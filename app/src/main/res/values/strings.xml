@@ -1,0 +1,18 @@
+<resources>
+    <string name="app_name">MoneyTracker</string>
+    <string name="title_money">money</string>
+    <string name="title_tracker">Tracker</string>
+    <string name="introduction_text">
+        Greeting guest, welcome to money tracker,
+        peace be with you in our LORD GOD and of the LORD and
+        survivor JESUS CHRIST
+    </string>
+    <string name="introduction_subText">
+        Get to know how you use your money
+    </string>
+    <string name="google_text">USE GOOGLE</string>
+    <string name="mail_text">USE EMAIL</string>
+    <string name="startUpScreenId">startUpScreen</string>
+    <string name="googleBtnId">googleBtn</string>
+    <string name="mailBtnId">mailBtn</string>
+</resources>
