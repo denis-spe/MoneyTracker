@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <integer name="authButtonIconSize">20</integer>
+    <integer name="authButtonSpacerWidth">8</integer>
+    <integer name="authButtonRoundedCornerShape">20</integer>
+</resources>
