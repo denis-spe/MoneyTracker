@@ -8,8 +8,11 @@
         survivor JESUS CHRIST
     </string>
     <string name="introduction_subText">
-        Get to know how you use your money
+        Get to know how you\n
+            use your money
     </string>
+    <string name="continueGuestId">continueGuestBtn</string>
+    <string name="continue_guest_text">Continue as guest</string>
     <string name="google_text">USE GOOGLE</string>
     <string name="mail_text">USE EMAIL</string>
     <string name="startUpScreenId">startUpScreen</string>

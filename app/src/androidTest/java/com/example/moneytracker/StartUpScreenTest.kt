@@ -2,14 +2,15 @@ package com.example.moneytracker
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
-import org.junit.runner.RunWith
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.moneytracker.ui.startUpScreen.StartUpScreen
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
 class StartUpScreenTest {
@@ -59,19 +60,25 @@ class StartUpScreenTest {
             .getString(R.string.google_text)
         val mailText = composeTestRule.activity
             .getString(R.string.google_text)
+        val continueGuestText = composeTestRule.activity
+            .getString(R.string.continue_guest_text)
 
         // Get the button
         val googleButton = composeTestRule.activity
             .getString(R.string.googleBtnId)
         val mailButton = composeTestRule.activity
             .getString(R.string.mailBtnId)
+        val continueGuestButton = composeTestRule.activity
+            .getString(R.string.continueGuestId)
 
         // Check if the button is displayed
         composeTestRule.onNodeWithTag(googleButton).assertIsDisplayed()
         composeTestRule.onNodeWithTag(mailButton).assertIsDisplayed()
+        composeTestRule.onNodeWithTag(continueGuestButton).assertIsDisplayed()
 
         // Check if the button text are displayed
         composeTestRule.onNodeWithText(googleText).assertIsDisplayed()
         composeTestRule.onNodeWithText(mailText).assertIsDisplayed()
+        composeTestRule.onNodeWithText(continueGuestText).assertIsDisplayed()
     }
 }

@@ -4,7 +4,6 @@ package com.example.moneytracker.ui.authScreens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -17,6 +16,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,7 +33,30 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
-import java.nio.file.WatchEvent
+
+@Composable
+fun AuthTextButton(
+    id: Int,
+    text: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    TextButton(
+        onClick = onClick,
+        modifier = modifier.testTag(stringResource(id = id))
+    ) {
+        val poppins = FontFamily(
+            Font(R.font.poppins_medium, FontWeight.Medium)
+        )
+
+        Text(
+            text = stringResource(id = text),
+            color = Color.Black,
+            fontSize = 15.sp,
+            fontFamily = poppins
+        )
+    }
+}
 
 
 @Composable
