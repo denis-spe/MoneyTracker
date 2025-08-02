@@ -2,6 +2,13 @@
     <string name="app_name">MoneyTracker</string>
     <string name="title_money">money</string>
     <string name="title_tracker">Tracker</string>
+    <string name="or_text">OR</string>
+    <string name="authBackBtnId">authBackBtn</string>
+    <string name="google_img">google image</string>
+    <string name="google_page_flow_img">google page flow img</string>
+    <string name="startup_page_flow_img">startup page flow img</string>
+
+    <!-- STARTUP SCREEN -->
     <string name="introduction_text">
         Greeting guest, welcome to money tracker,
         peace be with you in our LORD GOD and of the LORD and
@@ -11,11 +18,21 @@
         Get to know how you\n
             use your money
     </string>
-    <string name="continueGuestId">continueGuestBtn</string>
-    <string name="continue_guest_text">Continue as guest</string>
-    <string name="google_text">USE GOOGLE</string>
-    <string name="mail_text">USE EMAIL</string>
+    <string name="startupContinueGuestId">continueGuestBtn</string>
+    <string name="startup_continue_guest_text">Continue as guest</string>
+    <string name="startup_google_text">USE GOOGLE</string>
+    <string name="startup_mail_text">USE EMAIL</string>
     <string name="startUpScreenId">startUpScreen</string>
-    <string name="googleBtnId">googleBtn</string>
-    <string name="mailBtnId">mailBtn</string>
+    <string name="startupGoogleBtnId">googleBtn</string>
+    <string name="startupMailBtnId">mailBtn</string>
+
+    <!-- GOOGLE SCREEN -->
+    <string name="googleScreenId">googleScreen</string>
+    <string name="google_instruction_text">Register or login with</string>
+    <string name="google_account_text">oogle account</string>
+    <string name="googleDescriptionId">googleDescription</string>
+    <string name="googleLoginBtnId">googleBtnLogin</string>
+    <string name="google_login_text">LOGIN</string>
+    <string name="googleRegisterBtnId">googleBtnRegister</string>
+    <string name="google_register_text">REGISTER</string>
 </resources>

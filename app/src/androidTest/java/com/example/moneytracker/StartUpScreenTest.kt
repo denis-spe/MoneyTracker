@@ -37,6 +37,8 @@ class StartUpScreenTest {
             .getString(R.string.introduction_text)
         val introductionSubText = composeTestRule.activity
             .getString(R.string.introduction_subText)
+        val orText = composeTestRule.activity
+            .getString(R.string.or_text)
 
         // Check if there is the startUpScreen
         composeTestRule.onNodeWithTag(startUpScreenId).assertExists()
@@ -50,6 +52,9 @@ class StartUpScreenTest {
 
         composeTestRule.onNodeWithText(introductionSubText).assertExists()
 
+        // Check if the or text is displayed
+        composeTestRule.onNodeWithText(orText).assertIsDisplayed()
+
     }
 
     @Test
@@ -57,19 +62,19 @@ class StartUpScreenTest {
 
         // Get the button text
         val googleText = composeTestRule.activity
-            .getString(R.string.google_text)
+            .getString(R.string.startup_google_text)
         val mailText = composeTestRule.activity
-            .getString(R.string.google_text)
+            .getString(R.string.startup_google_text)
         val continueGuestText = composeTestRule.activity
-            .getString(R.string.continue_guest_text)
+            .getString(R.string.startup_continue_guest_text)
 
         // Get the button
         val googleButton = composeTestRule.activity
-            .getString(R.string.googleBtnId)
+            .getString(R.string.startupGoogleBtnId)
         val mailButton = composeTestRule.activity
-            .getString(R.string.mailBtnId)
+            .getString(R.string.startupMailBtnId)
         val continueGuestButton = composeTestRule.activity
-            .getString(R.string.continueGuestId)
+            .getString(R.string.startupContinueGuestId)
 
         // Check if the button is displayed
         composeTestRule.onNodeWithTag(googleButton).assertIsDisplayed()

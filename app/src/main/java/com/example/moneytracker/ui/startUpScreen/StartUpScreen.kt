@@ -33,10 +33,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.ui.authScreens.AuthButton
-import com.example.moneytracker.ui.authScreens.AuthFillButton
-import com.example.moneytracker.ui.authScreens.AuthHeader
-import com.example.moneytracker.ui.authScreens.AuthTextButton
+import com.example.moneytracker.ui.AuthButton
+import com.example.moneytracker.ui.AuthFillButton
+import com.example.moneytracker.ui.AuthHeader
+import com.example.moneytracker.ui.AuthTextButton
 import com.example.moneytracker.ui.screenManager.GoogleScreenRouter
 import com.example.moneytracker.ui.screenManager.MailScreenRouter
 
@@ -52,6 +52,7 @@ fun StartUpScreen(onNavigate: NavController? = null){
             .fillMaxSize()
             .testTag(stringResource(R.string.startUpScreenId)),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
 
         AuthHeader()
@@ -106,21 +107,22 @@ fun StartUpScreen(onNavigate: NavController? = null){
             modifier = Modifier.padding(top = 25.dp)
         ) {
             AuthFillButton(
-                id = R.string.googleBtnId,
-                text = R.string.google_text,
+                id = R.string.startupGoogleBtnId,
+                text = R.string.startup_google_text,
                 icon = R.drawable.google_icon,
                 modifier = Modifier.width(160.dp)
             ) {
                 onNavigate?.navigate(route = GoogleScreenRouter)
             }
 
-            Text("OR",
+            Text(
+                stringResource(R.string.or_text),
                 fontWeight = FontWeight.SemiBold,
                 )
 
             AuthButton(
-                id = R.string.mailBtnId,
-                text = R.string.mail_text,
+                id = R.string.startupMailBtnId,
+                text = R.string.startup_mail_text,
                 icon = R.drawable.email_icon,
                 modifier = Modifier.width(160.dp)
             ) {
@@ -132,7 +134,9 @@ fun StartUpScreen(onNavigate: NavController? = null){
             Image(
                 painter = painterResource(id = R.drawable.page_flow),
                 contentDescription = "page flow",
-                modifier = Modifier.size(42.dp)
+                modifier = Modifier
+                    .size(42.dp)
+                    .testTag(stringResource(R.string.startup_page_flow_img))
                 )
         }
 
@@ -142,8 +146,8 @@ fun StartUpScreen(onNavigate: NavController? = null){
             modifier = Modifier.padding(top = 55.dp)
         ) {
             AuthTextButton(
-                id = R.string.continueGuestId,
-                text = R.string.continue_guest_text
+                id = R.string.startupContinueGuestId,
+                text = R.string.startup_continue_guest_text
             ) {
 
             }
@@ -152,7 +156,7 @@ fun StartUpScreen(onNavigate: NavController? = null){
 }
 
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, device = "id:medium_phone")
 @Composable
 fun StartUpScreenPreview(){
     StartUpScreen()

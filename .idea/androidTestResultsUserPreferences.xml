@@ -9,7 +9,10 @@
               <option name="preferredColumnWidths">
                 <map>
                   <entry key="Duration" value="90" />
+                  <entry key="Google" value="120" />
+                  <entry key="Google Pixel 9" value="120" />
                   <entry key="Tests" value="360" />
+                  <entry key="samsung SM-A145F" value="120" />
                   <entry key="samsung SM-N770F" value="120" />
                 </map>
               </option>

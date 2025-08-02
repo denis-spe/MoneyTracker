@@ -1,6 +1,6 @@
 // Bless be the name of LORD our GOD
 
-package com.example.moneytracker.ui.authScreens
+package com.example.moneytracker.ui
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -8,12 +8,12 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,7 +86,8 @@ fun AuthButton(
             Image(
                 painter = painterResource(id = icon),
                 contentDescription = stringResource(id = text),
-                modifier = Modifier.size(integerResource(id = R.integer.authButtonIconSize).dp)
+                modifier = Modifier
+                    .size(integerResource(id = R.integer.authButtonIconSize).dp)
             )
             Spacer(modifier = Modifier.width(
                 integerResource(id = R.integer.authButtonSpacerWidth).dp))
@@ -117,13 +118,13 @@ fun AuthFillButton(
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start,
             modifier = Modifier.width(160.dp)
         ){
             Image(
                 painter = painterResource(id = icon),
                 contentDescription = stringResource(id = text),
-                modifier = Modifier.size(integerResource(id = R.integer.authButtonIconSize).dp)
+                modifier = Modifier
+                    .size(integerResource(id = R.integer.authButtonIconSize).dp)
             )
             Spacer(modifier = Modifier.width(
                 integerResource(id = R.integer.authButtonSpacerWidth).dp))
@@ -133,10 +134,30 @@ fun AuthFillButton(
 }
 
 @Composable
-fun AuthHeader(){
-    Column(
-        modifier = Modifier.padding(top = 81.dp)
+fun AuthBackButton(
+    id: Int,
+    icon: Int,
+    size: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    IconButton(
+        onClick = onClick,
+        modifier = modifier
+            .testTag(stringResource(id = id))
+            .size(size.dp)
     ) {
+        Image(
+            painter = painterResource(id = icon),
+            contentDescription = stringResource(id = id),
+            modifier = modifier.size(size.dp)
+        )
+    }
+}
+
+@Composable
+fun AuthHeader(){
+    Column {
         val robotoFont = FontFamily(
             Font(R.font.roboto, FontWeight.Normal)
         )
@@ -160,8 +181,8 @@ fun AuthHeader(){
 @Composable
 fun AuthButtonPreview(){
     AuthButton(
-        id = R.string.google_text,
-        text = R.string.google_text,
+        id = R.string.startup_google_text,
+        text = R.string.startup_google_text,
         icon = R.drawable.google_icon,
         onClick = {}
     )
@@ -171,8 +192,8 @@ fun AuthButtonPreview(){
 @Composable
 fun AuthFillButtonPreview(){
     AuthFillButton(
-        id = R.string.google_text,
-        text = R.string.google_text,
+        id = R.string.startup_google_text,
+        text = R.string.startup_google_text,
         icon = R.drawable.google_icon,
         onClick = {}
     )
