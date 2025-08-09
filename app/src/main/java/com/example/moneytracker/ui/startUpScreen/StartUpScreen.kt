@@ -5,7 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -35,7 +34,7 @@ import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthButton
 import com.example.moneytracker.ui.AuthFillButton
-import com.example.moneytracker.ui.AuthHeader
+import com.example.moneytracker.ui.AuthLayout
 import com.example.moneytracker.ui.AuthTextButton
 import com.example.moneytracker.ui.screenManager.GoogleScreenRouter
 import com.example.moneytracker.ui.screenManager.MailScreenRouter
@@ -47,15 +46,7 @@ import com.example.moneytracker.ui.screenManager.MailScreenRouter
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun StartUpScreen(onNavigate: NavController? = null){
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(stringResource(R.string.startUpScreenId)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-
-        AuthHeader()
+    AuthLayout(screenId = R.string.startUpScreenId) {
 
         Column(
             modifier = Modifier
@@ -110,7 +101,7 @@ fun StartUpScreen(onNavigate: NavController? = null){
                 id = R.string.startupGoogleBtnId,
                 text = R.string.startup_google_text,
                 icon = R.drawable.google_icon,
-                modifier = Modifier.width(160.dp)
+                modifier = Modifier.width(170.dp)
             ) {
                 onNavigate?.navigate(route = GoogleScreenRouter)
             }
@@ -124,7 +115,7 @@ fun StartUpScreen(onNavigate: NavController? = null){
                 id = R.string.startupMailBtnId,
                 text = R.string.startup_mail_text,
                 icon = R.drawable.email_icon,
-                modifier = Modifier.width(160.dp)
+                modifier = Modifier.width(170.dp)
             ) {
                 onNavigate?.navigate(route = MailScreenRouter)
             }

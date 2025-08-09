@@ -2,10 +2,8 @@
 package com.example.moneytracker.ui.authScreens.googleScreen
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -27,21 +25,13 @@ import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthBackButton
 import com.example.moneytracker.ui.AuthButton
 import com.example.moneytracker.ui.AuthFillButton
-import com.example.moneytracker.ui.AuthHeader
+import com.example.moneytracker.ui.AuthLayout
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 
 @Composable
 fun GoogleScreen(onNavigate: NavController? = null) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(stringResource(R.string.googleScreenId)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        // Auth Header
-        AuthHeader()
+    AuthLayout(screenId = R.string.googleScreenId) {
 
         // Google Description
         Column(
@@ -53,7 +43,7 @@ fun GoogleScreen(onNavigate: NavController? = null) {
             val roboto = FontFamily(
                 Font(
                     R.font.roboto,
-                    FontWeight.Normal,
+                    FontWeight.Medium,
                 )
             )
             Text(

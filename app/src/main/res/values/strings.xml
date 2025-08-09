@@ -5,8 +5,7 @@
     <string name="or_text">OR</string>
     <string name="authBackBtnId">authBackBtn</string>
     <string name="google_img">google image</string>
-    <string name="google_page_flow_img">google page flow img</string>
-    <string name="startup_page_flow_img">startup page flow img</string>
+
 
     <!-- STARTUP SCREEN -->
     <string name="introduction_text">
@@ -25,6 +24,7 @@
     <string name="startUpScreenId">startUpScreen</string>
     <string name="startupGoogleBtnId">googleBtn</string>
     <string name="startupMailBtnId">mailBtn</string>
+    <string name="startup_page_flow_img">startup page flow img</string>
 
     <!-- GOOGLE SCREEN -->
     <string name="googleScreenId">googleScreen</string>
@@ -35,4 +35,19 @@
     <string name="google_login_text">LOGIN</string>
     <string name="googleRegisterBtnId">googleBtnRegister</string>
     <string name="google_register_text">REGISTER</string>
+    <string name="google_page_flow_img">google page flow img</string>
+
+    <!-- MAIL SCREEN -->
+    <string name="mailScreenId">mailScreen</string>
+    <string name="mailDescriptionId">mailDescription</string>
+    <string name="mail_description_text">
+        Register or login with\n
+        money Tracker account
+    </string>
+    <string name="mail_img">mail_img</string>
+    <string name="mailLoginBtnId">mailBtnLogin</string>
+    <string name="mail_login_text">LOGIN</string>
+    <string name="mailRegisterBtnId">mailBtnRegister</string>
+    <string name="mail_register_text">REGISTER</string>
+    <string name="mail_page_flow_img">mail page flow img</string>
 </resources>

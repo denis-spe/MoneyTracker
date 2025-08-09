@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -91,7 +92,10 @@ fun AuthButton(
             )
             Spacer(modifier = Modifier.width(
                 integerResource(id = R.integer.authButtonSpacerWidth).dp))
-            Text(text = stringResource(id = text))
+            Text(
+                text = stringResource(id = text),
+                fontWeight = FontWeight.SemiBold
+            )
         }
     }
 }
@@ -128,8 +132,26 @@ fun AuthFillButton(
             )
             Spacer(modifier = Modifier.width(
                 integerResource(id = R.integer.authButtonSpacerWidth).dp))
-            Text(text = stringResource(id = text))
+            Text(
+                text = stringResource(id = text),
+                fontWeight = FontWeight.SemiBold
+            )
         }
+    }
+}
+
+@Composable
+fun AuthLayout(screenId: Int, content: @Composable () -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .testTag(stringResource(screenId)),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+
+        AuthHeader()
+        content()
     }
 }
 

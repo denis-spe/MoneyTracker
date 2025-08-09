@@ -7,14 +7,20 @@
       </SelectionState>
       <SelectionState runConfigName="StartUpScreenTest">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2025-07-26T21:05:35.831081Z">
+        <DropdownSelection timestamp="2025-08-02T15:21:39.155477Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R58W3174A7E" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=/Users/den/.android/avd/Pixel_2.avd" />
             </handle>
           </Target>
         </DropdownSelection>
         <DialogSelection />
+      </SelectionState>
+      <SelectionState runConfigName="GoogleScreenTest">
+        <option name="selectionMode" value="DROPDOWN" />
+      </SelectionState>
+      <SelectionState runConfigName="MailScreenTest">
+        <option name="selectionMode" value="DROPDOWN" />
       </SelectionState>
     </selectionStates>
   </component>
