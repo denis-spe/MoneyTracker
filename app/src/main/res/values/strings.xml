@@ -5,6 +5,8 @@
     <string name="or_text">OR</string>
     <string name="authBackBtnId">authBackBtn</string>
     <string name="google_img">google image</string>
+    <string name="emailOutlineIconId">emailOutlineIcon</string>
+    <string name="passwordOutlineIconId">passwordOutlineIcon</string>
 
 
     <!-- STARTUP SCREEN -->
@@ -50,4 +52,22 @@
     <string name="mailRegisterBtnId">mailBtnRegister</string>
     <string name="mail_register_text">REGISTER</string>
     <string name="mail_page_flow_img">mail page flow img</string>
+
+    <!-- LOGIN SCREEN -->
+    <string name="loginScreenId">loginScreen</string>
+    <string name="loginDescriptionId">loginDescription</string>
+    <string name="login_desc_text">
+        Login your money tracker \n
+        account enter email address \n
+        and password to get started
+    </string>
+    <string name="login_img">login_img</string>
+    <string name="loginEmailFieldId">loginEmailField</string>
+    <string name="loginEmailFieldPlaceholder">EMAIL ADDRESS</string>
+    <string name="loginPasswordFieldId">loginPasswordField</string>
+    <string name="loginPasswordPlaceholder">PASSWORD</string>
+    <string name="loginBtnId">Login button</string>
+    <string name="login_btn_text">Login</string>
+    <string name="login_page_flow_img">login page flow img</string>
+
 </resources>
