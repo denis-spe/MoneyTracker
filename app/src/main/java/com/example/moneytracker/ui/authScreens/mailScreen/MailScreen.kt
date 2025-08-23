@@ -43,7 +43,7 @@ fun MailScreen(onNavigate: NavController? = null) {
         // Mail Description
         Column(
             modifier = Modifier
-                .padding(top = 120.dp, bottom = 80.dp)
+                .padding(top = 50.dp, bottom = 40.dp)
                 .testTag(stringResource(R.string.mailDescriptionId)),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -55,7 +55,8 @@ fun MailScreen(onNavigate: NavController? = null) {
                 textAlign = TextAlign.Center,
                 fontFamily = roboto,
                 fontWeight = FontWeight.Medium,
-                fontSize = 24.sp
+                fontSize = 20.sp,
+                modifier = Modifier.padding(bottom = 15.dp)
             )
 
             Image(
@@ -79,6 +80,7 @@ fun MailScreen(onNavigate: NavController? = null) {
         Text(
             stringResource(R.string.or_text),
             fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)
         )
 
         AuthButton(

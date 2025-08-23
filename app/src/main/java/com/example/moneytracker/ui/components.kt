@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,8 +26,10 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,11 +40,14 @@ import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -217,7 +224,8 @@ fun AuthEmailField(
     outlineIcon: Int,
     filledIcon: Int,
     modifier: Modifier = Modifier,
-    textState: MutableState<TextFieldValue>
+    isError: MutableState<Boolean>,
+    textState: MutableState<String>
 ) {
     val focusedColor = colorResource(R.color.authBtnContainerColor)
     val unfocusedColor = colorResource(R.color.authBtnContainerColor).copy(alpha = 0.6f)
@@ -230,8 +238,8 @@ fun AuthEmailField(
         cursorColor = focusedColor,
     )
 
-    val fontSize = 17.sp
-    val iconColor = if (textState.value.text.isEmpty())
+    val fontSize = 14.sp
+    val iconColor = if (textState.value.isEmpty())
         unfocusedColor else focusedColor
     val poppins = FontFamily(
         Font(R.font.poppins_medium, FontWeight.Medium)
@@ -239,7 +247,99 @@ fun AuthEmailField(
 
     OutlinedTextField(
         value = textState.value,
-        onValueChange = { textState.value = it },
+        onValueChange = {
+            isError.value = false
+            textState.value = it
+        },
+        modifier = modifier
+            .testTag(stringResource(id = id))
+            .fillMaxWidth(0.7f),
+        textStyle = TextStyle(
+            fontSize = fontSize,
+            fontWeight = FontWeight.Medium,
+            fontFamily = poppins
+        ),
+        isError = isError.value,
+        placeholder = {
+            Text(
+                text = stringResource(id = placeholder),
+                color = Color.Gray,
+                fontSize = fontSize,
+                fontWeight = FontWeight.Medium,
+                fontFamily = poppins
+            )
+        },
+        leadingIcon = {
+            if (isError.value)
+                Image(
+                    painter = painterResource(id = R.drawable.circle_error),
+                    contentDescription = stringResource(id = id),
+                    modifier = Modifier.size(24.dp),
+                )
+            else
+                Image(
+                    painter = painterResource(
+                        id = if (textState.value.isEmpty())
+                            outlineIcon else filledIcon
+                    ),
+                    contentDescription = stringResource(id = id),
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = ColorFilter.tint(iconColor)
+                )
+        },
+        trailingIcon = @Composable {
+            if (textState.value.isNotEmpty())
+                IconButton(onClick = { textState.value = "" }) {
+                    Image(
+                        painter = painterResource(id = R.drawable.clear_icon),
+                        contentDescription = stringResource(id = id),
+                        modifier = Modifier.size(16.dp),
+                        colorFilter = ColorFilter.tint(focusedColor)
+                    )
+                }
+        },
+        shape = RoundedCornerShape(30),
+        colors = customColors,
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+    )
+}
+
+@Composable
+fun AuthPasswordField(
+    id: Int,
+    placeholder: Int,
+    outlineIcon: Int,
+    filledIcon: Int,
+    modifier: Modifier = Modifier,
+    isError: MutableState<Boolean>,
+    textState: MutableState<String>
+) {
+    val focusedColor = colorResource(R.color.authBtnContainerColor)
+    val unfocusedColor = colorResource(R.color.authBtnContainerColor).copy(alpha = 0.6f)
+
+    val customColors = OutlinedTextFieldDefaults.colors(
+        focusedTextColor = Color.DarkGray,
+        unfocusedTextColor = Color.Gray,
+        focusedBorderColor = focusedColor,
+        unfocusedBorderColor = unfocusedColor,
+        cursorColor = focusedColor,
+    )
+
+    val fontSize = 14.sp
+    val iconColor = if (textState.value.isEmpty())
+        unfocusedColor else focusedColor
+    val poppins = FontFamily(
+        Font(R.font.poppins_medium, FontWeight.Medium)
+    )
+    var isVisible by remember { mutableStateOf(false) }
+
+    OutlinedTextField(
+        value = textState.value,
+        onValueChange = {
+            isError.value = false
+            textState.value = it
+        },
         modifier = modifier
             .testTag(stringResource(id = id))
             .fillMaxWidth(0.7f),
@@ -257,53 +357,260 @@ fun AuthEmailField(
                 fontFamily = poppins
             )
         },
+        isError = isError.value,
         leadingIcon = {
-            Image(
-                painter = painterResource(
-                    id = if (textState.value.text.isEmpty())
-                        outlineIcon else filledIcon
-                ),
-                contentDescription = stringResource(id = id),
-                modifier = Modifier.size(24.dp),
-                colorFilter = ColorFilter.tint(iconColor)
-            )
+            if (isError.value)
+                Image(
+                    painter = painterResource(id = R.drawable.circle_error),
+                    contentDescription = stringResource(id = id),
+                    modifier = Modifier.size(24.dp),
+                )
+            else
+                Image(
+                    painter = painterResource(
+                        id = if (textState.value.isEmpty())
+                            outlineIcon else filledIcon
+                    ),
+                    contentDescription = stringResource(id = id),
+                    modifier = Modifier.size(24.dp),
+                    colorFilter = ColorFilter.tint(iconColor)
+                )
         },
         trailingIcon = @Composable {
-            if (textState.value.text.isNotEmpty())
-                IconButton(onClick = { textState.value = TextFieldValue("") }) {
-                    Image(
-                        painter = painterResource(id = R.drawable.clear_icon),
-                        contentDescription = stringResource(id = id),
-                        modifier = Modifier.size(24.dp),
-                        colorFilter = ColorFilter.tint(focusedColor)
-                    )
-                }
+            IconButton(onClick = {
+                isVisible = isVisible.not()
+            }) {
+                Image(
+                    painter = painterResource(
+                        id = if (isVisible) R.drawable.open_password
+                        else R.drawable.hidden_password
+                    ),
+                    contentDescription = stringResource(id = id),
+                    modifier = Modifier.size(20.dp),
+                    colorFilter = ColorFilter.tint(focusedColor)
+                )
+            }
         },
         shape = RoundedCornerShape(30),
         colors = customColors,
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+        visualTransformation = if (isVisible) VisualTransformation.None
+        else PasswordVisualTransformation()
     )
+}
+
+@Composable
+fun AuthNextPageButton(
+    id: Int,
+    text: Int,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+) {
+    val poppins = FontFamily(
+        Font(R.font.poppins_medium, FontWeight.Medium)
+    )
+
+    OutlinedButton(
+        modifier = modifier
+            .testTag(stringResource(id = id))
+            .fillMaxWidth(0.5f),
+        shape = RoundedCornerShape(integerResource(R.integer.authButtonRoundedCornerShape)),
+        onClick = onClick,
+        border = BorderStroke(1.dp, colorResource(id = R.color.authBtnContainerColor)),
+    ) {
+        Text(
+            text = stringResource(id = text),
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = poppins,
+            fontSize = 17.sp,
+            color = colorResource(id = R.color.authBtnContainerColor)
+        )
+    }
+}
+
+@Composable
+fun AuthInputLayout(
+    screenId: Int,
+    screenImgId: Int,
+    descriptionId: Int,
+    descriptionText: Int,
+    pageFlowImgId: Int,
+    nextPageButtonId: Int,
+    nextPageButtonText: Int,
+    nextPageButtonOnClick: () -> Unit,
+    backBtnOnClick: () -> Unit,
+    content: @Composable () -> Unit
+) {
+    val roboto = FontFamily(
+        Font(
+            R.font.roboto,
+            FontWeight.Medium,
+        )
+    )
+
+    AuthLayout(screenId = screenId) {
+
+        // Description
+        Column(
+            modifier = Modifier
+                .padding(top = 50.dp, bottom = 40.dp)
+                .testTag(stringResource(id = descriptionId))
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = buildAnnotatedString {
+                    append(stringResource(id = descriptionText))
+                },
+                textAlign = TextAlign.Center,
+                fontFamily = roboto,
+                fontWeight = FontWeight.Medium,
+                fontSize = 20.sp,
+                modifier = Modifier.padding(bottom = 15.dp)
+            )
+
+            Image(
+                painter = painterResource(id = screenImgId),
+                contentDescription = stringResource(id = screenId) + " image",
+                modifier = Modifier.size(60.dp)
+            )
+        }
+
+        // Text Fields
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            content()
+        }
+
+        // Next Page Button
+        AuthNextPageButton(
+            id = nextPageButtonId,
+            text = nextPageButtonText,
+            onClick = nextPageButtonOnClick
+        )
+
+        // Page flow
+        Row(
+            modifier = Modifier.padding(top = 10.dp, bottom = 10.dp)
+        ) {
+            Image(
+                painter = painterResource(id = pageFlowImgId),
+                contentDescription = stringResource(id = screenId) + " page flow",
+                modifier = Modifier.size(42.dp)
+            )
+        }
+
+        // Back to recent page button
+        AuthBackButton(
+            R.string.authBackBtnId,
+            icon = R.drawable.back_icon,
+            size = 60,
+            onClick = backBtnOnClick
+        )
+
+    }
 }
 
 @Preview(showBackground = true)
 @Composable
-fun AuthEmailFieldPreview() {
-    val textState = remember { mutableStateOf(TextFieldValue("")) }
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+fun AuthInputLayoutPreview() {
+    AuthInputLayout(
+        screenId = R.string.loginScreenId,
+        screenImgId = R.drawable.login_img,
+        descriptionId = R.string.loginDescriptionId,
+        descriptionText = R.string.login_desc_text,
+        pageFlowImgId = R.drawable.login_page_flow,
+        nextPageButtonId = R.string.loginBtnId,
+        nextPageButtonText = R.string.login_btn_text,
+        nextPageButtonOnClick = {},
+        backBtnOnClick = {}
     ) {
         AuthEmailField(
             id = R.string.loginEmailFieldId,
             placeholder = R.string.loginEmailFieldPlaceholder,
             outlineIcon = R.drawable.outline_email,
             filledIcon = R.drawable.filled_email,
-            textState = textState
+            isError = remember { mutableStateOf(false) },
+            textState = remember { mutableStateOf("") }
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        AuthPasswordField(
+            id = R.string.loginPasswordFieldId,
+            placeholder = R.string.loginPasswordPlaceholder,
+            outlineIcon = R.drawable.outline_password,
+            filledIcon = R.drawable.filled_password,
+            isError = remember { mutableStateOf(false) },
+            textState = remember { mutableStateOf("") }
         )
     }
 }
+
+//@Preview(showBackground = true)
+//@Composable
+//fun AuthNextPageButtonPreview(){
+//    Column(
+//        modifier = Modifier.fillMaxSize(),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center
+//    ) {
+//        AuthNextPageButton(
+//            id = R.string.loginBtnId,
+//            text = R.string.login_btn_text,
+//            onClick = {}
+//        )
+//    }
+//}
+
+//@Preview(showBackground = true)
+//@Composable
+//fun AuthEmailFieldPreview() {
+//    val textState = remember { mutableStateOf("") }
+//    val isError = remember { mutableStateOf(false) }
+//
+//    Column(
+//        modifier = Modifier.fillMaxSize(),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center
+//    ) {
+//        AuthEmailField(
+//            id = R.string.loginEmailFieldId,
+//            placeholder = R.string.loginEmailFieldPlaceholder,
+//            outlineIcon = R.drawable.outline_email,
+//            filledIcon = R.drawable.filled_email,
+//            isError = isError,
+//            textState = textState
+//        )
+//    }
+//}
+
+//@Preview(showBackground = true)
+//@Composable
+//fun AuthPasswordFieldPreview() {
+//    val textState = remember { mutableStateOf("") }
+//    val isError = remember { mutableStateOf(false) }
+//
+//    Column(
+//        modifier = Modifier.fillMaxSize(),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center
+//    ) {
+//        AuthPasswordField(
+//            id = R.string.loginEmailFieldId,
+//            placeholder = R.string.loginPasswordPlaceholder,
+//            outlineIcon = R.drawable.outline_password,
+//            filledIcon = R.drawable.filled_password,
+//            isError = isError,
+//            textState = textState
+//        )
+//    }
+//}
 
 //@Preview(showBackground = true)
 //@Composable

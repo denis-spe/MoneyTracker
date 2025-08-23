@@ -63,9 +63,9 @@
     </string>
     <string name="login_img">login_img</string>
     <string name="loginEmailFieldId">loginEmailField</string>
-    <string name="loginEmailFieldPlaceholder">EMAIL ADDRESS</string>
+    <string name="loginEmailFieldPlaceholder">Enter your email</string>
     <string name="loginPasswordFieldId">loginPasswordField</string>
-    <string name="loginPasswordPlaceholder">PASSWORD</string>
+    <string name="loginPasswordPlaceholder">Enter your password</string>
     <string name="loginBtnId">Login button</string>
     <string name="login_btn_text">Login</string>
     <string name="login_page_flow_img">login page flow img</string>
