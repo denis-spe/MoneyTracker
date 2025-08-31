@@ -218,14 +218,15 @@ fun AuthHeader(){
 }
 
 @Composable
-fun AuthEmailField(
+fun AuthOutlineTextField(
     id: Int,
     placeholder: Int,
     outlineIcon: Int,
     filledIcon: Int,
     modifier: Modifier = Modifier,
     isError: MutableState<Boolean>,
-    textState: MutableState<String>
+    textState: MutableState<String>,
+    isEmail: Boolean = false
 ) {
     val focusedColor = colorResource(R.color.authBtnContainerColor)
     val unfocusedColor = colorResource(R.color.authBtnContainerColor).copy(alpha = 0.6f)
@@ -274,7 +275,9 @@ fun AuthEmailField(
                 Image(
                     painter = painterResource(id = R.drawable.circle_error),
                     contentDescription = stringResource(id = id),
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .testTag(stringResource(id = R.string.error_icon)),
                 )
             else
                 Image(
@@ -283,7 +286,9 @@ fun AuthEmailField(
                             outlineIcon else filledIcon
                     ),
                     contentDescription = stringResource(id = id),
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .testTag(stringResource(id = R.string.authOutlineFieldLeadingIconId)),
                     colorFilter = ColorFilter.tint(iconColor)
                 )
         },
@@ -293,7 +298,13 @@ fun AuthEmailField(
                     Image(
                         painter = painterResource(id = R.drawable.clear_icon),
                         contentDescription = stringResource(id = id),
-                        modifier = Modifier.size(16.dp),
+                        modifier = Modifier
+                            .size(16.dp)
+                            .testTag(
+                                stringResource(
+                                    id = R.string.authOutlineFieldTrailingIconId
+                                )
+                            ),
                         colorFilter = ColorFilter.tint(focusedColor)
                     )
                 }
@@ -301,7 +312,10 @@ fun AuthEmailField(
         shape = RoundedCornerShape(30),
         colors = customColors,
         singleLine = true,
-        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+        keyboardOptions = KeyboardOptions(
+            keyboardType = if (isEmail) KeyboardType.Email
+            else KeyboardType.Text
+        )
     )
 }
 
@@ -363,7 +377,9 @@ fun AuthPasswordField(
                 Image(
                     painter = painterResource(id = R.drawable.circle_error),
                     contentDescription = stringResource(id = id),
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .testTag(stringResource(id = R.string.error_icon)),
                 )
             else
                 Image(
@@ -372,7 +388,9 @@ fun AuthPasswordField(
                             outlineIcon else filledIcon
                     ),
                     contentDescription = stringResource(id = id),
-                    modifier = Modifier.size(24.dp),
+                    modifier = Modifier
+                        .size(24.dp)
+                        .testTag(stringResource(id = R.string.authPasswordOutlineFieldLeadingIconId)),
                     colorFilter = ColorFilter.tint(iconColor)
                 )
         },
@@ -386,7 +404,13 @@ fun AuthPasswordField(
                         else R.drawable.hidden_password
                     ),
                     contentDescription = stringResource(id = id),
-                    modifier = Modifier.size(20.dp),
+                    modifier = Modifier
+                        .size(20.dp)
+                        .testTag(
+                            stringResource(
+                                id = R.string.authPasswordOutlineFieldTrailingIconId
+                            )
+                        ),
                     colorFilter = ColorFilter.tint(focusedColor)
                 )
             }
@@ -473,7 +497,9 @@ fun AuthInputLayout(
             Image(
                 painter = painterResource(id = screenImgId),
                 contentDescription = stringResource(id = screenId) + " image",
-                modifier = Modifier.size(60.dp)
+                modifier = Modifier
+                    .size(60.dp)
+                    .testTag(stringResource(id = R.string.screen_logo))
             )
         }
 
@@ -501,7 +527,11 @@ fun AuthInputLayout(
             Image(
                 painter = painterResource(id = pageFlowImgId),
                 contentDescription = stringResource(id = screenId) + " page flow",
-                modifier = Modifier.size(42.dp)
+                modifier = Modifier
+                    .size(42.dp)
+                    .testTag(
+                        stringResource(R.string.pageFlowId)
+                    )
             )
         }
 
@@ -521,7 +551,7 @@ fun AuthInputLayout(
 fun AuthInputLayoutPreview() {
     AuthInputLayout(
         screenId = R.string.loginScreenId,
-        screenImgId = R.drawable.login_img,
+        screenImgId = R.drawable.login_logo,
         descriptionId = R.string.loginDescriptionId,
         descriptionText = R.string.login_desc_text,
         pageFlowImgId = R.drawable.login_page_flow,
@@ -530,7 +560,7 @@ fun AuthInputLayoutPreview() {
         nextPageButtonOnClick = {},
         backBtnOnClick = {}
     ) {
-        AuthEmailField(
+        AuthOutlineTextField(
             id = R.string.loginEmailFieldId,
             placeholder = R.string.loginEmailFieldPlaceholder,
             outlineIcon = R.drawable.outline_email,

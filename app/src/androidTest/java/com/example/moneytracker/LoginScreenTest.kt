@@ -26,94 +26,127 @@ class LoginScreenTest {
         }
     }
 
+    /**
+     * Test for screenId
+     */
     @Test
-    fun testDisplayedContentInLoginScreen() {
-        val loginScreenId = composeTestRule.activity
+    fun testScreenId() {
+        val screenId = composeTestRule.activity
             .getString(R.string.loginScreenId)
+        composeTestRule.onNodeWithTag(screenId)
+            .assertExists()
+            .assertIsDisplayed()
+    }
+
+    /**
+     * Test for screen title
+     */
+    @Test
+    fun testScreenTitle() {
         val titleMoney = composeTestRule.activity
             .getString(R.string.title_money)
         val titleTracker = composeTestRule.activity
             .getString(R.string.title_tracker)
+        composeTestRule.onNodeWithText(titleMoney)
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithText(titleTracker)
+            .assertIsDisplayed()
+    }
 
+    /**
+     * Test for screen description
+     */
+    @Test
+    fun testScreenDescription() {
         val loginDescription = composeTestRule.activity
             .getString(R.string.loginDescriptionId)
         val loginDescriptionText = composeTestRule.activity
             .getString(R.string.login_desc_text)
-        val loginImg = composeTestRule.activity
-            .getString(R.string.login_img)
-
-        val loginEmailField = composeTestRule.activity
-            .getString(R.string.loginEmailFieldId)
-        val loginEmailFieldPlaceholder = composeTestRule.activity
-            .getString(R.string.loginEmailFieldPlaceholder)
-        val emailOutlineFieldIcon = composeTestRule.activity
-            .getString(R.string.emailOutlineIconId)
-
-        val loginPasswordField = composeTestRule.activity
-            .getString(R.string.loginPasswordFieldId)
-        val loginPasswordPlaceholder = composeTestRule.activity
-            .getString(R.string.loginPasswordPlaceholder)
-        val passwordOutlineIcon = composeTestRule.activity
-            .getString(R.string.passwordOutlineIconId)
-        val loginButton = composeTestRule.activity
-            .getString(R.string.loginBtnId)
-        val loginPageFlowImg = composeTestRule.activity
-            .getString(R.string.login_page_flow_img)
-        val backButton = composeTestRule.activity
-            .getString(R.string.authBackBtnId)
-
-
-        composeTestRule.onNodeWithTag(loginScreenId)
-            .assertExists()
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithText(titleMoney)
-            .assertIsDisplayed()
-
-        composeTestRule.onNodeWithText(titleTracker)
-            .assertIsDisplayed()
+        val screenLogo = composeTestRule.activity
+            .getString(R.string.screen_logo)
 
         composeTestRule.onNodeWithTag(loginDescription)
             .assertExists()
             .assertIsDisplayed()
-
         composeTestRule.onNodeWithText(loginDescriptionText)
             .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag(loginImg)
+        composeTestRule.onNodeWithTag(screenLogo)
             .assertExists()
             .assertIsDisplayed()
+    }
+
+    /**
+     * Test for screen input fields
+     */
+    @Test
+    fun testScreenInputs() {
+        val loginEmailField = composeTestRule.activity
+            .getString(R.string.loginEmailFieldId)
+        val loginEmailFieldPlaceholder = composeTestRule.activity
+            .getString(R.string.loginEmailFieldPlaceholder)
+        val loginPasswordField = composeTestRule.activity
+            .getString(R.string.loginPasswordFieldId)
+        val loginPasswordPlaceholder = composeTestRule.activity
+            .getString(R.string.loginPasswordPlaceholder)
+        val authOutlineFieldLeadingIconId = composeTestRule.activity
+            .getString(R.string.authOutlineFieldLeadingIconId)
+        val authOutlineFieldTrailingIconId = composeTestRule.activity
+            .getString(R.string.authOutlineFieldTrailingIconId)
+        val authPasswordOutlineFieldLeadingIconId = composeTestRule.activity
+            .getString(R.string.authPasswordOutlineFieldLeadingIconId)
+        val authPasswordOutlineFieldTrailingIconId = composeTestRule.activity
+            .getString(R.string.authPasswordOutlineFieldTrailingIconId)
 
         composeTestRule.onNodeWithTag(loginEmailField)
             .assertExists()
             .assertIsDisplayed()
-
         composeTestRule.onNodeWithText(loginEmailFieldPlaceholder)
             .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag(emailOutlineFieldIcon)
-            .assertExists()
-            .assertIsDisplayed()
-
         composeTestRule.onNodeWithTag(loginPasswordField)
             .assertExists()
             .assertIsDisplayed()
-
         composeTestRule.onNodeWithText(loginPasswordPlaceholder)
             .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag(passwordOutlineIcon)
+        composeTestRule.onNodeWithTag(authOutlineFieldLeadingIconId)
             .assertExists()
             .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(authOutlineFieldTrailingIconId)
+            .assertExists()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(authPasswordOutlineFieldLeadingIconId)
+            .assertExists()
+            .assertIsDisplayed()
+        composeTestRule.onNodeWithTag(authPasswordOutlineFieldTrailingIconId)
+            .assertExists()
+            .assertIsDisplayed()
+    }
+
+    /**
+     * Test for screen page flow image
+     */
+    @Test
+    fun testScreenPageFlow() {
+        val pageFlowImg = composeTestRule.activity
+            .getString(R.string.pageFlowId)
+
+        composeTestRule.onNodeWithTag(pageFlowImg)
+            .assertExists()
+            .assertIsDisplayed()
+    }
+
+    /**
+     * Test for screen buttons
+     */
+    @Test
+    fun testScreenButtons() {
+        val loginButton = composeTestRule.activity
+            .getString(R.string.loginBtnId)
+        val backButton = composeTestRule.activity
+            .getString(R.string.authBackBtnId)
 
         composeTestRule.onNodeWithTag(loginButton)
             .assertExists()
             .assertIsDisplayed()
-
-        composeTestRule.onNodeWithTag(loginPageFlowImg)
-            .assertExists()
-            .assertIsDisplayed()
-
         composeTestRule.onNodeWithTag(backButton)
             .assertExists()
             .assertIsDisplayed()
