@@ -1,8 +1,15 @@
 package com.example.moneytracker
 
-import org.junit.runner.RunWith
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.junit.Test
+import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class AppTest {
+class AppTest : TestBase(screenComposable = { App() }) {
+    @Test
+    fun testHolder() {
+        composeTestRule.onNodeWithTag("holder")
+            .assertExists()
+    }
 }

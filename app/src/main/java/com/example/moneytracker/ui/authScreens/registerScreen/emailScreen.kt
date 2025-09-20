@@ -21,7 +21,7 @@ fun EmailScreen(onNavigate: NavController? = null) {
         screenId = R.string.emailRegisterScreenId,
         screenImgId = R.drawable.email_logo,
         descriptionId = R.string.emailRegisterDescriptionId,
-        descriptionText = R.string.emailRegister_desc_text,
+        descriptionText = R.string.email_register_desc_text,
         pageFlowImgId = R.drawable.email_page_flow,
         nextPageButtonId = R.string.emailRegisterBtnId,
         nextPageButtonText = R.string.email_register_btn_text,
@@ -35,8 +35,8 @@ fun EmailScreen(onNavigate: NavController? = null) {
         }
     ) {
         AuthOutlineTextField(
-            id = R.string.loginEmailFieldId,
-            placeholder = R.string.loginEmailFieldPlaceholder,
+            id = R.string.emailRegisterEmailFieldId,
+            placeholder = R.string.emailRegisterEmailFieldPlaceholder,
             outlineIcon = R.drawable.outline_email,
             filledIcon = R.drawable.filled_email,
             isError = isErrorEmail,

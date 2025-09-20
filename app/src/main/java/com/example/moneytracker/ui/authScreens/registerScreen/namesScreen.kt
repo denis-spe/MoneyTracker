@@ -28,8 +28,8 @@ fun NamesScreen(onNavigate: NavController? = null) {
     AuthInputLayout(
         screenId = R.string.nameRegisterScreenId,
         screenImgId = R.drawable.name_logo,
-        descriptionId = R.string.nameRegister_desc_text,
-        descriptionText = R.string.nameRegister_desc_text,
+        descriptionId = R.string.nameRegisterDescriptionId,
+        descriptionText = R.string.name_register_desc_text,
         pageFlowImgId = R.drawable.name_page_flow,
         nextPageButtonId = R.string.nameRegisterBtnId,
         nextPageButtonText = R.string.name_register_btn_text,

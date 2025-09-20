@@ -287,24 +287,21 @@ fun AuthOutlineTextField(
                     ),
                     contentDescription = stringResource(id = id),
                     modifier = Modifier
-                        .size(24.dp)
-                        .testTag(stringResource(id = R.string.authOutlineFieldLeadingIconId)),
+                        .size(24.dp),
                     colorFilter = ColorFilter.tint(iconColor)
                 )
         },
         trailingIcon = @Composable {
             if (textState.value.isNotEmpty())
-                IconButton(onClick = { textState.value = "" }) {
+                IconButton(
+                    onClick = { textState.value = "" },
+                    modifier = Modifier.testTag(stringResource(R.string.emailClearTextBtnId))
+                ) {
                     Image(
                         painter = painterResource(id = R.drawable.clear_icon),
                         contentDescription = stringResource(id = id),
                         modifier = Modifier
-                            .size(16.dp)
-                            .testTag(
-                                stringResource(
-                                    id = R.string.authOutlineFieldTrailingIconId
-                                )
-                            ),
+                            .size(16.dp),
                         colorFilter = ColorFilter.tint(focusedColor)
                     )
                 }
@@ -315,7 +312,7 @@ fun AuthOutlineTextField(
         keyboardOptions = KeyboardOptions(
             keyboardType = if (isEmail) KeyboardType.Email
             else KeyboardType.Text
-        )
+        ),
     )
 }
 
@@ -389,15 +386,16 @@ fun AuthPasswordField(
                     ),
                     contentDescription = stringResource(id = id),
                     modifier = Modifier
-                        .size(24.dp)
-                        .testTag(stringResource(id = R.string.authPasswordOutlineFieldLeadingIconId)),
+                        .size(24.dp),
                     colorFilter = ColorFilter.tint(iconColor)
                 )
         },
         trailingIcon = @Composable {
             IconButton(onClick = {
                 isVisible = isVisible.not()
-            }) {
+            }, modifier = Modifier
+                .testTag(stringResource(R.string.passwordVisibilityBtnId))
+            ) {
                 Image(
                     painter = painterResource(
                         id = if (isVisible) R.drawable.open_password
@@ -405,12 +403,7 @@ fun AuthPasswordField(
                     ),
                     contentDescription = stringResource(id = id),
                     modifier = Modifier
-                        .size(20.dp)
-                        .testTag(
-                            stringResource(
-                                id = R.string.authPasswordOutlineFieldTrailingIconId
-                            )
-                        ),
+                        .size(20.dp),
                     colorFilter = ColorFilter.tint(focusedColor)
                 )
             }

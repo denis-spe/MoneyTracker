@@ -12,6 +12,8 @@
     <string name="pageFlowId">pageFlowId</string>
     <string name="error_icon">error_icon</string>
     <string name="screen_logo">screen_logo</string>
+    <string name="passwordVisibilityBtnId">password visibility button</string>
+    <string name="emailClearTextBtnId">email button</string>
 
 
     <!-- STARTUP SCREEN -->
@@ -78,7 +80,7 @@
     <!-- EMAIL REGISTER SCREEN -->
     <string name="emailRegisterScreenId">emailRegisterScreen</string>
     <string name="emailRegisterDescriptionId">emailRegisterDescription</string>
-    <string name="emailRegister_desc_text">
+    <string name="email_register_desc_text">
         Create money tracker account \n
         enter email address to get \n
         started
@@ -93,7 +95,7 @@
     <!-- NAMES REGISTER SCREEN -->
     <string name="nameRegisterScreenId">nameRegisterScreen</string>
     <string name="nameRegisterDescriptionId">nameRegisterDescription</string>
-    <string name="nameRegister_desc_text">
+    <string name="name_register_desc_text">
         Let get to know you more,\n
         enter you names
     </string>
@@ -116,7 +118,7 @@
     <string name="password_register_img">password_register_img</string>
     <string name="passwordRegisterPasswordFieldId">passwordRegisterPasswordField</string>
     <string name="passwordRegisterPasswordFieldPlaceholder">Password</string>
-    <string name="passwordConfirmRegisterPasswordFieldId">passwordRegisterPasswordField</string>
+    <string name="passwordConfirmRegisterPasswordFieldId">passwordConfirmRegisterPasswordField</string>
     <string name="passwordConfirmRegisterPasswordFieldPlaceholder">Confirm password</string>
     <string name="passwordRegisterBtnId">Register button</string>
     <string name="password_register_btn_text">Register</string>
