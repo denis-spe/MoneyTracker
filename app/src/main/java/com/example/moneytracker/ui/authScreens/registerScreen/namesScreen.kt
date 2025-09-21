@@ -16,7 +16,7 @@ import com.example.moneytracker.ui.AuthOutlineTextField
 import com.example.moneytracker.ui.screenManager.NamesRegistrationScreenRouter
 
 @Composable
-fun NamesScreen(onNavigate: NavController? = null) {
+fun NamesRegistrationScreen(onNavigate: NavController? = null) {
 
     val firstNameState = remember { mutableStateOf("") }
     val isFirstNameError = remember { mutableStateOf(false) }
@@ -34,9 +34,7 @@ fun NamesScreen(onNavigate: NavController? = null) {
         nextPageButtonId = R.string.nameRegisterBtnId,
         nextPageButtonText = R.string.name_register_btn_text,
         nextPageButtonOnClick = {
-            onNavigate?.navigate(
-                NamesRegistrationScreenRouter(firstNameState.value)
-            )
+            onNavigate?.navigate(NamesRegistrationScreenRouter)
         },
         backBtnOnClick = {
             onNavigate?.popBackStack()
@@ -67,5 +65,5 @@ fun NamesScreen(onNavigate: NavController? = null) {
 @Preview(showBackground = true)
 @Composable
 fun NamesScreenPreview() {
-    NamesScreen()
+    NamesRegistrationScreen()
 }

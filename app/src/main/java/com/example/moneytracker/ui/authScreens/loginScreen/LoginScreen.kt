@@ -1,4 +1,5 @@
 // Bless be the Name of the Lord
+
 package com.example.moneytracker.ui.authScreens.loginScreen
 
 import androidx.compose.foundation.layout.Spacer
@@ -34,7 +35,7 @@ fun LoginScreen(onNavigate: NavController? = null) {
         nextPageButtonId = R.string.loginBtnId,
         nextPageButtonText = R.string.login_btn_text,
         nextPageButtonOnClick = {
-            onNavigate?.navigate(HomeScreenRouter)
+            onNavigate?.navigate(HomeScreenRouter("denis7654"))
         },
         backBtnOnClick = {
             onNavigate?.popBackStack()

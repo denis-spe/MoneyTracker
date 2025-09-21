@@ -11,7 +11,7 @@ import com.example.moneytracker.ui.AuthOutlineTextField
 import com.example.moneytracker.ui.screenManager.NamesRegistrationScreenRouter
 
 @Composable
-fun EmailScreen(onNavigate: NavController? = null) {
+fun EmailRegistrationScreen(onNavigate: NavController? = null) {
 
     val emailState = remember { mutableStateOf("") }
     val isErrorEmail = remember { mutableStateOf(false) }
@@ -26,9 +26,7 @@ fun EmailScreen(onNavigate: NavController? = null) {
         nextPageButtonId = R.string.emailRegisterBtnId,
         nextPageButtonText = R.string.email_register_btn_text,
         nextPageButtonOnClick = {
-            onNavigate?.navigate(
-                NamesRegistrationScreenRouter(emailState.value)
-            )
+            onNavigate?.navigate(NamesRegistrationScreenRouter)
         },
         backBtnOnClick = {
             onNavigate?.popBackStack()
@@ -49,5 +47,5 @@ fun EmailScreen(onNavigate: NavController? = null) {
 @Preview(showBackground = true)
 @Composable
 fun EmailScreenPreview() {
-    EmailScreen()
+    EmailRegistrationScreen()
 }

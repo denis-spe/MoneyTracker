@@ -28,6 +28,8 @@ import com.example.moneytracker.ui.AuthBackButton
 import com.example.moneytracker.ui.AuthButton
 import com.example.moneytracker.ui.AuthFillButton
 import com.example.moneytracker.ui.AuthLayout
+import com.example.moneytracker.ui.screenManager.LoginScreenRouter
+import com.example.moneytracker.ui.screenManager.NamesRegistrationScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 
 @Composable
@@ -75,6 +77,7 @@ fun MailScreen(onNavigate: NavController? = null) {
             icon = R.drawable.login_icon,
             modifier = Modifier.width(160.dp)
         ) {
+            onNavigate?.navigate(route = LoginScreenRouter)
         }
 
         Text(
@@ -89,6 +92,7 @@ fun MailScreen(onNavigate: NavController? = null) {
             icon = R.drawable.register_icon,
             modifier = Modifier.width(160.dp)
         ) {
+            onNavigate?.navigate(route = NamesRegistrationScreenRouter)
         }
 
         Row(

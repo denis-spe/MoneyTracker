@@ -4,12 +4,12 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.example.moneytracker.ui.authScreens.registerScreen.EmailScreen
+import com.example.moneytracker.ui.authScreens.registerScreen.EmailRegistrationScreen
 import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class EmailScreenTest : TestBase(screenComposable = { EmailScreen() }) {
+class EmailScreenTest : TestBase(screenComposable = { EmailRegistrationScreen() }) {
 
     /**
      * Test for screenId

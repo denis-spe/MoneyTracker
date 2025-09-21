@@ -9,10 +9,10 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import com.example.moneytracker.ui.authScreens.registerScreen.PasswordScreen
+import com.example.moneytracker.ui.authScreens.registerScreen.PasswordRegistrationScreen
 import org.junit.Test
 
-class PasswordScreenTest : TestBase(screenComposable = { PasswordScreen() }) {
+class PasswordScreenTest : TestBase(screenComposable = { PasswordRegistrationScreen() }) {
 
     /**
      * Test for screenId

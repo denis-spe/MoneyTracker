@@ -19,7 +19,7 @@ object LoginScreenRouter
 object EmailRegistrationScreenRouter
 
 @Serializable
-data class NamesRegistrationScreenRouter(val email: String)
+object NamesRegistrationScreenRouter
 
 @Serializable
 data class PasswordRegistrationScreenRouter(

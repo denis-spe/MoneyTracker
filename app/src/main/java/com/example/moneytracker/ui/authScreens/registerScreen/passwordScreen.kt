@@ -14,7 +14,7 @@ import com.example.moneytracker.ui.AuthInputLayout
 import com.example.moneytracker.ui.AuthPasswordField
 
 @Composable
-fun PasswordScreen(onNavigate: NavController? = null) {
+fun PasswordRegistrationScreen(onNavigate: NavController? = null) {
 
     val passwordState = remember { mutableStateOf("") }
     val isErrorPassword = remember { mutableStateOf(false) }
@@ -63,5 +63,5 @@ fun PasswordScreen(onNavigate: NavController? = null) {
 @Preview(showBackground = true)
 @Composable
 fun PasswordScreenPreview() {
-    PasswordScreen()
+    PasswordRegistrationScreen()
 }

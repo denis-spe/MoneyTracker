@@ -124,4 +124,7 @@
     <string name="password_register_btn_text">Register</string>
     <string name="password_register_page_flow_img">password register page flow img</string>
 
+    <!-- HOME SCREEN -->
+    <string name="homeScreenId">homeScreen</string>
+
 </resources>
