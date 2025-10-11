@@ -12,7 +12,7 @@ import androidx.navigation.NavController
 import com.example.moneytracker.R
 
 @Composable
-fun HomeScreen(onNavigate: NavController? = null) {
+fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     Scaffold(
         modifier = Modifier
             .fillMaxSize()

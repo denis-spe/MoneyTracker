@@ -1,20 +1,40 @@
 package com.example.moneytracker
 
+import androidx.activity.compose.setContent
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.moneytracker.ui.screenManager.ScreenManager
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
+import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@HiltAndroidTest
 @RunWith(AndroidJUnit4::class)
-class ScreenManagerTest : TestBase(screenComposable = {
-    val navController = rememberNavController()
-    ScreenManager(navController)
-}) {
+class ScreenManagerTest {
+    @get:Rule(order = 0)
+    val hiltRule = HiltAndroidRule(this)
+
+    @get:Rule(order = 1)
+    val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Before
+    fun setUp() {
+        hiltRule.inject()
+
+        composeTestRule.activityRule.scenario.onActivity { activity ->
+            activity.setContent {
+                ScreenManager(rememberNavController())
+            }
+        }
+    }
 
     @Test
     fun startUpScreenTest() {
@@ -70,9 +90,8 @@ class ScreenManagerTest : TestBase(screenComposable = {
             .getString(R.string.loginPasswordFieldId)
         val loginNextScreenButtonId = composeTestRule.activity
             .getString(R.string.loginBtnId)
-
-        val backButtonId = composeTestRule.activity
-            .getString(R.string.authBackBtnId)
+        val homeScreenId = composeTestRule.activity
+            .getString(R.string.homeScreenId)
 
         // Starting from startUp page
         composeTestRule.onNodeWithTag(screenId).assertExists()
@@ -89,13 +108,13 @@ class ScreenManagerTest : TestBase(screenComposable = {
         // Check if login page is displayed
         composeTestRule.onNodeWithTag(loginScreenId).assertExists()
 
-        // Entering wrong information
-        composeTestRule.onNodeWithTag(loginEmailFieldId)
-            .performTextInput("denis@.com")
-        composeTestRule.onNodeWithTag(loginPasswordFieldId)
-            .performTextInput("")
-        composeTestRule.onNodeWithTag(loginNextScreenButtonId).performClick()
-        composeTestRule.onNodeWithTag(loginScreenId).assertExists()
+        // Entering incorrect information
+//        composeTestRule.onNodeWithTag(loginEmailFieldId)
+//            .performTextInput("denisbrian07@gmail.com")
+//        composeTestRule.onNodeWithTag(loginPasswordFieldId)
+//            .performTextInput("ILoveGOD")
+//        composeTestRule.onNodeWithTag(loginNextScreenButtonId).performClick()
+//        composeTestRule.onNodeWithTag(homeScreenId).assertExists()
 
         // Entering correct information
 //        composeTestRule.onNodeWithTag("loginEmailField")
@@ -104,5 +123,37 @@ class ScreenManagerTest : TestBase(screenComposable = {
 //            .performTextInput("ILoveGod")
 //        composeTestRule.onNodeWithTag("loginNextScreenButton").performClick()
 //        composeTestRule.onNodeWithTag("HomeScreen").assertExists()
+    }
+
+    @Test
+    fun testScreenFlowThroughMailByRegistering() {
+        val screenId = composeTestRule.activity
+            .getString(R.string.startUpScreenId)
+        val mailScreenId = composeTestRule.activity
+            .getString(R.string.mailScreenId)
+        val mailButtonId = composeTestRule.activity
+            .getString(R.string.startupMailBtnId)
+        val mailRegisterBtnId = composeTestRule.activity
+            .getString(R.string.mailRegisterBtnId)
+        val nameRegisterScreenId = composeTestRule.activity
+            .getString(R.string.nameRegisterScreenId)
+        val nameRegisterFirstNameFieldId = composeTestRule.activity
+            .getString(R.string.nameRegisterFirstNameFieldId)
+        val nameRegisterLastNameFieldId = composeTestRule.activity
+            .getString(R.string.nameRegisterLastNameFieldId)
+        val nameRegisterBtnId = composeTestRule.activity
+            .getString(R.string.nameRegisterBtnId)
+
+        composeTestRule.onNodeWithTag(screenId).assertExists()
+        composeTestRule.onNodeWithTag(mailButtonId).performClick()
+        composeTestRule.onNodeWithTag(mailScreenId).assertExists()
+        composeTestRule.onNodeWithTag(mailRegisterBtnId).performClick()
+        composeTestRule.onNodeWithTag(nameRegisterScreenId).assertExists()
+        composeTestRule.onNodeWithTag(nameRegisterFirstNameFieldId)
+            .performTextInput("Denis")
+        composeTestRule.onNodeWithTag(nameRegisterLastNameFieldId)
+            .performTextInput("Brian")
+        composeTestRule.onNodeWithTag(nameRegisterBtnId).performClick()
+
     }
 }

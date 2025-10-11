@@ -3,6 +3,8 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     kotlin("plugin.serialization") version "2.0.21"
+    id("com.google.dagger.hilt.android")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -16,7 +18,8 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+//        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "com.example.moneytracker.HiltTestRunner"
     }
 
     buildTypes {
@@ -41,6 +44,11 @@ android {
     }
 }
 
+// enable javac deprecation lint
+tasks.withType<JavaCompile>().configureEach {
+    options.compilerArgs.add("-Xlint:deprecation")
+}
+
 dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
@@ -53,13 +61,25 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.navigation.testing)
-    implementation(libs.hilt.android)
-    implementation(libs.hilt.compiler)
+
+    // Hilt (Dagger)
+    implementation(libs.hilt.android.v257)
+    ksp(libs.hilt.android.compiler.v257)
+
+    // Androidx Hilt extension for compose (provide hiltViewModel)
+    implementation(libs.androidx.hilt.navigation.compose.v100)
+    ksp(libs.androidx.hilt.compiler)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
+
+    // Hilt testing
+    androidTestImplementation(libs.hilt.android.testing) // Or your Hilt version
+    kspAndroidTest(libs.hilt.compiler.v2572)
+
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
     implementation(libs.kotlinx.serialization.json.v173)

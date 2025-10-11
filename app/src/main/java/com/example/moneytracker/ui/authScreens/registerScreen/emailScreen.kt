@@ -1,21 +1,21 @@
 package com.example.moneytracker.ui.authScreens.registerScreen
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthInputLayout
 import com.example.moneytracker.ui.AuthOutlineTextField
-import com.example.moneytracker.ui.screenManager.NamesRegistrationScreenRouter
+import com.example.moneytracker.ui.screenManager.PasswordRegistrationScreenRouter
 
 @Composable
-fun EmailRegistrationScreen(onNavigate: NavController? = null) {
-
-    val emailState = remember { mutableStateOf("") }
-    val isErrorEmail = remember { mutableStateOf(false) }
-
+fun EmailRegistrationScreen(
+    viewModel: RegisterViewModel = hiltViewModel(),
+    onNavigate: NavController? = null,
+) {
+    val uiState = viewModel.uiState.collectAsState()
 
     AuthInputLayout(
         screenId = R.string.emailRegisterScreenId,
@@ -26,7 +26,9 @@ fun EmailRegistrationScreen(onNavigate: NavController? = null) {
         nextPageButtonId = R.string.emailRegisterBtnId,
         nextPageButtonText = R.string.email_register_btn_text,
         nextPageButtonOnClick = {
-            onNavigate?.navigate(NamesRegistrationScreenRouter)
+            if (viewModel.validateEmailBeforeNavigate()) {
+                onNavigate?.navigate(PasswordRegistrationScreenRouter)
+            }
         },
         backBtnOnClick = {
             onNavigate?.popBackStack()
@@ -37,8 +39,9 @@ fun EmailRegistrationScreen(onNavigate: NavController? = null) {
             placeholder = R.string.emailRegisterEmailFieldPlaceholder,
             outlineIcon = R.drawable.outline_email,
             filledIcon = R.drawable.filled_email,
-            isError = isErrorEmail,
-            textState = emailState,
+            isError = false,
+            onNewValue = viewModel::onEmailChange,
+            text = uiState.value.email,
             isEmail = true
         )
     }

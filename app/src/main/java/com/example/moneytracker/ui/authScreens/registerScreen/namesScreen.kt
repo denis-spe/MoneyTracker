@@ -4,26 +4,23 @@ package com.example.moneytracker.ui.authScreens.registerScreen
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthInputLayout
 import com.example.moneytracker.ui.AuthOutlineTextField
-import com.example.moneytracker.ui.screenManager.NamesRegistrationScreenRouter
+import com.example.moneytracker.ui.screenManager.EmailRegistrationScreenRouter
 
 @Composable
-fun NamesRegistrationScreen(onNavigate: NavController? = null) {
-
-    val firstNameState = remember { mutableStateOf("") }
-    val isFirstNameError = remember { mutableStateOf(false) }
-
-    val lastNameState = remember { mutableStateOf("") }
-    val isLastNameError = remember { mutableStateOf(false) }
-
+fun NamesRegistrationScreen(
+    viewModel: RegisterViewModel = hiltViewModel(),
+    onNavigate: NavController? = null,
+) {
+    val uiState = viewModel.uiState.collectAsState()
 
     AuthInputLayout(
         screenId = R.string.nameRegisterScreenId,
@@ -34,7 +31,9 @@ fun NamesRegistrationScreen(onNavigate: NavController? = null) {
         nextPageButtonId = R.string.nameRegisterBtnId,
         nextPageButtonText = R.string.name_register_btn_text,
         nextPageButtonOnClick = {
-            onNavigate?.navigate(NamesRegistrationScreenRouter)
+            if (viewModel.validateNameBeforeNavigate()) {
+                onNavigate?.navigate(EmailRegistrationScreenRouter)
+            }
         },
         backBtnOnClick = {
             onNavigate?.popBackStack()
@@ -45,8 +44,9 @@ fun NamesRegistrationScreen(onNavigate: NavController? = null) {
             placeholder = R.string.nameRegisterFirstNameFieldPlaceholder,
             outlineIcon = R.drawable.outline_name,
             filledIcon = R.drawable.filled_name,
-            isError = isFirstNameError,
-            textState = firstNameState,
+            isError = false,
+            onNewValue = viewModel::onFirstNameChange,
+            text = uiState.value.firstName
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -56,8 +56,9 @@ fun NamesRegistrationScreen(onNavigate: NavController? = null) {
             placeholder = R.string.nameRegisterLastNameFieldPlaceholder,
             outlineIcon = R.drawable.outline_name,
             filledIcon = R.drawable.filled_name,
-            isError = isLastNameError,
-            textState = lastNameState,
+            isError = false,
+            onNewValue = viewModel::onLastNameChange,
+            text = uiState.value.lastName
         )
     }
 }

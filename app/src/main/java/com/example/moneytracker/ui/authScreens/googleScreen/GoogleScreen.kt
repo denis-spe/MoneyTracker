@@ -78,7 +78,7 @@ fun GoogleScreen(onNavigate: NavController? = null) {
             icon = R.drawable.login_icon,
             modifier = Modifier.width(160.dp)
         ) {
-            onNavigate?.navigate(HomeScreenRouter("PlaceHolder"))
+            onNavigate?.navigate(HomeScreenRouter)
         }
 
         Text(
@@ -92,7 +92,7 @@ fun GoogleScreen(onNavigate: NavController? = null) {
             icon = R.drawable.register_icon,
             modifier = Modifier.width(160.dp)
         ) {
-            onNavigate?.navigate(HomeScreenRouter("PlaceHolder"))
+            onNavigate?.navigate(HomeScreenRouter)
         }
 
         Row(

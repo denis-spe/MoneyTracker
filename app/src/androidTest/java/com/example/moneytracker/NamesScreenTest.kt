@@ -9,7 +9,9 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class NamesScreenTest : TestBase(screenComposable = { NamesRegistrationScreen() }) {
+class NamesScreenTest : TestBase(screenComposable = {
+    NamesRegistrationScreen()
+}) {
 
     /**
      * Test for screenId

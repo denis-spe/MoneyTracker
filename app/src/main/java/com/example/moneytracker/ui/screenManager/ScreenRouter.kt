@@ -22,11 +22,7 @@ object EmailRegistrationScreenRouter
 object NamesRegistrationScreenRouter
 
 @Serializable
-data class PasswordRegistrationScreenRouter(
-    val email: String,
-    val firstName: String,
-    val lastName: String
-)
+object PasswordRegistrationScreenRouter
 
 @Serializable
-data class HomeScreenRouter(val userId: String)
+object HomeScreenRouter

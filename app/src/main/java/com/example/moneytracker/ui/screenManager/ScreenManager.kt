@@ -25,16 +25,23 @@ fun ScreenManager(
         composable<GoogleScreenRouter> { GoogleScreen(navController) }
         composable<MailScreenRouter> { MailScreen(navController) }
         composable<NamesRegistrationScreenRouter> {
-            NamesRegistrationScreen(navController)
+            NamesRegistrationScreen(onNavigate = navController)
         }
         composable<EmailRegistrationScreenRouter> {
-            EmailRegistrationScreen(navController)
+            EmailRegistrationScreen(onNavigate = navController)
         }
         composable<PasswordRegistrationScreenRouter> {
-            PasswordRegistrationScreen(navController)
+            PasswordRegistrationScreen(onNavigate = navController)
         }
-        composable<LoginScreenRouter> { LoginScreen(navController) }
-        composable<HomeScreenRouter> { HomeScreen(navController) }
+        composable<LoginScreenRouter> {
+            LoginScreen(onNavigate = navController)
+        }
+        composable<HomeScreenRouter> {
+            HomeScreen(
+                userId = "123",
+                onNavigate = navController
+            )
+        }
     }
 }
 

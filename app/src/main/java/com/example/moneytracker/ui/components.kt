@@ -25,7 +25,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -51,7 +51,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.R
+import com.example.moneytracker.ui.authScreens.loginScreen.LoginViewModel
 
 @Composable
 fun AuthTextButton(
@@ -224,8 +226,9 @@ fun AuthOutlineTextField(
     outlineIcon: Int,
     filledIcon: Int,
     modifier: Modifier = Modifier,
-    isError: MutableState<Boolean>,
-    textState: MutableState<String>,
+    isError: Boolean,
+    text: String,
+    onNewValue: (String) -> Unit,
     isEmail: Boolean = false
 ) {
     val focusedColor = colorResource(R.color.authBtnContainerColor)
@@ -240,17 +243,16 @@ fun AuthOutlineTextField(
     )
 
     val fontSize = 14.sp
-    val iconColor = if (textState.value.isEmpty())
+    val iconColor = if (text.isEmpty())
         unfocusedColor else focusedColor
     val poppins = FontFamily(
         Font(R.font.poppins_medium, FontWeight.Medium)
     )
 
     OutlinedTextField(
-        value = textState.value,
+        value = text,
         onValueChange = {
-            isError.value = false
-            textState.value = it
+            onNewValue(it)
         },
         modifier = modifier
             .testTag(stringResource(id = id))
@@ -260,7 +262,7 @@ fun AuthOutlineTextField(
             fontWeight = FontWeight.Medium,
             fontFamily = poppins
         ),
-        isError = isError.value,
+        isError = isError,
         placeholder = {
             Text(
                 text = stringResource(id = placeholder),
@@ -271,7 +273,7 @@ fun AuthOutlineTextField(
             )
         },
         leadingIcon = {
-            if (isError.value)
+            if (isError)
                 Image(
                     painter = painterResource(id = R.drawable.circle_error),
                     contentDescription = stringResource(id = id),
@@ -282,7 +284,7 @@ fun AuthOutlineTextField(
             else
                 Image(
                     painter = painterResource(
-                        id = if (textState.value.isEmpty())
+                        id = if (text.isEmpty())
                             outlineIcon else filledIcon
                     ),
                     contentDescription = stringResource(id = id),
@@ -292,9 +294,9 @@ fun AuthOutlineTextField(
                 )
         },
         trailingIcon = @Composable {
-            if (textState.value.isNotEmpty())
+            if (text.isNotEmpty())
                 IconButton(
-                    onClick = { textState.value = "" },
+                    onClick = { onNewValue("") },
                     modifier = Modifier.testTag(stringResource(R.string.emailClearTextBtnId))
                 ) {
                     Image(
@@ -323,8 +325,9 @@ fun AuthPasswordField(
     outlineIcon: Int,
     filledIcon: Int,
     modifier: Modifier = Modifier,
-    isError: MutableState<Boolean>,
-    textState: MutableState<String>
+    isError: Boolean,
+    text: String,
+    onNewValue: (String) -> Unit,
 ) {
     val focusedColor = colorResource(R.color.authBtnContainerColor)
     val unfocusedColor = colorResource(R.color.authBtnContainerColor).copy(alpha = 0.6f)
@@ -338,7 +341,7 @@ fun AuthPasswordField(
     )
 
     val fontSize = 14.sp
-    val iconColor = if (textState.value.isEmpty())
+    val iconColor = if (text.isEmpty())
         unfocusedColor else focusedColor
     val poppins = FontFamily(
         Font(R.font.poppins_medium, FontWeight.Medium)
@@ -346,10 +349,9 @@ fun AuthPasswordField(
     var isVisible by remember { mutableStateOf(false) }
 
     OutlinedTextField(
-        value = textState.value,
+        value = text,
         onValueChange = {
-            isError.value = false
-            textState.value = it
+            onNewValue(it)
         },
         modifier = modifier
             .testTag(stringResource(id = id))
@@ -368,9 +370,9 @@ fun AuthPasswordField(
                 fontFamily = poppins
             )
         },
-        isError = isError.value,
+        isError = isError,
         leadingIcon = {
-            if (isError.value)
+            if (isError)
                 Image(
                     painter = painterResource(id = R.drawable.circle_error),
                     contentDescription = stringResource(id = id),
@@ -381,7 +383,7 @@ fun AuthPasswordField(
             else
                 Image(
                     painter = painterResource(
-                        id = if (textState.value.isEmpty())
+                        id = if (text.isEmpty())
                             outlineIcon else filledIcon
                     ),
                     contentDescription = stringResource(id = id),
@@ -542,6 +544,10 @@ fun AuthInputLayout(
 @Preview(showBackground = true)
 @Composable
 fun AuthInputLayoutPreview() {
+
+    val loginViewModel = hiltViewModel<LoginViewModel>()
+    val uiState = loginViewModel.uiState.collectAsState()
+
     AuthInputLayout(
         screenId = R.string.loginScreenId,
         screenImgId = R.drawable.login_logo,
@@ -558,8 +564,9 @@ fun AuthInputLayoutPreview() {
             placeholder = R.string.loginEmailFieldPlaceholder,
             outlineIcon = R.drawable.outline_email,
             filledIcon = R.drawable.filled_email,
-            isError = remember { mutableStateOf(false) },
-            textState = remember { mutableStateOf("") }
+            isError = true,
+            onNewValue = loginViewModel::onEmailChange,
+            text = uiState.value.email
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -569,8 +576,9 @@ fun AuthInputLayoutPreview() {
             placeholder = R.string.loginPasswordPlaceholder,
             outlineIcon = R.drawable.outline_password,
             filledIcon = R.drawable.filled_password,
-            isError = remember { mutableStateOf(false) },
-            textState = remember { mutableStateOf("") }
+            isError = false,
+            text = uiState.value.password,
+            onNewValue = loginViewModel::onPasswordChange
         )
     }
 }

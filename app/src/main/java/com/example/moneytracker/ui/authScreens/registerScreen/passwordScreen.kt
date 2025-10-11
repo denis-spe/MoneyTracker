@@ -3,25 +3,23 @@ package com.example.moneytracker.ui.authScreens.registerScreen
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthInputLayout
 import com.example.moneytracker.ui.AuthPasswordField
+import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 
 @Composable
-fun PasswordRegistrationScreen(onNavigate: NavController? = null) {
-
-    val passwordState = remember { mutableStateOf("") }
-    val isErrorPassword = remember { mutableStateOf(false) }
-
-    val confirmPasswordState = remember { mutableStateOf("") }
-    val isConfirmPasswordError = remember { mutableStateOf(false) }
-
+fun PasswordRegistrationScreen(
+    viewModel: RegisterViewModel = hiltViewModel(),
+    onNavigate: NavController? = null,
+) {
+    val uiState = viewModel.uiState.collectAsState()
 
     AuthInputLayout(
         screenId = R.string.passwordRegisterScreenId,
@@ -32,7 +30,9 @@ fun PasswordRegistrationScreen(onNavigate: NavController? = null) {
         nextPageButtonId = R.string.passwordRegisterBtnId,
         nextPageButtonText = R.string.password_register_btn_text,
         nextPageButtonOnClick = {
-
+            if (viewModel.validatePasswordBeforeNavigate()) {
+                onNavigate?.navigate(HomeScreenRouter)
+            }
         },
         backBtnOnClick = {
             onNavigate?.popBackStack()
@@ -43,8 +43,9 @@ fun PasswordRegistrationScreen(onNavigate: NavController? = null) {
             placeholder = R.string.passwordRegisterPasswordFieldPlaceholder,
             outlineIcon = R.drawable.outline_password,
             filledIcon = R.drawable.filled_password,
-            isError = isErrorPassword,
-            textState = passwordState
+            isError = false,
+            text = uiState.value.password,
+            onNewValue = viewModel::onPasswordChange
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -54,8 +55,9 @@ fun PasswordRegistrationScreen(onNavigate: NavController? = null) {
             placeholder = R.string.passwordConfirmRegisterPasswordFieldPlaceholder,
             outlineIcon = R.drawable.outline_password,
             filledIcon = R.drawable.filled_password,
-            isError = isConfirmPasswordError,
-            textState = confirmPasswordState
+            isError = false,
+            text = uiState.value.confirmPassword,
+            onNewValue = viewModel::onConfirmPasswordChange
         )
     }
 }
@@ -63,5 +65,6 @@ fun PasswordRegistrationScreen(onNavigate: NavController? = null) {
 @Preview(showBackground = true)
 @Composable
 fun PasswordScreenPreview() {
+
     PasswordRegistrationScreen()
 }

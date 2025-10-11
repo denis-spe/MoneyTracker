@@ -5,11 +5,11 @@ package com.example.moneytracker.ui.authScreens.loginScreen
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthInputLayout
@@ -18,13 +18,11 @@ import com.example.moneytracker.ui.AuthPasswordField
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 
 @Composable
-fun LoginScreen(onNavigate: NavController? = null) {
-
-    val emailState = remember { mutableStateOf("") }
-    val isErrorEmail = remember { mutableStateOf(false) }
-
-    val passwordState = remember { mutableStateOf("") }
-    val isErrorPassword = remember { mutableStateOf(false) }
+fun LoginScreen(
+    viewModel: LoginViewModel = hiltViewModel(),
+    onNavigate: NavController? = null
+) {
+    val uiState = viewModel.uiState.collectAsState()
 
     AuthInputLayout(
         screenId = R.string.loginScreenId,
@@ -35,7 +33,9 @@ fun LoginScreen(onNavigate: NavController? = null) {
         nextPageButtonId = R.string.loginBtnId,
         nextPageButtonText = R.string.login_btn_text,
         nextPageButtonOnClick = {
-            onNavigate?.navigate(HomeScreenRouter("denis7654"))
+//            if (viewModel.validateBeforeNavigate()) {
+            onNavigate?.navigate(HomeScreenRouter)
+//            }
         },
         backBtnOnClick = {
             onNavigate?.popBackStack()
@@ -46,8 +46,9 @@ fun LoginScreen(onNavigate: NavController? = null) {
             placeholder = R.string.loginEmailFieldPlaceholder,
             outlineIcon = R.drawable.outline_email,
             filledIcon = R.drawable.filled_email,
-            isError = isErrorEmail,
-            textState = emailState,
+            isError = false,
+            text = uiState.value.email,
+            onNewValue = viewModel::onEmailChange,
             isEmail = true
         )
 
@@ -58,8 +59,9 @@ fun LoginScreen(onNavigate: NavController? = null) {
             placeholder = R.string.loginPasswordPlaceholder,
             outlineIcon = R.drawable.outline_password,
             filledIcon = R.drawable.filled_password,
-            isError = isErrorPassword,
-            textState = passwordState
+            isError = false,
+            text = uiState.value.password,
+            onNewValue = viewModel::onPasswordChange
         )
 
     }
