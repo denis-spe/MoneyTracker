@@ -33,9 +33,9 @@ fun LoginScreen(
         nextPageButtonId = R.string.loginBtnId,
         nextPageButtonText = R.string.login_btn_text,
         nextPageButtonOnClick = {
-//            if (viewModel.validateBeforeNavigate()) {
-            onNavigate?.navigate(HomeScreenRouter)
-//            }
+            if (viewModel.validateBeforeNavigatingToHome()) {
+                onNavigate?.navigate(HomeScreenRouter)
+            }
         },
         backBtnOnClick = {
             onNavigate?.popBackStack()

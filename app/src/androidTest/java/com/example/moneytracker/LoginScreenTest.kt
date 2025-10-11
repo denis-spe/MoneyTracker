@@ -10,9 +10,13 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.moneytracker.ui.authScreens.loginScreen.LoginScreen
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@HiltAndroidTest
+@UninstallModules(FirebaseAuthModule::class)
 @RunWith(AndroidJUnit4::class)
 class LoginScreenTest : TestBase(
     screenComposable = {

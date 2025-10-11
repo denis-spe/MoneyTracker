@@ -1,7 +1,7 @@
 package com.example.moneytracker
 
-import com.example.moneytracker.backend.auth.AccountServiceImpl
 import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.backend.auth.AccountServicesImpl
 import com.google.firebase.auth.FirebaseAuth
 import dagger.Module
 import dagger.Provides
@@ -11,11 +11,17 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object AppModule {
+object FirebaseAuthModule {
     @Singleton
     @Provides
-    fun provideAccountService(): AccountServices {
-        return AccountServiceImpl(FirebaseAuth.getInstance())
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
+
+    @Singleton
+    @Provides
+    fun provideAccountService(auth: FirebaseAuth): AccountServices {
+        return AccountServicesImpl(auth)
     }
 
 }

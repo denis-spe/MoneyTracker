@@ -64,6 +64,8 @@ dependencies {
 
     // Hilt (Dagger)
     implementation(libs.hilt.android.v257)
+    implementation(libs.mockito.android)
+    implementation(libs.mockito.bom)
     ksp(libs.hilt.android.compiler.v257)
 
     // Androidx Hilt extension for compose (provide hiltViewModel)
@@ -86,8 +88,10 @@ dependencies {
 
     // Import the BoM for the Firebase platform
     implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
 
     // Add the dependency for the Firebase Authentication library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation(libs.firebase.auth)
+
 }

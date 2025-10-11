@@ -5,7 +5,7 @@ package com.example.moneytracker.helper
 import android.util.Patterns
 
 data class Validator(
-    val validator: Boolean,
+    val isValid: Boolean,
     val errorMessage: String
 )
 
@@ -15,17 +15,17 @@ val CharSequence.isEmailValid: Validator
 
         if (this.isEmpty()) {
             validator = Validator(
-                validator = false,
+                isValid = false,
                 errorMessage = "Email cannot be empty"
             )
         } else if (!Patterns.EMAIL_ADDRESS.matcher(this).matches()) {
             validator = Validator(
-                validator = false,
+                isValid = false,
                 errorMessage = "Invalid email"
             )
         } else {
             validator = Validator(
-                validator = true,
+                isValid = true,
                 errorMessage = ""
             )
         }
@@ -37,17 +37,17 @@ val CharSequence.isPasswordValid: Validator
         lateinit var validator: Validator
         if (this.isEmpty()) {
             validator = Validator(
-                validator = false,
+                isValid = false,
                 errorMessage = "Password cannot be empty"
             )
         } else if (this.length < 8) {
             validator = Validator(
-                validator = false,
-                errorMessage = "Password must be at least 8 characters"
+                isValid = false,
+                errorMessage = "Password must be at least eight characters"
             )
         } else {
             validator = Validator(
-                validator = true,
+                isValid = true,
                 errorMessage = ""
             )
         }

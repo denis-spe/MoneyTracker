@@ -5,9 +5,13 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.moneytracker.ui.authScreens.registerScreen.NamesRegistrationScreen
+import dagger.hilt.android.testing.HiltAndroidTest
+import dagger.hilt.android.testing.UninstallModules
 import org.junit.Test
 import org.junit.runner.RunWith
 
+@HiltAndroidTest
+@UninstallModules(FirebaseAuthModule::class)
 @RunWith(AndroidJUnit4::class)
 class NamesScreenTest : TestBase(screenComposable = {
     NamesRegistrationScreen()
