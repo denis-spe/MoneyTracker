@@ -14,6 +14,7 @@ import com.example.moneytracker.ui.AuthInputLayout
 import com.example.moneytracker.ui.AuthPasswordField
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 
+
 @Composable
 fun PasswordRegistrationScreen(
     viewModel: RegisterViewModel = hiltViewModel(),
@@ -31,7 +32,7 @@ fun PasswordRegistrationScreen(
         nextPageButtonText = R.string.password_register_btn_text,
         nextPageButtonOnClick = {
             if (viewModel.validatePasswordBeforeNavigate()) {
-                onNavigate?.navigate(HomeScreenRouter)
+                onNavigate?.navigate(HomeScreenRouter(userId = uiState.value.userId))
             }
         },
         backBtnOnClick = {

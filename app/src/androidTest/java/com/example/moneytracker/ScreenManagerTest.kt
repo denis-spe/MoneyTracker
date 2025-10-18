@@ -85,8 +85,8 @@ class ScreenManagerTest : TestBase(
 
         // Preform a click on login button
         composeTestRule.onNodeWithTag(loginButtonId).performClick()
-//
-//        // Check if login page is displayed
+
+        // Check if login page is displayed
         composeTestRule.onNodeWithTag(loginScreenId).assertExists()
 
         // Entering incorrect information
@@ -96,6 +96,51 @@ class ScreenManagerTest : TestBase(
             .performTextInput("4553")
         composeTestRule.onNodeWithTag(loginNextScreenButtonId).performClick()
         composeTestRule.onNodeWithTag(loginScreenId).assertExists()
+    }
+
+    @Test
+    fun testIfLoginScreenWillBeDisplayedAfterCorrectInformation() {
+        val screenId = composeTestRule.activity
+            .getString(R.string.startUpScreenId)
+        val loginButtonId = composeTestRule.activity
+            .getString(R.string.mailLoginBtnId)
+        val loginScreenId = composeTestRule.activity
+            .getString(R.string.loginScreenId)
+        val loginEmailFieldId = composeTestRule.activity
+            .getString(R.string.loginEmailFieldId)
+        val loginPasswordFieldId = composeTestRule.activity
+            .getString(R.string.loginPasswordFieldId)
+        val loginNextScreenButtonId = composeTestRule.activity
+            .getString(R.string.loginBtnId)
+        val startupMailBtnId = composeTestRule.activity
+            .getString(R.string.startupMailBtnId)
+        val mailScreenId = composeTestRule.activity
+            .getString(R.string.mailScreenId)
+        val homeScreenId = composeTestRule.activity
+            .getString(R.string.homeScreenId)
+
+        // Starting from startUp page
+        composeTestRule.onNodeWithTag(screenId).assertExists()
+
+        // Preform a click on mail button
+        composeTestRule.onNodeWithTag(startupMailBtnId).performClick()
+
+        // Check if mail page is displayed
+        composeTestRule.onNodeWithTag(mailScreenId).assertExists()
+
+        // Preform a click on login button
+        composeTestRule.onNodeWithTag(loginButtonId).performClick()
+
+        // Check if login page is displayed
+        composeTestRule.onNodeWithTag(loginScreenId).assertExists()
+
+        // Entering incorrect information
+        composeTestRule.onNodeWithTag(loginEmailFieldId)
+            .performTextInput("denisbrian07@gmail.com")
+        composeTestRule.onNodeWithTag(loginPasswordFieldId)
+            .performTextInput("ILoveGod")
+        composeTestRule.onNodeWithTag(loginNextScreenButtonId).performClick()
+        composeTestRule.onNodeWithTag(homeScreenId).assertExists()
     }
 
     @Test

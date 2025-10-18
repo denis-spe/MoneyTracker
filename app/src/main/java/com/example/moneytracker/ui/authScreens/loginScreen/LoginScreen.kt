@@ -6,6 +6,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -16,6 +21,8 @@ import com.example.moneytracker.ui.AuthInputLayout
 import com.example.moneytracker.ui.AuthOutlineTextField
 import com.example.moneytracker.ui.AuthPasswordField
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
@@ -23,6 +30,10 @@ fun LoginScreen(
     onNavigate: NavController? = null
 ) {
     val uiState = viewModel.uiState.collectAsState()
+    val user = uiState.value.user?.collectAsState(initial = null)
+
+    var isLoading by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     AuthInputLayout(
         screenId = R.string.loginScreenId,
@@ -32,9 +43,20 @@ fun LoginScreen(
         pageFlowImgId = R.drawable.login_page_flow,
         nextPageButtonId = R.string.loginBtnId,
         nextPageButtonText = R.string.login_btn_text,
+        isLoading = isLoading,
+        isError = uiState.value.isEmailError || uiState.value.isPasswordError ||
+                uiState.value.credentialErrorMessage.isNotEmpty(),
         nextPageButtonOnClick = {
             if (viewModel.validateBeforeNavigatingToHome()) {
-                onNavigate?.navigate(HomeScreenRouter)
+                isLoading = true
+                coroutineScope.launch {
+                    delay(5000)
+                    isLoading = false
+                    onNavigate?.navigate(
+                        HomeScreenRouter(userId = user?.value?.id ?: "")
+                    )
+                }
+
             }
         },
         backBtnOnClick = {

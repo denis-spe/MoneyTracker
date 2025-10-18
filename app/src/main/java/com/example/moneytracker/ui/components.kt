@@ -2,15 +2,23 @@
 
 package com.example.moneytracker.ui
 
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -22,18 +30,24 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
@@ -49,11 +63,10 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.R
-import com.example.moneytracker.ui.authScreens.loginScreen.LoginViewModel
 
 @Composable
 fun AuthTextButton(
@@ -420,23 +433,106 @@ fun AuthPasswordField(
 }
 
 @Composable
+fun LoadableButton(
+    modifier: Modifier = Modifier,
+    width: Float = 0.5f,
+    shape: Shape = RoundedCornerShape(size = 20.dp),
+    borderWidth: Dp = 1.dp,
+    borderColor: Color = Color.LightGray,
+    backgroundColor: Color? = null,
+    gradient: Brush = Brush.sweepGradient(listOf(Color.Gray, Color.White)),
+    animationDuration: Int = 900,
+    isLoading: Boolean = false,
+    isError: Boolean = false,
+    onClick: () -> Unit = {},
+    content: @Composable () -> Unit
+) {
+    val infiniteTransition = rememberInfiniteTransition(label = "Infinite Color Animation")
+    val degrees by infiniteTransition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = animationDuration, easing = FastOutLinearInEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "Infinite Colors"
+    )
+
+    val borderSize = if (!isLoading) borderWidth else 0.dp
+    val color = if (isError) Color.Red else borderColor
+    val backgroundColor = backgroundColor
+        ?: if (isSystemInDarkTheme()) Color.White else Color.DarkGray
+
+
+    Surface(
+        modifier = modifier
+            .clip(shape)
+            .border(borderSize, color, shape)
+            .clickable { onClick() },
+        shape = shape,
+        color = Color.Transparent,
+    ) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(width)
+                .padding(borderWidth)
+                .drawWithContent {
+                    if (isLoading && !isError) {
+                        rotate(degrees = degrees) {
+                            drawCircle(
+                                brush = gradient,
+                                radius = size.width,
+                                blendMode = BlendMode.SrcIn,
+                            )
+                        }
+                    }
+                    drawContent()
+                },
+            color = backgroundColor,
+            shape = shape
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(14.dp)
+            ) {
+                content()
+            }
+        }
+    }
+
+}
+
+@Composable
 fun AuthNextPageButton(
     id: Int,
     text: Int,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
+    isError: Boolean = false,
     onClick: () -> Unit,
 ) {
     val poppins = FontFamily(
         Font(R.font.poppins_medium, FontWeight.Medium)
     )
 
-    OutlinedButton(
+    LoadableButton(
         modifier = modifier
             .testTag(stringResource(id = id))
             .fillMaxWidth(0.5f),
         shape = RoundedCornerShape(integerResource(R.integer.authButtonRoundedCornerShape)),
         onClick = onClick,
-        border = BorderStroke(1.dp, colorResource(id = R.color.authBtnContainerColor)),
+        borderWidth = 1.dp,
+        borderColor = colorResource(id = R.color.authBtnContainerColor),
+        isLoading = isLoading,
+        isError = isError,
+        gradient = Brush.sweepGradient(
+            listOf(
+                colorResource(id = R.color.authBtnContainerColor),
+                (if (isSystemInDarkTheme())
+                    Color.White else Color.DarkGray)
+            )
+        )
     ) {
         Text(
             text = stringResource(id = text),
@@ -447,6 +543,7 @@ fun AuthNextPageButton(
         )
     }
 }
+
 
 @Composable
 fun AuthInputLayout(
@@ -459,6 +556,8 @@ fun AuthInputLayout(
     nextPageButtonText: Int,
     nextPageButtonOnClick: () -> Unit,
     backBtnOnClick: () -> Unit,
+    isLoading: Boolean = false,
+    isError: Boolean = false,
     content: @Composable () -> Unit
 ) {
     val roboto = FontFamily(
@@ -512,6 +611,8 @@ fun AuthInputLayout(
         AuthNextPageButton(
             id = nextPageButtonId,
             text = nextPageButtonText,
+            isLoading = isLoading,
+            isError = isError,
             onClick = nextPageButtonOnClick
         )
 
@@ -541,47 +642,47 @@ fun AuthInputLayout(
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun AuthInputLayoutPreview() {
-
-    val loginViewModel = hiltViewModel<LoginViewModel>()
-    val uiState = loginViewModel.uiState.collectAsState()
-
-    AuthInputLayout(
-        screenId = R.string.loginScreenId,
-        screenImgId = R.drawable.login_logo,
-        descriptionId = R.string.loginDescriptionId,
-        descriptionText = R.string.login_desc_text,
-        pageFlowImgId = R.drawable.login_page_flow,
-        nextPageButtonId = R.string.loginBtnId,
-        nextPageButtonText = R.string.login_btn_text,
-        nextPageButtonOnClick = {},
-        backBtnOnClick = {}
-    ) {
-        AuthOutlineTextField(
-            id = R.string.loginEmailFieldId,
-            placeholder = R.string.loginEmailFieldPlaceholder,
-            outlineIcon = R.drawable.outline_email,
-            filledIcon = R.drawable.filled_email,
-            isError = true,
-            onNewValue = loginViewModel::onEmailChange,
-            text = uiState.value.email
-        )
-
-        Spacer(modifier = Modifier.height(20.dp))
-
-        AuthPasswordField(
-            id = R.string.loginPasswordFieldId,
-            placeholder = R.string.loginPasswordPlaceholder,
-            outlineIcon = R.drawable.outline_password,
-            filledIcon = R.drawable.filled_password,
-            isError = false,
-            text = uiState.value.password,
-            onNewValue = loginViewModel::onPasswordChange
-        )
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun AuthInputLayoutPreview() {
+//
+//    val loginViewModel = hiltViewModel<LoginViewModel>()
+//    val uiState = loginViewModel.uiState.collectAsState()
+//
+//    AuthInputLayout(
+//        screenId = R.string.loginScreenId,
+//        screenImgId = R.drawable.login_logo,
+//        descriptionId = R.string.loginDescriptionId,
+//        descriptionText = R.string.login_desc_text,
+//        pageFlowImgId = R.drawable.login_page_flow,
+//        nextPageButtonId = R.string.loginBtnId,
+//        nextPageButtonText = R.string.login_btn_text,
+//        nextPageButtonOnClick = {},
+//        backBtnOnClick = {}
+//    ) {
+//        AuthOutlineTextField(
+//            id = R.string.loginEmailFieldId,
+//            placeholder = R.string.loginEmailFieldPlaceholder,
+//            outlineIcon = R.drawable.outline_email,
+//            filledIcon = R.drawable.filled_email,
+//            isError = true,
+//            onNewValue = loginViewModel::onEmailChange,
+//            text = uiState.value.email
+//        )
+//
+//        Spacer(modifier = Modifier.height(20.dp))
+//
+//        AuthPasswordField(
+//            id = R.string.loginPasswordFieldId,
+//            placeholder = R.string.loginPasswordPlaceholder,
+//            outlineIcon = R.drawable.outline_password,
+//            filledIcon = R.drawable.filled_password,
+//            isError = false,
+//            text = uiState.value.password,
+//            onNewValue = loginViewModel::onPasswordChange
+//        )
+//    }
+//}
 
 //@Preview(showBackground = true)
 //@Composable
@@ -644,15 +745,15 @@ fun AuthInputLayoutPreview() {
 //}
 
 //@Preview(showBackground = true)
-//@Composable
-//fun AuthButtonPreview(){
-//    AuthButton(
-//        id = R.string.startup_google_text,
-//        text = R.string.startup_google_text,
-//        icon = R.drawable.google_icon,
-//        onClick = {}
-//    )
-//}
+@Composable
+fun AuthButtonPreview() {
+    AuthButton(
+        id = R.string.startup_google_text,
+        text = R.string.startup_google_text,
+        icon = R.drawable.google_icon,
+        onClick = {}
+    )
+}
 //
 //@Preview(showBackground = true)
 //@Composable
@@ -666,3 +767,18 @@ fun AuthInputLayoutPreview() {
 //}
 
 
+@Preview(showBackground = true)
+@Composable
+fun AnimateButtonPreview() {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        LoadableButton(isLoading = true, isError = true) {
+            Text(
+                text = "Animated Button",
+            )
+        }
+    }
+}
