@@ -8,12 +8,17 @@ import com.example.moneytracker.helper.isPasswordValid
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+/**
+ * ViewModel for the Login Screen
+ * @param accountService The account services
+ */
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val accountService: AccountServices
@@ -21,19 +26,35 @@ class LoginViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(LoginUiState())
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
 
+    /**
+     * Updates the email in the UI state
+     */
     fun onEmailChange(email: String) {
-        _uiState.value = _uiState.value.copy(email = email)
+        _uiState.value = _uiState.value.copy(
+            email = email,
+            isEmailError = false,
+            emailErrorMessage = "",
+            credentialErrorMessage = "",
+        )
     }
 
+    /**
+     * Updates the password in the UI state
+     */
     fun onPasswordChange(password: String) {
-        _uiState.value = _uiState.value.copy(password = password)
+        _uiState.value = _uiState.value.copy(
+            password = password,
+            isPasswordError = false,
+            passwordErrorMessage = "",
+            credentialErrorMessage = "",
+        )
     }
 
-    fun onLoadingChange(isLoading: Boolean) {
-        _uiState.value = _uiState.value.copy(isLoading = isLoading)
-    }
-
-    fun validateBeforeNavigatingToHome(): Boolean {
+    /**
+     * Validates the input fields before navigating to the Home Screen
+     * @param block The block to execute if validation is successful
+     */
+    fun validateBeforeNavigatingToHome(block: (userId: String) -> Unit): Boolean {
         val email = _uiState.value.email
         val password = _uiState.value.password
 
@@ -48,13 +69,21 @@ class LoginViewModel @Inject constructor(
 
 
         if (!emailValidator.isValid || !passwordValidator.isValid) {
+            _uiState.value = _uiState.value.copy(
+                isEmailError = !emailValidator.isValid,
+                isPasswordError = !passwordValidator.isValid
+            )
             return false
         }
 
 
         viewModelScope.launch {
             try {
+                _uiState.value = _uiState.value.copy(isLoading = true)
                 accountService.authenticate(email, password)
+                delay(1000)
+                _uiState.value = _uiState.value.copy(isLoading = false)
+                block(accountService.currentUserId)
             } catch (_: FirebaseAuthInvalidCredentialsException) {
                 _uiState.value = _uiState.value.copy(
                     credentialErrorMessage = "No account found with these credentials.",
@@ -79,7 +108,6 @@ class LoginViewModel @Inject constructor(
                 )
             }
         }
-
         return _uiState.value.credentialErrorMessage.isEmpty()
     }
 }

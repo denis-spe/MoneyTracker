@@ -68,6 +68,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 
+val Color.Companion.autoColorChange: Color
+    @Composable get() = if (isSystemInDarkTheme())
+        colorResource(id = R.color.authDarkBgColor)
+    else
+        colorResource(id = R.color.authLightBgColor)
+
 @Composable
 fun AuthTextButton(
     id: Int,
@@ -221,13 +227,15 @@ fun AuthHeader(){
             text = stringResource(R.string.title_money),
             fontSize = 24.sp,
             fontWeight = FontWeight.ExtraBold,
-            fontFamily = robotoFont
+            fontFamily = robotoFont,
+            color = Color.autoColorChange
         )
         Text(
             text = stringResource(R.string.title_tracker),
             fontSize = 32.sp,
             fontWeight = FontWeight.ExtraBold,
-            fontFamily = robotoFont
+            fontFamily = robotoFont,
+            color = Color.autoColorChange
         )
     }
 }
@@ -460,8 +468,6 @@ fun LoadableButton(
 
     val borderSize = if (!isLoading) borderWidth else 0.dp
     val color = if (isError) Color.Red else borderColor
-    val backgroundColor = backgroundColor
-        ?: if (isSystemInDarkTheme()) Color.White else Color.DarkGray
 
 
     Surface(
@@ -470,7 +476,7 @@ fun LoadableButton(
             .border(borderSize, color, shape)
             .clickable { onClick() },
         shape = shape,
-        color = Color.Transparent,
+        color = Color.autoColorChange,
     ) {
         Surface(
             modifier = Modifier
@@ -488,7 +494,7 @@ fun LoadableButton(
                     }
                     drawContent()
                 },
-            color = backgroundColor,
+            color = Color.White,
             shape = shape
         ) {
             Column(
@@ -528,9 +534,7 @@ fun AuthNextPageButton(
         isError = isError,
         gradient = Brush.sweepGradient(
             listOf(
-                colorResource(id = R.color.authBtnContainerColor),
-                (if (isSystemInDarkTheme())
-                    Color.White else Color.DarkGray)
+                colorResource(id = R.color.authBtnContainerColor), Color.White
             )
         )
     ) {
@@ -539,7 +543,7 @@ fun AuthNextPageButton(
             fontWeight = FontWeight.SemiBold,
             fontFamily = poppins,
             fontSize = 17.sp,
-            color = colorResource(id = R.color.authBtnContainerColor)
+            color = if (isError) Color.Red else colorResource(id = R.color.authBtnContainerColor)
         )
     }
 }
@@ -642,6 +646,29 @@ fun AuthInputLayout(
     }
 }
 
+@Composable
+fun DisplayErrorMessage(
+    id: Int,
+    errorMessage: String,
+    modifier: Modifier = Modifier
+) {
+    if (errorMessage.isNotEmpty()) {
+        val poppins = FontFamily(
+            Font(R.font.poppins_medium, FontWeight.Medium)
+        )
+
+        Text(
+            text = errorMessage,
+            color = Color.Red,
+            fontSize = 12.sp,
+            fontFamily = poppins,
+            modifier = modifier
+                .padding(top = 8.dp)
+                .testTag(stringResource(id = id))
+        )
+    }
+}
+
 //@Preview(showBackground = true)
 //@Composable
 //fun AuthInputLayoutPreview() {
@@ -700,27 +727,28 @@ fun AuthInputLayout(
 //    }
 //}
 
-//@Preview(showBackground = true)
-//@Composable
-//fun AuthEmailFieldPreview() {
-//    val textState = remember { mutableStateOf("") }
-//    val isError = remember { mutableStateOf(false) }
-//
-//    Column(
-//        modifier = Modifier.fillMaxSize(),
-//        horizontalAlignment = Alignment.CenterHorizontally,
-//        verticalArrangement = Arrangement.Center
-//    ) {
-//        AuthEmailField(
-//            id = R.string.loginEmailFieldId,
-//            placeholder = R.string.loginEmailFieldPlaceholder,
-//            outlineIcon = R.drawable.outline_email,
-//            filledIcon = R.drawable.filled_email,
-//            isError = isError,
-//            textState = textState
-//        )
-//    }
-//}
+@Preview(showBackground = true)
+@Composable
+fun AuthEmailFieldPreview() {
+    val textState = remember { mutableStateOf("") }
+    val isError = remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        AuthOutlineTextField(
+            id = R.string.loginEmailFieldId,
+            placeholder = R.string.loginEmailFieldPlaceholder,
+            outlineIcon = R.drawable.outline_email,
+            filledIcon = R.drawable.filled_email,
+            isError = true,
+            text = textState.value,
+            onNewValue = { textState.value = it }
+        )
+    }
+}
 
 //@Preview(showBackground = true)
 //@Composable
@@ -745,15 +773,15 @@ fun AuthInputLayout(
 //}
 
 //@Preview(showBackground = true)
-@Composable
-fun AuthButtonPreview() {
-    AuthButton(
-        id = R.string.startup_google_text,
-        text = R.string.startup_google_text,
-        icon = R.drawable.google_icon,
-        onClick = {}
-    )
-}
+//@Composable
+//fun AuthButtonPreview() {
+//    AuthButton(
+//        id = R.string.startup_google_text,
+//        text = R.string.startup_google_text,
+//        icon = R.drawable.google_icon,
+//        onClick = {}
+//    )
+//}
 //
 //@Preview(showBackground = true)
 //@Composable
@@ -767,18 +795,18 @@ fun AuthButtonPreview() {
 //}
 
 
-@Preview(showBackground = true)
-@Composable
-fun AnimateButtonPreview() {
-    Column(
-        modifier = Modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        LoadableButton(isLoading = true, isError = true) {
-            Text(
-                text = "Animated Button",
-            )
-        }
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun AnimateButtonPreview() {
+//    Column(
+//        modifier = Modifier.fillMaxSize(),
+//        horizontalAlignment = Alignment.CenterHorizontally,
+//        verticalArrangement = Arrangement.Center
+//    ) {
+//        LoadableButton(isLoading = true, isError = true) {
+//            Text(
+//                text = "Animated Button",
+//            )
+//        }
+//    }
+//}

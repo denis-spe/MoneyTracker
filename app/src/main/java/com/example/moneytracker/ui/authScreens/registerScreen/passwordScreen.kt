@@ -32,7 +32,11 @@ fun PasswordRegistrationScreen(
         nextPageButtonText = R.string.password_register_btn_text,
         nextPageButtonOnClick = {
             if (viewModel.validatePasswordBeforeNavigate()) {
-                onNavigate?.navigate(HomeScreenRouter(userId = uiState.value.userId))
+                onNavigate?.navigate(
+                    HomeScreenRouter(
+                        userId = uiState.value.userId
+                    )
+                )
             }
         },
         backBtnOnClick = {
