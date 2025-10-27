@@ -8,11 +8,12 @@ import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthInputLayout
 import com.example.moneytracker.ui.AuthOutlineTextField
+import com.example.moneytracker.ui.DisplayErrorMessage
 import com.example.moneytracker.ui.screenManager.PasswordRegistrationScreenRouter
 
 @Composable
 fun EmailRegistrationScreen(
-    viewModel: RegisterViewModel = hiltViewModel(),
+    viewModel: RegisterViewModel,
     onNavigate: NavController? = null,
 ) {
     val uiState = viewModel.uiState.collectAsState()
@@ -25,8 +26,9 @@ fun EmailRegistrationScreen(
         pageFlowImgId = R.drawable.email_page_flow,
         nextPageButtonId = R.string.emailRegisterBtnId,
         nextPageButtonText = R.string.email_register_btn_text,
+        isError = uiState.value.isErrorInEmail,
         nextPageButtonOnClick = {
-            if (viewModel.validateEmailBeforeNavigate()) {
+            viewModel.validateEmailBeforeNavigateToPassword {
                 onNavigate?.navigate(PasswordRegistrationScreenRouter)
             }
         },
@@ -39,10 +41,16 @@ fun EmailRegistrationScreen(
             placeholder = R.string.emailRegisterEmailFieldPlaceholder,
             outlineIcon = R.drawable.outline_email,
             filledIcon = R.drawable.filled_email,
-            isError = false,
+            isError = uiState.value.isErrorInEmail,
             onNewValue = viewModel::onEmailChange,
             text = uiState.value.email,
             isEmail = true
+        )
+
+        // Email Error Message
+        DisplayErrorMessage(
+            id = R.string.errorEmailMessage,
+            errorMessage = uiState.value.emailErrorMessage
         )
     }
 }
@@ -50,5 +58,5 @@ fun EmailRegistrationScreen(
 @Preview(showBackground = true)
 @Composable
 fun EmailScreenPreview() {
-    EmailRegistrationScreen()
+    EmailRegistrationScreen(viewModel = hiltViewModel())
 }

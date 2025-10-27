@@ -2,6 +2,7 @@ package com.example.moneytracker.ui.screenManager
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -13,6 +14,7 @@ import com.example.moneytracker.ui.authScreens.mailScreen.MailScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.EmailRegistrationScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.NamesRegistrationScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.PasswordRegistrationScreen
+import com.example.moneytracker.ui.authScreens.registerScreen.RegisterViewModel
 import com.example.moneytracker.ui.homeScreen.HomeScreen
 import com.example.moneytracker.ui.startUpScreen.StartUpScreen
 import com.google.firebase.auth.FirebaseAuth
@@ -23,6 +25,9 @@ fun ScreenManager(
 ) {
 
     val account = AccountServicesImpl(FirebaseAuth.getInstance())
+
+    val registerViewModel: RegisterViewModel = hiltViewModel()
+
     val startDestination = if (account.hasUser) {
         HomeScreenRouter(userId = account.currentUserId)
     } else {
@@ -34,13 +39,22 @@ fun ScreenManager(
         composable<GoogleScreenRouter> { GoogleScreen(navController) }
         composable<MailScreenRouter> { MailScreen(navController) }
         composable<NamesRegistrationScreenRouter> {
-            NamesRegistrationScreen(onNavigate = navController)
+            NamesRegistrationScreen(
+                viewModel = registerViewModel,
+                onNavigate = navController
+            )
         }
         composable<EmailRegistrationScreenRouter> {
-            EmailRegistrationScreen(onNavigate = navController)
+            EmailRegistrationScreen(
+                viewModel = registerViewModel,
+                onNavigate = navController
+            )
         }
         composable<PasswordRegistrationScreenRouter> {
-            PasswordRegistrationScreen(onNavigate = navController)
+            PasswordRegistrationScreen(
+                viewModel = registerViewModel,
+                onNavigate = navController
+            )
         }
         composable<LoginScreenRouter> {
             LoginScreen(onNavigate = navController)

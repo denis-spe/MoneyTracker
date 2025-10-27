@@ -13,11 +13,12 @@ import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthInputLayout
 import com.example.moneytracker.ui.AuthOutlineTextField
+import com.example.moneytracker.ui.DisplayErrorMessage
 import com.example.moneytracker.ui.screenManager.EmailRegistrationScreenRouter
 
 @Composable
 fun NamesRegistrationScreen(
-    viewModel: RegisterViewModel = hiltViewModel(),
+    viewModel: RegisterViewModel,
     onNavigate: NavController? = null,
 ) {
     val uiState = viewModel.uiState.collectAsState()
@@ -30,8 +31,10 @@ fun NamesRegistrationScreen(
         pageFlowImgId = R.drawable.name_page_flow,
         nextPageButtonId = R.string.nameRegisterBtnId,
         nextPageButtonText = R.string.name_register_btn_text,
+        isError = uiState.value.isErrorInFirstName ||
+                uiState.value.isErrorInLastName,
         nextPageButtonOnClick = {
-            if (viewModel.validateNameBeforeNavigate()) {
+            viewModel.validateNameBeforeNavigateToEmail {
                 onNavigate?.navigate(EmailRegistrationScreenRouter)
             }
         },
@@ -44,9 +47,14 @@ fun NamesRegistrationScreen(
             placeholder = R.string.nameRegisterFirstNameFieldPlaceholder,
             outlineIcon = R.drawable.outline_name,
             filledIcon = R.drawable.filled_name,
-            isError = false,
+            isError = uiState.value.isErrorInFirstName,
             onNewValue = viewModel::onFirstNameChange,
             text = uiState.value.firstName
+        )
+        // Email Error Message
+        DisplayErrorMessage(
+            id = R.string.errorFirstNameMessage,
+            errorMessage = uiState.value.firstNameErrorMessage
         )
 
         Spacer(modifier = Modifier.height(20.dp))
@@ -56,9 +64,14 @@ fun NamesRegistrationScreen(
             placeholder = R.string.nameRegisterLastNameFieldPlaceholder,
             outlineIcon = R.drawable.outline_name,
             filledIcon = R.drawable.filled_name,
-            isError = false,
             onNewValue = viewModel::onLastNameChange,
+            isError = uiState.value.isErrorInLastName,
             text = uiState.value.lastName
+        )
+        // Email Error Message
+        DisplayErrorMessage(
+            id = R.string.errorLastNameMessage,
+            errorMessage = uiState.value.lastNameErrorMessage
         )
     }
 }
@@ -66,5 +79,5 @@ fun NamesRegistrationScreen(
 @Preview(showBackground = true)
 @Composable
 fun NamesScreenPreview() {
-    NamesRegistrationScreen()
+    NamesRegistrationScreen(viewModel = hiltViewModel())
 }

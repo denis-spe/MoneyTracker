@@ -12,5 +12,11 @@ data class RegisterUiState(
     val isErrorInPassword: Boolean = false,
     val confirmPassword: String = "",
     val isErrorInConfirmPassword: Boolean = false,
-    val errorMessage: String = ""
+    val emailErrorMessage: String = "",
+    val firstNameErrorMessage: String = "",
+    val lastNameErrorMessage: String = "",
+    val passwordErrorMessage: String = "",
+    val confirmPasswordErrorMessage: String = "",
+    val credentialErrorMessage: String = "",
+    val isLoading: Boolean = false,
 )

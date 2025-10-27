@@ -3,12 +3,8 @@
 
 package com.example.moneytracker.ui.authScreens.loginScreen
 
-import com.example.moneytracker.backend.auth.User
-import kotlinx.coroutines.flow.Flow
-
 /**
  * UI state for the Login Screen
- * @param user The current user flow
  * @param email The email input
  * @param password The password input
  * @param isEmailError Whether there is an email error
@@ -19,7 +15,6 @@ import kotlinx.coroutines.flow.Flow
  * @param isLoading Whether the screen is loading
  */
 data class LoginUiState(
-    val user: Flow<User>? = null,
     val email: String = "",
     val password: String = "",
     val isEmailError: Boolean = false,

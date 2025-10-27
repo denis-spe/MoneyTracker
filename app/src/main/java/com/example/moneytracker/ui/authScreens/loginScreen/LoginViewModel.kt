@@ -33,6 +33,7 @@ class LoginViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             email = email,
             isEmailError = false,
+            isLoading = false,
             emailErrorMessage = "",
             credentialErrorMessage = "",
         )
@@ -45,6 +46,7 @@ class LoginViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(
             password = password,
             isPasswordError = false,
+            isLoading = false,
             passwordErrorMessage = "",
             credentialErrorMessage = "",
         )
@@ -55,18 +57,26 @@ class LoginViewModel @Inject constructor(
      * @param block The block to execute if validation is successful
      */
     fun validateBeforeNavigatingToHome(block: (userId: String) -> Unit): Boolean {
+        // Prepare UI State
+        _uiState.value = _uiState.value.copy(
+            isEmailError = false,
+            isPasswordError = false,
+            credentialErrorMessage = "",
+        )
+
+        // Get current input values
         val email = _uiState.value.email
         val password = _uiState.value.password
 
+        // Validate inputs
         val emailValidator = email.isEmailValid
         val passwordValidator = password.isPasswordValid
 
+        // Update UI state with validation results
         _uiState.value = _uiState.value.copy(
             emailErrorMessage = emailValidator.errorMessage,
             passwordErrorMessage = passwordValidator.errorMessage
         )
-
-
 
         if (!emailValidator.isValid || !passwordValidator.isValid) {
             _uiState.value = _uiState.value.copy(
@@ -80,7 +90,7 @@ class LoginViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                accountService.authenticate(email, password)
+                accountService.login(email, password)
                 delay(1000)
                 _uiState.value = _uiState.value.copy(isLoading = false)
                 block(accountService.currentUserId)

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -30,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.AuthButton
@@ -37,6 +39,7 @@ import com.example.moneytracker.ui.AuthFillButton
 import com.example.moneytracker.ui.AuthLayout
 import com.example.moneytracker.ui.AuthTextButton
 import com.example.moneytracker.ui.screenManager.GoogleScreenRouter
+import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.MailScreenRouter
 
 @SuppressLint(
@@ -45,7 +48,12 @@ import com.example.moneytracker.ui.screenManager.MailScreenRouter
 )
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun StartUpScreen(onNavigate: NavController? = null){
+fun StartUpScreen(
+    onNavigate: NavController? = null,
+    viewModel: StartUpViewModel = hiltViewModel()
+) {
+    val uiState = viewModel.uiState.collectAsState()
+
     AuthLayout(screenId = R.string.startUpScreenId) {
 
         Column(
@@ -101,7 +109,8 @@ fun StartUpScreen(onNavigate: NavController? = null){
                 id = R.string.startupGoogleBtnId,
                 text = R.string.startup_google_text,
                 icon = R.drawable.google_icon,
-                modifier = Modifier.width(170.dp)
+                modifier = Modifier.width(170.dp),
+                color = null
             ) {
                 onNavigate?.navigate(route = GoogleScreenRouter)
             }
@@ -115,7 +124,8 @@ fun StartUpScreen(onNavigate: NavController? = null){
                 id = R.string.startupMailBtnId,
                 text = R.string.startup_mail_text,
                 icon = R.drawable.email_icon,
-                modifier = Modifier.width(170.dp)
+                modifier = Modifier.width(170.dp),
+                color = null
             ) {
                 onNavigate?.navigate(route = MailScreenRouter)
             }
@@ -126,7 +136,7 @@ fun StartUpScreen(onNavigate: NavController? = null){
                 painter = painterResource(id = R.drawable.page_flow),
                 contentDescription = "page flow",
                 modifier = Modifier
-                    .size(42.dp)
+                    .size(30.dp)
                     .testTag(stringResource(R.string.startup_page_flow_img))
                 )
         }
@@ -134,13 +144,18 @@ fun StartUpScreen(onNavigate: NavController? = null){
         Row(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.padding(top = 55.dp)
+            modifier = Modifier.padding(top = 45.dp)
         ) {
             AuthTextButton(
                 id = R.string.startupContinueGuestId,
-                text = R.string.startup_continue_guest_text
+                text = R.string.startup_continue_guest_text,
+                isLoading = uiState.value.isLoading,
             ) {
-
+                viewModel.anonymousLogin { userId ->
+                    onNavigate?.navigate(
+                        HomeScreenRouter(userId = userId)
+                    )
+                }
             }
         }
     }

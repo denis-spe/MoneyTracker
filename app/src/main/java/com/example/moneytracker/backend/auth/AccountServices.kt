@@ -19,12 +19,24 @@ interface AccountServices {
     val currentUser: Flow<User>
 
     /**
-     * Authenticates a user with an email and password
+     * Login a user with an email and password
+     * @param email The user's email
+     * @param password The user's password
      */
-    suspend fun authenticate(email: String, password: String)
+    suspend fun login(email: String, password: String)
+
+    /**
+     * Registers a new user with an email and password
+     * @param firstName The user's first name
+     * @param lastName The user's last name
+     * @param email The user's email
+     * @param password The user's password
+     */
+    suspend fun register(firstName: String, lastName: String, email: String, password: String)
 
     /**
      * Sends a recovery email to the specified email
+     * @param email The user's email
      */
     suspend fun sendRecoveryEmail(email: String)
 
@@ -35,6 +47,8 @@ interface AccountServices {
 
     /**
      * Link an email and password account
+     * @param email The user's email
+     * @param password The user's password
      */
     suspend fun linkAccount(email: String, password: String)
 

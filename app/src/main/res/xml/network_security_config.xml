@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+
+    <!-- allow local/dev hosts for debug builds; be explicit about subdomains -->
+    <domain-config
+        cleartextTrafficPermitted="true"
+        includeSubdomains="false">
+        <!-- AVD host -->
+        <domain>10.0.2.2</domain>
+        <!-- localhost mapping (if you use 127.0.0.1) -->
+        <domain>127.0.0.1</domain>
+        <!-- your dev machine LAN IP (if testing on a physical device) -->
+        <domain>192.168.10.141</domain>
+    </domain-config>
+</network-security-config>

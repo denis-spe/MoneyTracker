@@ -27,6 +27,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -79,22 +81,32 @@ fun AuthTextButton(
     id: Int,
     text: Int,
     modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
     onClick: () -> Unit,
 ) {
     TextButton(
         onClick = onClick,
-        modifier = modifier.testTag(stringResource(id = id))
+        modifier = modifier.testTag(stringResource(id = id)),
     ) {
         val poppins = FontFamily(
             Font(R.font.poppins_medium, FontWeight.Medium)
         )
+        Column(
+            modifier = Modifier.fillMaxWidth(0.5f),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = stringResource(id = text),
+                color = colorResource(id = R.color.authBtnContainerColor),
+                fontSize = 15.sp,
+                fontFamily = poppins,
+            )
 
-        Text(
-            text = stringResource(id = text),
-            color = Color.Black,
-            fontSize = 15.sp,
-            fontFamily = poppins
-        )
+            if (isLoading) {
+                LinearProgressIndicator()
+            }
+        }
     }
 }
 
@@ -105,6 +117,7 @@ fun AuthButton(
     text: Int,
     icon: Int,
     modifier: Modifier = Modifier,
+    color: Color? = MaterialTheme.colorScheme.onBackground,
     onClick: () -> Unit,
 ){
     val cornerShape = RoundedCornerShape(integerResource(R.integer.authButtonRoundedCornerShape))
@@ -127,7 +140,8 @@ fun AuthButton(
                 painter = painterResource(id = icon),
                 contentDescription = stringResource(id = text),
                 modifier = Modifier
-                    .size(integerResource(id = R.integer.authButtonIconSize).dp)
+                    .size(integerResource(id = R.integer.authButtonIconSize).dp),
+                colorFilter = if (color != null) ColorFilter.tint(color) else null
             )
             Spacer(modifier = Modifier.width(
                 integerResource(id = R.integer.authButtonSpacerWidth).dp))
@@ -145,6 +159,7 @@ fun AuthFillButton(
     text: Int,
     icon: Int,
     modifier: Modifier = Modifier,
+    color: Color? = MaterialTheme.colorScheme.onBackground,
     onClick: () -> Unit,
 ){
     val cornerShape = RoundedCornerShape(integerResource(R.integer.authButtonRoundedCornerShape))
@@ -167,7 +182,8 @@ fun AuthFillButton(
                 painter = painterResource(id = icon),
                 contentDescription = stringResource(id = text),
                 modifier = Modifier
-                    .size(integerResource(id = R.integer.authButtonIconSize).dp)
+                    .size(integerResource(id = R.integer.authButtonIconSize).dp),
+                colorFilter = if (color != null) ColorFilter.tint(color) else null
             )
             Spacer(modifier = Modifier.width(
                 integerResource(id = R.integer.authButtonSpacerWidth).dp))
@@ -181,16 +197,18 @@ fun AuthFillButton(
 
 @Composable
 fun AuthLayout(screenId: Int, content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(stringResource(screenId)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
+    Surface() {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag(stringResource(screenId)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
 
-        AuthHeader()
-        content()
+            AuthHeader()
+            content()
+        }
     }
 }
 
@@ -228,14 +246,14 @@ fun AuthHeader(){
             fontSize = 24.sp,
             fontWeight = FontWeight.ExtraBold,
             fontFamily = robotoFont,
-            color = Color.autoColorChange
+            color = MaterialTheme.colorScheme.onBackground
         )
         Text(
             text = stringResource(R.string.title_tracker),
             fontSize = 32.sp,
             fontWeight = FontWeight.ExtraBold,
             fontFamily = robotoFont,
-            color = Color.autoColorChange
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }
@@ -256,7 +274,7 @@ fun AuthOutlineTextField(
     val unfocusedColor = colorResource(R.color.authBtnContainerColor).copy(alpha = 0.6f)
 
     val customColors = OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.DarkGray,
+        focusedTextColor = MaterialTheme.colorScheme.onBackground,
         unfocusedTextColor = Color.Gray,
         focusedBorderColor = focusedColor,
         unfocusedBorderColor = unfocusedColor,
@@ -354,7 +372,7 @@ fun AuthPasswordField(
     val unfocusedColor = colorResource(R.color.authBtnContainerColor).copy(alpha = 0.6f)
 
     val customColors = OutlinedTextFieldDefaults.colors(
-        focusedTextColor = Color.DarkGray,
+        focusedTextColor = MaterialTheme.colorScheme.onBackground,
         unfocusedTextColor = Color.Gray,
         focusedBorderColor = focusedColor,
         unfocusedBorderColor = unfocusedColor,
@@ -494,7 +512,7 @@ fun LoadableButton(
                     }
                     drawContent()
                 },
-            color = Color.White,
+            color = MaterialTheme.colorScheme.background,
             shape = shape
         ) {
             Column(
@@ -534,7 +552,7 @@ fun AuthNextPageButton(
         isError = isError,
         gradient = Brush.sweepGradient(
             listOf(
-                colorResource(id = R.color.authBtnContainerColor), Color.White
+                colorResource(id = R.color.authBtnContainerColor), Color.autoColorChange
             )
         )
     ) {
@@ -597,7 +615,8 @@ fun AuthInputLayout(
                 contentDescription = stringResource(id = screenId) + " image",
                 modifier = Modifier
                     .size(60.dp)
-                    .testTag(stringResource(id = R.string.screen_logo))
+                    .testTag(stringResource(id = R.string.screen_logo)),
+                colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onBackground)
             )
         }
 
@@ -656,16 +675,23 @@ fun DisplayErrorMessage(
         val poppins = FontFamily(
             Font(R.font.poppins_medium, FontWeight.Medium)
         )
-
-        Text(
-            text = errorMessage,
-            color = Color.Red,
-            fontSize = 12.sp,
-            fontFamily = poppins,
-            modifier = modifier
-                .padding(top = 8.dp)
-                .testTag(stringResource(id = id))
-        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.6f)
+                .padding(top = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = errorMessage,
+                color = Color.Red,
+                fontSize = 12.sp,
+                fontFamily = poppins,
+                textAlign = TextAlign.Center,
+                modifier = modifier
+                    .testTag(stringResource(id = id))
+            )
+        }
     }
 }
 

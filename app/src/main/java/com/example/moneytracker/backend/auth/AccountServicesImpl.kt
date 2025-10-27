@@ -2,6 +2,7 @@
 package com.example.moneytracker.backend.auth
 
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -25,8 +26,21 @@ open class AccountServicesImpl(private val auth: FirebaseAuth) : AccountServices
             awaitClose { auth.removeAuthStateListener(listener) }
         }
 
-    override suspend fun authenticate(email: String, password: String) {
+    override suspend fun login(email: String, password: String) {
         auth.signInWithEmailAndPassword(email, password).await()
+    }
+
+    override suspend fun register(
+        firstName: String,
+        lastName: String,
+        email: String,
+        password: String
+    ) {
+        auth.createUserWithEmailAndPassword(email, password).await()
+            .user?.updateProfile(
+                UserProfileChangeRequest.Builder()
+                    .setDisplayName("$firstName $lastName").build()
+            )
     }
 
     override suspend fun sendRecoveryEmail(email: String) {
@@ -38,7 +52,6 @@ open class AccountServicesImpl(private val auth: FirebaseAuth) : AccountServices
     }
 
     override suspend fun linkAccount(email: String, password: String) {
-        //TODO
     }
 
     override suspend fun deleteAccount() {
