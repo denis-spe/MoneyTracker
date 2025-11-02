@@ -6,7 +6,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import com.google.firebase.FirebaseApp
-import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -16,7 +15,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         // important: call as early as possible
-        FirebaseAuth.getInstance().useEmulator("192.168.10.141", 9099)
+//        FirebaseAuth.getInstance().useEmulator("192.168.10.141", 9099)
 
         // Initialize Firebase
         FirebaseApp.initializeApp(this)
@@ -24,6 +23,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             MoneyTrackerTheme {
                 App()
+//                BottomSheet(this.getString(R.string.default_web_client_id))
             }
         }
     }

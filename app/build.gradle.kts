@@ -67,6 +67,8 @@ dependencies {
     implementation(libs.hilt.android.v257)
     implementation(libs.mockito.android)
     implementation(libs.mockito.bom)
+    implementation(libs.googleid)
+    implementation(libs.firebase.crashlytics.buildtools)
     ksp(libs.hilt.android.compiler.v257)
 
     // Androidx Hilt extension for compose (provide hiltViewModel)
@@ -94,5 +96,7 @@ dependencies {
     // Add the dependency for the Firebase Authentication library
     // When using the BoM, you don't specify versions in Firebase library dependencies
     implementation(libs.firebase.auth)
+    implementation(libs.play.services.auth)
+    implementation(libs.coil.compose)
 
 }

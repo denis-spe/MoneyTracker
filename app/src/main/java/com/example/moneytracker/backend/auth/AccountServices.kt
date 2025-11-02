@@ -1,6 +1,8 @@
 package com.example.moneytracker.backend.auth
 
-import kotlinx.coroutines.flow.Flow
+import android.content.Context
+import com.google.firebase.auth.FirebaseUser
+import kotlinx.coroutines.flow.StateFlow
 
 interface AccountServices {
     /**
@@ -16,7 +18,12 @@ interface AccountServices {
     /**
      * The current Firebase user or null if not available.
      */
-    val currentUser: Flow<User>
+    val userState: StateFlow<FirebaseUser?>
+
+    suspend fun handleGoogleSignIn(
+        context: Context
+    )
+
 
     /**
      * Login a user with an email and password

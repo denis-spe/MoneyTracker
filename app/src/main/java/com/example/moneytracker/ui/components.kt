@@ -26,6 +26,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -196,7 +197,7 @@ fun AuthFillButton(
 }
 
 @Composable
-fun AuthLayout(screenId: Int, content: @Composable () -> Unit) {
+fun AuthLayout(screenId: Int, isLoading: Boolean = false, content: @Composable () -> Unit) {
     Surface() {
         Column(
             modifier = Modifier
@@ -205,9 +206,11 @@ fun AuthLayout(screenId: Int, content: @Composable () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
             AuthHeader()
             content()
+            if (isLoading) {
+                CircularProgressIndicator()
+            }
         }
     }
 }

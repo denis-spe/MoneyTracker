@@ -51,6 +51,7 @@
     <string name="googleRegisterBtnId">googleBtnRegister</string>
     <string name="google_register_text">REGISTER</string>
     <string name="google_page_flow_img">google page flow img</string>
+    <string name="default_web_client_id">398768948931-lceu426h5ag9scmpn4epj8dug7ka7571.apps.googleusercontent.com</string>
 
     <!-- MAIL SCREEN -->
     <string name="mailScreenId">mailScreen</string>

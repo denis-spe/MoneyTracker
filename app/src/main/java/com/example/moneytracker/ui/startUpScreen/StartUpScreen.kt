@@ -19,6 +19,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -38,7 +39,6 @@ import com.example.moneytracker.ui.AuthButton
 import com.example.moneytracker.ui.AuthFillButton
 import com.example.moneytracker.ui.AuthLayout
 import com.example.moneytracker.ui.AuthTextButton
-import com.example.moneytracker.ui.screenManager.GoogleScreenRouter
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.MailScreenRouter
 
@@ -52,9 +52,14 @@ fun StartUpScreen(
     onNavigate: NavController? = null,
     viewModel: StartUpViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
     val uiState = viewModel.uiState.collectAsState()
 
-    AuthLayout(screenId = R.string.startUpScreenId) {
+
+    AuthLayout(
+        screenId = R.string.startUpScreenId,
+        isLoading = uiState.value.isLoading
+    ) {
 
         Column(
             modifier = Modifier
@@ -112,7 +117,12 @@ fun StartUpScreen(
                 modifier = Modifier.width(170.dp),
                 color = null
             ) {
-                onNavigate?.navigate(route = GoogleScreenRouter)
+                // Launch Google sign-in
+//                val signInIntent = viewModel.googleSignInClient.signInIntent
+//                launcher.launch(signInIntent)
+                viewModel.signInWithGoogle(context = context) { userId ->
+                    onNavigate?.navigate(HomeScreenRouter(userId))
+                }
             }
 
             Text(
@@ -149,7 +159,6 @@ fun StartUpScreen(
             AuthTextButton(
                 id = R.string.startupContinueGuestId,
                 text = R.string.startup_continue_guest_text,
-                isLoading = uiState.value.isLoading,
             ) {
                 viewModel.anonymousLogin { userId ->
                     onNavigate?.navigate(
