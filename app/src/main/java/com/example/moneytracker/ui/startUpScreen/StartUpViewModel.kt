@@ -3,8 +3,10 @@ package com.example.moneytracker.ui.startUpScreen
 import android.content.ContentValues.TAG
 import android.content.Context
 import android.credentials.GetCredentialException
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.credentials.exceptions.GetCredentialCancellationException
 import androidx.credentials.exceptions.GetCredentialCustomException
 import androidx.credentials.exceptions.NoCredentialException
@@ -36,12 +38,13 @@ class StartUpViewModel @Inject constructor(
     val userState = accountService.userState
 
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun signInWithGoogle(
         context: Context,
         block: (userId: String) -> Unit
     ) {
         val failureMessage = "Sign in failed!"
-        var e: Exception? = null
+        val e: Exception? = null
 
         viewModelScope.launch {
             //using delay() here helps prevent NoCredentialException when the BottomSheet Flow is triggered
@@ -110,10 +113,11 @@ class StartUpViewModel @Inject constructor(
 
     fun anonymousLogin(block: (userId: String) -> Unit): Boolean {
         viewModelScope.launch {
+            delay(250)
+
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
                 accountService.createAnonymousAccount()
-                delay(1000)
                 _uiState.value = _uiState.value.copy(isLoading = false)
             } catch (_: FirebaseAuthInvalidCredentialsException) {
                 _uiState.value = _uiState.value.copy(
@@ -141,7 +145,7 @@ class StartUpViewModel @Inject constructor(
             }
 
             if (accountService.currentUserId.isNotEmpty()
-                && uiState.value.credentialErrorMessage.isEmpty()
+//                && uiState.value.credentialErrorMessage.isEmpty()
             ) {
                 block(accountService.currentUserId)
             }

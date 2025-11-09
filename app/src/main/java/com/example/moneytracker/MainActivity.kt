@@ -1,11 +1,15 @@
 package com.example.moneytracker
 
+import android.content.pm.ApplicationInfo
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -14,8 +18,21 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        // important: call as early as possible
-//        FirebaseAuth.getInstance().useEmulator("192.168.10.141", 9099)
+        val isDebug = 0 != (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE)
+
+
+
+        if (isDebug) {
+            val ip = "192.168.10.141" // ← your dev machine's IP
+            FirebaseAuth.getInstance().useEmulator(ip, 9099)
+            FirebaseFirestore.getInstance().useEmulator(ip, 8080)
+
+            // Optional:
+            // FirebaseStorage.getInstance().useEmulator(ip, 9199)
+            Log.d("Firebase", "Using Firebase emulators for debug build")
+        } else {
+            Log.d("Firebase", "Using real Firebase backend")
+        }
 
         // Initialize Firebase
         FirebaseApp.initializeApp(this)
@@ -23,7 +40,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             MoneyTrackerTheme {
                 App()
-//                BottomSheet(this.getString(R.string.default_web_client_id))
             }
         }
     }

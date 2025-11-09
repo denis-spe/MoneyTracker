@@ -69,6 +69,7 @@ dependencies {
     implementation(libs.mockito.bom)
     implementation(libs.googleid)
     implementation(libs.firebase.crashlytics.buildtools)
+    implementation(libs.firebase.firestore)
     ksp(libs.hilt.android.compiler.v257)
 
     // Androidx Hilt extension for compose (provide hiltViewModel)

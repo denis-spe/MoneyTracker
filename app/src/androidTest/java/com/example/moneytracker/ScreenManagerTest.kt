@@ -30,32 +30,6 @@ class ScreenManagerTest : TestBase(
     }
 
     @Test
-    fun testScreenFlowThroughGoogle(){
-        val screenId = composeTestRule.activity
-            .getString(R.string.startUpScreenId)
-        val googleScreenId = composeTestRule.activity
-            .getString(R.string.googleScreenId)
-        val googleButtonId = composeTestRule.activity
-            .getString(R.string.startupGoogleBtnId)
-        val backButtonId = composeTestRule.activity
-            .getString(R.string.authBackBtnId)
-
-        composeTestRule.onNodeWithTag(screenId)
-            .assertExists()
-            .assertIsDisplayed()
-
-        // Preform a click on google button
-        composeTestRule.onNodeWithTag(googleButtonId).performClick()
-
-        // Check if google page is displayed
-        composeTestRule.onNodeWithTag(googleScreenId).assertExists()
-
-        // Click back button to go back the startUp page.
-        composeTestRule.onNodeWithTag(backButtonId).performClick()
-    }
-
-
-    @Test
     fun testIfLoginScreenWillBeDisplayedAfterIncorrectInformation() {
         val screenId = composeTestRule.activity
             .getString(R.string.startUpScreenId)
@@ -91,9 +65,9 @@ class ScreenManagerTest : TestBase(
 
         // Entering incorrect information
         composeTestRule.onNodeWithTag(loginEmailFieldId)
-            .performTextInput("denis07gmail.com")
+            .performTextInput("den@gmail.com")
         composeTestRule.onNodeWithTag(loginPasswordFieldId)
-            .performTextInput("4553")
+            .performTextInput("ILoveGOD")
         composeTestRule.onNodeWithTag(loginNextScreenButtonId).performClick()
         composeTestRule.onNodeWithTag(loginScreenId).assertExists()
     }

@@ -1,6 +1,7 @@
 package com.example.moneytracker.ui.startUpScreen
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -117,9 +118,6 @@ fun StartUpScreen(
                 modifier = Modifier.width(170.dp),
                 color = null
             ) {
-                // Launch Google sign-in
-//                val signInIntent = viewModel.googleSignInClient.signInIntent
-//                launcher.launch(signInIntent)
                 viewModel.signInWithGoogle(context = context) { userId ->
                     onNavigate?.navigate(HomeScreenRouter(userId))
                 }
@@ -166,6 +164,14 @@ fun StartUpScreen(
                     )
                 }
             }
+        }
+
+        if (uiState.value.credentialErrorMessage.isNotEmpty()) {
+            Toast.makeText(
+                context,
+                uiState.value.credentialErrorMessage,
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 }
