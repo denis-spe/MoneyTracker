@@ -20,13 +20,15 @@ class HomeScreenViewModel @Inject constructor(
     fun createUserWithId(id: String) {
         viewModelScope.launch {
             dataStorage.addData(
-                id, Dataset(
+                id,
+                Dataset(
                     userId = id,
                     amount = 0.0,
                     dataType = DataType.INCOME,
                     label = "First Income"
                 )
             )
+//            dataStorage.createUserWithId(id = id)
         }
     }
 }

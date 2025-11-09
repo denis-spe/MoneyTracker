@@ -1,5 +1,7 @@
 package com.example.moneytracker.backend.storage
 
+import android.util.Log
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -8,12 +10,13 @@ class DataStorageImpl(
 ) : DataStorage {
 
     suspend fun getWholeDatasets(useId: String) {
-        db.collection(COLLECTION_NAME)
+        val data = db.collection(COLLECTION_NAME)
             .document(useId)
             .get()
             .await()
-            .data
-            ?.map { it.value as Dataset }
+            .get("datasets")
+            .let { it as List<*> }
+            .map { it as Dataset }
     }
 
     /**
@@ -24,11 +27,18 @@ class DataStorageImpl(
             "datasets" to listOf<Dataset>()
         )
 
-        db.collection(COLLECTION_NAME)
-            .document(id)
-            .set(data)
-            .await()
+        try {
+            db.collection(COLLECTION_NAME)
+                .document(id)
+                .set(data)
+                .await()
+            Log.d("Firestore", "Successfully wrote data for user $id")
+        } catch (e: Exception) {
+            // This will show you if there was a permission error or network issue
+            Log.e("Firestore", "Failed to write user data for $id", e)
+        }
     }
+
 
     /**
      * Add a dataset to the storage
@@ -36,7 +46,13 @@ class DataStorageImpl(
     override fun addData(userId: String, dataset: Dataset) {
         db.collection(COLLECTION_NAME)
             .document(userId)
-            .set(dataset)
+            .update("datasets", FieldValue.arrayUnion(dataset))
+            .addOnSuccessListener {
+                Log.d("Firestore", "Successfully wrote data for user $userId")
+            }
+            .addOnFailureListener {
+                Log.e("Firestore", "Failed to write user data for $userId", it)
+            }
     }
 
     companion object {
