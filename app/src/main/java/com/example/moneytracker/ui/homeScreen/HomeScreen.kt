@@ -10,7 +10,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -18,13 +17,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.DataType
+import com.example.moneytracker.backend.storage.Dataset
 
 @Composable
 fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Initialize ViewModel
     val viewModel: HomeScreenViewModel = hiltViewModel()
     // Collect user information from ViewModel
-    val userState by viewModel.userState.collectAsState()
+    val datasets = viewModel.uiState.collectAsState()
 
 
 
@@ -41,8 +42,13 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             verticalArrangement = Arrangement.Center
         ) {
             Text(text = "Welcome to Home Screen, User ID: $userId")
+
+            Text(datasets.value.datasets.toString())
+
             Button(onClick = {
-                viewModel.createUserWithId(userId)
+                viewModel.addData(
+                    Dataset(DataType.EARNINGS, 100.0, "Test")
+                )
             }) {
                 Text("Created Id")
             }

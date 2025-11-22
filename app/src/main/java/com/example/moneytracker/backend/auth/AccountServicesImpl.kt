@@ -1,15 +1,22 @@
 // Holy is the LORD of host
 package com.example.moneytracker.backend.auth
 
+import android.content.ContentValues.TAG
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.credentials.Credential
 import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
+import androidx.credentials.PasswordCredential
+import androidx.credentials.PublicKeyCredential
 import androidx.credentials.exceptions.NoCredentialException
 import com.example.moneytracker.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -33,39 +40,71 @@ open class AccountServicesImpl(
     override val hasUser: Boolean
         get() = auth.currentUser != null
 
+    // inside AccountServicesImpl
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private suspend fun signIn(
-        request: GetCredentialRequest,
-        context: Context
-    ): NoCredentialException? {
+    suspend fun signIn(request: GetCredentialRequest, context: Context): Exception? {
         val credentialManager = CredentialManager.create(context)
 
-        try {
-            // The getCredential is called to request a credential from Credential Manager.
-            val result = credentialManager.getCredential(
-                request = request,
-                context = context,
-            )
+        val result = credentialManager.getCredential(request = request, context = context)
+        val credential: Credential = result.credential
+        Log.i(TAG, "CredentialManager returned: ${credential::class.java.simpleName}")
 
-            val platformCred = result.credential
-            if (platformCred is GoogleIdTokenCredential) {
-                val idToken = platformCred.idToken
-
-                // Sign in to Firebase using the ID token.
-                val user = auth.signInWithCredential(
-                    GoogleAuthProvider
-                        .getCredential(idToken, null)
-                )
-                    .await().user
-
-                _userState.value = user
+        when (credential) {
+            is PublicKeyCredential -> {
+                // Passkey flow: send the authenticationResponseJson to your backend to verify
+                credential.authenticationResponseJson
+                Log.i(TAG, "Received PublicKeyCredential — send to server for verification")
+                // TODO: send responseJson to your backend for verification (passkeys)
+                return null
             }
-            return null
-        } catch (e: NoCredentialException) {
-            return e
+
+            is PasswordCredential -> {
+                // Username/password saved credential — sign in with Email/Password provider
+                val email = credential.id
+                val password = credential.password
+                Log.i(TAG, "Received PasswordCredential for id=$email")
+                auth.signInWithEmailAndPassword(email, password).await()
+                _userState.value = auth.currentUser
+                return null
+            }
+
+            is CustomCredential -> {
+                // Google ID token results are returned as a CustomCredential with a specific type
+                if (credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
+                    try {
+                        val googleIdTokenCredential =
+                            GoogleIdTokenCredential.createFrom(credential.data)
+                        val idToken = googleIdTokenCredential.idToken // getIdToken() equivalent
+                        if (idToken.isNotEmpty()) {
+                            val firebaseCred: AuthCredential =
+                                GoogleAuthProvider.getCredential(idToken, null)
+                            val firebaseUser = auth.signInWithCredential(firebaseCred).await().user
+                            _userState.value = firebaseUser
+                            Log.i(TAG, "Signed into Firebase via Google: uid=${firebaseUser?.uid}")
+                            return null
+                        } else {
+                            Log.e(TAG, "GoogleIdTokenCredential has empty id token")
+                            return IllegalStateException("Received empty Google ID token")
+                        }
+                    } catch (e: NoCredentialException) {
+                        Log.e(TAG, "Failed to get credential from CustomCredential", e)
+                        return e
+                    }
+                } else {
+                    Log.w(TAG, "Unhandled CustomCredential type: ${credential.type}")
+                    return IllegalArgumentException("Unhandled CustomCredential type: ${credential.type}")
+                }
+            }
+
+            else -> {
+                Log.w(TAG, "Unexpected credential type: ${credential::class.java}")
+                return IllegalArgumentException("Unsupported credential type: ${credential::class.java}")
+            }
         }
+
     }
 
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override suspend fun handleGoogleSignIn(
         context: Context
     ) {
@@ -85,6 +124,7 @@ open class AccountServicesImpl(
 
         // Attempt to sign in with the created request using an authorized account
         val e = signIn(request, context)
+
         // If the sign-in fails with NoCredentialException,  there are no authorized accounts.
         // In this case, we attempt to sign in again with filtering disabled.
         if (e is NoCredentialException) {
@@ -100,6 +140,7 @@ open class AccountServicesImpl(
 
             //We will build out this function in a moment
             signIn(requestFalse, context)
+
         }
     }
 

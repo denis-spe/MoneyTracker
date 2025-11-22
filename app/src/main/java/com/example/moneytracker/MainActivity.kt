@@ -1,13 +1,15 @@
 package com.example.moneytracker
 
 import android.content.pm.ApplicationInfo
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
-import com.google.firebase.FirebaseOptions
+import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.AndroidEntryPoint
@@ -15,17 +17,12 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
         val isDebug = 0 != (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE)
-
-        val options = FirebaseOptions.Builder()
-            .setProjectId("moneytracker-7e998")      // <- MUST match emulator
-            .setApplicationId("1:android:dummy")      // can be dummy for emulator
-            .setApiKey("fake-api-key")                // can be dummy for emulator
-            .build()
 
         if (isDebug) {
             val ip = "192.168.10.141" // ← your dev machine's IP
@@ -36,11 +33,11 @@ class MainActivity : ComponentActivity() {
             // FirebaseStorage.getInstance().useEmulator(ip, 9199)
             Log.d("Firebase", "Using Firebase emulators for debug build")
         } else {
+            // Initialize Firebase
+            FirebaseApp.initializeApp(this)
             Log.d("Firebase", "Using real Firebase backend")
         }
 
-        // Initialize Firebase
-//        FirebaseApp.initializeApp(this)
 
         setContent {
             MoneyTrackerTheme {

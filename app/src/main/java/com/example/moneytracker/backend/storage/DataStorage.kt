@@ -1,6 +1,7 @@
 package com.example.moneytracker.backend.storage
 
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.flow.Flow
 
 interface DataStorage {
 
@@ -26,4 +27,9 @@ interface DataStorage {
      */
     fun addData(userId: String, dataset: Dataset)
 
+    /**
+     * Get all datasets
+     * @param userId the user id
+     */
+    suspend fun getWholeDatasets(userId: String): Flow<List<Dataset>>
 }

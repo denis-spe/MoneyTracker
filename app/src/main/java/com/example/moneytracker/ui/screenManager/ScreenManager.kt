@@ -1,5 +1,7 @@
 package com.example.moneytracker.ui.screenManager
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -19,6 +21,7 @@ import com.example.moneytracker.ui.homeScreen.HomeScreen
 import com.example.moneytracker.ui.startUpScreen.StartUpScreen
 import com.google.firebase.auth.FirebaseAuth
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun ScreenManager(
     navController: NavHostController = rememberNavController()
@@ -28,7 +31,7 @@ fun ScreenManager(
 
     val registerViewModel: RegisterViewModel = hiltViewModel()
 
-    val startDestination = if (account.hasUser) {
+    if (account.hasUser) {
         HomeScreenRouter(userId = account.currentUserId)
     } else {
         StartUpScreenRouter
@@ -68,6 +71,7 @@ fun ScreenManager(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Preview
 @Composable
 fun ScreenManagerPreview() {

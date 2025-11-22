@@ -135,7 +135,7 @@ class ScreenManagerTest : TestBase(
             .getString(R.string.nameRegisterLastNameFieldId)
         val nameRegisterBtnId = composeTestRule.activity
             .getString(R.string.nameRegisterBtnId)
-        val loginNextScreenButtonId = composeTestRule.activity
+        composeTestRule.activity
             .getString(R.string.loginBtnId)
 
         composeTestRule.onNodeWithTag(screenId).assertExists()

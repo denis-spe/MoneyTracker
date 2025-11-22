@@ -112,6 +112,7 @@ fun BottomSheet(webClientId: String) {
 
 
 //This function is used to generate a secure nonce to pass in with our request
+@RequiresApi(Build.VERSION_CODES.O)
 fun generateSecureRandomNonce(byteLength: Int = 32): String {
     val randomBytes = ByteArray(byteLength)
     SecureRandom.getInstanceStrong().nextBytes(randomBytes)

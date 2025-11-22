@@ -1,7 +1,9 @@
 package com.example.moneytracker.ui.startUpScreen
 
 import android.annotation.SuppressLint
+import android.os.Build
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -43,6 +45,7 @@ import com.example.moneytracker.ui.AuthTextButton
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.MailScreenRouter
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SuppressLint(
     "UnusedMaterial3ScaffoldPaddingParameter", "UnusedBoxWithConstraintsScope",
     "MissingColorAlphaChannel"
@@ -173,10 +176,15 @@ fun StartUpScreen(
                 Toast.LENGTH_SHORT
             ).show()
         }
+
+//        val webClientId: String = context.getString(R.string.default_web_client_id)
+//        BottomSheet(webClientId)
+
     }
 }
 
 
+@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Preview(showBackground = true, device = "id:medium_phone")
 @Composable
 fun StartUpScreenPreview(){

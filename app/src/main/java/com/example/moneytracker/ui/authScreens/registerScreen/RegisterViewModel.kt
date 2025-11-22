@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.helper.isEmailValid
 import com.example.moneytracker.helper.isPasswordValid
 import com.google.firebase.FirebaseNetworkException
@@ -18,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class RegisterViewModel @Inject constructor(
-    private val accountService: AccountServices
+    private val accountService: AccountServices,
+    private val dataStorage: DataStorage
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(RegisterUiState())
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
@@ -182,6 +184,7 @@ class RegisterViewModel @Inject constructor(
                     email = email,
                     password = confirmPassword
                 )
+                dataStorage.createUserWithId(accountService.currentUserId)
                 delay(1000)
                 _uiState.value = _uiState.value.copy(isLoading = false)
                 block(accountService.currentUserId)

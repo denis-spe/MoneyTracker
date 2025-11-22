@@ -198,7 +198,7 @@ fun AuthFillButton(
 
 @Composable
 fun AuthLayout(screenId: Int, isLoading: Boolean = false, content: @Composable () -> Unit) {
-    Surface() {
+    Surface {
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -760,7 +760,7 @@ fun DisplayErrorMessage(
 @Composable
 fun AuthEmailFieldPreview() {
     val textState = remember { mutableStateOf("") }
-    val isError = remember { mutableStateOf(false) }
+    remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier.fillMaxSize(),

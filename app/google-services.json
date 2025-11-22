@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "398768948931-cu0i3g3nbls8scmekr2hd35ie3ohdi90.apps.googleusercontent.com",
+          "client_id": "398768948931-o9pl8uic80ve0t6tkn8ukq4ql9erom67.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "com.example.moneytracker",
-            "certificate_hash": "d97b89ee81a6d52864c383c7651dfc2dd48dff17"
+            "certificate_hash": "e1fc737d70a169a66f8b9b50b266ae168e501368"
           }
         },
         {

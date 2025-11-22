@@ -13,6 +13,7 @@ import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.backend.storage.DataStorage
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException
@@ -26,6 +27,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class StartUpViewModel @Inject constructor(
+    private val dataStorage: DataStorage,
     private val accountService: AccountServices
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(StartUpUiState())
@@ -44,7 +46,6 @@ class StartUpViewModel @Inject constructor(
         block: (userId: String) -> Unit
     ) {
         val failureMessage = "Sign in failed!"
-        val e: Exception? = null
 
         viewModelScope.launch {
             //using delay() here helps prevent NoCredentialException when the BottomSheet Flow is triggered
@@ -55,9 +56,6 @@ class StartUpViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoading = true)
                 accountService.handleGoogleSignIn(context)
                 _uiState.value = _uiState.value.copy(isLoading = false)
-
-                Toast.makeText(context, "Sign in successful!", Toast.LENGTH_SHORT).show()
-                Log.i(TAG, "(☞ﾟヮﾟ)☞  Sign in Successful!  ☜(ﾟヮﾟ☜)")
 
             } catch (e: GetCredentialException) {
                 _uiState.value = _uiState.value.copy(
@@ -106,6 +104,7 @@ class StartUpViewModel @Inject constructor(
             if (accountService.currentUserId.isNotEmpty()
                 && uiState.value.credentialErrorMessage.isEmpty()
             ) {
+                dataStorage.createUserWithId(accountService.currentUserId)
                 block(accountService.currentUserId)
             }
         }
@@ -117,6 +116,7 @@ class StartUpViewModel @Inject constructor(
 
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
+                // Create an anonymous account
                 accountService.createAnonymousAccount()
                 _uiState.value = _uiState.value.copy(isLoading = false)
             } catch (_: FirebaseAuthInvalidCredentialsException) {
@@ -144,9 +144,9 @@ class StartUpViewModel @Inject constructor(
                 Log.e("RegisterViewModel", "Error registering user ${e.message}", e)
             }
 
-            if (accountService.currentUserId.isNotEmpty()
-//                && uiState.value.credentialErrorMessage.isEmpty()
-            ) {
+            if (accountService.currentUserId.isNotEmpty()) {
+                // Create a data storage entry for the user
+                dataStorage.createUserWithId(accountService.currentUserId)
                 block(accountService.currentUserId)
             }
         }
