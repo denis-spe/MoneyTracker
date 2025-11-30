@@ -6,9 +6,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.ui.AuthInputLayout
-import com.example.moneytracker.ui.AuthOutlineTextField
-import com.example.moneytracker.ui.DisplayErrorMessage
+import com.example.moneytracker.ui.components.AuthInputLayout
+import com.example.moneytracker.ui.components.AuthOutlineTextField
+import com.example.moneytracker.ui.components.DisplayErrorMessage
 import com.example.moneytracker.ui.screenManager.PasswordRegistrationScreenRouter
 
 @Composable

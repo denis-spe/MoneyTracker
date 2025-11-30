@@ -39,6 +39,10 @@ class StartUpViewModel @Inject constructor(
      */
     val userState = accountService.userState
 
+    fun setLoadingToHomeState(isLoading: Boolean) {
+        _uiState.value = _uiState.value.copy(isLoadingToHome = isLoading)
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun signInWithGoogle(
@@ -106,6 +110,7 @@ class StartUpViewModel @Inject constructor(
             ) {
                 dataStorage.createUserWithId(accountService.currentUserId)
                 block(accountService.currentUserId)
+
             }
         }
     }

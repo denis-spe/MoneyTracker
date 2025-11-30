@@ -107,12 +107,12 @@ open class AccountServicesImpl(
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override suspend fun handleGoogleSignIn(
         context: Context
-    ) {
+    ): Exception? {
         val webClientId: String = context.getString(R.string.default_web_client_id)
 
         // Create a Google ID option with filtering by authorized accounts enabled.
         val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(true)
+            .setFilterByAuthorizedAccounts(false)
             .setServerClientId(webClientId)
             .setNonce(generateSecureRandomNonce())
             .build()
@@ -123,7 +123,7 @@ open class AccountServicesImpl(
             .build()
 
         // Attempt to sign in with the created request using an authorized account
-        val e = signIn(request, context)
+        var e = signIn(request, context)
 
         // If the sign-in fails with NoCredentialException,  there are no authorized accounts.
         // In this case, we attempt to sign in again with filtering disabled.
@@ -139,9 +139,10 @@ open class AccountServicesImpl(
                 .build()
 
             //We will build out this function in a moment
-            signIn(requestFalse, context)
+            e = signIn(requestFalse, context)
 
         }
+        return e
     }
 
     override suspend fun login(email: String, password: String) {

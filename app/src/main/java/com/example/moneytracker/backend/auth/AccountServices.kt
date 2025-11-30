@@ -22,7 +22,7 @@ interface AccountServices {
 
     suspend fun handleGoogleSignIn(
         context: Context
-    )
+    ): Exception?
 
 
     /**

@@ -5,34 +5,47 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Dataset
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Initialize ViewModel
     val viewModel: HomeScreenViewModel = hiltViewModel()
     // Collect user information from ViewModel
-    val datasets = viewModel.uiState.collectAsState()
-
+    viewModel.uiState.collectAsState()
+    viewModel.userState.collectAsState()
 
 
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .testTag(stringResource(R.string.homeScreenId))
+            .testTag(stringResource(R.string.homeScreenId)),
+        topBar = {
+            CenterAlignedTopAppBar(
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Transparent,
+                    titleContentColor = MaterialTheme.colorScheme.primary,
+                ),
+                title = {
+                    HeaderNavUi()
+                }
+            )
+        }
     ) { paddingValues ->
         Column(
             modifier = Modifier
@@ -41,17 +54,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            Text(text = "Welcome to Home Screen, User ID: $userId")
 
-            Text(datasets.value.datasets.toString())
-
-            Button(onClick = {
-                viewModel.addData(
-                    Dataset(DataType.EARNINGS, 100.0, "Test")
-                )
-            }) {
-                Text("Created Id")
-            }
         }
     }
 }

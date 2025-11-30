@@ -24,10 +24,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.ui.AuthBackButton
-import com.example.moneytracker.ui.AuthButton
-import com.example.moneytracker.ui.AuthFillButton
-import com.example.moneytracker.ui.AuthLayout
+import com.example.moneytracker.ui.components.AuthBackButton
+import com.example.moneytracker.ui.components.AuthButton
+import com.example.moneytracker.ui.components.AuthFillButton
+import com.example.moneytracker.ui.components.AuthLayout
 import com.example.moneytracker.ui.screenManager.LoginScreenRouter
 import com.example.moneytracker.ui.screenManager.NamesRegistrationScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter

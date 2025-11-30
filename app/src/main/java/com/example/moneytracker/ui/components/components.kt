@@ -1,6 +1,6 @@
 // Bless be the name of LORD our GOD
 
-package com.example.moneytracker.ui
+package com.example.moneytracker.ui.components
 
 import androidx.compose.animation.core.FastOutLinearInEasing
 import androidx.compose.animation.core.RepeatMode
@@ -76,6 +76,7 @@ val Color.Companion.autoColorChange: Color
         colorResource(id = R.color.authDarkBgColor)
     else
         colorResource(id = R.color.authLightBgColor)
+
 
 @Composable
 fun AuthTextButton(

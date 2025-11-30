@@ -5,6 +5,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -38,11 +39,13 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.ui.AuthButton
-import com.example.moneytracker.ui.AuthFillButton
-import com.example.moneytracker.ui.AuthLayout
-import com.example.moneytracker.ui.AuthTextButton
+import com.example.moneytracker.ui.components.AuthButton
+import com.example.moneytracker.ui.components.AuthFillButton
+import com.example.moneytracker.ui.components.AuthLayout
+import com.example.moneytracker.ui.components.AuthTextButton
+import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
+import com.example.moneytracker.ui.screenManager.LoadingScreenRouter
 import com.example.moneytracker.ui.screenManager.MailScreenRouter
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
@@ -54,17 +57,20 @@ import com.example.moneytracker.ui.screenManager.MailScreenRouter
 @Composable
 fun StartUpScreen(
     onNavigate: NavController? = null,
-    viewModel: StartUpViewModel = hiltViewModel()
+    viewModel: StartUpViewModel = hiltViewModel(),
+    loadingViewModel: LoadingViewModel? = null,
 ) {
     val context = LocalContext.current
     val uiState = viewModel.uiState.collectAsState()
+    val userState = viewModel.userState.collectAsState()
+
+
 
 
     AuthLayout(
         screenId = R.string.startUpScreenId,
         isLoading = uiState.value.isLoading
     ) {
-
         Column(
             modifier = Modifier
                 .padding(top = 120.dp)
@@ -122,7 +128,18 @@ fun StartUpScreen(
                 color = null
             ) {
                 viewModel.signInWithGoogle(context = context) { userId ->
-                    onNavigate?.navigate(HomeScreenRouter(userId))
+
+                    loadingViewModel!!.setScreenContent {
+                        val color = if (isSystemInDarkTheme()) Color.White else Color.Black
+
+                        Text(
+                            "Welcome ${userState.value?.displayName}",
+                            color = color,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    onNavigate?.navigate(LoadingScreenRouter(userId = userId))
                 }
             }
 

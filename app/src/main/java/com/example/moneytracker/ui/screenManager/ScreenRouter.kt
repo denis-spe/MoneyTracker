@@ -7,7 +7,7 @@ import kotlinx.serialization.Serializable
 object StartUpScreenRouter
 
 @Serializable
-object GoogleScreenRouter
+data class LoadingScreenRouter(val userId: String)
 
 @Serializable
 object MailScreenRouter

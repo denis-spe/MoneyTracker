@@ -3,14 +3,15 @@ package com.example.moneytracker.ui.screenManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.example.moneytracker.backend.auth.AccountServicesImpl
-import com.example.moneytracker.ui.authScreens.googleScreen.GoogleScreen
 import com.example.moneytracker.ui.authScreens.loginScreen.LoginScreen
 import com.example.moneytracker.ui.authScreens.mailScreen.MailScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.EmailRegistrationScreen
@@ -18,6 +19,8 @@ import com.example.moneytracker.ui.authScreens.registerScreen.NamesRegistrationS
 import com.example.moneytracker.ui.authScreens.registerScreen.PasswordRegistrationScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.RegisterViewModel
 import com.example.moneytracker.ui.homeScreen.HomeScreen
+import com.example.moneytracker.ui.loading.LoadingScreen
+import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.startUpScreen.StartUpScreen
 import com.google.firebase.auth.FirebaseAuth
 
@@ -28,18 +31,35 @@ fun ScreenManager(
 ) {
 
     val account = AccountServicesImpl(FirebaseAuth.getInstance())
-
     val registerViewModel: RegisterViewModel = hiltViewModel()
+    val user = account.userState.collectAsState()
+    val loadingViewModel: LoadingViewModel = hiltViewModel()
 
-    if (account.hasUser) {
+    val router = if (account.hasUser) {
         HomeScreenRouter(userId = account.currentUserId)
     } else {
         StartUpScreenRouter
     }
 
-    NavHost(navController = navController, startDestination = StartUpScreenRouter) {
-        composable<StartUpScreenRouter> { StartUpScreen(navController) }
-        composable<GoogleScreenRouter> { GoogleScreen(navController) }
+    NavHost(navController = navController, startDestination = router) {
+        composable<StartUpScreenRouter> {
+            StartUpScreen(
+                navController,
+                loadingViewModel = loadingViewModel
+            )
+        }
+        composable<LoadingScreenRouter> { backStackEntry ->
+            val arguments = backStackEntry.toRoute<LoadingScreenRouter>()
+            val currentUserId = arguments.userId
+
+            // 2. Pass the fresh userId to the LoadingScreen
+            LoadingScreen(
+                user = user,
+                navController = navController,
+                currentUserId = currentUserId, // Use the argument, not the old state
+                content = loadingViewModel.content ?: {}
+            )
+        }
         composable<MailScreenRouter> { MailScreen(navController) }
         composable<NamesRegistrationScreenRouter> {
             NamesRegistrationScreen(
