@@ -7,8 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -27,7 +27,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Initialize ViewModel
     val viewModel: HomeScreenViewModel = hiltViewModel()
     // Collect user information from ViewModel
-    viewModel.uiState.collectAsState()
+    val uiStates = viewModel.uiState.collectAsState()
     viewModel.userState.collectAsState()
 
 
@@ -37,9 +37,8 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             .testTag(stringResource(R.string.homeScreenId)),
         topBar = {
             CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
-                    titleContentColor = MaterialTheme.colorScheme.primary,
+                colors = TopAppBarDefaults.centerAlignedTopAppBarColors().copy(
+                    titleContentColor = Color.White,
                 ),
                 title = {
                     HeaderNavUi()
@@ -54,7 +53,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-
+            Text(uiStates.value.datasets.toString())
         }
     }
 }

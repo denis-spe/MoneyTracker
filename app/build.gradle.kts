@@ -24,6 +24,7 @@ android {
     }
 
     buildTypes {
+
         release {
             isMinifyEnabled = false
             proguardFiles(
@@ -32,6 +33,13 @@ android {
             )
         }
     }
+
+    // Move buildFeatures to be a direct child of 'android'
+    buildFeatures {
+        buildConfig = true
+        compose = true
+    }
+
     compileOptions {
 
         sourceCompatibility = JavaVersion.VERSION_11
