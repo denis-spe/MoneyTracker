@@ -14,9 +14,11 @@ import androidx.credentials.PasswordCredential
 import androidx.credentials.PublicKeyCredential
 import androidx.credentials.exceptions.NoCredentialException
 import com.example.moneytracker.R
+import com.google.android.gms.tasks.Task
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.firebase.auth.AuthCredential
+import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -42,7 +44,11 @@ open class AccountServicesImpl(
 
     // inside AccountServicesImpl
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    suspend fun signIn(request: GetCredentialRequest, context: Context): Exception? {
+    suspend fun signIn(
+        request: GetCredentialRequest,
+        context: Context,
+        credentialListener: (Task<AuthResult>) -> Unit
+    ): Exception? {
         val credentialManager = CredentialManager.create(context)
 
         val result = credentialManager.getCredential(request = request, context = context)
@@ -78,7 +84,9 @@ open class AccountServicesImpl(
                         if (idToken.isNotEmpty()) {
                             val firebaseCred: AuthCredential =
                                 GoogleAuthProvider.getCredential(idToken, null)
-                            val firebaseUser = auth.signInWithCredential(firebaseCred).await().user
+                            val credential = auth.signInWithCredential(firebaseCred)
+                            credentialListener(credential)
+                            val firebaseUser = credential.await().user
                             _userState.value = firebaseUser
                             Log.i(TAG, "Signed into Firebase via Google: uid=${firebaseUser?.uid}")
                             return null
@@ -106,7 +114,8 @@ open class AccountServicesImpl(
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override suspend fun handleGoogleSignIn(
-        context: Context
+        context: Context,
+        credentialListener: (Task<AuthResult>) -> Unit
     ): Exception? {
         val webClientId: String = context.getString(R.string.default_web_client_id)
 
@@ -123,7 +132,7 @@ open class AccountServicesImpl(
             .build()
 
         // Attempt to sign in with the created request using an authorized account
-        var e = signIn(request, context)
+        var e = this.signIn(request, context, credentialListener)
 
         // If the sign-in fails with NoCredentialException,  there are no authorized accounts.
         // In this case, we attempt to sign in again with filtering disabled.
@@ -139,7 +148,7 @@ open class AccountServicesImpl(
                 .build()
 
             //We will build out this function in a moment
-            e = signIn(requestFalse, context)
+            e = this.signIn(requestFalse, context, credentialListener)
 
         }
         return e

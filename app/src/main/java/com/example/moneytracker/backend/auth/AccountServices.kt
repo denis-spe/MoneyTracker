@@ -1,6 +1,8 @@
 package com.example.moneytracker.backend.auth
 
 import android.content.Context
+import com.google.android.gms.tasks.Task
+import com.google.firebase.auth.AuthResult
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.flow.StateFlow
 
@@ -21,7 +23,8 @@ interface AccountServices {
     val userState: StateFlow<FirebaseUser?>
 
     suspend fun handleGoogleSignIn(
-        context: Context
+        context: Context,
+        credentialListener: (Task<AuthResult>) -> Unit
     ): Exception?
 
 

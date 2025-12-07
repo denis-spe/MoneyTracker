@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.ui.homeScreen.topTitle.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,10 @@ class HomeScreenViewModel @Inject constructor(
         viewModelScope.launch {
             dataStorage.addData(userState.value!!.uid, dataset = dataset)
         }
+    }
+
+    fun updateTopTitle(currentTopTitle: CurrentTopTitle) {
+        _uiState.value = _uiState.value.copy(topTitle = currentTopTitle)
     }
 
     private fun fetchDataset() {

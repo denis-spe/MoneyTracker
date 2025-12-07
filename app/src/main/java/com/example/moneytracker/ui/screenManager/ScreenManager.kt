@@ -35,13 +35,13 @@ fun ScreenManager(
     val user = account.userState.collectAsState()
     val loadingViewModel: LoadingViewModel = hiltViewModel()
 
-    if (account.hasUser) {
+    val router = if (account.hasUser) {
         HomeScreenRouter(userId = account.currentUserId)
     } else {
         StartUpScreenRouter
     }
 
-    NavHost(navController = navController, startDestination = StartUpScreenRouter) {
+    NavHost(navController = navController, startDestination = router) {
         composable<StartUpScreenRouter> {
             StartUpScreen(
                 navController,

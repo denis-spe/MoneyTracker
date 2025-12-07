@@ -51,17 +51,37 @@ class StartUpViewModel @Inject constructor(
     ) {
         val failureMessage = "Sign in failed!"
 
-        viewModelScope.launch {
-            //using delay() here helps prevent NoCredentialException when the BottomSheet Flow is triggered
-            //on the initial running of our app
-            delay(250)
+        _uiState.value = _uiState.value.copy(
+            credentialErrorMessage = ""
+        )
 
+        viewModelScope.launch {
             try {
                 _uiState.value = _uiState.value.copy(isLoading = true)
-                accountService.handleGoogleSignIn(context)
-                _uiState.value = _uiState.value.copy(isLoading = false)
+                //using delay() here helps prevent NoCredentialException when the BottomSheet Flow is triggered
+                //on the initial running of our app
+                delay(250)
+                accountService.handleGoogleSignIn(context) {
+
+                    it.addOnCompleteListener { task ->
+                        viewModelScope.launch {
+                            if (task.isComplete && task.isSuccessful) {
+                                _uiState.value = _uiState.value.copy(
+                                    credentialErrorMessage = "",
+                                    isLoading = false
+                                )
+                                dataStorage.createUserWithId(accountService.currentUserId)
+                                block(accountService.currentUserId)
+                            }
+                            if (task.isCanceled) {
+                                accountService.signOut()
+                            }
+                        }
+                    }
+                }
 
             } catch (e: GetCredentialException) {
+                accountService.signOut()
                 _uiState.value = _uiState.value.copy(
                     credentialErrorMessage = "Sign in failed!",
                     isLoading = false,
@@ -71,6 +91,7 @@ class StartUpViewModel @Inject constructor(
                 Log.e(TAG, "$failureMessage: Failure getting credentials", e)
 
             } catch (e: GoogleIdTokenParsingException) {
+                accountService.signOut()
                 _uiState.value = _uiState.value.copy(
                     credentialErrorMessage = "Sign in failed!",
                     isLoading = false,
@@ -79,10 +100,12 @@ class StartUpViewModel @Inject constructor(
                 Log.e(TAG, "$failureMessage: Issue with parsing received GoogleIdToken", e)
 
             } catch (e: NoCredentialException) {
-                _uiState.value = _uiState.value.copy(
-                    credentialErrorMessage = "No credentials found",
-                    isLoading = false,
-                )
+                if (accountService.currentUserId.isEmpty()) {
+                    _uiState.value = _uiState.value.copy(
+                        credentialErrorMessage = "No credentials found",
+                        isLoading = false,
+                    )
+                }
 
                 Log.e(TAG, "$failureMessage: No credentials found", e)
 
@@ -103,14 +126,6 @@ class StartUpViewModel @Inject constructor(
 
                 Toast.makeText(context, ": Sign-in cancelled", Toast.LENGTH_SHORT).show()
                 Log.e(TAG, "$failureMessage: Sign-in was cancelled", e)
-            }
-
-            if (accountService.currentUserId.isNotEmpty()
-                && uiState.value.credentialErrorMessage.isEmpty()
-            ) {
-                dataStorage.createUserWithId(accountService.currentUserId)
-                block(accountService.currentUserId)
-
             }
         }
     }

@@ -1,4 +1,4 @@
-package com.example.moneytracker.ui.loading
+package com.example.moneytracker.ui.components
 
 import android.net.Uri
 import android.util.Log
@@ -16,14 +16,15 @@ import coil.request.ImageRequest
 
 @Composable
 fun ProfileImage(
+    modifier: Modifier = Modifier,
     accountSpecificUrl: Uri?,
     currentAccountId: String,
+    size: Int = 100
 ) {
     val context = LocalContext.current
     val uriString = accountSpecificUrl?.toString() ?: "null"
     val uniqueCacheKey = "${currentAccountId}_$uriString"
 
-    // DEBUG LOGGING
     Log.d(
         "ProfileImageDebug",
         "accountId=$currentAccountId uri=$uriString cacheKey=$uniqueCacheKey"
@@ -42,8 +43,8 @@ fun ProfileImage(
         model = request,
         contentDescription = "User Profile Image",
         contentScale = ContentScale.Crop,
-        modifier = Modifier
-            .size(100.dp)
+        modifier = modifier
+            .size(size.dp)
             .clip(CircleShape),
     )
 }
