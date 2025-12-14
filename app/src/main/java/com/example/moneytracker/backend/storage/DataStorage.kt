@@ -32,4 +32,7 @@ interface DataStorage {
      * @param userId the user id
      */
     suspend fun getWholeDatasets(userId: String): Flow<List<Dataset>>
+
+
+    suspend fun getInfo(userId: String): Flow<Info>
 }

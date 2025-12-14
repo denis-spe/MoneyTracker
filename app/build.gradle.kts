@@ -108,4 +108,14 @@ dependencies {
     implementation(libs.play.services.auth)
     implementation(libs.coil.compose)
 
+    // Vico chart
+    // Core
+    implementation("com.patrykandpatrick.vico:core:1.14.0")
+
+    // Compose (new cartesian API)
+    implementation("com.patrykandpatrick.vico:compose:1.14.0")
+
+    // Material 3 (recommended)
+    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
+
 }

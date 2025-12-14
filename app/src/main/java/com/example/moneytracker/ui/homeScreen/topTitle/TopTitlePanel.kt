@@ -4,7 +4,6 @@
 package com.example.moneytracker.ui.homeScreen.topTitle
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,21 +25,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.ui.homeScreen.Colors
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 
 @Composable
-fun TopTitlePanel(state: State<HomeUiState>, function: (CurrentTopTitle) -> Unit) {
-
-    val colors = Colors()
-
-    // Define the colors for the button
-    val contentColor = (if (isSystemInDarkTheme()) colors.darkModeColor else colors.lightModeColor)
-
-    // Panel and button color
-    val backgroundColor = if (isSystemInDarkTheme()) colors.darkModeBackgroundColor else
-        colors.lightModeBackgroundColor
-    val lighterBackgroundColor = colors.lightModeBackgroundColor
+fun TopTitlePanel(
+    state: State<HomeUiState>,
+    contentColor: Color,
+    currentPageColor: Color,
+    backgroundColor: Color,
+    function: (CurrentTopTitle) -> Unit
+) {
 
     // Text weight
     val fontWeight = FontWeight.Bold
@@ -53,7 +47,7 @@ fun TopTitlePanel(state: State<HomeUiState>, function: (CurrentTopTitle) -> Unit
             .clip(RoundedCornerShape(20.dp))
             .fillMaxWidth(0.72f)
             .height(46.dp)
-            .background(lighterBackgroundColor)
+            .background(backgroundColor)
 
     ) {
 
@@ -65,7 +59,7 @@ fun TopTitlePanel(state: State<HomeUiState>, function: (CurrentTopTitle) -> Unit
             colors = ButtonDefaults.textButtonColors().copy(
                 contentColor = contentColor,
                 containerColor = if (state.value.topTitle == CurrentTopTitle.TODAY)
-                    backgroundColor.copy(0.7f) else
+                    currentPageColor else
                     Color.Unspecified,
             ),
         ) {
@@ -94,7 +88,7 @@ fun TopTitlePanel(state: State<HomeUiState>, function: (CurrentTopTitle) -> Unit
             colors = ButtonDefaults.textButtonColors().copy(
                 contentColor = contentColor,
                 containerColor = if (state.value.topTitle == CurrentTopTitle.YESTERDAY)
-                    backgroundColor.copy(0.7f) else
+                    currentPageColor else
                     Color.Unspecified,
             )
 
@@ -123,7 +117,7 @@ fun TopTitlePanel(state: State<HomeUiState>, function: (CurrentTopTitle) -> Unit
             colors = ButtonDefaults.textButtonColors().copy(
                 contentColor = contentColor,
                 containerColor = if (state.value.topTitle == CurrentTopTitle.ALL)
-                    backgroundColor.copy(0.9f) else
+                    currentPageColor else
                     Color.Unspecified,
             )
         ) {

@@ -1,5 +1,6 @@
 package com.example.moneytracker.ui.homeScreen
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
@@ -25,6 +26,9 @@ class HomeScreenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    /**
+     * Create a new user with the current user id
+     */
     fun createUserWithId() {
         viewModelScope.launch {
             dataStorage.createUserWithId(id = userState.value!!.uid)
@@ -45,18 +49,42 @@ class HomeScreenViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(topTitle = currentTopTitle)
     }
 
+    fun updateIsUserDropdownVisible(isVisible: Boolean) {
+        _uiState.value = _uiState.value.copy(isUserDropdownVisible = isVisible)
+    }
+
+    fun updateIsLogOutLoading(isLoading: Boolean) {
+        _uiState.value = _uiState.value.copy(isLogOutLoading = isLoading)
+    }
+
     private fun fetchDataset() {
         viewModelScope.launch {
-            dataStorage.getWholeDatasets(userState.value!!.uid)
-                .catch { e ->
-                    _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
-                }
-                .collect { data ->
+            // ensure we have a user id to subscribe with
+            val uid = userState.value?.uid ?: return@launch
 
-                    _uiState.value = _uiState.value.copy(datasets = data, isLoading = true)
-                    delay(250)
-                    _uiState.value = _uiState.value.copy(isLoading = false)
-                }
+            // Launch two concurrent collectors so neither flow blocks the other
+            launch {
+                dataStorage.getInfo(uid)
+                    .catch { e ->
+                        _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
+                    }
+                    .collect { info ->
+                        Log.d("HomeScreenColor", info.toString())
+                        _uiState.value = _uiState.value.copy(info = info)
+                    }
+            }
+
+            launch {
+                dataStorage.getWholeDatasets(uid)
+                    .catch { e ->
+                        _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
+                    }
+                    .collect { data ->
+                        _uiState.value = _uiState.value.copy(datasets = data, isLoading = true)
+                        delay(250)
+                        _uiState.value = _uiState.value.copy(isLoading = false)
+                    }
+            }
         }
     }
 

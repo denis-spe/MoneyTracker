@@ -6,7 +6,6 @@ package com.example.moneytracker.ui.homeScreen.topNavigation
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
@@ -21,18 +20,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.ui.homeScreen.Colors
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
-fun TopNavPanel(userState: State<FirebaseUser?>, onClick: () -> Unit = {}) {
+fun TopNavPanel(
+    userState: State<FirebaseUser?>,
+    userColor: Int,
+    contentColor: Color,
+    onClick: () -> Unit = {}
+) {
     val userName = userState.value?.displayName
-    val uid = userState.value?.uid
-
-    val colors = Colors()
-
-    // Define the colors for the button
-    val contentColor = (if (isSystemInDarkTheme()) colors.darkModeColor else colors.lightModeColor)
+    userState.value?.uid
 
     Column(
         modifier = Modifier
@@ -41,7 +39,7 @@ fun TopNavPanel(userState: State<FirebaseUser?>, onClick: () -> Unit = {}) {
             .padding(5.dp)
             .border(4.dp, contentColor.copy(0.5f), RoundedCornerShape(100))
             .clip(RoundedCornerShape(100))
-            .background(Color(0xFF009688))
+            .background(Color(userColor))
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
@@ -49,7 +47,7 @@ fun TopNavPanel(userState: State<FirebaseUser?>, onClick: () -> Unit = {}) {
         if (userName != null && userName.isNotEmpty())
             Text(userName[0].toString(), color = contentColor)
         else {
-            Text(uid?.get(0).toString(), color = contentColor)
+            Text("G", color = contentColor)
         }
     }
 }

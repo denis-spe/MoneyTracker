@@ -11,20 +11,25 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
@@ -32,28 +37,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.example.moneytracker.R
 import com.example.moneytracker.ui.components.ProfileImage
-import com.example.moneytracker.ui.homeScreen.Colors
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
 fun DropDownUserProfile(
     paddingValues: PaddingValues,
+    contentColor: Color,
+    backgroundColor: Color,
     visible: Boolean = false,
     userState: State<FirebaseUser?>,
+    isLoading: Boolean = false,
+    settingsClick: () -> Unit = {},
     onClick: () -> Unit,
 ) {
-
-    val colors = Colors()
-
-    // Define the colors for the button
-    val contentColor = (if (isSystemInDarkTheme()) colors.darkModeColor else colors.lightModeColor)
-
-    // Panel and button color
-    val backgroundColor = if (isSystemInDarkTheme()) colors.darkModeBackgroundColor else
-        colors.lightModeBackgroundColor
 
     val density = LocalDensity.current
 
@@ -102,62 +103,80 @@ fun DropDownUserProfile(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .height(200.dp),
+                        .height(200.dp)
+                        .padding(10.dp),
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
                     userState.value.let {
                         Log.d("Photo", it?.photoUrl.toString())
-                        if (it != null && it.photoUrl != null) {
+                        if (it != null) {
                             ProfileImage(
                                 accountSpecificUrl = it.photoUrl,
                                 currentAccountId = it.uid,
-                                size = 50
+                                size = 50,
+                                color = contentColor
                             )
-                            Text(
-                                userNames[0],
-                                color = contentColor,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 10.dp)
-                            )
-                            Text(
-                                text = if (userNames.size > 1) userNames[1] else "",
-                                color = contentColor,
-                                fontWeight = FontWeight.Bold
-                            )
-                        } else {
-                            Column(
-                                modifier = Modifier
-                                    .width(50.dp)
-                                    .height(50.dp)
-                                    .padding(5.dp)
-                                    .border(4.dp, contentColor.copy(0.5f), RoundedCornerShape(100))
-                                    .clip(RoundedCornerShape(100))
-                                    .background(Color(0xFFDC0B1E)),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                if (it != null && it.uid.isNotEmpty())
-                                    Text(it.uid[0].toString(), color = contentColor)
-                            }
 
-                            Text(
-                                "Guest",
-                                color = contentColor,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 10.dp)
-                            )
+                            if (it.displayName != null && it.displayName!!.isNotEmpty()) {
+                                Text(
+                                    userNames[0],
+                                    color = contentColor,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 10.dp)
+                                )
+                                Text(
+                                    text = if (userNames.size > 1) userNames[1] else "",
+                                    color = contentColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                Text(
+                                    "Guest",
+                                    color = contentColor,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier.padding(top = 6.dp)
+                                )
+                            }
                         }
                     }
 
-                    TextButton(
-                        onClick = onClick
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text(
-                            text = "Sign out",
-                            color = contentColor,
-                            fontWeight = FontWeight.Bold
-                        )
+                        IconButton(
+                            onClick = onClick
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.logout),
+                                contentDescription = "logout",
+                                tint = contentColor,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        }
+
+
+                        if (isLoading) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            IconButton(
+                                onClick = settingsClick
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Settings,
+                                    contentDescription = "Settings",
+                                    tint = contentColor,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
+                        }
                     }
                 }
             }

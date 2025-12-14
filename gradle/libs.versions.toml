@@ -1,5 +1,5 @@
 [versions]
-agp = "8.13.1"
+agp = "8.13.2"
 coilCompose = "2.7.0"
 daggerAndroid = "2.57.2"
 daggerAndroidSupport = "2.x"
@@ -36,8 +36,11 @@ playServicesAuth = "21.4.0"
 googleid = "1.1.1"
 firebaseCrashlyticsBuildtools = "3.0.6"
 firebaseFirestore = "26.0.2"
+vico = "2.3.6"
 
 [libraries]
+# For Jetpack Compose.
+vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationCompose" }
 androidx-hilt-navigation-compose-v100 = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hiltNavigationComposeVersion" }

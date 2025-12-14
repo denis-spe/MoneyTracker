@@ -1,12 +1,15 @@
 package com.example.moneytracker.backend.storage
 
 import android.util.Log
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import kotlin.random.Random
 
 class DataStorageImpl(
     override val db: FirebaseFirestore
@@ -18,19 +21,87 @@ class DataStorageImpl(
 
         val listenerRegistration = documentRef.addSnapshotListener { snapshot, error ->
             if (error != null && snapshot == null) {
+                Log.e("DataStorageImpl", "getWholeDatasets listener error", error)
                 close(error) // Close the flow with an exception
                 return@addSnapshotListener
             }
-            // Use toObject() for automatic data class conversion
+
             try {
-                var data = snapshot?.get("datasets") as List<*>
-                data = data.map { it as Map<*, *> }.map { it.toDataset() }
-                trySend(data) // Emit the new data
+                val raw = snapshot?.get("datasets")
+                if (raw == null) {
+                    // No datasets field yet - emit empty list
+                    trySend(emptyList())
+                    return@addSnapshotListener
+                }
+
+                val list = when (raw) {
+                    is List<*> -> raw
+                    else -> listOf(raw)
+                }
+
+                val data = list.mapNotNull {
+                    try {
+                        when (it) {
+                            is Map<*, *> -> it.toDataset()
+                            else -> null
+                        }
+                    } catch (e: Exception) {
+                        Log.e("DataStorageImpl", "Failed to parse dataset item", e)
+                        null
+                    }
+                }
+
+                trySend(data)
             } catch (e: Exception) {
-                close(e)
+                Log.e("DataStorageImpl", "Unhandled error while reading datasets", e)
+                // Don't close the flow on parse errors; send an empty list instead to keep collecting
+                trySend(emptyList())
             }
         }
         awaitClose { listenerRegistration.remove() } // Unregister the listener when the flow is cancelled
+    }
+
+    override suspend fun getInfo(userId: String): Flow<Info> = callbackFlow {
+        val documentRef = db.collection(COLLECTION_NAME)
+            .document(userId)
+
+        val listenerRegistration = documentRef.addSnapshotListener { snapshot, error ->
+            if (error != null && snapshot == null) {
+                Log.e("DataStorageImpl", "getInfo listener error", error)
+                close(error) // Close the flow with an exception
+                return@addSnapshotListener
+            }
+
+            try {
+                val color = when (val infoMap = snapshot?.get("info")) {
+                    is Map<*, *> -> {
+                        // Firestore may store numbers as Long - use safe cast
+                        (infoMap["color"] as? Number)?.toInt() ?: 0
+                    }
+
+                    is Number -> infoMap.toInt()
+                    else -> 0
+                }
+
+                val info = Info(color = color)
+                trySend(info)
+            } catch (e: Exception) {
+                Log.e("DataStorageImpl", "Failed to parse info", e)
+                // Emit default Info instead of closing
+                trySend(Info())
+            }
+        }
+        awaitClose { listenerRegistration.remove() } // Unregister the listener when the flow is cancelled
+    }
+
+    fun generateRandomOpaqueColor(): Color {
+        // Generate random values for Red, Green, and Blue components (0 to 255)
+        val red = Random.nextInt(256)
+        val green = Random.nextInt(256)
+        val blue = Random.nextInt(256)
+
+        // Create a Compose Color object with full opacity (alpha = 255)
+        return Color(red, green, blue, alpha = 255)
     }
 
 
@@ -38,8 +109,12 @@ class DataStorageImpl(
      * Create a new user with a given id
      */
     override suspend fun createUserWithId(id: String) {
+        val color = generateRandomOpaqueColor()
+        Log.d("Color", color.toString())
+
         val data = hashMapOf(
-            "datasets" to listOf<Dataset>()
+            "datasets" to listOf<Dataset>(),
+            "info" to Info(color = color.toArgb())
         )
 
         try {

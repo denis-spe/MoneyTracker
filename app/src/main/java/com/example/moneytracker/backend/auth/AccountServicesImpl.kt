@@ -171,6 +171,7 @@ open class AccountServicesImpl(
                     .setDisplayName("$firstName $lastName").build()
             )
         _userState.value = auth.currentUser
+        auth.tenantId
     }
 
     override suspend fun sendRecoveryEmail(email: String) {
