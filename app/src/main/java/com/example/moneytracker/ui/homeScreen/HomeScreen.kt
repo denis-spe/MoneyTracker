@@ -25,7 +25,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Dataset
-import com.example.moneytracker.ui.components.charts.SimpleLineChart
+import com.example.moneytracker.ui.components.charts.VicoLineChart
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
 import com.example.moneytracker.ui.homeScreen.topTitle.TopTitlePanel
@@ -122,7 +122,9 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            SimpleLineChart(data = uiStates.value.datasets)
+            VicoLineChart(
+                lineDataSeries = listOf()
+            )
         }
 
         DropDownUserProfile(

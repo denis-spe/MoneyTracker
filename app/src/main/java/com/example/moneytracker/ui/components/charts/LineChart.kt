@@ -6,52 +6,98 @@ package com.example.moneytracker.ui.components.charts
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.backend.storage.Dataset
-import com.patrykandpatrick.vico.compose.axis.horizontal.rememberBottomAxis
-import com.patrykandpatrick.vico.compose.axis.vertical.rememberStartAxis
-import com.patrykandpatrick.vico.compose.chart.Chart
-import com.patrykandpatrick.vico.compose.component.textComponent
-import com.patrykandpatrick.vico.core.axis.AxisItemPlacer
-import com.patrykandpatrick.vico.core.chart.line.LineChart
-import com.patrykandpatrick.vico.core.entry.FloatEntry
-import com.patrykandpatrick.vico.core.entry.entryModelOf
+import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
+import com.patrykandpatrick.vico.compose.cartesian.layer.continuous
+import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
+import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.common.shader.toShaderProvider
+import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
+import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
+import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
+import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
+import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
+import com.patrykandpatrick.vico.core.common.Fill
 
 @Composable
-fun SimpleLineChart(
-    data: List<Dataset>,
-    modifier: Modifier = Modifier
+fun VicoLineChart(
+    modifier: Modifier = Modifier,
+    lineDataSeries: List<LineData>,
 ) {
+    val modelProducer = remember { CartesianChartModelProducer() }
 
-    // Map incoming data to chart entries (recomputed every composition)
-    val entries = data.mapIndexed { i, v -> FloatEntry(i.toFloat(), v.amount.toFloat()) }
+    var lineSeries = lineDataSeries
 
-    // If there's only one point, duplicate it at x+1 so a line segment can be drawn
-    val safeEntries = if (entries.size <= 1 && entries.isNotEmpty()) {
-        val e = entries.first()
-        listOf(e, FloatEntry(e.x + 1f, e.y))
-    } else entries
+    if (lineSeries.isEmpty()) {
+        lineSeries = listOf(
+            LineData(
+                x = listOf(0f, 1f, 2f, 3f, 4f, 5f, 6f),
+                y = listOf(0, 0, 0, 0, 0, 0, 0),
+                color = Color.Gray
+            )
+        )
+    }
 
-    // Create the model from current entries (cheap operation).
-    val model = entryModelOf(safeEntries)
+    val lineLayer = rememberLineCartesianLayer(
+        lineProvider = { index, _ ->
+            val lineColor = lineSeries[index]
 
-    rememberStartAxis(
-        label = textComponent()
+            val gradientFill = LineCartesianLayer.AreaFill.single(
+                Fill(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            lineColor.color.copy(alpha = 0.35f),
+                            lineColor.color.copy(alpha = 0f)
+                        )
+                    ).toShaderProvider()
+                )
+            )
+
+            LineCartesianLayer.Line(
+                fill = LineCartesianLayer.LineFill.single(Fill(lineColor.color.toArgb())),
+                stroke = LineCartesianLayer.LineStroke.continuous(
+                    cap = StrokeCap.Round,
+                    thickness = 2.dp
+                ),
+                areaFill = gradientFill
+            )
+        }
     )
 
-    val bottomAxis = rememberBottomAxis(
-        itemPlacer = AxisItemPlacer.Horizontal.default(spacing = 1)
+    val chart = rememberCartesianChart(
+        lineLayer,
+        marker = rememberMarker(),
+        bottomAxis = HorizontalAxis.rememberBottom(guideline = null),
+        startAxis = VerticalAxis.rememberStart()
     )
 
-    Chart(
-        modifier = modifier
+    LaunchedEffect(Unit) {
+        modelProducer.runTransaction {
+            lineSeries {
+                lineSeries.forEach { lineData ->
+                    series(
+                        x = lineData.x,
+                        y = lineData.y
+                    )
+                }
+            }
+        }
+    }
+
+    CartesianChartHost(
+        chart = chart,
+        modelProducer = modelProducer,
+        modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp),
-        chart = LineChart(),
-        model = model,
-//        startAxis = startAxis,
-        bottomAxis = bottomAxis,
+            .height(280.dp)
     )
 }
-

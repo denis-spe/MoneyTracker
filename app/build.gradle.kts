@@ -2,7 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
-    kotlin("plugin.serialization") version "2.0.21"
+    kotlin("plugin.serialization") version "2.2.21"
     id("com.google.dagger.hilt.android")
     id("com.google.gms.google-services")
     id("com.google.devtools.ksp")
@@ -59,6 +59,7 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 dependencies {
+    implementation("androidx.compose.material:material-icons-extended")
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
@@ -78,6 +79,7 @@ dependencies {
     implementation(libs.googleid)
     implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.firebase.firestore)
+    implementation(libs.androidx.compose.foundation.layout)
     ksp(libs.hilt.android.compiler.v257)
 
     // Androidx Hilt extension for compose (provide hiltViewModel)
@@ -110,12 +112,13 @@ dependencies {
 
     // Vico chart
     // Core
-    implementation("com.patrykandpatrick.vico:core:1.14.0")
+    val vicoVersion = "2.3.6" // As of late 2025, please check for the latest version
+    implementation("com.patrykandpatrick.vico:core:$vicoVersion")
+    implementation("com.patrykandpatrick.vico:compose-m3:$vicoVersion")
 
     // Compose (new cartesian API)
-    implementation("com.patrykandpatrick.vico:compose:1.14.0")
+    implementation("com.patrykandpatrick.vico:compose:$vicoVersion")
 
     // Material 3 (recommended)
-    implementation("com.patrykandpatrick.vico:compose-m3:1.14.0")
-
+    implementation("com.patrykandpatrick.vico:compose-m3:$vicoVersion")
 }
