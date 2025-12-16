@@ -20,6 +20,7 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.continuous
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.shader.toShaderProvider
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
@@ -77,7 +78,7 @@ fun VicoLineChart(
         lineLayer,
         marker = rememberMarker(),
         bottomAxis = HorizontalAxis.rememberBottom(guideline = null),
-        startAxis = VerticalAxis.rememberStart()
+        startAxis = VerticalAxis.rememberStart(line = rememberLineComponent(Fill.Transparent))
     )
 
     LaunchedEffect(Unit) {
