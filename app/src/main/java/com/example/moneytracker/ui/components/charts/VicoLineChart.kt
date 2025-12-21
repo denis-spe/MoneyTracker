@@ -3,7 +3,6 @@
 // and with all your might and love your neighbor as your self.
 package com.example.moneytracker.ui.components.charts
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -32,20 +31,25 @@ import com.patrykandpatrick.vico.core.common.Fill
 @Composable
 fun VicoLineChart(
     modifier: Modifier = Modifier,
-    lineDataSeries: List<LineData>,
+    chartDataSeries: List<ChartData>,
+    placeholderChartDataSeries: List<ChartData> = listOf(
+        ChartData(
+            x = listOf(0, 1, 2, 3, 4, 5, 6),
+            y = listOf(0, 1, 2, 3, 4, 5, 6),
+            color = Color.Unspecified
+        )
+    ),
+    count: Int = 6,
+    xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
+    yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
+    markerFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() }
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
 
-    var lineSeries = lineDataSeries
+    var lineSeries = chartDataSeries
 
     if (lineSeries.isEmpty()) {
-        lineSeries = listOf(
-            LineData(
-                x = listOf(0f, 1f, 2f, 3f, 4f, 5f, 6f),
-                y = listOf(0, 0, 0, 0, 0, 0, 0),
-                color = Color.Gray
-            )
-        )
+        lineSeries = placeholderChartDataSeries
     }
 
     val lineLayer = rememberLineCartesianLayer(
@@ -76,9 +80,19 @@ fun VicoLineChart(
 
     val chart = rememberCartesianChart(
         lineLayer,
-        marker = rememberMarker(),
-        bottomAxis = HorizontalAxis.rememberBottom(guideline = null),
-        startAxis = VerticalAxis.rememberStart(line = rememberLineComponent(Fill.Transparent))
+        marker = rememberMarker(valueFormatter = { _, value ->
+            markerFormatter(value[0].x)
+        }),
+        bottomAxis = HorizontalAxis.rememberBottom(
+            guideline = null,
+            valueFormatter = { _, value, _ -> xValueFormatter(value) }
+        ),
+        startAxis = VerticalAxis.rememberStart(
+            line = rememberLineComponent(Fill.Transparent),
+            title = "X",
+            itemPlacer = VerticalAxis.ItemPlacer.count({ count }),
+            valueFormatter = { _, value, _ -> yValueFormatter(value) }
+        )
     )
 
     LaunchedEffect(Unit) {
@@ -97,8 +111,7 @@ fun VicoLineChart(
     CartesianChartHost(
         chart = chart,
         modelProducer = modelProducer,
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .height(280.dp)
     )
 }

@@ -25,12 +25,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Dataset
-import com.example.moneytracker.ui.components.charts.VicoLineChart
+import com.example.moneytracker.ui.components.charts.ChartData
+import com.example.moneytracker.ui.components.charts.VicoBarChart
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
 import com.example.moneytracker.ui.homeScreen.topTitle.TopTitlePanel
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import kotlinx.coroutines.delay
+import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -77,7 +79,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
 
         topBar = {
             CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors().copy(
+                colors = TopAppBarDefaults.topAppBarColors().copy(
                     titleContentColor = Color.White,
                 ),
                 title = {
@@ -122,8 +124,33 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            VicoLineChart(
-                lineDataSeries = listOf()
+            VicoBarChart(
+                chartDataSeries = listOf(
+                    ChartData(
+                        x = List(9) { Random.nextInt(20, 100) },
+                        y = (0..9).toList(),
+                        color = Color.Green
+                    ),
+
+                    ChartData(
+                        x = List(9) { Random.nextInt(20, 100) },
+                        y = (0..9).toList(),
+                        color = Color.Yellow
+                    ),
+
+                    ChartData(
+                        x = List(9) { Random.nextInt(20, 100) },
+                        y = (0..9).toList(),
+                        color = Color.Red
+                    )
+                ),
+//                xValueFormatter = {
+//                    "R ${it.toInt()}"
+//                },
+//                yValueFormatter = {
+//                    val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+//                    days[it.toInt()]
+//                }
             )
         }
 
