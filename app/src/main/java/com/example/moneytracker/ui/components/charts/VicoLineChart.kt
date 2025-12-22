@@ -39,7 +39,8 @@ fun VicoLineChart(
             color = Color.Unspecified
         )
     ),
-    count: Int = 6,
+    fillArea: Boolean = false,
+    lineType: LineCartesianLayer.PointConnector = LineCartesianLayer.PointConnector.cubic(),
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     markerFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() }
@@ -73,7 +74,8 @@ fun VicoLineChart(
                     cap = StrokeCap.Round,
                     thickness = 2.dp
                 ),
-                areaFill = gradientFill
+                areaFill = if (fillArea) gradientFill else null,
+                pointConnector = lineType
             )
         }
     )
@@ -90,7 +92,6 @@ fun VicoLineChart(
         startAxis = VerticalAxis.rememberStart(
             line = rememberLineComponent(Fill.Transparent),
             title = "X",
-            itemPlacer = VerticalAxis.ItemPlacer.count({ count }),
             valueFormatter = { _, value, _ -> yValueFormatter(value) }
         )
     )

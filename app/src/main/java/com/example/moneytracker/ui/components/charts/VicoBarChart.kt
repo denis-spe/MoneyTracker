@@ -18,7 +18,6 @@ import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesian
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.fill
-import com.patrykandpatrick.vico.compose.common.vicoTheme
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
@@ -51,16 +50,11 @@ fun VicoBarChart(
         columnSeries = placeholderChartDataSeries
     }
 
+
     val columnLayer = rememberColumnCartesianLayer(
         ColumnCartesianLayer.ColumnProvider.series(
-            vicoTheme.columnCartesianLayerColors.mapIndexed { i, color ->
-                var color = color
-                val len = vicoTheme.columnCartesianLayerColors.size
-                if (i != len - 1 && len < 3) {
-                    color = columnSeries[i].color
-                } else if (i != 0) {
-                    color = columnSeries[i - 1].color
-                }
+            columnSeries.map { lineData ->
+                val color = lineData.color
 
                 rememberLineComponent(fill(color), Defaults.COLUMN_WIDTH.dp)
             }
@@ -70,7 +64,7 @@ fun VicoBarChart(
 
     val chart = rememberCartesianChart(
         columnLayer,
-        marker = rememberMarker(valueFormatter = { context, value ->
+        marker = rememberMarker(valueFormatter = { _, value ->
             markerFormatter(value[0].x)
         }),
         bottomAxis = HorizontalAxis.rememberBottom(
@@ -81,7 +75,7 @@ fun VicoBarChart(
         startAxis = VerticalAxis.rememberStart(
             line = rememberLineComponent(Fill.Transparent),
             title = "X",
-            itemPlacer = VerticalAxis.ItemPlacer.count({ count }),
+//            itemPlacer = VerticalAxis.ItemPlacer.count({ count }),
             valueFormatter = { _, value, _ -> yValueFormatter(value) }
         )
     )

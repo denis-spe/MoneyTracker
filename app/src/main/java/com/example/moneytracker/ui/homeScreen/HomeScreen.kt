@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,15 +19,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.ui.components.charts.ChartData
-import com.example.moneytracker.ui.components.charts.VicoBarChart
+import com.example.moneytracker.ui.components.charts.DonutChart
+import com.example.moneytracker.ui.components.charts.DonutChartData
+import com.example.moneytracker.ui.components.charts.DonutChartDataCollection
+import com.example.moneytracker.ui.components.charts.VicoLineChart
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
 import com.example.moneytracker.ui.homeScreen.topTitle.TopTitlePanel
@@ -124,33 +130,56 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            VicoBarChart(
+            val data = DonutChartDataCollection(
+                listOf(
+                    DonutChartData(100f, Color.Red, "Red"),
+                    DonutChartData(200f, Color.Blue, "Blue"),
+                    DonutChartData(300f, Color.Green, "Green")
+                )
+            )
+            DonutChart(
+                data = data,
+                chartSize = 150.dp,
+                gapPercentage = 0.06f,
+                strokeCap = StrokeCap.Round
+            ) {
+                Column {
+                    Text(text = it?.title ?: "")
+                    Text(text = (it?.amount ?: "").toString())
+                }
+            }
+
+            VicoLineChart(
                 chartDataSeries = listOf(
                     ChartData(
-                        x = List(9) { Random.nextInt(20, 100) },
-                        y = (0..9).toList(),
+                        x = List(12) { Random.nextInt(20, 100) },
+                        y = (0..12).toList(),
                         color = Color.Green
                     ),
 
                     ChartData(
-                        x = List(9) { Random.nextInt(20, 100) },
+                        x = List(12) { Random.nextInt(20, 100) },
                         y = (0..9).toList(),
                         color = Color.Yellow
                     ),
 
                     ChartData(
-                        x = List(9) { Random.nextInt(20, 100) },
-                        y = (0..9).toList(),
+                        x = List(12) { Random.nextInt(20, 100) },
+                        y = (0..12).toList(),
                         color = Color.Red
                     )
                 ),
-//                xValueFormatter = {
-//                    "R ${it.toInt()}"
-//                },
-//                yValueFormatter = {
-//                    val days = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
-//                    days[it.toInt()]
-//                }
+                xValueFormatter = {
+                    "R ${it.toInt()}"
+                },
+                yValueFormatter = {
+                    val days = listOf(
+                        "JAN", "FEB", "MAR", "APR",
+                        "MAY", "JUN", "JUL", "AUG",
+                        "SEP", "OCT", "NOV", "DEC"
+                    )
+                    days[it.toInt()]
+                }
             )
         }
 
