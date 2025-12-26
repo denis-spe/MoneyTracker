@@ -168,7 +168,7 @@ fun DonutChart(
             chartSize = chartSize,
             data = DonutChartDataCollection(
                 listOf(
-                    DonutChartData(100f, placeholderDonutColor, "placeHolder"),
+                    DonutChartData(100f, placeholderDonutColor.copy(0.3f), "placeHolder"),
                 )
             ),
             gapPercentage = gapPercentage,
