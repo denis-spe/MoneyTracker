@@ -28,17 +28,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Dataset
-import com.example.moneytracker.ui.components.charts.ChartData
 import com.example.moneytracker.ui.components.charts.DonutChart
-import com.example.moneytracker.ui.components.charts.DonutChartData
-import com.example.moneytracker.ui.components.charts.DonutChartDataCollection
-import com.example.moneytracker.ui.components.charts.VicoLineChart
+import com.example.moneytracker.ui.components.charts.VicoBarChart
+import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
+import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
 import com.example.moneytracker.ui.homeScreen.topTitle.TopTitlePanel
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import kotlinx.coroutines.delay
-import kotlin.random.Random
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -132,9 +130,9 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         ) {
             val data = DonutChartDataCollection(
                 listOf(
-                    DonutChartData(100f, Color.Red, "Red"),
-                    DonutChartData(200f, Color.Blue, "Blue"),
-                    DonutChartData(300f, Color.Green, "Green")
+//                    DonutChartData(100f, Color.Gray, "Red"),
+//                    DonutChartData(200f, Color.Blue, "Blue"),
+//                    DonutChartData(300f, Color.Green, "Green")
                 )
             )
             DonutChart(
@@ -149,38 +147,29 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 }
             }
 
-            VicoLineChart(
-                chartDataSeries = listOf(
-                    ChartData(
-                        x = List(12) { Random.nextInt(20, 100) },
-                        y = (0..12).toList(),
-                        color = Color.Green
-                    ),
-
-                    ChartData(
-                        x = List(12) { Random.nextInt(20, 100) },
-                        y = (0..9).toList(),
-                        color = Color.Yellow
-                    ),
-
-                    ChartData(
-                        x = List(12) { Random.nextInt(20, 100) },
-                        y = (0..12).toList(),
-                        color = Color.Red
+            VicoBarChart(
+                chartDataCollection = ChartDataCollection(
+                    listOf(
+//                        ChartData(
+//                            x = listOf(2, 1, 3, 4, 5, 6, 65, 64),
+//                            y = listOf(4, 2, 5, 24, 4, 12, 12, 3),
+//                            label = "Income",
+//                            color = Color.Green
+//                        ),
+//
+//                        ChartData(
+//                            x = listOf(21, 1, 3, 2, 5, 6, 5, 14),
+//                            y = listOf(4, 21, 5, 24, 4, 22, 12, 13),
+//                            label = "Expense",
+//                            color = Color.Red
+//                        )
                     )
                 ),
-                xValueFormatter = {
-                    "R ${it.toInt()}"
-                },
-                yValueFormatter = {
-                    val days = listOf(
-                        "JAN", "FEB", "MAR", "APR",
-                        "MAY", "JUN", "JUL", "AUG",
-                        "SEP", "OCT", "NOV", "DEC"
-                    )
-                    days[it.toInt()]
-                }
+                thickness = 7.dp,
+                showLegend = true,
+                strokeThickness = 1.dp
             )
+
         }
 
         DropDownUserProfile(

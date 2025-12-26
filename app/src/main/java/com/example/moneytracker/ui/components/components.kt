@@ -12,7 +12,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -70,12 +69,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
-
-val Color.Companion.autoColorChange: Color
-    @Composable get() = if (isSystemInDarkTheme())
-        colorResource(id = R.color.authDarkBgColor)
-    else
-        colorResource(id = R.color.authLightBgColor)
+import com.example.moneytracker.ui.theme.autoColorChange
 
 
 @Composable

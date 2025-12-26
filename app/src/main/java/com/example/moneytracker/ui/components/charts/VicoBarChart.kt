@@ -10,56 +10,90 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.moneytracker.ui.components.charts.collections.ChartData
+import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
+import com.example.moneytracker.ui.components.charts.marker.rememberMarker
+import com.example.moneytracker.ui.theme.autoTextColorChange
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
+import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.common.fill
+import com.patrykandpatrick.vico.compose.common.rememberHorizontalLegend
+import com.patrykandpatrick.vico.core.cartesian.CartesianDrawingContext
+import com.patrykandpatrick.vico.core.cartesian.CartesianMeasuringContext
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.ColumnCartesianLayer
-import com.patrykandpatrick.vico.core.common.Defaults
 import com.patrykandpatrick.vico.core.common.Fill
+import com.patrykandpatrick.vico.core.common.Insets
+import com.patrykandpatrick.vico.core.common.LegendItem
+import com.patrykandpatrick.vico.core.common.component.ShapeComponent
+import com.patrykandpatrick.vico.core.common.shape.Shape
 
 @Composable
 fun VicoBarChart(
     modifier: Modifier = Modifier,
-    chartDataSeries: List<ChartData>,
-    placeholderChartDataSeries: List<ChartData> = listOf(
-        ChartData(
-            x = listOf(0, 1, 2, 3, 4, 5, 6),
-            y = listOf(0, 1, 2, 3, 4, 5, 6),
-            color = Color.Unspecified
-        )
-    ),
-    count: Int = 6,
+    chartDataCollection: ChartDataCollection,
+    thickness: Dp = 5.dp,
+    strokeThickness: Dp = 0.dp,
+    showLegend: Boolean = false,
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
-    markerFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() }
+    markerFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
+    placeholderValueSize: Int = 6,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
+    val chartData = chartDataCollection.chartData
+    val textComponent = rememberTextComponent(color = Color.autoTextColorChange)
 
-    var columnSeries = chartDataSeries
-
-    if (columnSeries.isEmpty()) {
-        columnSeries = placeholderChartDataSeries
-    }
-
-
-    val columnLayer = rememberColumnCartesianLayer(
-        ColumnCartesianLayer.ColumnProvider.series(
-            columnSeries.map { lineData ->
-                val color = lineData.color
-
-                rememberLineComponent(fill(color), Defaults.COLUMN_WIDTH.dp)
+    val legend = rememberHorizontalLegend<CartesianMeasuringContext, CartesianDrawingContext>(
+        items = { extraStore -> // 'this' is the AdditionScope<LegendItem>
+            chartData.forEach { lineData ->
+                add(
+                    LegendItem(
+                        icon = ShapeComponent(
+                            fill = Fill(lineData.color.toArgb()),
+                            shape = Shape.Rectangle,
+                        ),
+                        labelComponent = textComponent,
+                        label = lineData.label ?: "",
+                    )
+                )
             }
-        )
+        },
+        iconSize = 8.dp,
+        iconLabelSpacing = 4.dp,
+        columnSpacing = 16.dp,
+        padding = Insets(topDp = 16f) // Note: Insets usually take Floats in the core class
     )
+
+    var columnLayer = rememberColumnCartesianLayer()
+
+    // Create and configure the line layer only when we have data.
+    if (chartDataCollection.allAreNotEmpty()) {
+        columnLayer = rememberColumnCartesianLayer(
+            ColumnCartesianLayer.ColumnProvider.series(
+                chartData.map { lineData ->
+                    val color = lineData.color
+
+                    rememberLineComponent(
+                        fill(color),
+                        thickness = thickness,
+                        strokeThickness = strokeThickness,
+                    )
+                }
+            )
+        )
+    }
 
 
     val chart = rememberCartesianChart(
@@ -70,20 +104,22 @@ fun VicoBarChart(
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
             valueFormatter = { _, value, _ -> xValueFormatter(value) },
-            itemPlacer = HorizontalAxis.ItemPlacer.aligned({ count })
         ),
         startAxis = VerticalAxis.rememberStart(
             line = rememberLineComponent(Fill.Transparent),
             title = "X",
-//            itemPlacer = VerticalAxis.ItemPlacer.count({ count }),
             valueFormatter = { _, value, _ -> yValueFormatter(value) }
-        )
+        ),
+        legend = if (showLegend) legend else null // Show legend
     )
 
     LaunchedEffect(Unit) {
         modelProducer.runTransaction {
+            if (!(chartDataCollection.allAreNotEmpty())) {
+                return@runTransaction
+            }
             columnSeries {
-                columnSeries.forEach { lineData ->
+                chartDataCollection.chartData.forEach { lineData ->
                     series(
                         x = lineData.x,
                         y = lineData.y
@@ -98,6 +134,21 @@ fun VicoBarChart(
         chart = chart,
         modelProducer = modelProducer,
         modifier = modifier
-            .height(280.dp)
+            .height(280.dp),
+        placeholder = {
+            VicoPlaceholderChart(
+                chartDataCollection = ChartDataCollection(
+                    chartData = listOf(
+                        ChartData(
+                            x = (0..placeholderValueSize).toList(),
+                            y = List(placeholderValueSize) { 0 },
+                            label = "Placeholder"
+                        )
+                    )
+                ),
+                xValueFormatter = xValueFormatter,
+                yValueFormatter = { _ -> yValueFormatter(0.0) },
+            )
+        }
     )
 }

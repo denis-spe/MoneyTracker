@@ -9,6 +9,4 @@
     <color name="white">#FFFFFFFF</color>
     <color name="authBtnContainerColor">#2467DB</color>
     <color name="fillAuthBtnContainerColor">#4CAF50</color>
-    <color name="authDarkBgColor">#CD000000</color>
-    <color name="authLightBgColor">#F2FFFFFF</color>
 </resources>

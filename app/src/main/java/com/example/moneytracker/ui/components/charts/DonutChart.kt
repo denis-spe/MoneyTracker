@@ -29,6 +29,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.example.moneytracker.ui.components.charts.collections.DonutChartData
+import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -39,18 +41,6 @@ private data class DonutStroke(
     val strokeSizeSelected: Dp = 60.dp
 )
 
-data class DonutChartData(
-    val amount: Float,
-    val color: Color,
-    val title: String,
-)
-
-data class DonutChartDataCollection(
-    var items: List<DonutChartData>
-) {
-    internal var totalAmount: Float = items.sumOf { it.amount.toDouble() }.toFloat()
-        private set
-}
 
 private data class DrawingAngles(val start: Float, val end: Float)
 
@@ -73,6 +63,93 @@ private class DonutChartState(
 }
 
 @Composable
+fun PlaceHolderDonutChart(
+    modifier: Modifier = Modifier,
+    chartSize: Dp = 350.dp,
+    data: DonutChartDataCollection,
+    gapPercentage: Float = 0.04f,
+    strokeWidth: Dp = 20.dp,
+    strokeWidthSelected: Dp = 40.dp,
+    strokeCap: StrokeCap = StrokeCap.Butt,
+) {
+    var selectedIndex by remember { mutableStateOf(-1) }
+    val animationTargetState = (0..data.items.size).map {
+        remember {
+            mutableStateOf(
+                DonutChartState(
+                    donutStroke = DonutStroke(strokeWidth, strokeWidthSelected)
+                )
+            )
+        }
+    }
+    val animValues = (0..data.items.size).map {
+        animateDpAsState(
+            targetValue = animationTargetState[it].value.stroke,
+            animationSpec = TweenSpec(700)
+        )
+    }
+    val anglesList: MutableList<DrawingAngles> = remember { mutableListOf() }
+    val gapAngle = data.calculateGapAngle(gapPercentage)
+    var center = Offset(0f, 0f)
+
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(top = 24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Canvas(
+            modifier = Modifier
+                .size(chartSize)
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = { tapOffset ->
+                            handleCanvasTap(
+                                center = center,
+                                tapOffset = tapOffset,
+                                anglesList = anglesList,
+                                currentSelectedIndex = selectedIndex,
+                                currentStrokeValues = animationTargetState.map { it.value.stroke.toPx() },
+                                onItemSelected = { index ->
+                                },
+                                onItemDeselected = { index ->
+                                },
+                                onNoItemSelected = {
+                                    selectedIndex = -1
+                                }
+                            )
+                        }
+                    )
+                },
+            onDraw = {
+                val defaultStrokeWidth = strokeWidth.toPx()
+                center = this.center
+                anglesList.clear()
+                var lastAngle = 0f
+                data.items.forEachIndexed { ind, item ->
+                    val sweepAngle = data.findSweepAngle(ind, gapPercentage)
+                    anglesList.add(DrawingAngles(lastAngle, sweepAngle))
+                    val strokeWidth = animValues[ind].value.toPx()
+                    drawArc(
+                        color = item.color,
+                        startAngle = lastAngle,
+                        sweepAngle = sweepAngle,
+                        useCenter = false,
+                        topLeft = Offset(defaultStrokeWidth / 2, defaultStrokeWidth / 2),
+                        style = Stroke(strokeWidth, cap = strokeCap),
+                        size = Size(
+                            size.width - defaultStrokeWidth,
+                            size.height - defaultStrokeWidth
+                        )
+                    )
+                    lastAngle += sweepAngle + gapAngle
+                }
+            }
+        )
+    }
+}
+
+@Composable
 fun DonutChart(
     modifier: Modifier = Modifier,
     chartSize: Dp = 350.dp,
@@ -81,8 +158,26 @@ fun DonutChart(
     strokeWidth: Dp = 20.dp,
     strokeWidthSelected: Dp = 40.dp,
     strokeCap: StrokeCap = StrokeCap.Butt,
+    placeholderDonutColor: Color = Color.Gray,
     selectionView: @Composable (selectedItem: DonutChartData?) -> Unit = {},
 ) {
+
+    if (data.items.isEmpty() || data.totalAmount == 0f) {
+        PlaceHolderDonutChart(
+            modifier = modifier,
+            chartSize = chartSize,
+            data = DonutChartDataCollection(
+                listOf(
+                    DonutChartData(100f, placeholderDonutColor, "placeHolder"),
+                )
+            ),
+            gapPercentage = gapPercentage,
+            strokeWidth = strokeWidth,
+            strokeWidthSelected = strokeWidthSelected,
+            strokeCap = strokeCap
+        )
+    }
+
     var selectedIndex by remember { mutableStateOf(-1) }
     val animationTargetState = (0..data.items.size).map {
         remember {
@@ -175,6 +270,7 @@ fun DonutChart(
         selectionView(if (selectedIndex >= 0) data.items[selectedIndex] else null)
     }
 }
+
 
 private fun handleCanvasTap(
     center: Offset,

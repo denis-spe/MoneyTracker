@@ -1,4 +1,4 @@
-package com.example.moneytracker.ui.components.charts
+package com.example.moneytracker.ui.components.charts.marker
 
 /*
  * Copyright 2025 by Patryk Goworowski and Patrick Michalik.
