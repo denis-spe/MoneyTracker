@@ -3,3 +3,5 @@ Praise Be The LORD of Hosts, For the LORD is good and his mercy endures forever
 Project tracks
 -------------------
 - Create a chart placeholder [26/12/25]
+- Make model drawer for data addition [26/12/25 13:45]
+- Added the data addition [27/12/25 03:55]

@@ -1,6 +1,9 @@
 package com.example.moneytracker.ui.homeScreen
 
 import android.util.Log
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
@@ -25,6 +28,8 @@ class HomeScreenViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    var isDescriptionIconVisible by mutableStateOf(false)
+        private set
 
     /**
      * Create a new user with the current user id
@@ -55,6 +60,18 @@ class HomeScreenViewModel @Inject constructor(
 
     fun updateIsLogOutLoading(isLoading: Boolean) {
         _uiState.value = _uiState.value.copy(isLogOutLoading = isLoading)
+    }
+
+    fun updateOnModelBottomSheetShow(isVisible: Boolean) {
+        _uiState.value = _uiState.value.copy(onModelBottomSheetShow = isVisible)
+    }
+
+    fun updateIsDescriptionIconVisible(isVisible: Boolean) {
+        isDescriptionIconVisible = isVisible
+    }
+
+    fun updateDescriptionIcon(icon: Int) {
+        _uiState.value = _uiState.value.copy(descriptionIcon = icon)
     }
 
     private fun fetchDataset() {

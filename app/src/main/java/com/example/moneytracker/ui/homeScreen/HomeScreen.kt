@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -32,6 +33,9 @@ import com.example.moneytracker.ui.components.charts.DonutChart
 import com.example.moneytracker.ui.components.charts.VicoBarChart
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
+import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
+import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
+import com.example.moneytracker.ui.homeScreen.dataAddition.IconList
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
 import com.example.moneytracker.ui.homeScreen.topTitle.TopTitlePanel
@@ -80,7 +84,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     }
                 )
             },
-
         topBar = {
             CenterAlignedTopAppBar(
                 colors = TopAppBarDefaults.topAppBarColors().copy(
@@ -118,7 +121,11 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     }
                 }
             )
-        }
+        },
+        floatingActionButton = {
+            DataAdditionFloatingButton(viewModel::updateOnModelBottomSheetShow)
+        },
+        floatingActionButtonPosition = FabPosition.End,
     ) { paddingValues ->
 
         Column(
@@ -172,6 +179,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
 
         }
 
+        // Drop down user profile
         DropDownUserProfile(
             paddingValues,
             contentColor = contentColor,
@@ -182,5 +190,17 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         ) {
             viewModel.updateIsLogOutLoading(!uiStates.value.isLogOutLoading)
         }
+
+        // Modal bottom sheet
+        DataAdditionModelDrawer(
+            uiStates.value.onModelBottomSheetShow,
+            viewModel::updateOnModelBottomSheetShow,
+            viewModel
+        )
+
+        // Show all icons for description
+        IconList(
+            viewModel
+        )
     }
 }

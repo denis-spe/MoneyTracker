@@ -9,4 +9,9 @@
     <color name="white">#FFFFFFFF</color>
     <color name="authBtnContainerColor">#2467DB</color>
     <color name="fillAuthBtnContainerColor">#4CAF50</color>
+    <color name="Earnings">#51AF4C</color>
+    <color name="Expense">#FF3D00</color>
+    <color name="Debt">#2467DB</color>
+    <color name="Lent">#FFAE4C</color>
+    <color name="Savings">#76476E</color>
 </resources>
