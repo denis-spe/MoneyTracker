@@ -1,57 +1,53 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.text.input.InputTransformation
-import androidx.compose.foundation.text.input.TextFieldLineLimits
-import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.foundation.text.input.then
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
+import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
-import java.text.NumberFormat
-import java.util.Locale
+import com.example.moneytracker.ui.theme.autoColorChange
+import com.example.moneytracker.ui.theme.autoTextColorChange
+import kotlinx.datetime.LocalDateTime
+import network.chaintech.kmp_date_time_picker.utils.now
 
-private val ICON_SIZE = 25.dp
-private val FONT_WEIGHT = FontWeight.Bold
-private val AMOUNT_FONT_SIZE = 18.sp
+private val MODEL_DRAWER_ICON_SIZE = 25.dp
+val FONT_WEIGHT = FontWeight.Bold
 
 @Composable
 fun DataAdditionFloatingButton(
@@ -59,9 +55,15 @@ fun DataAdditionFloatingButton(
 ) {
     FloatingActionButton(
         onClick = { onModelBottomSheetShow(true) },
-        shape = CircleShape
+        shape = CircleShape,
+        containerColor = Color.autoColorChange,
     ) {
-        Icon(imageVector = Icons.Default.Add, contentDescription = "Add data")
+        Icon(
+            imageVector = Icons.Default.KeyboardArrowUp,
+            contentDescription = "Add data",
+            tint = Color.autoTextColorChange,
+            modifier = Modifier.size(35.dp)
+        )
     }
 }
 
@@ -214,19 +216,19 @@ fun DataAdditionModelDrawerContent(
             }
 
             DataType.EXPENSE -> {
-                ExpenseModelDrawerContent()
+                ExpenseModelDrawerContent(viewModel)
             }
 
             DataType.DEBT -> {
-                DebtModelDrawerContent()
+                DebtModelDrawerContent(viewModel)
             }
 
             DataType.LENT -> {
-                LentModelDrawerContent()
+                LentModelDrawerContent(viewModel)
             }
 
             DataType.SAVINGS -> {
-                SavingsModelDrawerContent()
+                SavingsModelDrawerContent(viewModel)
             }
 
         }
@@ -235,13 +237,29 @@ fun DataAdditionModelDrawerContent(
 
 @Composable
 fun ModelDrawerContent(
-    color: Int,
+    colorResId: Int,
     icon: Int,
     dataType: DataType,
     description: String,
-    content: @Composable (ColumnScope.() -> Unit)
+    buttonText: String,
+    viewModel: HomeScreenViewModel,
 ) {
-    val color = colorResource(color)
+
+    val showDateTime = remember { mutableStateOf(false) }
+    val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
+    val amountState = rememberTextFieldState()
+    val labelState = rememberTextFieldState()
+    val descriptionState = rememberTextFieldState()
+    val wasSuccess = remember { mutableStateOf(State.INITIAL) }
+    val labelIconState = remember { mutableIntStateOf(R.drawable.description) }
+
+    LaunchedEffect(amountState.text.toString()) {
+        if (wasSuccess.value == State.ERROR) {
+            wasSuccess.value = State.INITIAL
+        }
+    }
+
+    val amountAsDouble = amountState.text.toString().toDoubleOrNull()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -255,208 +273,190 @@ fun ModelDrawerContent(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            val color = colorResource(id = colorResId)
+
             Icon(
                 modifier = Modifier
-                    .size(ICON_SIZE)
+                    .size(MODEL_DRAWER_ICON_SIZE)
                     .padding(end = 5.dp),
                 painter = painterResource(id = icon),
                 contentDescription = dataType.text,
                 tint = color
             )
-            Text(description, color = color)
+
+            Text(description, color = color, fontWeight = FONT_WEIGHT)
         }
 
         Column(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
-            content = content
-        )
-    }
-}
-
-@Composable
-fun ModelDrawerTextField(
-    state: TextFieldState,
-    placeholder: String,
-    color: Int,
-    iconState: MutableState<Int>,
-    viewModel: HomeScreenViewModel,
-) {
-    val color = colorResource(color)
-    val modifier = Modifier.fillMaxWidth(0.7f)
-    val uiState = viewModel.uiState.collectAsState()
-
-    OutlinedTextField(
-        modifier = modifier.padding(bottom = 10.dp),
-        state = state,
-        lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = {
-            Text(
-                text = placeholder,
-                color = color,
-                fontWeight = FontWeight.Bold
+        ) {
+            // Amount
+            ModelDrawerAmountField(
+                state = amountState,
+                placeholder = "0.0",
+                colorResId = colorResId,
             )
-        },
-        colors = OutlinedTextFieldDefaults.colors().copy(
-            focusedTextColor = color,
-            unfocusedTextColor = color.copy(alpha = 0.5f),
-            cursorColor = color,
-            focusedIndicatorColor = color,
-            unfocusedIndicatorColor = color.copy(alpha = 0.5f),
-            focusedContainerColor = color.copy(alpha = 0.1f),
-            unfocusedContainerColor = color.copy(alpha = 0.2f),
-        ),
-        textStyle = TextStyle(
-            color = color,
-            fontWeight = FontWeight.Bold
-        ),
-        shape = CircleShape,
-        leadingIcon = {
-            IconButton(
-                onClick = {
-                    viewModel.updateIsDescriptionIconVisible(true)
-                }
+
+            // Label
+            ModelDrawerTextField(
+                state = labelState,
+                placeholder = "Label (Optional)",
+                colorResId = colorResId,
+                iconState = labelIconState,
+                viewModel = viewModel,
+                textLength = 15
+            )
+
+            // Description
+            ModelDrawerTextField(
+                state = descriptionState,
+                placeholder = "Description (Optional)",
+                colorResId = colorResId,
+                viewModel = viewModel
+            )
+
+            // Show date time picker.
+            ChainNetworkDateTimeButton(
+                showDateTime,
+                localDateTimeState,
+                colorResId = colorResId
+            )
+
+            ModelDrawerButton(
+                text = if (wasSuccess.value == State.ERROR) {
+                    "Add Amount"
+                } else buttonText,
+                wasSuccess = wasSuccess,
+                colorResId = colorResId
             ) {
-                Image(
-                    painter = painterResource(id = uiState.value.descriptionIcon),
-                    contentDescription = "Icon",
-                )
+                if (amountAsDouble != null) {
+                    viewModel.addData(
+                        Dataset(
+                            dataType = dataType,
+                            amount = amountAsDouble,
+                            label = labelState.text.toString(),
+                            description = descriptionState.text.toString(),
+                            dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                            labelIcon = labelIconState.value
+                        )
+                    )
+                    wasSuccess.value = State.SUCCESS
+
+                    // Reset all state
+                    amountState.clearText()
+                    labelState.clearText()
+                    descriptionState.clearText()
+                    labelIconState.value = R.drawable.description
+
+                } else {
+                    wasSuccess.value = State.ERROR
+                }
             }
         }
+    }
+
+    // Show all icons for label and description.
+    IconList(
+        labelIconState,
+        viewModel = viewModel
     )
 }
 
 
+
 @Composable
-fun ModelDrawerAmountField(
-    state: TextFieldState,
-    placeholder: String,
-    colorResId: Int, // renamed to avoid shadowing
+fun ModelDrawerButton(
+    text: String,
+    colorResId: Int,
+    wasSuccess: MutableState<State>,
+    onClick: () -> Unit,
 ) {
-    val color = colorResource(id = colorResId)
-    val modifier = Modifier.fillMaxWidth(0.7f)
+    val color = if (wasSuccess.value == State.ERROR)
+        colorResource(R.color.error_color) else
+        colorResource(id = colorResId)
 
-    val locale = Locale.getDefault()
-    val numberFormat = remember(locale) { NumberFormat.getCurrencyInstance(locale) }
-
-
-    OutlinedTextField(
-        modifier = modifier.padding(bottom = 10.dp),
-        state = state,
-        lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = {
-            Text(
-                text = placeholder,
-                color = color,
-                fontWeight = FontWeight.Bold
-            )
-        },
-        colors = OutlinedTextFieldDefaults.colors().copy(
-            focusedTextColor = color,
-            unfocusedTextColor = color.copy(alpha = 0.5f),
-            cursorColor = color,
-            focusedIndicatorColor = color,
-            unfocusedIndicatorColor = color.copy(alpha = 0.5f),
-            focusedContainerColor = color.copy(alpha = 0.1f),
-            unfocusedContainerColor = color.copy(alpha = 0.2f),
+    OutlinedButton(
+        onClick = onClick,
+        modifier = Modifier.padding(bottom = 10.dp),
+        colors = ButtonDefaults.outlinedButtonColors().copy(
+            contentColor = color,
+            containerColor = color.copy(alpha = 0.2f),
         ),
-        textStyle = TextStyle(
-            color = color,
-            fontWeight = FontWeight.Bold,
-            fontSize = AMOUNT_FONT_SIZE
-        ),
-        shape = CircleShape,
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number // only digits expected
-        ),
-        leadingIcon = {
-            Text(
-                text = numberFormat.currency?.symbol ?: "$",
-                color = color,
-                fontWeight = FontWeight.Bold
-            )
-        },
-
-        inputTransformation = InputTransformation.maxLength(16).then(
-            CustomInputTransformation()
-        ),
-        outputTransformation = CustomOutputTransformation(),
-    )
+        border = BorderStroke(1.dp, color)
+    ) {
+        Text(text = text)
+    }
 }
 
 @Composable
-fun ModelDrawerButton() {
-}
-
-@Composable
-fun EarningsModelDrawerContent(viewModel: HomeScreenViewModel) {
-
+fun EarningsModelDrawerContent(
+    viewModel: HomeScreenViewModel
+) {
     ModelDrawerContent(
-        color = R.color.Earnings,
+        colorResId = R.color.Earnings,
         icon = R.drawable.filled_earnings,
         dataType = DataType.EARNINGS,
-        description = "Add your earnings here"
-    ) {
-        ModelDrawerAmountField(
-            state = rememberTextFieldState(),
-            placeholder = "0.0",
-            colorResId = R.color.Earnings,
-        )
-        ModelDrawerTextField(
-            state = TextFieldState(),
-            placeholder = "Description",
-            color = R.color.Earnings,
-            iconState = remember { mutableStateOf(R.drawable.description) },
-            viewModel
-        )
-    }
+        description = "Add your earnings here",
+        buttonText = "Received",
+        viewModel = viewModel
+    )
 }
 
 @Composable
-fun ExpenseModelDrawerContent() {
+fun ExpenseModelDrawerContent(
+    viewModel: HomeScreenViewModel
+) {
     ModelDrawerContent(
-        color = R.color.Expense,
+        colorResId = R.color.Expense,
         icon = R.drawable.filled_expenditure,
         dataType = DataType.EXPENSE,
-        description = "Put your expenses here"
-    ) {
-
-    }
+        description = "Add your expenses here",
+        buttonText = "Spent",
+        viewModel = viewModel
+    )
 }
 
 @Composable
-fun DebtModelDrawerContent() {
+fun DebtModelDrawerContent(
+    viewModel: HomeScreenViewModel
+) {
+
     ModelDrawerContent(
-        color = R.color.Debt,
+        colorResId = R.color.Debt,
         icon = R.drawable.filled_debt,
         dataType = DataType.DEBT,
-        description = "Set your debts here"
-    ) {
-
-    }
+        description = "Set your debts here",
+        buttonText = "Set Debt",
+        viewModel = viewModel
+    )
 }
 
 @Composable
-fun LentModelDrawerContent() {
+fun LentModelDrawerContent(
+    viewModel: HomeScreenViewModel
+) {
     ModelDrawerContent(
-        color = R.color.Lent,
+        colorResId = R.color.Lent,
         icon = R.drawable.filled_lent,
         dataType = DataType.LENT,
-        description = "Put your lent here"
-    ) {
-
-    }
+        description = "Put your lent here",
+        buttonText = "Lent",
+        viewModel = viewModel
+    )
 }
 
 @Composable
-fun SavingsModelDrawerContent() {
+fun SavingsModelDrawerContent(
+    viewModel: HomeScreenViewModel
+) {
     ModelDrawerContent(
-        color = R.color.Savings,
+        colorResId = R.color.Savings,
         icon = R.drawable.filled_savings,
         dataType = DataType.SAVINGS,
-        description = "Add your savings here"
-    ) {
-
-    }
+        description = "Add your savings here",
+        buttonText = "Saved",
+        viewModel = viewModel
+    )
 }

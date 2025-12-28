@@ -70,27 +70,12 @@ class HomeScreenViewModel @Inject constructor(
         isDescriptionIconVisible = isVisible
     }
 
-    fun updateDescriptionIcon(icon: Int) {
-        _uiState.value = _uiState.value.copy(descriptionIcon = icon)
-    }
-
     private fun fetchDataset() {
         viewModelScope.launch {
             // ensure we have a user id to subscribe with
             val uid = userState.value?.uid ?: return@launch
 
             // Launch two concurrent collectors so neither flow blocks the other
-            launch {
-                dataStorage.getInfo(uid)
-                    .catch { e ->
-                        _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
-                    }
-                    .collect { info ->
-                        Log.d("HomeScreenColor", info.toString())
-                        _uiState.value = _uiState.value.copy(info = info)
-                    }
-            }
-
             launch {
                 dataStorage.getWholeDatasets(uid)
                     .catch { e ->
@@ -100,6 +85,17 @@ class HomeScreenViewModel @Inject constructor(
                         _uiState.value = _uiState.value.copy(datasets = data, isLoading = true)
                         delay(250)
                         _uiState.value = _uiState.value.copy(isLoading = false)
+                    }
+            }
+
+            launch {
+                dataStorage.getInfo(uid)
+                    .catch { e ->
+                        _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
+                    }
+                    .collect { info ->
+                        Log.d("HomeScreenColor", info.toString())
+                        _uiState.value = _uiState.value.copy(info = info)
                     }
             }
         }

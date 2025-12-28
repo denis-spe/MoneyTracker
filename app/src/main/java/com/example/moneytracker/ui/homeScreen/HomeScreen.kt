@@ -1,13 +1,13 @@
 // Bless be the Name of the Lord
 package com.example.moneytracker.ui.homeScreen
 
-import android.util.Log
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
@@ -23,19 +23,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.ui.components.charts.DonutChart
-import com.example.moneytracker.ui.components.charts.VicoBarChart
-import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
+import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
-import com.example.moneytracker.ui.homeScreen.dataAddition.IconList
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
 import com.example.moneytracker.ui.homeScreen.topTitle.TopTitlePanel
@@ -50,6 +48,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Collect user information from ViewModel
     val uiStates = viewModel.uiState.collectAsState()
     val userState = viewModel.userState.collectAsState()
+    val datasets = uiStates.value.datasets
 
     val colors = Colors()
 
@@ -60,6 +59,24 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val backgroundColor = if (isSystemInDarkTheme()) colors.darkModeBackgroundColor else
         colors.lightModeBackgroundColor
 
+    val donutChartDataCollection = DonutChartDataCollection(
+        datasets
+            .groupBy { it.dataType }
+            .values.toList()
+            .map { lst ->
+                val firstItemInList = lst[0]
+                val amount = lst.sumOf { it.amount }.toFloat()
+                val color = colorResource(firstItemInList.dataType.color)
+                val title = firstItemInList.dataType.text
+
+                DonutChartData(
+                    amount,
+                    color = color,
+                    title = title
+                )
+            }
+    )
+
 
     LaunchedEffect(key1 = uiStates.value.isLogOutLoading) {
         delay(1000)
@@ -69,9 +86,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         }
     }
 
-    LaunchedEffect(key1 = uiStates.value.info.color) {
-        Log.d("HomeScreenColor", uiStates.value.info.color.toString())
-    }
 
     Scaffold(
         modifier = Modifier
@@ -104,17 +118,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         contentColor = contentColor,
                         userColor = uiStates.value.info.color
                     ) {
-                        viewModel.addData(
-                            Dataset(
-                                dataType = com.example.moneytracker.backend.storage.DataType.EARNINGS,
-                                amount = 40.0,
-                                label = "Test",
-                                category = "Test",
-                                description = "Test"
-                            )
-                        )
-
-                        Log.d("HomeScreenClick", uiStates.value.info.color.toString())
                         viewModel.updateIsUserDropdownVisible(
                             !uiStates.value.isUserDropdownVisible
                         )
@@ -125,7 +128,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         floatingActionButton = {
             DataAdditionFloatingButton(viewModel::updateOnModelBottomSheetShow)
         },
-        floatingActionButtonPosition = FabPosition.End,
+        floatingActionButtonPosition = FabPosition.Center,
     ) { paddingValues ->
 
         Column(
@@ -135,15 +138,8 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            val data = DonutChartDataCollection(
-                listOf(
-//                    DonutChartData(100f, Color.Gray, "Red"),
-//                    DonutChartData(200f, Color.Blue, "Blue"),
-//                    DonutChartData(300f, Color.Green, "Green")
-                )
-            )
             DonutChart(
-                data = data,
+                data = donutChartDataCollection,
                 chartSize = 150.dp,
                 gapPercentage = 0.06f,
                 strokeCap = StrokeCap.Round
@@ -154,29 +150,13 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 }
             }
 
-            VicoBarChart(
-                chartDataCollection = ChartDataCollection(
-                    listOf(
-//                        ChartData(
-//                            x = listOf(2, 1, 3, 4, 5, 6, 65, 64),
-//                            y = listOf(4, 2, 5, 24, 4, 12, 12, 3),
-//                            label = "Income",
-//                            color = Color.Green
-//                        ),
-//
-//                        ChartData(
-//                            x = listOf(21, 1, 3, 2, 5, 6, 5, 14),
-//                            y = listOf(4, 21, 5, 24, 4, 22, 12, 13),
-//                            label = "Expense",
-//                            color = Color.Red
-//                        )
-                    )
-                ),
-                thickness = 7.dp,
-                showLegend = true,
-                strokeThickness = 1.dp
-            )
+            LazyColumn {
 
+                items(datasets.size) {
+                    val dataset = datasets[it]
+                    Text(dataset.dataType.text)
+                }
+            }
         }
 
         // Drop down user profile
@@ -197,10 +177,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             viewModel::updateOnModelBottomSheetShow,
             viewModel
         )
-
-        // Show all icons for description
-        IconList(
-            viewModel
-        )
     }
+
 }

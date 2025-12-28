@@ -28,6 +28,7 @@ class DataStorageImpl(
 
             try {
                 val raw = snapshot?.get("datasets")
+                Log.d("DataStorageImpl", "raw datasets field: $raw")
                 if (raw == null) {
                     // No datasets field yet - emit empty list
                     trySend(emptyList())
@@ -51,6 +52,7 @@ class DataStorageImpl(
                     }
                 }
 
+                Log.d("DataStorageImpl", "parsed datasets count: ${data.size}")
                 trySend(data)
             } catch (e: Exception) {
                 Log.e("DataStorageImpl", "Unhandled error while reading datasets", e)
@@ -73,7 +75,9 @@ class DataStorageImpl(
             }
 
             try {
-                val color = when (val infoMap = snapshot?.get("info")) {
+                val infoField = snapshot?.get("info")
+                Log.d("DataStorageImpl", "raw info field: $infoField")
+                val color = when (val infoMap = infoField) {
                     is Map<*, *> -> {
                         // Firestore may store numbers as Long - use safe cast
                         (infoMap["color"] as? Number)?.toInt() ?: 0
@@ -84,6 +88,7 @@ class DataStorageImpl(
                 }
 
                 val info = Info(color = color)
+                Log.d("DataStorageImpl", "emitting Info(color=${info.color})")
                 trySend(info)
             } catch (e: Exception) {
                 Log.e("DataStorageImpl", "Failed to parse info", e)

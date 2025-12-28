@@ -121,4 +121,7 @@ dependencies {
 
     // Material 3 (recommended)
     implementation("com.patrykandpatrick.vico:compose-m3:$vicoVersion")
+
+    // Date time wheel
+    implementation("network.chaintech:kmp-date-time-picker:1.1.1")
 }

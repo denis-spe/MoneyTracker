@@ -5,3 +5,5 @@ Project tracks
 - Create a chart placeholder [26/12/25]
 - Make model drawer for data addition [26/12/25 13:45]
 - Added the data addition [27/12/25 03:55]
+- Improve the data addition section [27/12/25 13:06]
+- Completed the data addition [28/12/25 02:29]

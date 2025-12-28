@@ -1,10 +1,11 @@
 package com.example.moneytracker.backend.storage
 
-enum class DataType(val text: String) {
-    EARNINGS(text = "Earnings"),
-    EXPENSE(text = "Expense"),
-    LENT(text = "Lent"),
-    DEBT(text = "Debt"),
-    SAVINGS(text = "Savings");
+import com.example.moneytracker.R
 
+enum class DataType(val text: String, val color: Int) {
+    EARNINGS(text = "Earnings", color = R.color.Earnings),
+    EXPENSE(text = "Expense", color = R.color.Expense),
+    LENT(text = "Lent", color = R.color.Lent),
+    DEBT(text = "Debt", color = R.color.Debt),
+    SAVINGS(text = "Savings", color = R.color.Savings)
 }

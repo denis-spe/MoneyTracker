@@ -1,12 +1,12 @@
 package com.example.moneytracker.backend.storage
 
-import java.util.Date
+import com.google.firebase.Timestamp
 
 data class Dataset(
     val dataType: DataType,
     val amount: Double,
     val label: String,
-    val category: String? = null,
-    val description: String? = null,
-    val dateTime: Date = Date()
+    val description: String,
+    val dateTime: Timestamp,
+    val labelIcon: Int,
 )
