@@ -7,3 +7,5 @@ Project tracks
 - Added the data addition [27/12/25 03:55]
 - Improve the data addition section [27/12/25 13:06]
 - Completed the data addition [28/12/25 02:29]
+- Improve donut chart and organise the today screen [28/12/25 21:19]
+- Added animate on donut chart and organised the ItemList [29/12/25 03:00]

@@ -7,7 +7,7 @@ WARNING: java.lang.System::loadLibrary has been called by io.netty.util.internal
 WARNING: Use --enable-native-access=ALL-UNNAMED to avoid a warning for callers in this module
 WARNING: Restricted methods will be blocked in a future release unless native access is enabled
 
-Dec 28, 2025 2:01:02 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start
+Dec 29, 2025 2:45:31 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketServer start
 INFO: Started WebSocket server on ws://192.168.10.141:9150
 API endpoint: http://192.168.10.141:8080
 If you are using a library that supports the FIRESTORE_EMULATOR_HOST environment variable, run:
@@ -21,64 +21,11 @@ If you are running a Firestore in Datastore Mode project, run:
 Note: Support for Datastore Mode is in preview. If you encounter any bugs please file at https://github.com/firebase/firebase-tools/issues.
 Dev App Server is now running.
 
-Dec 28, 2025 2:03:09 AM com.google.cloud.datastore.emulator.firestore.websocket.WebSocketChannelHandler initChannel
-INFO: Connected to new websocket client
-Dec 28, 2025 2:03:38 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+Dec 29, 2025 2:45:50 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:03:46 AM com.google.cloud.datastore.emulator.impl.util.WrappedStreamObserver onError
-WARNING: Operation failed: no entity to update: app: "dev~moneytracker-7e998"
-path <
-  Element {
-    type: "database"
-    name: "fWtkRIAUTE5SvPy2FS5GRwEaIIfD"
-  }
->
-
-com.google.cloud.datastore.core.exception.DatastoreException: no entity to update: app: "dev~moneytracker-7e998"
-path <
-  Element {
-    type: "database"
-    name: "fWtkRIAUTE5SvPy2FS5GRwEaIIfD"
-  }
->
-
-	at com.google.cloud.datastore.core.exception.DatastoreException.withProblem(DatastoreException.java:207)
-	at com.google.cloud.datastore.emulator.impl.util.FirestoreEmulatorConverters.checkMutation(FirestoreEmulatorConverters.java:202)
-	at com.google.cloud.datastore.emulator.impl.firestore.FirestoreEmulatorHelper.commitHelper(FirestoreEmulatorHelper.java:365)
-	at com.google.cloud.datastore.emulator.impl.firestore.FirestoreEmulatorHelper.internalCommit(FirestoreEmulatorHelper.java:314)
-	at com.google.cloud.datastore.emulator.impl.firestore.CloudFirestoreV1.internalCommit(CloudFirestoreV1.java:1077)
-	at com.google.cloud.datastore.emulator.impl.firestore.CloudFirestoreV1.write(CloudFirestoreV1.java:1065)
-	at com.google.cloud.datastore.emulator.impl.firestore.CloudFirestoreV1WriteStream.handleRequest(CloudFirestoreV1WriteStream.java:218)
-	at com.google.cloud.datastore.emulator.impl.firestore.CloudFirestoreV1WriteStream.write(CloudFirestoreV1WriteStream.java:140)
-	at com.google.cloud.datastore.emulator.impl.firestore.CloudFirestoreV1WriteStream.onNext(CloudFirestoreV1WriteStream.java:95)
-	at com.google.cloud.datastore.emulator.impl.firestore.CloudFirestoreV1WriteStream.onNext(CloudFirestoreV1WriteStream.java:27)
-	at io.grpc.stub.ServerCalls$StreamingServerCallHandler$StreamingServerCallListener.onMessage(ServerCalls.java:262)
-	at io.grpc.ForwardingServerCallListener.onMessage(ForwardingServerCallListener.java:33)
-	at io.grpc.Contexts$ContextualizedServerCallListener.onMessage(Contexts.java:76)
-	at io.grpc.ForwardingServerCallListener.onMessage(ForwardingServerCallListener.java:33)
-	at io.grpc.Contexts$ContextualizedServerCallListener.onMessage(Contexts.java:76)
-	at io.grpc.internal.ServerCallImpl$ServerStreamListenerImpl.messagesAvailableInternal(ServerCallImpl.java:334)
-	at io.grpc.internal.ServerCallImpl$ServerStreamListenerImpl.messagesAvailable(ServerCallImpl.java:319)
-	at io.grpc.internal.ServerImpl$JumpToApplicationThreadServerStreamListener$1MessagesAvailable.runInContext(ServerImpl.java:834)
-	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
-	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
-	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1090)
-	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:614)
-	at java.base/java.lang.Thread.run(Thread.java:1474)
-
-Dec 28, 2025 2:04:43 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:04:44 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+Dec 29, 2025 2:46:44 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:04:46 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:04:52 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:04:54 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:06:17 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:06:58 AM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
+Dec 29, 2025 2:50:12 AM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
 WARNING: An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
 java.net.SocketException: Connection reset
 	at java.base/sun.nio.ch.SocketChannelImpl.throwConnectionReset(SocketChannelImpl.java:399)
@@ -97,15 +44,9 @@ java.net.SocketException: Connection reset
 	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
 	at java.base/java.lang.Thread.run(Thread.java:1474)
 
-Dec 28, 2025 2:07:08 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+Dec 29, 2025 2:50:20 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:07:17 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:08:11 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:09:11 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:09:14 AM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
+Dec 29, 2025 2:51:13 AM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
 WARNING: An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
 java.net.SocketException: Connection reset
 	at java.base/sun.nio.ch.SocketChannelImpl.throwConnectionReset(SocketChannelImpl.java:399)
@@ -124,39 +65,11 @@ java.net.SocketException: Connection reset
 	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
 	at java.base/java.lang.Thread.run(Thread.java:1474)
 
-Dec 28, 2025 2:09:20 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+Dec 29, 2025 2:54:36 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:10:37 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:11:58 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:12:43 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:13:28 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:13:46 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+Dec 29, 2025 2:56:07 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:14:13 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:14:58 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:15:15 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:15:17 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected non-HTTP/2 connection.
-Dec 28, 2025 2:15:17 AM com.google.cloud.datastore.emulator.firestore.webchannel.FirestoreV1WebChannelAdapter$FirestoreListenHandler onClose
-INFO: channel closed
-Dec 28, 2025 2:18:17 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:19:57 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:21:24 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:21:26 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:21:26 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:21:28 AM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
+Dec 29, 2025 2:57:14 AM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
 WARNING: An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
 java.net.SocketException: Connection reset
 	at java.base/sun.nio.ch.SocketChannelImpl.throwConnectionReset(SocketChannelImpl.java:399)
@@ -175,11 +88,9 @@ java.net.SocketException: Connection reset
 	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
 	at java.base/java.lang.Thread.run(Thread.java:1474)
 
-Dec 28, 2025 2:22:37 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+Dec 29, 2025 2:57:22 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:24:14 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
-INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:24:15 AM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
+Dec 29, 2025 2:58:03 AM io.netty.channel.DefaultChannelPipeline onUnhandledInboundException
 WARNING: An exceptionCaught() event was fired, and it reached at the tail of the pipeline. It usually means the last handler in the pipeline did not handle the exception.
 java.net.SocketException: Connection reset
 	at java.base/sun.nio.ch.SocketChannelImpl.throwConnectionReset(SocketChannelImpl.java:399)
@@ -198,7 +109,7 @@ java.net.SocketException: Connection reset
 	at io.netty.util.concurrent.FastThreadLocalRunnable.run(FastThreadLocalRunnable.java:30)
 	at java.base/java.lang.Thread.run(Thread.java:1474)
 
-Dec 28, 2025 2:24:16 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+Dec 29, 2025 2:58:10 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.
-Dec 28, 2025 2:24:16 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
+Dec 29, 2025 2:59:41 AM io.gapi.emulators.netty.HttpVersionRoutingHandler channelRead
 INFO: Detected HTTP/2 connection.

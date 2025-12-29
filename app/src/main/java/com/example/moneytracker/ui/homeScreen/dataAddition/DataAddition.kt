@@ -1,6 +1,7 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
+import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -21,6 +22,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -54,7 +56,13 @@ fun DataAdditionFloatingButton(
     onModelBottomSheetShow: (Boolean) -> Unit,
 ) {
     FloatingActionButton(
-        onClick = { onModelBottomSheetShow(true) },
+        onClick = {
+            Log.d(
+                "DataAdditionFloatingButton",
+                "FAB clicked, invoking onModelBottomSheetShow(true)"
+            )
+            onModelBottomSheetShow(true)
+        },
         shape = CircleShape,
         containerColor = Color.autoColorChange,
     ) {
@@ -76,14 +84,22 @@ fun DataAdditionModelDrawer(
 ) {
     val tabToDisplay = remember { mutableStateOf(DataType.EARNINGS) }
 
-    if (!onModelBottomSheetShowValue) return
+    // Create a remembered sheet state so the sheet (and its content) is pre-composed.
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+    )
 
-    ModalBottomSheet(
-        onDismissRequest = { onModelBottomSheetShow(false) }
-    ) {
-        DataAdditionModelDrawerTopTitle(tabToDisplay)
-        DataAdditionModelDrawerContent(tabToDisplay, viewModel)
-    }
+    if (onModelBottomSheetShowValue)
+        ModalBottomSheet(
+            onDismissRequest = {
+                // If the user dismisses the sheet via gesture or scrim tap, update the flag.
+                onModelBottomSheetShow(false)
+            },
+            sheetState = sheetState,
+        ) {
+            DataAdditionModelDrawerTopTitle(tabToDisplay)
+            DataAdditionModelDrawerContent(tabToDisplay, viewModel)
+        }
 }
 
 @Composable
@@ -259,6 +275,12 @@ fun ModelDrawerContent(
         }
     }
 
+    LaunchedEffect(labelState.text.toString()) {
+        if (wasSuccess.value == State.ERROR) {
+            wasSuccess.value = State.INITIAL
+        }
+    }
+
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
 
     Column(
@@ -302,7 +324,7 @@ fun ModelDrawerContent(
             // Label
             ModelDrawerTextField(
                 state = labelState,
-                placeholder = "Label (Optional)",
+                placeholder = "Label",
                 colorResId = colorResId,
                 iconState = labelIconState,
                 viewModel = viewModel,
@@ -326,12 +348,12 @@ fun ModelDrawerContent(
 
             ModelDrawerButton(
                 text = if (wasSuccess.value == State.ERROR) {
-                    "Add Amount"
+                    "Fill both amount and label"
                 } else buttonText,
                 wasSuccess = wasSuccess,
                 colorResId = colorResId
             ) {
-                if (amountAsDouble != null) {
+                if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
                     viewModel.addData(
                         Dataset(
                             dataType = dataType,

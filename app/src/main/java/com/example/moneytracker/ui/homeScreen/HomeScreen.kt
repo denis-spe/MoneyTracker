@@ -1,13 +1,15 @@
 // Bless be the Name of the Lord
 package com.example.moneytracker.ui.homeScreen
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
@@ -17,29 +19,37 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
+import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.components.charts.DonutChart
 import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
+import com.example.moneytracker.ui.homeScreen.listItems.ItemList
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
 import com.example.moneytracker.ui.homeScreen.topTitle.TopTitlePanel
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import kotlinx.coroutines.delay
 
+@Suppress("UNUSED_PARAMETER")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onNavigate: NavController? = null, userId: String) {
@@ -50,6 +60,9 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val userState = viewModel.userState.collectAsState()
     val datasets = uiStates.value.datasets
 
+    // Keep the passed userId referenced to avoid unused-parameter warnings
+    // userId intentionally unused in this screen; parameter kept for API stability
+
     val colors = Colors()
 
     // Define the colors for the button
@@ -59,23 +72,28 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val backgroundColor = if (isSystemInDarkTheme()) colors.darkModeBackgroundColor else
         colors.lightModeBackgroundColor
 
-    val donutChartDataCollection = DonutChartDataCollection(
-        datasets
-            .groupBy { it.dataType }
-            .values.toList()
-            .map { lst ->
-                val firstItemInList = lst[0]
-                val amount = lst.sumOf { it.amount }.toFloat()
-                val color = colorResource(firstItemInList.dataType.color)
-                val title = firstItemInList.dataType.text
+    val context = LocalContext.current
 
-                DonutChartData(
-                    amount,
-                    color = color,
-                    title = title
-                )
-            }
-    )
+    val donutChartDataCollection = remember(datasets, context) {
+        DonutChartDataCollection(
+            datasets
+                .groupBy { it.dataType }
+                .values.toList()
+                .map { lst ->
+                    val firstItemInList = lst[0]
+                    val amount = lst.sumOf { it.amount }.toFloat()
+                    val colorInt = ContextCompat.getColor(context, firstItemInList.dataType.color)
+                    val color = Color(colorInt)
+                    val title = firstItemInList.dataType.text
+
+                    DonutChartData(
+                        amount,
+                        color = color,
+                        title = title
+                    )
+                }
+        )
+    }
 
 
     LaunchedEffect(key1 = uiStates.value.isLogOutLoading) {
@@ -142,21 +160,37 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 data = donutChartDataCollection,
                 chartSize = 150.dp,
                 gapPercentage = 0.06f,
-                strokeCap = StrokeCap.Round
+                strokeCap = StrokeCap.Round,
+                strokeWidthSelected = 30.dp
             ) {
-                Column {
-                    Text(text = it?.title ?: "")
-                    Text(text = (it?.amount ?: "").toString())
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    it?.let { donutChartData ->
+                        Text(text = donutChartData.title)
+                        Text(text = donutChartData.amount.formatToAmount())
+                    } ?: run {
+                        var enabled by remember { mutableStateOf(true) }
+                        val totalAmount: Float by animateFloatAsState(
+                            if (enabled)
+                                donutChartDataCollection.totalAmount
+                            else 0f,
+                            label = "Overall Amount",
+                            animationSpec = tween(
+                                durationMillis = 1000,
+                                easing = LinearEasing,
+                            )
+                        )
+
+                        Text(text = "Total")
+                        Text(text = totalAmount.formatToAmount())
+                    }
                 }
             }
 
-            LazyColumn {
+            ItemList(datasets)
 
-                items(datasets.size) {
-                    val dataset = datasets[it]
-                    Text(dataset.dataType.text)
-                }
-            }
         }
 
         // Drop down user profile

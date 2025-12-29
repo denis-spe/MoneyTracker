@@ -71,6 +71,7 @@ fun PlaceHolderDonutChart(
     strokeWidth: Dp = 20.dp,
     strokeWidthSelected: Dp = 40.dp,
     strokeCap: StrokeCap = StrokeCap.Butt,
+    selectionView: @Composable (selectedItem: DonutChartData?) -> Unit = {},
 ) {
     var selectedIndex by remember { mutableStateOf(-1) }
     val animationTargetState = (0..data.items.size).map {
@@ -146,6 +147,7 @@ fun PlaceHolderDonutChart(
                 }
             }
         )
+        selectionView(null)
     }
 }
 
@@ -161,22 +163,6 @@ fun DonutChart(
     placeholderDonutColor: Color = Color.Gray,
     selectionView: @Composable (selectedItem: DonutChartData?) -> Unit = {},
 ) {
-
-    if (data.items.isEmpty() || data.totalAmount == 0f) {
-        PlaceHolderDonutChart(
-            modifier = modifier,
-            chartSize = chartSize,
-            data = DonutChartDataCollection(
-                listOf(
-                    DonutChartData(100f, placeholderDonutColor.copy(0.3f), "placeHolder"),
-                )
-            ),
-            gapPercentage = gapPercentage,
-            strokeWidth = strokeWidth,
-            strokeWidthSelected = strokeWidthSelected,
-            strokeCap = strokeCap
-        )
-    }
 
     var selectedIndex by remember { mutableStateOf(-1) }
     val animationTargetState = (0..data.items.size).map {

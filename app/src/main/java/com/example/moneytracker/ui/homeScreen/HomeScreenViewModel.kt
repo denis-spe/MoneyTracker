@@ -11,7 +11,6 @@ import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.ui.homeScreen.topTitle.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -82,9 +81,8 @@ class HomeScreenViewModel @Inject constructor(
                         _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
                     }
                     .collect { data ->
-                        _uiState.value = _uiState.value.copy(datasets = data, isLoading = true)
-                        delay(250)
-                        _uiState.value = _uiState.value.copy(isLoading = false)
+                        // Update datasets directly without artificial delays to avoid UI jank
+                        _uiState.value = _uiState.value.copy(datasets = data)
                     }
             }
 
