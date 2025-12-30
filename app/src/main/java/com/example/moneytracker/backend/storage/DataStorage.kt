@@ -35,4 +35,10 @@ interface DataStorage {
 
 
     suspend fun getInfo(userId: String): Flow<Info>
+
+    /**
+     * Add a repay entry into a dataset (identified by its id) for the given user.
+     * Implementations should perform this atomically (transaction) to avoid lost updates.
+     */
+    suspend fun addRepayToDataset(userId: String, datasetId: String, repay: Repay)
 }

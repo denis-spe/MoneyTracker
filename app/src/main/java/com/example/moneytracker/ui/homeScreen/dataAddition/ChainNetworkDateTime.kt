@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -115,8 +117,14 @@ fun ChainNetworkDateTimeButton(
     val minute = if (time.minute < 10) "0${time.minute}" else time.minute
     val dayOfWeek = localDateTimeState.value.dayOfWeek.name
     val color = colorResource(colorResId)
+    val height = integerResource(R.integer.textFieldAndButtonHeight).dp
+    val padding = integerResource(R.integer.modelDrawerPadding).dp
+    val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
 
     OutlinedButton(
+        modifier = Modifier
+            .height(height)
+            .padding(bottom = padding),
         onClick = { showDateTime.value = true },
         colors = ButtonDefaults.outlinedButtonColors().copy(
             contentColor = color,
@@ -137,7 +145,8 @@ fun ChainNetworkDateTimeButton(
             )
             Text(
                 "$dayOfWeek $date ${hour}:${minute}",
-                fontWeight = FONT_WEIGHT
+                fontSize = fontSize
+
             )
         }
     }

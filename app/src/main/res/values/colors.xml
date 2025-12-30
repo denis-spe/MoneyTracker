@@ -15,4 +15,5 @@
     <color name="Debt">#2467DB</color>
     <color name="Lent">#FFAE4C</color>
     <color name="Savings">#76476E</color>
+    <color name="Repay">#08DB8A</color>
 </resources>

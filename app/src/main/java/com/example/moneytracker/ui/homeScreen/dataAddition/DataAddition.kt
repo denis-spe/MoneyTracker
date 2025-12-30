@@ -1,37 +1,29 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
-import android.util.Log
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,37 +35,13 @@ import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
-import com.example.moneytracker.ui.theme.autoColorChange
-import com.example.moneytracker.ui.theme.autoTextColorChange
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 
 private val MODEL_DRAWER_ICON_SIZE = 25.dp
 val FONT_WEIGHT = FontWeight.Bold
 
-@Composable
-fun DataAdditionFloatingButton(
-    onModelBottomSheetShow: (Boolean) -> Unit,
-) {
-    FloatingActionButton(
-        onClick = {
-            Log.d(
-                "DataAdditionFloatingButton",
-                "FAB clicked, invoking onModelBottomSheetShow(true)"
-            )
-            onModelBottomSheetShow(true)
-        },
-        shape = CircleShape,
-        containerColor = Color.autoColorChange,
-    ) {
-        Icon(
-            imageVector = Icons.Default.KeyboardArrowUp,
-            contentDescription = "Add data",
-            tint = Color.autoTextColorChange,
-            modifier = Modifier.size(35.dp)
-        )
-    }
-}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -247,6 +215,10 @@ fun DataAdditionModelDrawerContent(
                 SavingsModelDrawerContent(viewModel)
             }
 
+            DataType.REPAY -> {
+                RepayModelDrawerContent(viewModel)
+            }
+
         }
     }
 }
@@ -268,6 +240,10 @@ fun ModelDrawerContent(
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
     val labelIconState = remember { mutableIntStateOf(R.drawable.description) }
+    val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
+    val repayAmount = rememberTextFieldState()
+    val datasetState = viewModel.uiState.collectAsState()
+    val dataset = datasetState.value.datasets
 
     LaunchedEffect(amountState.text.toString()) {
         if (wasSuccess.value == State.ERROR) {
@@ -319,6 +295,7 @@ fun ModelDrawerContent(
                 state = amountState,
                 placeholder = "0.0",
                 colorResId = colorResId,
+                wasSuccess = wasSuccess,
             )
 
             // Label
@@ -328,6 +305,7 @@ fun ModelDrawerContent(
                 colorResId = colorResId,
                 iconState = labelIconState,
                 viewModel = viewModel,
+                wasSuccess = wasSuccess,
                 textLength = 15
             )
 
@@ -346,10 +324,32 @@ fun ModelDrawerContent(
                 colorResId = colorResId
             )
 
+            if (dataType == DataType.LENT) {
+                RepayField(
+                    state = repayAmount,
+                    datatype = DataType.LENT,
+                    colorResId = colorResId,
+                    datasets = dataset.filter {
+                        it.dataType == DataType.LENT
+                    },
+                    selectedDataset = selectedDataset,
+                )
+            }
+
+            if (dataType == DataType.DEBT) {
+                RepayField(
+                    state = repayAmount,
+                    datatype = DataType.DEBT,
+                    colorResId = colorResId,
+                    datasets = dataset.filter {
+                        it.dataType == DataType.DEBT
+                    },
+                    selectedDataset = selectedDataset,
+                )
+            }
+
             ModelDrawerButton(
-                text = if (wasSuccess.value == State.ERROR) {
-                    "Fill both amount and label"
-                } else buttonText,
+                text = buttonText,
                 wasSuccess = wasSuccess,
                 colorResId = colorResId
             ) {
@@ -384,32 +384,6 @@ fun ModelDrawerContent(
         labelIconState,
         viewModel = viewModel
     )
-}
-
-
-
-@Composable
-fun ModelDrawerButton(
-    text: String,
-    colorResId: Int,
-    wasSuccess: MutableState<State>,
-    onClick: () -> Unit,
-) {
-    val color = if (wasSuccess.value == State.ERROR)
-        colorResource(R.color.error_color) else
-        colorResource(id = colorResId)
-
-    OutlinedButton(
-        onClick = onClick,
-        modifier = Modifier.padding(bottom = 10.dp),
-        colors = ButtonDefaults.outlinedButtonColors().copy(
-            contentColor = color,
-            containerColor = color.copy(alpha = 0.2f),
-        ),
-        border = BorderStroke(1.dp, color)
-    ) {
-        Text(text = text)
-    }
 }
 
 @Composable
@@ -481,4 +455,9 @@ fun SavingsModelDrawerContent(
         buttonText = "Saved",
         viewModel = viewModel
     )
+}
+
+@Composable
+fun RepayModelDrawerContent(viewModel: HomeScreenViewModel) {
+    TODO("Not yet implemented")
 }

@@ -157,6 +157,62 @@ class DataStorageImpl(
             }
     }
 
+    // New: atomically add a repay entry into a specific dataset inside the user's datasets array
+    override suspend fun addRepayToDataset(userId: String, datasetId: String, repay: Repay) {
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+
+        try {
+            db.runTransaction { tx ->
+                val snap = tx.get(docRef)
+                if (!snap.exists()) {
+                    throw IllegalStateException("User document does not exist: $userId")
+                }
+
+                val list = when (val raw = snap.get("datasets")) {
+                    is List<*> -> raw.toMutableList()
+                    null -> mutableListOf<Any>()
+                    else -> mutableListOf(raw)
+                }
+
+                var updated = false
+
+                // Iterate existing dataset maps, find dataset by id and append repay
+                val newList = list.map { item ->
+                    if (item is Map<*, *>) {
+                        val id = item["id"] as? String ?: (item[$$"$id"] as? String)
+                        if (id == datasetId) {
+                            // Build a mutable copy of the map to modify repay
+                            val mutable = item.toMutableMap()
+
+                            val existingRepay: MutableList<Any?> = when (val r = mutable["repay"]) {
+                                is List<*> -> r.map { it }.toMutableList()
+                                null -> mutableListOf()
+                                else -> mutableListOf(r)
+                            }
+
+                            existingRepay.add(repay)
+                            mutable["repay"] = existingRepay
+                            updated = true
+                            mutable as Map<*, *>
+                        } else item
+                    } else null
+                }
+
+                if (!updated) {
+                    throw IllegalStateException("Dataset with id $datasetId not found")
+                }
+
+                tx.update(docRef, "datasets", newList)
+                null
+            }.await()
+
+            Log.d("Firestore", "Successfully added repay to dataset $datasetId for user $userId")
+        } catch (e: Exception) {
+            Log.e("Firestore", "Failed to add repay to dataset: $datasetId for user $userId", e)
+            throw e
+        }
+    }
+
     companion object {
         const val COLLECTION_NAME = "database"
     }

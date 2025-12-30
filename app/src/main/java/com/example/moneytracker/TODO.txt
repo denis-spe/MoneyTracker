@@ -9,3 +9,4 @@ Project tracks
 - Completed the data addition [28/12/25 02:29]
 - Improve donut chart and organise the today screen [28/12/25 21:19]
 - Added animate on donut chart and organised the ItemList [29/12/25 03:00]
+- Introduced repay data and repay field in model drawer [30/12/25 03:30]
