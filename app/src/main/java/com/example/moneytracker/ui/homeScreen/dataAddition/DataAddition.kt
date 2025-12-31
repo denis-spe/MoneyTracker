@@ -4,9 +4,11 @@ package com.example.moneytracker.ui.homeScreen.dataAddition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,12 +33,14 @@ import androidx.compose.ui.unit.dp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Repay
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
+import java.util.UUID
 
 private val MODEL_DRAWER_ICON_SIZE = 25.dp
 val FONT_WEIGHT = FontWeight.Bold
@@ -241,7 +245,7 @@ fun ModelDrawerContent(
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
     val labelIconState = remember { mutableIntStateOf(R.drawable.description) }
     val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
-    val repayAmount = rememberTextFieldState()
+    val repayAmountState = rememberTextFieldState()
     val datasetState = viewModel.uiState.collectAsState()
     val dataset = datasetState.value.datasets
 
@@ -258,6 +262,7 @@ fun ModelDrawerContent(
     }
 
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
+    val repayAsDouble = repayAmountState.text.toString().toDoubleOrNull()
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -326,9 +331,8 @@ fun ModelDrawerContent(
 
             if (dataType == DataType.LENT) {
                 RepayField(
-                    state = repayAmount,
+                    state = repayAmountState,
                     datatype = DataType.LENT,
-                    colorResId = colorResId,
                     datasets = dataset.filter {
                         it.dataType == DataType.LENT
                     },
@@ -338,9 +342,8 @@ fun ModelDrawerContent(
 
             if (dataType == DataType.DEBT) {
                 RepayField(
-                    state = repayAmount,
+                    state = repayAmountState,
                     datatype = DataType.DEBT,
-                    colorResId = colorResId,
                     datasets = dataset.filter {
                         it.dataType == DataType.DEBT
                     },
@@ -348,32 +351,60 @@ fun ModelDrawerContent(
                 )
             }
 
-            ModelDrawerButton(
-                text = buttonText,
-                wasSuccess = wasSuccess,
-                colorResId = colorResId
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
-                    viewModel.addData(
-                        Dataset(
-                            dataType = dataType,
-                            amount = amountAsDouble,
-                            label = labelState.text.toString(),
-                            description = descriptionState.text.toString(),
-                            dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                            labelIcon = labelIconState.value
+                ModelDrawerButton(
+                    text = buttonText,
+                    wasSuccess = wasSuccess,
+                    colorResId = colorResId
+                ) {
+                    if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
+                        viewModel.addData(
+                            Dataset(
+                                id = UUID.randomUUID().toString(),
+                                dataType = dataType,
+                                amount = amountAsDouble,
+                                label = labelState.text.toString(),
+                                description = descriptionState.text.toString(),
+                                dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                labelIcon = labelIconState.intValue
+                            )
                         )
-                    )
-                    wasSuccess.value = State.SUCCESS
+                        wasSuccess.value = State.SUCCESS
 
-                    // Reset all state
-                    amountState.clearText()
-                    labelState.clearText()
-                    descriptionState.clearText()
-                    labelIconState.value = R.drawable.description
+                        // Reset all state
+                        amountState.clearText()
+                        labelState.clearText()
+                        descriptionState.clearText()
+                        labelIconState.intValue = R.drawable.description
 
-                } else {
-                    wasSuccess.value = State.ERROR
+                    } else {
+                        wasSuccess.value = State.ERROR
+                    }
+                }
+                Spacer(modifier = Modifier.width(5.dp))
+
+                if (dataType == DataType.DEBT || dataType == DataType.LENT) {
+                    ModelDrawerButton(
+                        text = "Repay",
+                        wasSuccess = wasSuccess,
+                        colorResId = R.color.Repay
+                    ) {
+                        if (repayAsDouble != null && selectedDataset.value != null) {
+                            viewModel.addRepayData(
+                                selectedDataset.value!!,
+                                Repay(
+                                    amount = repayAsDouble,
+                                    dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                    label = "Repaid: ${selectedDataset.value?.label}",
+                                    description = descriptionState.text.toString()
+                                )
+                            )
+                        }
+                    }
                 }
             }
         }

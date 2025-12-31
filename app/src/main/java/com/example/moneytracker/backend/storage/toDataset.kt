@@ -80,10 +80,10 @@ fun Map<*, *>.toDataset(): Dataset {
         else -> DataType.EARNINGS
     }
 
-    val repay = when (val repayRaw = this["repay"]) {
-        is List<*> -> repayRaw.mapNotNull { it as? Map<*, *> }.map { it.toRepay() }
-        else -> null
-    }
+    // repay may be stored as a list of maps; ensure each item is a Map before calling toRepay()
+    val repay: List<Repay> = (this["repay"] as? List<*>)?.mapNotNull { item ->
+        (item as? Map<*, *>)?.toRepay()
+    } ?: emptyList()
 
     val label = this["label"] as? String ?: ""
     val description = this["description"] as? String ?: ""
@@ -92,9 +92,13 @@ fun Map<*, *>.toDataset(): Dataset {
         ?: (this["labelIcon"] as? String)?.toIntOrNull()
         ?: 0
 
+    // Map stored 'id' (if any) into the Dataset.id field
+    val id = this["id"] as? String
+
     return Dataset(
-        amount = amount,
+        id = id,
         dataType = dataType,
+        amount = amount,
         label = label,
         description = description,
         dateTime = dateTime,

@@ -11,12 +11,9 @@ data class Dataset(
     val description: String,
     val dateTime: Timestamp,
     val labelIcon: Int,
-    val repay: List<Repay>? = null
+    val repay: List<Repay> = emptyList()
 ) {
     fun wasRepaid(): Boolean {
-        if (repay != null) {
-            return repay.sumOf { it.amount } == amount
-        }
-        return false
+        return repay.sumOf { it.amount } == amount
     }
 }

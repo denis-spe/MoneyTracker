@@ -9,6 +9,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import java.util.UUID
 import kotlin.random.Random
 
 class DataStorageImpl(
@@ -146,6 +147,10 @@ class DataStorageImpl(
      * Add a dataset to the storage
      */
     override fun addData(userId: String, dataset: Dataset) {
+        Log.d(
+            "DataStorageImpl",
+            "addData user=$userId dataset.id=${dataset.id} label=${dataset.label}"
+        )
         db.collection(COLLECTION_NAME)
             .document(userId)
             .update("datasets", FieldValue.arrayUnion(dataset))
@@ -157,58 +162,129 @@ class DataStorageImpl(
             }
     }
 
-    // New: atomically add a repay entry into a specific dataset inside the user's datasets array
-    override suspend fun addRepayToDataset(userId: String, datasetId: String, repay: Repay) {
+    private fun repayToMap(repay: Repay): Map<String, Any?> = mapOf(
+        "repayId" to repay.repayId,
+        "amount" to repay.amount,
+        "label" to repay.label,
+        "description" to repay.description,
+        "dateTime" to repay.dateTime
+    )
+
+    override suspend fun addRepayToDataset(
+        userId: String,
+        datasetId: String,
+        repay: Repay
+    ) {
+        Log.d(
+            "DataStorageImpl",
+            "addRepayToDataset called: $repay for datasetId=$datasetId userId=$userId"
+        )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
         try {
             db.runTransaction { tx ->
                 val snap = tx.get(docRef)
                 if (!snap.exists()) {
-                    throw IllegalStateException("User document does not exist: $userId")
+                    Log.w("DataStorageImpl", "User document does not exist: $userId")
+                    return@runTransaction null
                 }
 
-                val list = when (val raw = snap.get("datasets")) {
-                    is List<*> -> raw.toMutableList()
-                    null -> mutableListOf<Any>()
-                    else -> mutableListOf(raw)
+                val list: MutableList<Any?> = when (val rawDatasets = snap.get("datasets")) {
+                    is List<*> -> rawDatasets.map { it as Any? }.toMutableList()
+                    null -> mutableListOf()
+                    else -> mutableListOf(rawDatasets as Any?)
                 }
 
-                var updated = false
-
-                // Iterate existing dataset maps, find dataset by id and append repay
-                val newList = list.map { item ->
-                    if (item is Map<*, *>) {
-                        val id = item["id"] as? String ?: (item[$$"$id"] as? String)
-                        if (id == datasetId) {
-                            // Build a mutable copy of the map to modify repay
-                            val mutable = item.toMutableMap()
-
-                            val existingRepay: MutableList<Any?> = when (val r = mutable["repay"]) {
-                                is List<*> -> r.map { it }.toMutableList()
-                                null -> mutableListOf()
-                                else -> mutableListOf(r)
-                            }
-
-                            existingRepay.add(repay)
-                            mutable["repay"] = existingRepay
-                            updated = true
-                            mutable as Map<*, *>
-                        } else item
-                    } else null
+                // Find the dataset map by matching its stored 'id' field to datasetId
+                val idx = list.indexOfFirst { item ->
+                    (item as? Map<*, *>)?.get("id")?.toString() == datasetId
                 }
 
-                if (!updated) {
-                    throw IllegalStateException("Dataset with id $datasetId not found")
+                if (idx == -1) {
+                    Log.w(
+                        "DataStorageImpl",
+                        "Could not find dataset with id $datasetId in user's datasets"
+                    )
+                    return@runTransaction null
                 }
 
-                tx.update(docRef, "datasets", newList)
+                // Safely create a mutable map with String keys for the dataset
+                val datasetMap: MutableMap<String, Any?> = when (val existing = list[idx]) {
+                    is Map<*, *> -> existing.entries.associate { (k, v) -> k.toString() to v }
+                        .toMutableMap()
+
+                    else -> mutableMapOf()
+                }
+
+                // Ensure repay list exists and is a mutable list we can append to
+                val currentRepay =
+                    (datasetMap["repay"] as? List<*>)?.map { it as Any? }?.toMutableList()
+                        ?: mutableListOf()
+                currentRepay.add(repayToMap(repay))
+
+                // Put updated repay back into the dataset map
+                datasetMap["repay"] = currentRepay
+
+                // Replace the dataset in the list with updated map
+                list[idx] = datasetMap
+
+                // Write the updated datasets array back
+                tx.update(docRef, "datasets", list)
                 null
             }.await()
 
-            Log.d("Firestore", "Successfully added repay to dataset $datasetId for user $userId")
+            Log.d(
+                "DataStorageImpl",
+                "addRepayToDataset transaction committed for datasetId=$datasetId"
+            )
         } catch (e: Exception) {
-            Log.e("Firestore", "Failed to add repay to dataset: $datasetId for user $userId", e)
+            Log.e("DataStorageImpl", "Failed to add repay to dataset", e)
+            throw e
+        }
+    }
+
+    override suspend fun ensureDatasetIds(userId: String) {
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+        try {
+            db.runTransaction { tx ->
+                val snap = tx.get(docRef)
+                if (!snap.exists()) return@runTransaction null
+
+                val list: MutableList<Any?> = when (val rawDatasets = snap.get("datasets")) {
+                    is List<*> -> rawDatasets.map { it as Any? }.toMutableList()
+                    else -> mutableListOf()
+                }
+
+                var changed = false
+                var added = 0
+                val newList = list.map { item ->
+                    if (item is Map<*, *>) {
+                        val id = item["id"] as? String
+                        if (id == null) {
+                            changed = true
+                            added++
+                            // copy entries and add id
+                            val mutable = item.entries.associate { (k, v) -> k.toString() to v }
+                                .toMutableMap()
+                            mutable["id"] = UUID.randomUUID().toString()
+                            mutable as Map<String, Any?>
+                        } else item
+                    } else item
+                }
+
+                if (changed) {
+                    Log.d(
+                        "DataStorageImpl",
+                        "ensureDatasetIds: assigning $added ids for user=$userId"
+                    )
+                    tx.update(docRef, "datasets", newList)
+                } else {
+                    Log.d("DataStorageImpl", "ensureDatasetIds: no ids needed for user=$userId")
+                }
+                null
+            }.await()
+        } catch (e: Exception) {
+            Log.e("DataStorageImpl", "Failed to ensure dataset ids", e)
             throw e
         }
     }

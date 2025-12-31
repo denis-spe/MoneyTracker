@@ -144,7 +144,11 @@ fun ChainNetworkDateTimeButton(
                 contentDescription = "Calendar and clock"
             )
             Text(
-                "$dayOfWeek $date ${hour}:${minute}",
+                "${
+                    dayOfWeek.take(3).lowercase().mapIndexed { index, char ->
+                        if (index == 0) char.uppercase() else char
+                    }.joinToString("")
+                } $date ${hour}:${minute}",
                 fontSize = fontSize
 
             )

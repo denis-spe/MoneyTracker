@@ -11,11 +11,6 @@ interface DataStorage {
     val db: FirebaseFirestore
 
     /**
-     * Get all datasets
-     */
-//    val getWholeDatasets: State<List<Dataset>>
-
-    /**
      * Create a new user with a given id
      */
     suspend fun createUserWithId(id: String)
@@ -41,4 +36,10 @@ interface DataStorage {
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      */
     suspend fun addRepayToDataset(userId: String, datasetId: String, repay: Repay)
+
+    /**
+     * Ensure every dataset stored for the user has a non-null id; assign UUIDs to missing ones.
+     * This is a migration helper to avoid dataset.id being null for older documents.
+     */
+    suspend fun ensureDatasetIds(userId: String)
 }

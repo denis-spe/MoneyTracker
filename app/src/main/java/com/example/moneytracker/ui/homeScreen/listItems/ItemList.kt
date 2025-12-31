@@ -48,14 +48,14 @@ fun ItemCard(dataset: Dataset) {
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+            horizontalArrangement = Arrangement.SpaceEvenly,
             modifier = Modifier
-                .fillMaxWidth(0.7f)
+                .fillMaxWidth(0.8f)
         ) {
             // Icon column
             Column(
                 verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                horizontalAlignment = Alignment.Start
             ) {
                 Image(
                     painter = painterResource(dataset.labelIcon),

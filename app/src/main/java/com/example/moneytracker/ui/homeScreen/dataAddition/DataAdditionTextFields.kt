@@ -44,6 +44,7 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -191,7 +192,6 @@ fun ModelDrawerAmountField(
 fun RepayField(
     datatype: DataType,
     state: TextFieldState,
-    colorResId: Int,
     datasets: List<Dataset>,
     selectedDataset: MutableState<Dataset?>,
     modifier: Modifier = Modifier
@@ -200,13 +200,15 @@ fun RepayField(
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val corner = 30.dp
 
-    LaunchedEffect(selectedDataset.value) {
-        state.edit {
-            replace(
-                0, length,
-                selectedDataset.value?.amount.toString()
-            )
-
+    // If datasets change (e.g. migration assigned ids), refresh selectedDataset reference
+    LaunchedEffect(datasets) {
+        val current = selectedDataset.value
+        if (current != null) {
+            val matched =
+                datasets.find { it.label == current.label && it.dateTime == current.dateTime }
+            if (matched != null) {
+                selectedDataset.value = matched
+            }
         }
     }
 
@@ -231,6 +233,13 @@ fun RepayField(
                     onClick = {
                         isExpanded = false
                         selectedDataset.value = dataset
+                        state.edit {
+                            replace(
+                                0,
+                                length,
+                                dataset.amount.formatToAmount()
+                            )
+                        }
                     },
                     leadingIcon = {
                         Image(
@@ -259,7 +268,7 @@ fun RepayField(
             shape = RoundedCornerShape(
                 topEnd = corner,
                 bottomEnd = corner
-            )
+            ),
         )
     }
 }

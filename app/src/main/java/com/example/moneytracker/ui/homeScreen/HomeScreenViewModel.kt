@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Repay
 import com.example.moneytracker.ui.homeScreen.topTitle.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,6 +50,46 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    fun addRepayData(dataset: Dataset, repay: Repay) {
+        // Log early so we can see UI triggered this method
+        Log.d(
+            "HomeScreenViewModel",
+            "addRepayData called for dataset=${dataset.label} id=${dataset.id}"
+        )
+
+        // If id is null, attempt to find a matching dataset that may have been migrated/updated
+        var targetId: String? = dataset.id
+        if (targetId == null) {
+            val match =
+                _uiState.value.datasets.find { it.label == dataset.label && it.dateTime == dataset.dateTime }
+            if (match != null && match.id != null) {
+                targetId = match.id
+                Log.d(
+                    "HomeScreenViewModel",
+                    "Found matching migrated dataset id=$targetId for label=${dataset.label}"
+                )
+            } else {
+                Log.w(
+                    "HomeScreenViewModel",
+                    "Dataset.id is null and no matching migrated dataset found. Dataset: $dataset"
+                )
+                return
+            }
+        }
+
+        viewModelScope.launch {
+            try {
+                dataStorage.addRepayToDataset(
+                    userState.value!!.uid,
+                    datasetId = targetId,
+                    repay = repay
+                )
+            } catch (e: Exception) {
+                Log.e("HomeScreenViewModel", "addRepayData failed", e)
+            }
+        }
+    }
+
     fun updateTopTitle(currentTopTitle: CurrentTopTitle) {
         _uiState.value = _uiState.value.copy(topTitle = currentTopTitle)
     }
@@ -69,10 +110,18 @@ class HomeScreenViewModel @Inject constructor(
         isDescriptionIconVisible = isVisible
     }
 
+
     private fun fetchDataset() {
         viewModelScope.launch {
             // ensure we have a user id to subscribe with
             val uid = userState.value?.uid ?: return@launch
+
+            // Migration: ensure stored datasets have ids so repay can match by id
+            try {
+                dataStorage.ensureDatasetIds(uid)
+            } catch (e: Exception) {
+                Log.e("HomeScreenViewModel", "ensureDatasetIds failed", e)
+            }
 
             // Launch two concurrent collectors so neither flow blocks the other
             launch {
