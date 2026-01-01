@@ -9,9 +9,12 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -24,20 +27,27 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.helper.State
-import com.example.moneytracker.ui.theme.autoColorChange
 import com.example.moneytracker.ui.theme.autoTextColorChange
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionFloatingButton(
-    onModelBottomSheetShow: (Boolean) -> Unit,
+    updateOnModelBottomSheetShow: (Boolean) -> Unit,
+    sheetState: SheetState,
+    scope: CoroutineScope,
 ) {
     FloatingActionButton(
         onClick = {
-            onModelBottomSheetShow(true)
+            updateOnModelBottomSheetShow(true)
+            scope.launch {
+                sheetState.show()
+            }
         },
         shape = CircleShape,
-        containerColor = Color.autoColorChange,
+        containerColor = MaterialTheme.colorScheme.background,
     ) {
         Icon(
             imageVector = Icons.Default.KeyboardArrowUp,

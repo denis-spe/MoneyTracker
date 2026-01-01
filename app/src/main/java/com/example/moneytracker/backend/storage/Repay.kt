@@ -9,4 +9,5 @@ data class Repay(
     val label: String,
     val description: String,
     val dateTime: com.google.firebase.Timestamp,
+    val labelIcon: Int,
 )

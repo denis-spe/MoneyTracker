@@ -14,9 +14,9 @@ import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -38,6 +38,8 @@ import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
@@ -50,28 +52,29 @@ val FONT_WEIGHT = FontWeight.Bold
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawer(
-    onModelBottomSheetShowValue: Boolean,
-    onModelBottomSheetShow: (Boolean) -> Unit,
+    sheetState: SheetState,
     viewModel: HomeScreenViewModel,
+    updateOnModelBottomSheetShow: (Boolean) -> Unit,
+    scope: CoroutineScope,
+    isBottomSheetOpen: Boolean,
 ) {
     val tabToDisplay = remember { mutableStateOf(DataType.EARNINGS) }
 
-    // Create a remembered sheet state so the sheet (and its content) is pre-composed.
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true,
-    )
 
-    if (onModelBottomSheetShowValue)
+    if (isBottomSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = {
-                // If the user dismisses the sheet via gesture or scrim tap, update the flag.
-                onModelBottomSheetShow(false)
+                updateOnModelBottomSheetShow(false)
+                scope.launch {
+                    sheetState.hide()
+                }
             },
             sheetState = sheetState,
         ) {
             DataAdditionModelDrawerTopTitle(tabToDisplay)
             DataAdditionModelDrawerContent(tabToDisplay, viewModel)
         }
+    }
 }
 
 @Composable
@@ -400,9 +403,14 @@ fun ModelDrawerContent(
                                     amount = repayAsDouble,
                                     dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
                                     label = "Repaid: ${selectedDataset.value?.label}",
-                                    description = descriptionState.text.toString()
+                                    description = selectedDataset.value?.description ?: "",
+                                    labelIcon = selectedDataset.value?.labelIcon
+                                        ?: R.drawable.description
                                 )
                             )
+
+                            repayAmountState.clearText()
+                            selectedDataset.value = null
                         }
                     }
                 }

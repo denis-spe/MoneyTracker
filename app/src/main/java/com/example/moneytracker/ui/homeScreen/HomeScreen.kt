@@ -4,6 +4,7 @@ package com.example.moneytracker.ui.homeScreen
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -11,17 +12,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FabPosition
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -36,6 +41,7 @@ import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.components.charts.DonutChart
 import com.example.moneytracker.ui.components.charts.collections.DonutChartData
@@ -59,9 +65,12 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val uiStates = viewModel.uiState.collectAsState()
     val userState = viewModel.userState.collectAsState()
     val datasets = uiStates.value.datasets
+    val scope = rememberCoroutineScope()
+    // Create a remembered sheet state so the sheet (and its content) is pre-composed.
+    val sheetState = rememberModalBottomSheetState(
+        skipPartiallyExpanded = true,
+    )
 
-    // Keep the passed userId referenced to avoid unused-parameter warnings
-    // userId intentionally unused in this screen; parameter kept for API stability
 
     val colors = Colors()
 
@@ -105,112 +114,147 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     }
 
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(stringResource(R.string.homeScreenId))
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        viewModel.updateIsUserDropdownVisible(false)
-                    }
-                )
-            },
-        topBar = {
-            CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors().copy(
-                    titleContentColor = Color.White,
-                ),
-                title = {
-                    TopTitlePanel(
-                        uiStates,
-                        contentColor = contentColor,
-                        currentPageColor = colors.currentPageColor,
-                        backgroundColor = backgroundColor,
-                        viewModel::updateTopTitle
+    when (val datasetUiState = viewModel.datasetUiState) {
+
+        is DatasetUiState.Success -> {
+            Scaffold(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(stringResource(R.string.homeScreenId))
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                viewModel.updateIsUserDropdownVisible(false)
+                            }
+                        )
+                    },
+                topBar = {
+                    CenterAlignedTopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors().copy(
+                            titleContentColor = Color.White,
+                        ),
+                        title = {
+                            TopTitlePanel(
+                                uiStates,
+                                contentColor = contentColor,
+                                currentPageColor = colors.currentPageColor,
+                                backgroundColor = backgroundColor,
+                                viewModel::updateTopTitle
+                            )
+                        },
+                        navigationIcon = {
+                            TopNavPanel(
+                                userState,
+                                contentColor = contentColor,
+                                userColor = uiStates.value.info.color
+                            ) {
+                                viewModel.updateIsUserDropdownVisible(
+                                    !uiStates.value.isUserDropdownVisible
+                                )
+                            }
+                        }
                     )
                 },
-                navigationIcon = {
-                    TopNavPanel(
-                        userState,
-                        contentColor = contentColor,
-                        userColor = uiStates.value.info.color
-                    ) {
-                        viewModel.updateIsUserDropdownVisible(
-                            !uiStates.value.isUserDropdownVisible
-                        )
-                    }
-                }
-            )
-        },
-        floatingActionButton = {
-            DataAdditionFloatingButton(viewModel::updateOnModelBottomSheetShow)
-        },
-        floatingActionButtonPosition = FabPosition.Center,
-    ) { paddingValues ->
+                floatingActionButton = {
+                    DataAdditionFloatingButton(
+                        sheetState = sheetState,
+                        scope = scope,
+                        updateOnModelBottomSheetShow = viewModel::updateOnModelBottomSheetShow
+                    )
+                },
+                floatingActionButtonPosition = FabPosition.Center,
+            ) { paddingValues ->
 
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            DonutChart(
-                data = donutChartDataCollection,
-                chartSize = 150.dp,
-                gapPercentage = 0.06f,
-                strokeCap = StrokeCap.Round,
-                strokeWidthSelected = 30.dp
-            ) {
                 Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(paddingValues),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    it?.let { donutChartData ->
-                        Text(text = donutChartData.title)
-                        Text(text = donutChartData.amount.formatToAmount())
-                    } ?: run {
-                        var enabled by remember { mutableStateOf(true) }
-                        val totalAmount: Float by animateFloatAsState(
-                            if (enabled)
-                                donutChartDataCollection.totalAmount
-                            else 0f,
-                            label = "Overall Amount",
-                            animationSpec = tween(
-                                durationMillis = 1000,
-                                easing = LinearEasing,
-                            )
-                        )
+                    DonutChart(
+                        data = donutChartDataCollection,
+                        chartSize = 150.dp,
+                        gapPercentage = 0.06f,
+                        strokeCap = StrokeCap.Round,
+                        strokeWidthSelected = 30.dp
+                    ) {
+                        Column(
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            it?.let { donutChartData ->
+                                Text(text = donutChartData.title)
+                                Text(text = donutChartData.amount.formatToAmount())
+                            } ?: run {
+                                var enabled by remember { mutableStateOf(true) }
+                                val totalAmount: Float by animateFloatAsState(
+                                    if (enabled)
+                                        donutChartDataCollection.totalAmount
+                                    else 0f,
+                                    label = "Overall Amount",
+                                    animationSpec = tween(
+                                        durationMillis = 1000,
+                                        easing = LinearEasing,
+                                    )
+                                )
 
-                        Text(text = "Total")
-                        Text(text = totalAmount.formatToAmount())
+                                Text(text = "Total")
+                                Text(text = totalAmount.formatToAmount())
+                            }
+                        }
                     }
+
+                    ItemList(datasets)
+
                 }
+
+                // Drop down user profile
+                DropDownUserProfile(
+                    paddingValues,
+                    contentColor = contentColor,
+                    backgroundColor = backgroundColor.copy(alpha = 0.9f),
+                    visible = uiStates.value.isUserDropdownVisible,
+                    userState = userState,
+                    isLoading = uiStates.value.isLogOutLoading,
+                ) {
+                    viewModel.updateIsLogOutLoading(!uiStates.value.isLogOutLoading)
+                }
+
+                // Modal bottom sheet
+                DataAdditionModelDrawer(
+                    viewModel = viewModel,
+                    sheetState = sheetState,
+                    scope = scope,
+                    isBottomSheetOpen = uiStates.value.isBottomSheetOpen,
+                    updateOnModelBottomSheetShow = viewModel::updateOnModelBottomSheetShow,
+                )
             }
-
-            ItemList(datasets)
-
         }
 
-        // Drop down user profile
-        DropDownUserProfile(
-            paddingValues,
-            contentColor = contentColor,
-            backgroundColor = backgroundColor.copy(alpha = 0.9f),
-            visible = uiStates.value.isUserDropdownVisible,
-            userState = userState,
-            isLoading = uiStates.value.isLogOutLoading,
-        ) {
-            viewModel.updateIsLogOutLoading(!uiStates.value.isLogOutLoading)
+        is DatasetUiState.Loading -> {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(
+                        MaterialTheme.colorScheme.background
+                    ),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator()
+            }
         }
 
-        // Modal bottom sheet
-        DataAdditionModelDrawer(
-            uiStates.value.onModelBottomSheetShow,
-            viewModel::updateOnModelBottomSheetShow,
-            viewModel
-        )
+        is DatasetUiState.Error -> {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = datasetUiState.message ?: "Unknown error")
+            }
+        }
     }
 
 }

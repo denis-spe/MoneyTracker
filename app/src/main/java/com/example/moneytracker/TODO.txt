@@ -11,3 +11,4 @@ Project tracks
 - Added animate on donut chart and organised the ItemList [29/12/25 03:00]
 - Introduced repay data and repay field in model drawer [30/12/25 03:30]
 - Fixed the repay property for adding data [31/12/25 03:37]
+- Update the textField [01/01/26 05:23]

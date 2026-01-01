@@ -26,7 +26,11 @@ interface DataStorage {
      * Get all datasets
      * @param userId the user id
      */
-    suspend fun getWholeDatasets(userId: String): Flow<List<Dataset>>
+    suspend fun getWholeDatasets(
+        userId: String,
+        onSuccess: (isSuccess: Boolean) -> Unit,
+        onFailure: (error: Throwable?) -> Unit
+    ): Flow<List<Dataset>>
 
 
     suspend fun getInfo(userId: String): Flow<Info>

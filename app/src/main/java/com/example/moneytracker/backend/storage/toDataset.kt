@@ -25,13 +25,17 @@ fun Map<*, *>.toRepay(): Repay {
         is String -> (dateTimeRaw.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
         else -> Timestamp(0, 0)
     }
+    val labelIcon = (this["labelIcon"] as? Number)?.toInt()
+        ?: (this["labelIcon"] as? String)?.toIntOrNull()
+        ?: 0
 
     return Repay(
         repayId = repayId,
         amount = amount,
         label = label,
         description = description,
-        dateTime = dateTime
+        dateTime = dateTime,
+        labelIcon = labelIcon
     )
 }
 

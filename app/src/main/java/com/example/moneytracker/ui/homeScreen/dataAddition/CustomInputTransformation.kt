@@ -10,5 +10,7 @@ class CustomInputTransformation : InputTransformation {
         if (!asCharSequence().isDigitsOnly()) {
             revertAllChanges()
         }
+
+        placeCursorBeforeCharAt(length)
     }
 }

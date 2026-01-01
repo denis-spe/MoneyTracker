@@ -14,6 +14,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.insert
 import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.foundation.text.input.then
 import androidx.compose.material3.DropdownMenu
@@ -44,7 +46,6 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.State
-import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -124,9 +125,9 @@ fun ModelDrawerAmountField(
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
+    modifier: Modifier = Modifier,
     shape: Shape = CircleShape,
     wasSuccess: MutableState<State>? = null,
-    modifier: Modifier = Modifier
 ) {
     val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
     val color = if (isError)
@@ -214,7 +215,7 @@ fun RepayField(
 
     Row(
         modifier = modifier
-            .fillMaxWidth(0.7f)
+            .fillMaxWidth(0.8f)
             .padding(bottom = 10.dp),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
@@ -233,12 +234,9 @@ fun RepayField(
                     onClick = {
                         isExpanded = false
                         selectedDataset.value = dataset
+                        state.clearText()
                         state.edit {
-                            replace(
-                                0,
-                                length,
-                                dataset.amount.formatToAmount()
-                            )
+                            this.insert(0, dataset.amount.toLong().toString())
                         }
                     },
                     leadingIcon = {

@@ -5,5 +5,5 @@
     <integer name="authButtonRoundedCornerShape">20</integer>
     <integer name="textFieldAndButtonHeight">50</integer>
     <integer name="modelDrawerPadding">10</integer>
-    <integer name="modelDrawerFontSize">13</integer>
+    <integer name="modelDrawerFontSize">15</integer>
 </resources>

@@ -1,11 +1,14 @@
 package com.example.moneytracker.backend.storage
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -16,7 +19,12 @@ class DataStorageImpl(
     override val db: FirebaseFirestore
 ) : DataStorage {
 
-    override suspend fun getWholeDatasets(userId: String): Flow<List<Dataset>> = callbackFlow {
+    @RequiresApi(Build.VERSION_CODES.O)
+    override suspend fun getWholeDatasets(
+        userId: String,
+        onSuccess: (isSuccess: Boolean) -> Unit,
+        onFailure: (error: Throwable?) -> Unit
+    ): Flow<List<Dataset>> = callbackFlow {
         val documentRef = db.collection(COLLECTION_NAME)
             .document(userId)
 
@@ -27,7 +35,7 @@ class DataStorageImpl(
                 return@addSnapshotListener
             }
 
-            try {
+            val data = try {
                 val raw = snapshot?.get("datasets")
                 Log.d("DataStorageImpl", "raw datasets field: $raw")
                 if (raw == null) {
@@ -59,6 +67,11 @@ class DataStorageImpl(
                 Log.e("DataStorageImpl", "Unhandled error while reading datasets", e)
                 // Don't close the flow on parse errors; send an empty list instead to keep collecting
                 trySend(emptyList())
+            }
+            onSuccess(data.isSuccess)
+
+            data.onFailure {
+                onFailure(it)
             }
         }
         awaitClose { listenerRegistration.remove() } // Unregister the listener when the flow is cancelled

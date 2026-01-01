@@ -18,27 +18,56 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Repay
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 
+val Int.addZeroIfLessThenTen: String
+    get() = if (this < 10) "0$this" else this.toString()
+
 @Composable
 fun ItemList(datasets: List<Dataset>) {
+
     LazyColumn(
         modifier = Modifier.height(200.dp)
     ) {
-
         items(datasets.size) {
             val dataset = datasets[it]
-            ItemCard(dataset)
+            ItemCardDataset(dataset)
+            val repayments = dataset.repay
+            if (repayments.isNotEmpty()) {
+                for (repay in repayments)
+                    ItemCardRepay(repay)
+            }
         }
+
+
+//        if (repay.isNotEmpty()) {
+//            items(repay.size) {
+//                val repayData = repay[it]
+//                ItemCardDataset(
+//                    Dataset(
+//                        id = repayData.repayId,
+//                        dataType = DataType.REPAY,
+//                        amount = repayData.amount,
+//                        label = repayData.label,
+//                        description = repayData.description,
+//                        dateTime = repayData.dateTime,
+//                        labelIcon = repayData.labelIcon
+//                    )
+//                )
+//            }
+//        }
     }
 }
 
 @Composable
-fun ItemCard(dataset: Dataset) {
+fun ItemCardDataset(dataset: Dataset) {
     val color = colorResource(dataset.dataType.color)
     Column(
         modifier = Modifier
@@ -74,12 +103,10 @@ fun ItemCard(dataset: Dataset) {
                     description = description.substring(0..10) + "..."
 
                 val dateTime = dataset.dateTime.toLocalDateTimeUtc()
-                val day = dateTime.day
-                val hour = if (dateTime.hour < 10) "0${dateTime.hour}" else dateTime.hour
-                val minute = if (dateTime.minute < 10) "0${dateTime.minute}" else dateTime.minute
-                val month = dateTime.month.name.take(3).lowercase().mapIndexedNotNull { index, c ->
-                    if (index == 0) c.uppercase() else c.lowercase()
-                }.joinToString("")
+                val day = dateTime.day.addZeroIfLessThenTen
+                val hour = dateTime.hour.addZeroIfLessThenTen
+                val minute = dateTime.minute.addZeroIfLessThenTen
+                val month = dateTime.month.name.take(3).title
                 val year = dateTime.year
                 val dateTimeAsString = "$day $month $year, $hour:$minute"
 
@@ -101,6 +128,81 @@ fun ItemCard(dataset: Dataset) {
                     DataType.DEBT -> "-$amount"
                     else -> amount
                 }
+
+                Text(
+                    text = amount,
+                    color = color
+                )
+            }
+
+        }
+        HorizontalDivider(
+            modifier = Modifier
+                .fillMaxWidth(0.7f)
+                .padding(top = 5.dp),
+            color = color,
+            thickness = 1.dp
+        )
+    }
+}
+
+@Composable
+fun ItemCardRepay(dataset: Repay) {
+    val color = colorResource(R.color.Repay)
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            modifier = Modifier
+                .fillMaxWidth(0.8f)
+        ) {
+            // Icon column
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
+                Image(
+                    painter = painterResource(dataset.labelIcon),
+                    contentDescription = "list icon",
+                    modifier = Modifier.size(ICON_SIZE)
+                )
+            }
+
+            // Label, description, and date time column
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.Start
+            ) {
+                var description = dataset.description
+                if (description.length > 10)
+                    description = description.substring(0..10) + "..."
+
+                val dateTime = dataset.dateTime.toLocalDateTimeUtc()
+                val day = dateTime.day.addZeroIfLessThenTen
+                val hour = dateTime.hour.addZeroIfLessThenTen
+                val minute = dateTime.minute.addZeroIfLessThenTen
+                val month = dateTime.month.name.take(3).title
+                val year = dateTime.year
+                val dateTimeAsString = "$day $month $year, $hour:$minute"
+
+                Text(text = dataset.label)
+                if (dataset.description.isNotEmpty()) {
+                    Text(text = description)
+                }
+                Text(text = dateTimeAsString)
+            }
+
+            // Amount column
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.End
+            ) {
+                val amount = dataset.amount.formatToAmount()
 
                 Text(
                     text = amount,

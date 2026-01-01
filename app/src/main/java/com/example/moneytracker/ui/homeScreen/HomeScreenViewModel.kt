@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.Repay
 import com.example.moneytracker.ui.homeScreen.topTitle.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -29,6 +30,8 @@ class HomeScreenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     var isDescriptionIconVisible by mutableStateOf(false)
+        private set
+    var datasetUiState by mutableStateOf<DatasetUiState>(DatasetUiState.Loading)
         private set
 
     /**
@@ -103,7 +106,7 @@ class HomeScreenViewModel @Inject constructor(
     }
 
     fun updateOnModelBottomSheetShow(isVisible: Boolean) {
-        _uiState.value = _uiState.value.copy(onModelBottomSheetShow = isVisible)
+        _uiState.value = _uiState.value.copy(isBottomSheetOpen = isVisible)
     }
 
     fun updateIsDescriptionIconVisible(isVisible: Boolean) {
@@ -125,7 +128,15 @@ class HomeScreenViewModel @Inject constructor(
 
             // Launch two concurrent collectors so neither flow blocks the other
             launch {
-                dataStorage.getWholeDatasets(uid)
+                dataStorage.getWholeDatasets(
+                    uid,
+                    onSuccess = {
+                        datasetUiState = DatasetUiState.Success
+                    },
+                    onFailure = {
+                        datasetUiState = DatasetUiState.Error(it?.message)
+                    }
+                )
                     .catch { e ->
                         _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
                     }

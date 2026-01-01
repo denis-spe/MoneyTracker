@@ -13,5 +13,5 @@ data class HomeUiState(
     val topTitle: CurrentTopTitle = CurrentTopTitle.TODAY,
     val isUserDropdownVisible: Boolean = false,
     val isLogOutLoading: Boolean = false,
-    val onModelBottomSheetShow: Boolean = false,
+    val isBottomSheetOpen: Boolean = false,
 )
