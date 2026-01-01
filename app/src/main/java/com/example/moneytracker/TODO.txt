@@ -12,3 +12,4 @@ Project tracks
 - Introduced repay data and repay field in model drawer [30/12/25 03:30]
 - Fixed the repay property for adding data [31/12/25 03:37]
 - Update the textField [01/01/26 05:23]
+- Improve the ui view [02/01/26 01:24]

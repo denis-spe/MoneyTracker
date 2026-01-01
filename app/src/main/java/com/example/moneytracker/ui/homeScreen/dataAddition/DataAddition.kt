@@ -396,18 +396,21 @@ fun ModelDrawerContent(
                         wasSuccess = wasSuccess,
                         colorResId = R.color.Repay
                     ) {
-                        if (repayAsDouble != null && selectedDataset.value != null) {
-                            viewModel.addRepayData(
-                                selectedDataset.value!!,
-                                Repay(
-                                    amount = repayAsDouble,
-                                    dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                    label = "Repaid: ${selectedDataset.value?.label}",
-                                    description = selectedDataset.value?.description ?: "",
-                                    labelIcon = selectedDataset.value?.labelIcon
-                                        ?: R.drawable.description
+                        if (repayAsDouble != null) {
+                            selectedDataset.value?.let {
+                                viewModel.addRepayData(
+                                    it,
+                                    Repay(
+                                        amount = repayAsDouble,
+                                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                        label = "Repaid: ${it.label}",
+                                        description = it.description,
+                                        repayIcon = it.labelIcon
+                                    )
                                 )
-                            )
+                            } ?: run {
+                                wasSuccess.value = State.ERROR
+                            }
 
                             repayAmountState.clearText()
                             selectedDataset.value = null

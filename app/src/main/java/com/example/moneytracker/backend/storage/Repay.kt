@@ -1,13 +1,12 @@
 // Great is the LORD of host
 package com.example.moneytracker.backend.storage
 
-import com.google.firebase.firestore.DocumentId
+import com.google.firebase.Timestamp
 
 data class Repay(
-    @DocumentId val repayId: String? = null,
     val amount: Double,
     val label: String,
     val description: String,
-    val dateTime: com.google.firebase.Timestamp,
-    val labelIcon: Int,
+    val dateTime: Timestamp,
+    val repayIcon: Int,
 )

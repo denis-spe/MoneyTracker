@@ -1,9 +1,6 @@
 // Bless be the Name of the Lord
 package com.example.moneytracker.ui.homeScreen
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -23,35 +20,29 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DatasetUiState
-import com.example.moneytracker.helper.formatToAmount
-import com.example.moneytracker.ui.components.charts.DonutChart
 import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
+import com.example.moneytracker.ui.homeScreen.chartContent.ItemList
+import com.example.moneytracker.ui.homeScreen.chartContent.Statistic
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
-import com.example.moneytracker.ui.homeScreen.listItems.ItemList
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
-import com.example.moneytracker.ui.homeScreen.topTitle.TopTitlePanel
+import com.example.moneytracker.ui.homeScreen.topPanel.TopTitlePanel
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import kotlinx.coroutines.delay
 
@@ -170,44 +161,15 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         .fillMaxSize()
                         .padding(paddingValues),
                     horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    DonutChart(
-                        data = donutChartDataCollection,
-                        chartSize = 150.dp,
-                        gapPercentage = 0.06f,
-                        strokeCap = StrokeCap.Round,
-                        strokeWidthSelected = 30.dp
-                    ) {
-                        Column(
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            it?.let { donutChartData ->
-                                Text(text = donutChartData.title)
-                                Text(text = donutChartData.amount.formatToAmount())
-                            } ?: run {
-                                var enabled by remember { mutableStateOf(true) }
-                                val totalAmount: Float by animateFloatAsState(
-                                    if (enabled)
-                                        donutChartDataCollection.totalAmount
-                                    else 0f,
-                                    label = "Overall Amount",
-                                    animationSpec = tween(
-                                        durationMillis = 1000,
-                                        easing = LinearEasing,
-                                    )
-                                )
+                    // Statistic
+                    Statistic(donutChartDataCollection, datasets = datasets)
 
-                                Text(text = "Total")
-                                Text(text = totalAmount.formatToAmount())
-                            }
-                        }
-                    }
-
+                    // Items list
                     ItemList(datasets)
-
                 }
+
 
                 // Drop down user profile
                 DropDownUserProfile(

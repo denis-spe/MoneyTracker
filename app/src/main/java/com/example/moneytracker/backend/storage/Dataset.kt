@@ -1,10 +1,10 @@
 package com.example.moneytracker.backend.storage
 
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.DocumentId
+
 
 data class Dataset(
-    @DocumentId val id: String? = null,
+    val id: String = "",
     val dataType: DataType,
     val amount: Double,
     val label: String,

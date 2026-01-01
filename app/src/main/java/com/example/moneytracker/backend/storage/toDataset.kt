@@ -3,7 +3,6 @@ package com.example.moneytracker.backend.storage
 import com.google.firebase.Timestamp
 
 fun Map<*, *>.toRepay(): Repay {
-    val repayId = this["repayId"] as? String ?: ""
     val amount = (this["amount"] as? Number)?.toDouble()
         ?: (this["amount"] as? String)?.toDoubleOrNull()
         ?: 0.0
@@ -25,17 +24,14 @@ fun Map<*, *>.toRepay(): Repay {
         is String -> (dateTimeRaw.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
         else -> Timestamp(0, 0)
     }
-    val labelIcon = (this["labelIcon"] as? Number)?.toInt()
-        ?: (this["labelIcon"] as? String)?.toIntOrNull()
-        ?: 0
+    val repayIcon = (this["repayIcon"] as Number).toInt()
 
     return Repay(
-        repayId = repayId,
         amount = amount,
         label = label,
         description = description,
         dateTime = dateTime,
-        labelIcon = labelIcon
+        repayIcon = repayIcon
     )
 }
 
@@ -97,7 +93,7 @@ fun Map<*, *>.toDataset(): Dataset {
         ?: 0
 
     // Map stored 'id' (if any) into the Dataset.id field
-    val id = this["id"] as? String
+    val id = this["id"] as String
 
     return Dataset(
         id = id,

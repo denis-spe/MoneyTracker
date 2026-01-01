@@ -8,7 +8,6 @@ import androidx.compose.ui.graphics.toArgb
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
@@ -31,16 +30,19 @@ class DataStorageImpl(
         val listenerRegistration = documentRef.addSnapshotListener { snapshot, error ->
             if (error != null && snapshot == null) {
                 Log.e("DataStorageImpl", "getWholeDatasets listener error", error)
+                onFailure(error)
                 close(error) // Close the flow with an exception
                 return@addSnapshotListener
             }
 
-            val data = try {
+            try {
                 val raw = snapshot?.get("datasets")
                 Log.d("DataStorageImpl", "raw datasets field: $raw")
                 if (raw == null) {
                     // No datasets field yet - emit empty list
+                    Log.d("DataStorageImpl", "No datasets field found, emitting empty list")
                     trySend(emptyList())
+                    onSuccess(true)
                     return@addSnapshotListener
                 }
 
@@ -63,15 +65,12 @@ class DataStorageImpl(
 
                 Log.d("DataStorageImpl", "parsed datasets count: ${data.size}")
                 trySend(data)
+                onSuccess(true)
             } catch (e: Exception) {
                 Log.e("DataStorageImpl", "Unhandled error while reading datasets", e)
                 // Don't close the flow on parse errors; send an empty list instead to keep collecting
                 trySend(emptyList())
-            }
-            onSuccess(data.isSuccess)
-
-            data.onFailure {
-                onFailure(it)
+                onFailure(e)
             }
         }
         awaitClose { listenerRegistration.remove() } // Unregister the listener when the flow is cancelled
@@ -176,11 +175,11 @@ class DataStorageImpl(
     }
 
     private fun repayToMap(repay: Repay): Map<String, Any?> = mapOf(
-        "repayId" to repay.repayId,
         "amount" to repay.amount,
         "label" to repay.label,
         "description" to repay.description,
-        "dateTime" to repay.dateTime
+        "dateTime" to repay.dateTime,
+        "repayIcon" to repay.repayIcon
     )
 
     override suspend fun addRepayToDataset(
