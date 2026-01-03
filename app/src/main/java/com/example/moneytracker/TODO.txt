@@ -13,3 +13,4 @@ Project tracks
 - Fixed the repay property for adding data [31/12/25 03:37]
 - Update the textField [01/01/26 05:23]
 - Improve the ui view [02/01/26 01:24]
+- Modified the statistic from data table to insight bar [02/01/26 3:44]

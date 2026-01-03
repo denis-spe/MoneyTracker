@@ -22,22 +22,29 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.mean
 import com.example.moneytracker.helper.median
 import com.example.moneytracker.helper.std
 import com.example.moneytracker.ui.components.charts.DonutChart
+import com.example.moneytracker.ui.components.charts.InsightBar
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 
 @Composable
@@ -124,6 +131,100 @@ fun Stat(
 }
 
 @Composable
+fun InsightBarPager(
+    datasets: List<Dataset>,
+) {
+    val earnings = datasets.filter { it.dataType == DataType.EARNINGS }.sumOf { it.amount }
+    val expense = datasets.filter { it.dataType == DataType.EXPENSE }.sumOf { it.amount }
+
+    Column(
+        modifier = Modifier.fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        var progress by remember { mutableDoubleStateOf(0.0) }
+
+        LaunchedEffect(Unit) {
+            progress = expense / earnings
+        }
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                "${(progress * 100).toInt()}% of your earnings was spent",
+                fontSize = 10.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        InsightBar(
+            progress.toFloat(),
+            modifier = Modifier.fillMaxWidth(0.6f),
+            color = colorResource(R.color.Expense),
+            barColor = colorResource(R.color.Earnings)
+        )
+    }
+}
+
+@Composable
+fun DonutChartPager(
+    donutChartDataCollection: DonutChartDataCollection,
+    fontWeight: FontWeight,
+    fontSize: TextUnit
+) {
+    Column(
+        modifier = Modifier.fillMaxHeight(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        DonutChart(
+            data = donutChartDataCollection,
+            chartSize = 150.dp,
+            gapPercentage = 0.06f,
+            strokeCap = StrokeCap.Round,
+            strokeWidthSelected = 30.dp
+        ) {
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                it?.let { donutChartData ->
+                    Text(
+                        text = donutChartData.title,
+                        fontWeight = fontWeight, fontSize = fontSize
+                    )
+                    Text(
+                        text = donutChartData.amount.formatToAmount(),
+                        fontWeight = fontWeight, fontSize = fontSize
+                    )
+                } ?: run {
+                    var enabled by remember { mutableStateOf(true) }
+                    val totalAmount: Float by animateFloatAsState(
+                        if (enabled)
+                            donutChartDataCollection.totalAmount
+                        else 0f,
+                        label = "Overall Amount",
+                        animationSpec = tween(
+                            durationMillis = 1000,
+                            easing = LinearEasing,
+                        )
+                    )
+
+                    Text(
+                        text = "Overall",
+                        fontWeight = fontWeight, fontSize = fontSize
+                    )
+                    Text(
+                        text = totalAmount.formatToAmount(),
+                        fontWeight = fontWeight, fontSize = fontSize
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun Statistic(
     donutChartDataCollection: DonutChartDataCollection,
     datasets: List<Dataset>,
@@ -131,7 +232,6 @@ fun Statistic(
     val fontWeight = FontWeight.Bold
     val fontSize = 16.sp
     var state by remember { mutableStateOf("Chart") }
-
 
     Column(
         modifier = Modifier
@@ -178,54 +278,15 @@ fun Statistic(
         }
         when (state) {
             "Chart" -> {
-                DonutChart(
-                    data = donutChartDataCollection,
-                    chartSize = 150.dp,
-                    gapPercentage = 0.06f,
-                    strokeCap = StrokeCap.Round,
-                    strokeWidthSelected = 30.dp
-                ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        it?.let { donutChartData ->
-                            Text(
-                                text = donutChartData.title,
-                                fontWeight = fontWeight, fontSize = fontSize
-                            )
-                            Text(
-                                text = donutChartData.amount.formatToAmount(),
-                                fontWeight = fontWeight, fontSize = fontSize
-                            )
-                        } ?: run {
-                            var enabled by remember { mutableStateOf(true) }
-                            val totalAmount: Float by animateFloatAsState(
-                                if (enabled)
-                                    donutChartDataCollection.totalAmount
-                                else 0f,
-                                label = "Overall Amount",
-                                animationSpec = tween(
-                                    durationMillis = 1000,
-                                    easing = LinearEasing,
-                                )
-                            )
-
-                            Text(
-                                text = "Overall",
-                                fontWeight = fontWeight, fontSize = fontSize
-                            )
-                            Text(
-                                text = totalAmount.formatToAmount(),
-                                fontWeight = fontWeight, fontSize = fontSize
-                            )
-                        }
-                    }
-                }
+                DonutChartPager(
+                    donutChartDataCollection,
+                    fontWeight = fontWeight,
+                    fontSize = fontSize
+                )
             }
 
             "Statistic" -> {
-                Stat(datasets)
+                InsightBarPager(datasets)
             }
         }
     }

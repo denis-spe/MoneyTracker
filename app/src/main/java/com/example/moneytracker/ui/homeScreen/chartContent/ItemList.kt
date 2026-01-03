@@ -106,7 +106,7 @@ fun ItemList(datasets: List<Dataset>) {
             modifier = Modifier.padding(bottom = 8.dp)
         ) {
             ItemFilter(
-                items = listOf("All", "Earnings", "Expense", "Debt", "Lent", "Repay"),
+                items = listOf("All", "Earnings", "Expense", "Debt", "Lent", "Repay", "Savings"),
                 selected = recentFilterState
             )
         }
@@ -229,6 +229,24 @@ fun ItemList(datasets: List<Dataset>) {
 
                     "Lent" -> {
                         if (dataset.dataType == DataType.LENT) {
+                            Row(
+                                modifier = Modifier.animateItem()
+                            ) {
+                                ItemCard(
+                                    label = dataset.label,
+                                    labelIcon = dataset.labelIcon,
+                                    amount = dataset.amount,
+                                    dataType = dataset.dataType,
+                                    colorResId = dataset.dataType.color,
+                                    description = dataset.description,
+                                    dateTime = dataset.dateTime
+                                )
+                            }
+                        }
+                    }
+
+                    "Savings" -> {
+                        if (dataset.dataType == DataType.SAVINGS) {
                             Row(
                                 modifier = Modifier.animateItem()
                             ) {
