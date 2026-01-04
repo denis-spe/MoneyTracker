@@ -46,6 +46,7 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.subtractedRepay
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import java.text.NumberFormat
 import java.util.Locale
@@ -195,7 +196,8 @@ fun RepayField(
     state: TextFieldState,
     datasets: List<Dataset>,
     selectedDataset: MutableState<Dataset?>,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    wasRepaySuccess: MutableState<State>
 ) {
     var isExpanded by remember { mutableStateOf(false) }
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
@@ -227,6 +229,7 @@ fun RepayField(
             }
         ) {
             datasets.forEach { dataset ->
+                if (dataset.wasRepaid()) return@forEach
                 DropdownMenuItem(
                     text = {
                         Text(dataset.label, fontSize = fontSize)
@@ -236,7 +239,7 @@ fun RepayField(
                         selectedDataset.value = dataset
                         state.clearText()
                         state.edit {
-                            this.insert(0, dataset.amount.toLong().toString())
+                            this.insert(0, dataset.subtractedRepay.toLong().toString())
                         }
                     },
                     leadingIcon = {
@@ -255,6 +258,7 @@ fun RepayField(
                 topStart = corner,
                 bottomStart = corner
             ),
+            wasSuccess = wasRepaySuccess,
             colorResId = R.color.Repay
         ) {
             isExpanded = true
@@ -267,6 +271,7 @@ fun RepayField(
                 topEnd = corner,
                 bottomEnd = corner
             ),
+            wasSuccess = wasRepaySuccess
         )
     }
 }

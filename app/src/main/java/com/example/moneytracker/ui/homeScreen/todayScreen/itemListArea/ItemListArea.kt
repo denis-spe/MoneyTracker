@@ -1,5 +1,5 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
-package com.example.moneytracker.ui.homeScreen.chartContent
+package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -83,7 +83,7 @@ fun ItemFilter(
 }
 
 @Composable
-fun ItemList(datasets: List<Dataset>) {
+fun ItemListArea(datasets: List<Dataset>) {
     val recentFilterState = remember { mutableStateOf("All") }
 
     Column(

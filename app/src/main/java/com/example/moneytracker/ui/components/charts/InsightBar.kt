@@ -38,7 +38,7 @@ fun InsightBar(
             .fillMaxWidth()
             .height(height)
             .clip(RoundedCornerShape(50))
-            .background(barColor.copy(0.4f))
+            .background(barColor)
     ) {
         Box(
             modifier = Modifier

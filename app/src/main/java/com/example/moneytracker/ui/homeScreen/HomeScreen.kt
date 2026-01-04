@@ -7,7 +7,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -20,26 +19,20 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DatasetUiState
-import com.example.moneytracker.ui.components.charts.collections.DonutChartData
-import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
-import com.example.moneytracker.ui.homeScreen.chartContent.ItemList
-import com.example.moneytracker.ui.homeScreen.chartContent.Statistic
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
+import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
 import com.example.moneytracker.ui.homeScreen.topPanel.TopTitlePanel
@@ -55,7 +48,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Collect user information from ViewModel
     val uiStates = viewModel.uiState.collectAsState()
     val userState = viewModel.userState.collectAsState()
-    val datasets = uiStates.value.datasets
+    var datasets = uiStates.value.datasets
     val scope = rememberCoroutineScope()
     // Create a remembered sheet state so the sheet (and its content) is pre-composed.
     val sheetState = rememberModalBottomSheetState(
@@ -72,29 +65,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val backgroundColor = if (isSystemInDarkTheme()) colors.darkModeBackgroundColor else
         colors.lightModeBackgroundColor
 
-    val context = LocalContext.current
-
-    val donutChartDataCollection = remember(datasets, context) {
-        DonutChartDataCollection(
-            datasets
-                .groupBy { it.dataType }
-                .values.toList()
-                .map { lst ->
-                    val firstItemInList = lst[0]
-                    val amount = lst.sumOf { it.amount }.toFloat()
-                    val colorInt = ContextCompat.getColor(context, firstItemInList.dataType.color)
-                    val color = Color(colorInt)
-                    val title = firstItemInList.dataType.text
-
-                    DonutChartData(
-                        amount,
-                        color = color,
-                        title = title
-                    )
-                }
-        )
-    }
-
 
     LaunchedEffect(key1 = uiStates.value.isLogOutLoading) {
         delay(1000)
@@ -102,6 +72,10 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             onNavigate?.navigate(StartUpScreenRouter)
             viewModel.signOut()
         }
+    }
+
+    LaunchedEffect(uiStates) {
+        datasets = uiStates.value.datasets
     }
 
 
@@ -156,19 +130,8 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 floatingActionButtonPosition = FabPosition.Center,
             ) { paddingValues ->
 
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.SpaceBetween
-                ) {
-                    // Statistic
-                    Statistic(donutChartDataCollection, datasets = datasets)
-
-                    // Items list
-                    ItemList(datasets)
-                }
+                // Today's screen
+                TodayScreen(paddingValues, datasets = datasets)
 
 
                 // Drop down user profile

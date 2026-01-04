@@ -35,6 +35,7 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.Repay
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.subtractedRepay
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
@@ -72,7 +73,11 @@ fun DataAdditionModelDrawer(
             sheetState = sheetState,
         ) {
             DataAdditionModelDrawerTopTitle(tabToDisplay)
-            DataAdditionModelDrawerContent(tabToDisplay, viewModel)
+            DataAdditionModelDrawerContent(
+                tabToDisplay, viewModel,
+                scope = scope,
+                sheetState = sheetState
+            )
         }
     }
 }
@@ -195,37 +200,57 @@ fun DataAdditionModelDrawerTopTitle(tabToDisplay: MutableState<DataType>) {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawerContent(
     tabToDisplay: MutableState<DataType>,
-    viewModel: HomeScreenViewModel
+    viewModel: HomeScreenViewModel,
+    scope: CoroutineScope,
+    sheetState: SheetState
 ) {
     Column {
         when (tabToDisplay.value) {
             DataType.EARNINGS -> {
-                EarningsModelDrawerContent(viewModel)
+                EarningsModelDrawerContent(viewModel) {
+                    scope.launch {
+                        sheetState.hide()
+                    }
+                }
             }
 
             DataType.EXPENSE -> {
-                ExpenseModelDrawerContent(viewModel)
+                ExpenseModelDrawerContent(viewModel) {
+                    scope.launch {
+                        sheetState.hide()
+                    }
+                }
             }
 
             DataType.DEBT -> {
-                DebtModelDrawerContent(viewModel)
+                DebtModelDrawerContent(viewModel) {
+                    scope.launch {
+                        sheetState.hide()
+                    }
+                }
             }
 
             DataType.LENT -> {
-                LentModelDrawerContent(viewModel)
+                LentModelDrawerContent(viewModel) {
+                    scope.launch {
+                        sheetState.hide()
+                    }
+                }
             }
 
             DataType.SAVINGS -> {
-                SavingsModelDrawerContent(viewModel)
+                SavingsModelDrawerContent(viewModel) {
+                    scope.launch {
+                        sheetState.hide()
+                    }
+                }
             }
 
-            DataType.REPAY -> {
-                RepayModelDrawerContent(viewModel)
-            }
-
+            else -> {}
         }
     }
 }
@@ -238,6 +263,7 @@ fun ModelDrawerContent(
     description: String,
     buttonText: String,
     viewModel: HomeScreenViewModel,
+    onDismiss: () -> Unit
 ) {
 
     val showDateTime = remember { mutableStateOf(false) }
@@ -246,6 +272,7 @@ fun ModelDrawerContent(
     val labelState = rememberTextFieldState()
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
+    val wasRepaySuccess = remember { mutableStateOf(State.INITIAL) }
     val labelIconState = remember { mutableIntStateOf(R.drawable.description) }
     val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
     val repayAmountState = rememberTextFieldState()
@@ -261,6 +288,12 @@ fun ModelDrawerContent(
     LaunchedEffect(labelState.text.toString()) {
         if (wasSuccess.value == State.ERROR) {
             wasSuccess.value = State.INITIAL
+        }
+    }
+
+    LaunchedEffect(repayAmountState.text.toString()) {
+        if (wasRepaySuccess.value == State.ERROR) {
+            wasRepaySuccess.value = State.INITIAL
         }
     }
 
@@ -334,22 +367,24 @@ fun ModelDrawerContent(
 
             if (dataType == DataType.LENT) {
                 RepayField(
-                    state = repayAmountState,
                     datatype = DataType.LENT,
+                    state = repayAmountState,
                     datasets = dataset.filter {
                         it.dataType == DataType.LENT
                     },
+                    wasRepaySuccess = wasRepaySuccess,
                     selectedDataset = selectedDataset,
                 )
             }
 
             if (dataType == DataType.DEBT) {
                 RepayField(
-                    state = repayAmountState,
                     datatype = DataType.DEBT,
+                    state = repayAmountState,
                     datasets = dataset.filter {
                         it.dataType == DataType.DEBT
                     },
+                    wasRepaySuccess = wasRepaySuccess,
                     selectedDataset = selectedDataset,
                 )
             }
@@ -384,6 +419,9 @@ fun ModelDrawerContent(
                         descriptionState.clearText()
                         labelIconState.intValue = R.drawable.description
 
+                        // Dismiss the model drawer.
+                        onDismiss()
+
                     } else {
                         wasSuccess.value = State.ERROR
                     }
@@ -393,11 +431,15 @@ fun ModelDrawerContent(
                 if (dataType == DataType.DEBT || dataType == DataType.LENT) {
                     ModelDrawerButton(
                         text = "Repay",
-                        wasSuccess = wasSuccess,
+                        wasSuccess = wasRepaySuccess,
                         colorResId = R.color.Repay
                     ) {
                         if (repayAsDouble != null) {
                             selectedDataset.value?.let {
+                                if (repayAsDouble > it.subtractedRepay) {
+                                    wasRepaySuccess.value = State.ERROR
+                                    return@ModelDrawerButton
+                                }
                                 viewModel.addRepayData(
                                     it,
                                     Repay(
@@ -409,11 +451,14 @@ fun ModelDrawerContent(
                                     )
                                 )
                             } ?: run {
-                                wasSuccess.value = State.ERROR
+                                wasRepaySuccess.value = State.ERROR
                             }
 
                             repayAmountState.clearText()
                             selectedDataset.value = null
+
+                            // Dismiss the model drawer.
+                            onDismiss()
                         }
                     }
                 }
@@ -430,7 +475,8 @@ fun ModelDrawerContent(
 
 @Composable
 fun EarningsModelDrawerContent(
-    viewModel: HomeScreenViewModel
+    viewModel: HomeScreenViewModel,
+    onDismiss: () -> Unit
 ) {
     ModelDrawerContent(
         colorResId = R.color.Earnings,
@@ -438,13 +484,15 @@ fun EarningsModelDrawerContent(
         dataType = DataType.EARNINGS,
         description = "Add your earnings here",
         buttonText = "Received",
-        viewModel = viewModel
+        viewModel = viewModel,
+        onDismiss = onDismiss
     )
 }
 
 @Composable
 fun ExpenseModelDrawerContent(
-    viewModel: HomeScreenViewModel
+    viewModel: HomeScreenViewModel,
+    onDismiss: () -> Unit
 ) {
     ModelDrawerContent(
         colorResId = R.color.Expense,
@@ -452,13 +500,15 @@ fun ExpenseModelDrawerContent(
         dataType = DataType.EXPENSE,
         description = "Add your expenses here",
         buttonText = "Spent",
-        viewModel = viewModel
+        viewModel = viewModel,
+        onDismiss = onDismiss
     )
 }
 
 @Composable
 fun DebtModelDrawerContent(
-    viewModel: HomeScreenViewModel
+    viewModel: HomeScreenViewModel,
+    onDismiss: () -> Unit
 ) {
 
     ModelDrawerContent(
@@ -467,13 +517,15 @@ fun DebtModelDrawerContent(
         dataType = DataType.DEBT,
         description = "Set your debts here",
         buttonText = "Set Debt",
-        viewModel = viewModel
+        viewModel = viewModel,
+        onDismiss = onDismiss
     )
 }
 
 @Composable
 fun LentModelDrawerContent(
-    viewModel: HomeScreenViewModel
+    viewModel: HomeScreenViewModel,
+    onDismiss: () -> Unit
 ) {
     ModelDrawerContent(
         colorResId = R.color.Lent,
@@ -481,13 +533,15 @@ fun LentModelDrawerContent(
         dataType = DataType.LENT,
         description = "Put your lent here",
         buttonText = "Lent",
-        viewModel = viewModel
+        viewModel = viewModel,
+        onDismiss = onDismiss
     )
 }
 
 @Composable
 fun SavingsModelDrawerContent(
-    viewModel: HomeScreenViewModel
+    viewModel: HomeScreenViewModel,
+    onDismiss: () -> Unit
 ) {
     ModelDrawerContent(
         colorResId = R.color.Savings,
@@ -495,11 +549,7 @@ fun SavingsModelDrawerContent(
         dataType = DataType.SAVINGS,
         description = "Add your savings here",
         buttonText = "Saved",
-        viewModel = viewModel
+        viewModel = viewModel,
+        onDismiss = onDismiss
     )
-}
-
-@Composable
-fun RepayModelDrawerContent(viewModel: HomeScreenViewModel) {
-    TODO("Not yet implemented")
 }

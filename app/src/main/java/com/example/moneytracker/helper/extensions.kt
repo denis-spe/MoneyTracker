@@ -2,6 +2,8 @@
 package com.example.moneytracker.helper
 
 import com.example.moneytracker.backend.storage.Dataset
+import java.time.LocalDate
+import java.time.ZoneId
 
 /**
  * Formats a double to a string with two decimal places.
@@ -62,4 +64,22 @@ val List<Dataset>.variance: Double
  */
 val List<Dataset>.std: Double
     get() = kotlin.math.sqrt(variance)
+
+/**
+ * Check if the dataset is for today.
+ */
+val Dataset.isForToday: Boolean
+    get() {
+        val today = LocalDate.now(ZoneId.systemDefault())
+        val dataDate = dateTime.toDate().toInstant()
+            .atZone(ZoneId.systemDefault())
+            .toLocalDate()
+
+        return dataDate == today
+    }
+
+val Dataset.subtractedRepay: Double
+    get() = amount - repay.sumOf { it.amount }
+
+
 
