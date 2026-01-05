@@ -445,7 +445,7 @@ fun ModelDrawerContent(
                                     Repay(
                                         amount = repayAsDouble,
                                         dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                        label = "Repaid: ${it.label}",
+                                        label = "${it.dataType.text} Repaid: ${it.label}",
                                         description = it.description,
                                         repayIcon = it.labelIcon
                                     )

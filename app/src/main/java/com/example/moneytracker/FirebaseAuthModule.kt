@@ -6,6 +6,8 @@ import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.DataStorageImpl
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreSettings
+import com.google.firebase.firestore.PersistentCacheSettings
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,6 +26,15 @@ object FirebaseAuthModule {
     @Singleton
     @Provides
     fun provideFirebaseFirestore(): FirebaseFirestore {
+        val settings = FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(
+                PersistentCacheSettings.newBuilder()
+                    .setSizeBytes(100 * 1024 * 1024) // 100 MB cache
+                    .build()
+            )
+            .build()
+        FirebaseFirestore.getInstance().firestoreSettings = settings
+        FirebaseFirestore.setLoggingEnabled(true)
         return FirebaseFirestore.getInstance()
     }
 

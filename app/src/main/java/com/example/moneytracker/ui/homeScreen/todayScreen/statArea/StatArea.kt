@@ -191,7 +191,7 @@ fun StatArea(
         PagerItem("LentVsEarnings", Pair(R.color.Earnings, R.color.Lent)),
         PagerItem("SavingsVsEarnings", Pair(R.color.Earnings, R.color.Savings)),
         PagerItem("DebtRepay", Pair(R.color.Debt, R.color.Repay)),
-
+        PagerItem("LentRepay", Pair(R.color.Lent, R.color.Repay)),
         )
     val pagerState = rememberPagerState(pageCount = { items.size })
 

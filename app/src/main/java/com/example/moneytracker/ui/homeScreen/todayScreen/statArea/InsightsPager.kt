@@ -61,17 +61,23 @@ fun Insights(
         verticalArrangement = Arrangement.Center
     ) {
         var percentage by remember { mutableDoubleStateOf(0.0) }
-        var netLoss by remember { mutableStateOf(0.0) }
+        var marginRatio by remember { mutableDoubleStateOf(0.0) }
         var text by remember { mutableStateOf(buildAnnotatedString { "" }) }
 
         LaunchedEffect(firstFinancial, secondFinancial) {
             if (firstFinancial == 0.0) {
                 percentage = 0.0
-                return@LaunchedEffect
-            }
-            percentage = secondFinancial / firstFinancial
-            netLoss = (secondFinancial - firstFinancial) / firstFinancial
+                marginRatio = 0.0 // Ensure it's not NaN
+            } else {
+                percentage = secondFinancial / firstFinancial
 
+                // Calculate the raw difference ratio
+                val ratio = (secondFinancial - firstFinancial) / firstFinancial
+
+                // Use absolute value for the animation to prevent "NaN" or negative visuals
+                // We handle the "direction" (Loss vs Gain) in the text builder
+                marginRatio = if (ratio.isNaN()) 0.0 else ratio
+            }
         }
 
         val animatePercentage = animateIntAsState(
@@ -79,11 +85,11 @@ fun Insights(
             animationSpec = tween(durationMillis = 700, easing = LinearEasing)
         )
         val animateNetLoss = animateIntAsState(
-            targetValue = (netLoss.toFloat() * 100).toInt(),
+            targetValue = (marginRatio.toFloat() * 100).toInt(),
             animationSpec = tween(durationMillis = 700, easing = LinearEasing)
         )
 
-        LaunchedEffect(animatePercentage.value) {
+        LaunchedEffect(firstFinancial, secondFinancial) {
             text = builder()
         }
 
@@ -98,14 +104,28 @@ fun Insights(
                 textAlign = TextAlign.Center
             )
         }
+
+        val barColor = when {
+            firstFinancial > 0
+                    && firstFinancial > secondFinancial
+                    && secondFinancial != 0.0 -> colorResource(barColorResId)
+                .copy(0.3f)
+
+            firstFinancial == 0.0 && secondFinancial == 0.0 -> colorResource(barColorResId)
+                .copy(0.3f)
+
+            secondFinancial > firstFinancial -> colorResource(colorResId)
+            else -> {
+                colorResource(barColorResId)
+            }
+        }
+
         InsightBar(
             percentage.toFloat(),
             modifier = Modifier.fillMaxWidth(0.6f),
             color = colorResource(colorResId),
-            barColor = if (secondFinancial > 0 || firstFinancial == 0.0) colorResource(barColorResId).copy(
-                0.2f
-            )
-            else colorResource(barColorResId)
+            barColor = barColor
+
         )
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -114,7 +134,7 @@ fun Insights(
             Text(
                 text = "${animatePercentage.value}% (${
                     if (animatePercentage.value > 0) animateNetLoss.value else 0
-                } net loss)",
+                } margin ratio)",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 textAlign = TextAlign.Center
@@ -212,6 +232,10 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
         datasets.filter { it.dataType == DataType.SAVINGS }.sumOf { it.amount }
     val debtRepay =
         datasets.filter { it.dataType == DataType.DEBT }.map { it.repay }
+            .flatten()
+            .sumOf { it.amount }
+    val lentRepay =
+        datasets.filter { it.dataType == DataType.LENT }.map { it.repay }
             .flatten()
             .sumOf { it.amount }
 
@@ -335,6 +359,30 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
                             }
                         }
                     }
+
+                    "LentRepay" -> {
+                        Insights(
+                            firstFinancial = lent,
+                            secondFinancial = lentRepay,
+                            colorResId = R.color.Repay,
+                            barColorResId = R.color.Lent
+                        ) {
+                            if (lentRepay > lent) {
+                                buildAnnotatedString {
+                                    append("All your lent has been repaid")
+                                }
+                            } else if (lent > 0) {
+                                buildAnnotatedString {
+                                    append("You owes someone")
+                                }
+                            } else {
+                                buildAnnotatedString {
+                                    append("You haven't lent to anyone")
+                                }
+                            }
+                        }
+                    }
+
                 }
             }
         }
