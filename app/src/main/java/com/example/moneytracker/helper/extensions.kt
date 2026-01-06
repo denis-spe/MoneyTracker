@@ -1,7 +1,10 @@
 // Great is the LORD of hosts
 package com.example.moneytracker.helper
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Repay
 import java.time.LocalDate
 import java.time.ZoneId
 
@@ -69,6 +72,7 @@ val List<Dataset>.std: Double
  * Check if the dataset is for today.
  */
 val Dataset.isForToday: Boolean
+    @RequiresApi(Build.VERSION_CODES.O)
     get() {
         val today = LocalDate.now(ZoneId.systemDefault())
         val dataDate = dateTime.toDate().toInstant()
@@ -81,5 +85,15 @@ val Dataset.isForToday: Boolean
 val Dataset.subtractedRepay: Double
     get() = amount - repay.sumOf { it.amount }
 
+
+val Repay.repayToMap: Map<String, Any>
+    get() = mapOf(
+        "repay" to repayId,
+        "amount" to amount,
+        "label" to label,
+        "description" to description,
+        "dateTime" to dateTime,
+        "repayIcon" to repayIcon
+    )
 
 

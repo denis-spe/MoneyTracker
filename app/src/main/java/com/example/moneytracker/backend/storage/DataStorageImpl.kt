@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
+import com.example.moneytracker.helper.repayToMap
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -174,14 +175,6 @@ class DataStorageImpl(
             }
     }
 
-    private fun repayToMap(repay: Repay): Map<String, Any?> = mapOf(
-        "amount" to repay.amount,
-        "label" to repay.label,
-        "description" to repay.description,
-        "dateTime" to repay.dateTime,
-        "repayIcon" to repay.repayIcon
-    )
-
     override suspend fun addRepayToDataset(
         userId: String,
         datasetId: String,
@@ -193,66 +186,26 @@ class DataStorageImpl(
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
-        try {
-            db.runTransaction { tx ->
-                val snap = tx.get(docRef)
-                if (!snap.exists()) {
-                    Log.w("DataStorageImpl", "User document does not exist: $userId")
-                    return@runTransaction null
-                }
+        // read (may be served from cache if offline)
+        val snapshot = docRef.get().await()
+        val datasets = snapshot.get("datasets") as? List<Map<String, Any>> ?: emptyList()
 
-                val list: MutableList<Any?> = when (val rawDatasets = snap.get("datasets")) {
-                    is List<*> -> rawDatasets.map { it as Any? }.toMutableList()
-                    null -> mutableListOf()
-                    else -> mutableListOf(rawDatasets as Any?)
-                }
+        val mutableDatasets = datasets.toMutableList()
+        val idx = mutableDatasets.indexOfFirst { (it["id"] as? String) == datasetId }
 
-                // Find the dataset map by matching its stored 'id' field to datasetId
-                val idx = list.indexOfFirst { item ->
-                    (item as? Map<*, *>)?.get("id")?.toString() == datasetId
-                }
-
-                if (idx == -1) {
-                    Log.w(
-                        "DataStorageImpl",
-                        "Could not find dataset with id $datasetId in user's datasets"
-                    )
-                    return@runTransaction null
-                }
-
-                // Safely create a mutable map with String keys for the dataset
-                val datasetMap: MutableMap<String, Any?> = when (val existing = list[idx]) {
-                    is Map<*, *> -> existing.entries.associate { (k, v) -> k.toString() to v }
-                        .toMutableMap()
-
-                    else -> mutableMapOf()
-                }
-
-                // Ensure repay list exists and is a mutable list we can append to
-                val currentRepay =
-                    (datasetMap["repay"] as? List<*>)?.map { it as Any? }?.toMutableList()
-                        ?: mutableListOf()
-                currentRepay.add(repayToMap(repay))
-
-                // Put updated repay back into the dataset map
-                datasetMap["repay"] = currentRepay
-
-                // Replace the dataset in the list with updated map
-                list[idx] = datasetMap
-
-                // Write the updated datasets array back
-                tx.update(docRef, "datasets", list)
-                null
-            }.await()
-
-            Log.d(
-                "DataStorageImpl",
-                "addRepayToDataset transaction committed for datasetId=$datasetId"
-            )
-        } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to add repay to dataset", e)
-            throw e
+        if (idx == -1) {
+            throw IllegalArgumentException("Dataset $datasetId not found for user $userId")
         }
+
+        // mutate target dataset's items
+        val datasetMap = mutableDatasets[idx].toMutableMap()
+        val items = (datasetMap["repay"] as? List<Map<String, Any>> ?: emptyList()).toMutableList()
+        items.add(repay.repayToMap)                         // your map representation
+        datasetMap["repay"] = items
+        mutableDatasets[idx] = datasetMap
+
+        // write whole datasets array back (queued when offline)
+        docRef.update("datasets", mutableDatasets).await()
     }
 
     override suspend fun ensureDatasetIds(userId: String) {

@@ -38,6 +38,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.theme.autoTextColorChange
+import kotlin.time.Duration.Companion.seconds
 
 
 private val ICONS_TEXT_SIZE = 11.sp
@@ -100,7 +101,7 @@ fun IconList(
                             .padding(8.dp),
                         columns = GridCells.Fixed(4),
                     ) {
-                        items(ICONS.size) { index ->
+                        items(ICONS.size, key = { it.seconds }) { index ->
                             val icon = ICONS[index]
 
                             var modifier = Modifier

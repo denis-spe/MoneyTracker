@@ -5,27 +5,31 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -39,8 +43,7 @@ import com.example.moneytracker.helper.subtractedRepay
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
@@ -49,35 +52,71 @@ private val MODEL_DRAWER_ICON_SIZE = 25.dp
 val FONT_WEIGHT = FontWeight.Bold
 
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawer(
-    sheetState: SheetState,
+    datasets: List<Dataset>,
     viewModel: HomeScreenViewModel,
-    updateOnModelBottomSheetShow: (Boolean) -> Unit,
-    scope: CoroutineScope,
     isBottomSheetOpen: Boolean,
 ) {
     val tabToDisplay = remember { mutableStateOf(DataType.EARNINGS) }
 
 
+
+
     if (isBottomSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = {
-                updateOnModelBottomSheetShow(false)
-                scope.launch {
-                    sheetState.hide()
-                }
+                viewModel.updateOnModelBottomSheetShow(false)
+                viewModel.updateIsBottomSheetContentLoading(true)
             },
-            sheetState = sheetState,
+            containerColor = BottomSheetDefaults.ContainerColor.copy(0.97f)
         ) {
+            LaunchedEffect(viewModel.isBottomSheetContentLoading) {
+                delay(800)
+                viewModel.updateIsBottomSheetContentLoading(false)
+            }
+            /*.... Tab buttons ....*/
             DataAdditionModelDrawerTopTitle(tabToDisplay)
-            DataAdditionModelDrawerContent(
-                tabToDisplay, viewModel,
-                scope = scope,
-                sheetState = sheetState
-            )
+
+            /*.... Horizontal divider .... */
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                HorizontalDivider(
+                    modifier = Modifier
+                        .fillMaxWidth(0.8f)
+                        .padding(bottom = 10.dp)
+                )
+            }
+
+
+            if (viewModel.isBottomSheetContentLoading) {
+
+                /*... Loading indicator ...*/
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight(0.5f)
+                        .fillMaxWidth(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    CircularProgressIndicator(
+                        strokeCap = StrokeCap.Square
+                    )
+                }
+
+            } else {
+                /*... Text field and button ...*/
+                DataAdditionModelDrawerContent(
+                    tabToDisplay,
+                    datasets = datasets,
+                    viewModel = viewModel,
+                    isBottomSheetOpen = isBottomSheetOpen
+                )
+            }
         }
     }
 }
@@ -204,49 +243,89 @@ fun DataAdditionModelDrawerTopTitle(tabToDisplay: MutableState<DataType>) {
 @Composable
 fun DataAdditionModelDrawerContent(
     tabToDisplay: MutableState<DataType>,
+    datasets: List<Dataset>,
     viewModel: HomeScreenViewModel,
-    scope: CoroutineScope,
-    sheetState: SheetState
+    isBottomSheetOpen: Boolean
 ) {
     Column {
         when (tabToDisplay.value) {
             DataType.EARNINGS -> {
-                EarningsModelDrawerContent(viewModel) {
-                    scope.launch {
-                        sheetState.hide()
-                    }
+                ModelDrawerContent(
+                    colorResId = R.color.Earnings,
+                    icon = R.drawable.filled_earnings,
+                    dataType = DataType.EARNINGS,
+                    description = "Add your earnings here",
+                    buttonText = "Received",
+                    datasets = datasets,
+                    viewModel = viewModel,
+                    isBottomSheetOpen = isBottomSheetOpen,
+                ) {
+                    viewModel.updateOnModelBottomSheetShow(false)
+                    viewModel.updateIsBottomSheetContentLoading(true)
                 }
             }
 
             DataType.EXPENSE -> {
-                ExpenseModelDrawerContent(viewModel) {
-                    scope.launch {
-                        sheetState.hide()
-                    }
+                ModelDrawerContent(
+                    colorResId = R.color.Expense,
+                    icon = R.drawable.filled_expenditure,
+                    dataType = DataType.EXPENSE,
+                    description = "Add your expenses here",
+                    buttonText = "Spent",
+                    isBottomSheetOpen = isBottomSheetOpen,
+                    datasets = datasets,
+                    viewModel = viewModel,
+                ) {
+                    viewModel.updateOnModelBottomSheetShow(false)
+                    viewModel.updateIsBottomSheetContentLoading(true)
                 }
             }
 
             DataType.DEBT -> {
-                DebtModelDrawerContent(viewModel) {
-                    scope.launch {
-                        sheetState.hide()
-                    }
+                ModelDrawerContent(
+                    colorResId = R.color.Debt,
+                    icon = R.drawable.filled_debt,
+                    dataType = DataType.DEBT,
+                    description = "Set your debts here",
+                    buttonText = "Set Debt",
+                    isBottomSheetOpen = isBottomSheetOpen,
+                    datasets = datasets,
+                    viewModel = viewModel,
+                ) {
+                    viewModel.updateOnModelBottomSheetShow(false)
+                    viewModel.updateIsBottomSheetContentLoading(true)
                 }
             }
 
             DataType.LENT -> {
-                LentModelDrawerContent(viewModel) {
-                    scope.launch {
-                        sheetState.hide()
-                    }
+                ModelDrawerContent(
+                    colorResId = R.color.Lent,
+                    icon = R.drawable.filled_lent,
+                    dataType = DataType.LENT,
+                    description = "Put your lent here",
+                    buttonText = "Lent",
+                    isBottomSheetOpen = isBottomSheetOpen,
+                    datasets = datasets,
+                    viewModel = viewModel,
+                ) {
+                    viewModel.updateOnModelBottomSheetShow(false)
+                    viewModel.updateIsBottomSheetContentLoading(true)
                 }
             }
 
             DataType.SAVINGS -> {
-                SavingsModelDrawerContent(viewModel) {
-                    scope.launch {
-                        sheetState.hide()
-                    }
+                ModelDrawerContent(
+                    colorResId = R.color.Savings,
+                    icon = R.drawable.filled_savings,
+                    dataType = DataType.SAVINGS,
+                    description = "Add your savings here",
+                    buttonText = "Saved",
+                    isBottomSheetOpen = isBottomSheetOpen,
+                    datasets = datasets,
+                    viewModel = viewModel,
+                ) {
+                    viewModel.updateOnModelBottomSheetShow(false)
+                    viewModel.updateIsBottomSheetContentLoading(true)
                 }
             }
 
@@ -255,6 +334,7 @@ fun DataAdditionModelDrawerContent(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModelDrawerContent(
     colorResId: Int,
@@ -262,8 +342,10 @@ fun ModelDrawerContent(
     dataType: DataType,
     description: String,
     buttonText: String,
+    datasets: List<Dataset>,
     viewModel: HomeScreenViewModel,
-    onDismiss: () -> Unit
+    isBottomSheetOpen: Boolean,
+    onDismiss: () -> Unit,
 ) {
 
     val showDateTime = remember { mutableStateOf(false) }
@@ -276,8 +358,7 @@ fun ModelDrawerContent(
     val labelIconState = remember { mutableIntStateOf(R.drawable.description) }
     val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
     val repayAmountState = rememberTextFieldState()
-    val datasetState = viewModel.uiState.collectAsState()
-    val dataset = datasetState.value.datasets
+
 
     LaunchedEffect(amountState.text.toString()) {
         if (wasSuccess.value == State.ERROR) {
@@ -301,7 +382,8 @@ fun ModelDrawerContent(
     val repayAsDouble = repayAmountState.text.toString().toDoubleOrNull()
 
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -326,139 +408,153 @@ fun ModelDrawerContent(
             Text(description, color = color, fontWeight = FONT_WEIGHT)
         }
 
-        Column(
+        LazyColumn(
             modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            // Amount
-            ModelDrawerAmountField(
-                state = amountState,
-                placeholder = "0.0",
-                colorResId = colorResId,
-                wasSuccess = wasSuccess,
-            )
-
-            // Label
-            ModelDrawerTextField(
-                state = labelState,
-                placeholder = "Label",
-                colorResId = colorResId,
-                iconState = labelIconState,
-                viewModel = viewModel,
-                wasSuccess = wasSuccess,
-                textLength = 15
-            )
-
-            // Description
-            ModelDrawerTextField(
-                state = descriptionState,
-                placeholder = "Description (Optional)",
-                colorResId = colorResId,
-                viewModel = viewModel
-            )
-
-            // Show date time picker.
-            ChainNetworkDateTimeButton(
-                showDateTime,
-                localDateTimeState,
-                colorResId = colorResId
-            )
-
-            if (dataType == DataType.LENT) {
-                RepayField(
-                    datatype = DataType.LENT,
-                    state = repayAmountState,
-                    datasets = dataset.filter {
-                        it.dataType == DataType.LENT
-                    },
-                    wasRepaySuccess = wasRepaySuccess,
-                    selectedDataset = selectedDataset,
-                )
-            }
-
-            if (dataType == DataType.DEBT) {
-                RepayField(
-                    datatype = DataType.DEBT,
-                    state = repayAmountState,
-                    datasets = dataset.filter {
-                        it.dataType == DataType.DEBT
-                    },
-                    wasRepaySuccess = wasRepaySuccess,
-                    selectedDataset = selectedDataset,
-                )
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ModelDrawerButton(
-                    text = buttonText,
+            item {
+                // Amount
+                ModelDrawerAmountField(
+                    state = amountState,
+                    placeholder = "0.0",
+                    colorResId = colorResId,
                     wasSuccess = wasSuccess,
+                )
+            }
+
+            item {
+                // Label
+                ModelDrawerTextField(
+                    state = labelState,
+                    placeholder = "Label",
+                    colorResId = colorResId,
+                    iconState = labelIconState,
+                    viewModel = viewModel,
+                    wasSuccess = wasSuccess,
+                    textLength = 15
+                )
+            }
+
+            item {
+                // Description
+                ModelDrawerTextField(
+                    state = descriptionState,
+                    placeholder = "Description (Optional)",
+                    colorResId = colorResId,
+                    viewModel = viewModel
+                )
+            }
+
+            item {
+                // Show date time picker.
+                ChainNetworkDateTimeButton(
+                    showDateTime,
+                    localDateTimeState,
                     colorResId = colorResId
-                ) {
-                    if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
-                        viewModel.addData(
-                            Dataset(
-                                id = UUID.randomUUID().toString(),
-                                dataType = dataType,
-                                amount = amountAsDouble,
-                                label = labelState.text.toString(),
-                                description = descriptionState.text.toString(),
-                                dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                labelIcon = labelIconState.intValue
-                            )
-                        )
-                        wasSuccess.value = State.SUCCESS
+                )
+            }
 
-                        // Reset all state
-                        amountState.clearText()
-                        labelState.clearText()
-                        descriptionState.clearText()
-                        labelIconState.intValue = R.drawable.description
-
-                        // Dismiss the model drawer.
-                        onDismiss()
-
-                    } else {
-                        wasSuccess.value = State.ERROR
-                    }
+            item {
+                if (dataType == DataType.LENT) {
+                    RepayField(
+                        isBottomSheetOpen,
+                        datatype = DataType.LENT,
+                        amountState = repayAmountState,
+                        datasets = datasets.filter {
+                            it.dataType == DataType.LENT
+                        },
+                        wasRepaySuccess = wasRepaySuccess,
+                        selectedDataset = selectedDataset,
+                    )
                 }
-                Spacer(modifier = Modifier.width(5.dp))
 
-                if (dataType == DataType.DEBT || dataType == DataType.LENT) {
+                if (dataType == DataType.DEBT) {
+                    RepayField(
+                        isBottomSheetOpen,
+                        datatype = DataType.DEBT,
+                        amountState = repayAmountState,
+                        datasets = datasets.filter {
+                            it.dataType == DataType.DEBT
+                        },
+                        wasRepaySuccess = wasRepaySuccess,
+                        selectedDataset = selectedDataset,
+                    )
+                }
+            }
+
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     ModelDrawerButton(
-                        text = "Repay",
-                        wasSuccess = wasRepaySuccess,
-                        colorResId = R.color.Repay
+                        text = buttonText,
+                        wasSuccess = wasSuccess,
+                        colorResId = colorResId
                     ) {
-                        if (repayAsDouble != null) {
-                            selectedDataset.value?.let {
-                                if (repayAsDouble > it.subtractedRepay) {
-                                    wasRepaySuccess.value = State.ERROR
-                                    return@ModelDrawerButton
-                                }
-                                viewModel.addRepayData(
-                                    it,
-                                    Repay(
-                                        amount = repayAsDouble,
-                                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                        label = "${it.dataType.text} Repaid: ${it.label}",
-                                        description = it.description,
-                                        repayIcon = it.labelIcon
-                                    )
+                        if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
+                            viewModel.addData(
+                                Dataset(
+                                    id = UUID.randomUUID().toString(),
+                                    dataType = dataType,
+                                    amount = amountAsDouble,
+                                    label = labelState.text.toString(),
+                                    description = descriptionState.text.toString(),
+                                    dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                    labelIcon = labelIconState.intValue
                                 )
-                            } ?: run {
-                                wasRepaySuccess.value = State.ERROR
-                            }
+                            )
+                            wasSuccess.value = State.SUCCESS
 
-                            repayAmountState.clearText()
-                            selectedDataset.value = null
+                            // Reset all state
+                            amountState.clearText()
+                            labelState.clearText()
+                            descriptionState.clearText()
+                            labelIconState.intValue = R.drawable.description
 
                             // Dismiss the model drawer.
                             onDismiss()
+
+                        } else {
+                            wasSuccess.value = State.ERROR
+                        }
+                    }
+                    Spacer(modifier = Modifier.width(5.dp))
+
+                    if (dataType == DataType.DEBT || dataType == DataType.LENT) {
+                        ModelDrawerButton(
+                            text = "Repay",
+                            wasSuccess = wasRepaySuccess,
+                            colorResId = R.color.Repay
+                        ) {
+                            if (repayAsDouble != null) {
+                                selectedDataset.value?.let {
+                                    if (repayAsDouble > it.subtractedRepay) {
+                                        wasRepaySuccess.value = State.ERROR
+                                        return@ModelDrawerButton
+                                    }
+                                    viewModel.addRepayData(
+                                        it,
+                                        Repay(
+                                            amount = repayAsDouble,
+                                            dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                            label = "${it.dataType.text} Repaid: ${it.label}",
+                                            description = it.description,
+                                            repayIcon = it.labelIcon
+                                        )
+                                    )
+                                } ?: run {
+                                    wasRepaySuccess.value = State.ERROR
+                                }
+
+                                repayAmountState.clearText()
+                                selectedDataset.value = null
+
+                                // Dismiss the model drawer.
+                                onDismiss()
+                            }
                         }
                     }
                 }
@@ -473,83 +569,3 @@ fun ModelDrawerContent(
     )
 }
 
-@Composable
-fun EarningsModelDrawerContent(
-    viewModel: HomeScreenViewModel,
-    onDismiss: () -> Unit
-) {
-    ModelDrawerContent(
-        colorResId = R.color.Earnings,
-        icon = R.drawable.filled_earnings,
-        dataType = DataType.EARNINGS,
-        description = "Add your earnings here",
-        buttonText = "Received",
-        viewModel = viewModel,
-        onDismiss = onDismiss
-    )
-}
-
-@Composable
-fun ExpenseModelDrawerContent(
-    viewModel: HomeScreenViewModel,
-    onDismiss: () -> Unit
-) {
-    ModelDrawerContent(
-        colorResId = R.color.Expense,
-        icon = R.drawable.filled_expenditure,
-        dataType = DataType.EXPENSE,
-        description = "Add your expenses here",
-        buttonText = "Spent",
-        viewModel = viewModel,
-        onDismiss = onDismiss
-    )
-}
-
-@Composable
-fun DebtModelDrawerContent(
-    viewModel: HomeScreenViewModel,
-    onDismiss: () -> Unit
-) {
-
-    ModelDrawerContent(
-        colorResId = R.color.Debt,
-        icon = R.drawable.filled_debt,
-        dataType = DataType.DEBT,
-        description = "Set your debts here",
-        buttonText = "Set Debt",
-        viewModel = viewModel,
-        onDismiss = onDismiss
-    )
-}
-
-@Composable
-fun LentModelDrawerContent(
-    viewModel: HomeScreenViewModel,
-    onDismiss: () -> Unit
-) {
-    ModelDrawerContent(
-        colorResId = R.color.Lent,
-        icon = R.drawable.filled_lent,
-        dataType = DataType.LENT,
-        description = "Put your lent here",
-        buttonText = "Lent",
-        viewModel = viewModel,
-        onDismiss = onDismiss
-    )
-}
-
-@Composable
-fun SavingsModelDrawerContent(
-    viewModel: HomeScreenViewModel,
-    onDismiss: () -> Unit
-) {
-    ModelDrawerContent(
-        colorResId = R.color.Savings,
-        icon = R.drawable.filled_savings,
-        dataType = DataType.SAVINGS,
-        description = "Add your savings here",
-        buttonText = "Saved",
-        viewModel = viewModel,
-        onDismiss = onDismiss
-    )
-}

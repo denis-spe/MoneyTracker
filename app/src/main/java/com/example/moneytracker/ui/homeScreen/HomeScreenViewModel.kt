@@ -31,6 +31,8 @@ class HomeScreenViewModel @Inject constructor(
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     var isDescriptionIconVisible by mutableStateOf(false)
         private set
+    var isBottomSheetContentLoading by mutableStateOf(true)
+        private set
     var datasetUiState by mutableStateOf<DatasetUiState>(DatasetUiState.Loading)
         private set
 
@@ -42,6 +44,7 @@ class HomeScreenViewModel @Inject constructor(
             dataStorage.createUserWithId(id = userState.value!!.uid)
         }
     }
+
 
     init {
         fetchDataset()
@@ -111,6 +114,10 @@ class HomeScreenViewModel @Inject constructor(
 
     fun updateIsDescriptionIconVisible(isVisible: Boolean) {
         isDescriptionIconVisible = isVisible
+    }
+
+    fun updateIsBottomSheetContentLoading(isLoading: Boolean) {
+        isBottomSheetContentLoading = isLoading
     }
 
 

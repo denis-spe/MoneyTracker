@@ -15,11 +15,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,12 +47,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val uiStates = viewModel.uiState.collectAsState()
     val userState = viewModel.userState.collectAsState()
     var datasets = uiStates.value.datasets
-    val scope = rememberCoroutineScope()
-    // Create a remembered sheet state so the sheet (and its content) is pre-composed.
-    val sheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true,
-    )
-
 
     val colors = Colors()
 
@@ -122,8 +114,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 },
                 floatingActionButton = {
                     DataAdditionFloatingButton(
-                        sheetState = sheetState,
-                        scope = scope,
                         updateOnModelBottomSheetShow = viewModel::updateOnModelBottomSheetShow
                     )
                 },
@@ -149,10 +139,8 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 // Modal bottom sheet
                 DataAdditionModelDrawer(
                     viewModel = viewModel,
-                    sheetState = sheetState,
-                    scope = scope,
                     isBottomSheetOpen = uiStates.value.isBottomSheetOpen,
-                    updateOnModelBottomSheetShow = viewModel::updateOnModelBottomSheetShow,
+                    datasets = datasets
                 )
             }
         }

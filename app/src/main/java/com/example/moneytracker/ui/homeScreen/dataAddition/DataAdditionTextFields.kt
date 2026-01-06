@@ -14,9 +14,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
-import androidx.compose.foundation.text.input.clearText
-import androidx.compose.foundation.text.input.insert
 import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.input.then
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -48,6 +47,7 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.subtractedRepay
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import kotlinx.coroutines.android.awaitFrame
 import java.text.NumberFormat
 import java.util.Locale
 
@@ -192,29 +192,39 @@ fun ModelDrawerAmountField(
 
 @Composable
 fun RepayField(
+    sheetVisible: Boolean,
     datatype: DataType,
-    state: TextFieldState,
+    amountState: TextFieldState,
     datasets: List<Dataset>,
     selectedDataset: MutableState<Dataset?>,
     modifier: Modifier = Modifier,
     wasRepaySuccess: MutableState<State>
 ) {
-    var isExpanded by remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
+
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val corner = 30.dp
 
-    // If datasets change (e.g. migration assigned ids), refresh selectedDataset reference
-    LaunchedEffect(datasets) {
-        val current = selectedDataset.value
-        if (current != null) {
-            val matched =
-                datasets.find { it.label == current.label && it.dateTime == current.dateTime }
-            if (matched != null) {
-                selectedDataset.value = matched
-            }
+    /* ----------------------------------------------------------
+     * 1) React to Firestore datasets ONLY when sheet is visible
+     * ---------------------------------------------------------- */
+    LaunchedEffect(sheetVisible, datasets) {
+        if (!sheetVisible) return@LaunchedEffect
+
+        val current = selectedDataset.value ?: return@LaunchedEffect
+
+        val matched = datasets.firstOrNull {
+            it.label == current.label && it.dateTime == current.dateTime
+        }
+
+        if (matched != null && matched !== current) {
+            selectedDataset.value = matched
         }
     }
 
+    /* ----------------------------------------------------------
+     * 2) UI
+     * ---------------------------------------------------------- */
     Row(
         modifier = modifier
             .fillMaxWidth(0.8f)
@@ -222,36 +232,36 @@ fun RepayField(
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
+
+        /* ---------- Dropdown ---------- */
         DropdownMenu(
-            expanded = isExpanded,
-            onDismissRequest = {
-                isExpanded = false
-            }
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
-            datasets.forEach { dataset ->
-                if (dataset.wasRepaid()) return@forEach
-                DropdownMenuItem(
-                    text = {
-                        Text(dataset.label, fontSize = fontSize)
-                    },
-                    onClick = {
-                        isExpanded = false
-                        selectedDataset.value = dataset
-                        state.clearText()
-                        state.edit {
-                            this.insert(0, dataset.subtractedRepay.toLong().toString())
+            datasets
+                .filterNot { it.wasRepaid() }
+                .forEach { dataset ->
+
+                    DropdownMenuItem(
+                        text = {
+                            Text(dataset.label, fontSize = fontSize)
+                        },
+                        onClick = {
+                            expanded = false
+                            selectedDataset.value = dataset
+                        },
+                        leadingIcon = {
+                            Image(
+                                painter = painterResource(dataset.labelIcon),
+                                contentDescription = dataset.label,
+                                modifier = Modifier.size(ICON_SIZE)
+                            )
                         }
-                    },
-                    leadingIcon = {
-                        Image(
-                            painter = painterResource(id = dataset.labelIcon),
-                            contentDescription = dataset.label,
-                            modifier = Modifier.size(ICON_SIZE)
-                        )
-                    }
-                )
-            }
+                    )
+                }
         }
+
+        /* ---------- Dataset button ---------- */
         ModelDrawerButton(
             text = selectedDataset.value?.label ?: "Select ${datatype.text}",
             shape = RoundedCornerShape(
@@ -261,10 +271,12 @@ fun RepayField(
             wasSuccess = wasRepaySuccess,
             colorResId = R.color.Repay
         ) {
-            isExpanded = true
+            expanded = true
         }
+
+        /* ---------- Amount field ---------- */
         ModelDrawerAmountField(
-            state,
+            state = amountState,
             placeholder = "0",
             colorResId = R.color.Repay,
             shape = RoundedCornerShape(
@@ -273,5 +285,21 @@ fun RepayField(
             ),
             wasSuccess = wasRepaySuccess
         )
+    }
+
+    /* ----------------------------------------------------------
+     * 3) Update amount AFTER selection (deferred, safe)
+     * ---------------------------------------------------------- */
+    val selected = selectedDataset.value
+    LaunchedEffect(sheetVisible, selected) {
+        if (!sheetVisible || selected == null) return@LaunchedEffect
+
+        // wait for BottomSheet to render first frame
+        awaitFrame()
+
+        val newValue = selected.subtractedRepay.toLong().toString()
+        if (amountState.text.toString() != newValue) {
+            amountState.setTextAndPlaceCursorAtEnd(newValue)
+        }
     }
 }

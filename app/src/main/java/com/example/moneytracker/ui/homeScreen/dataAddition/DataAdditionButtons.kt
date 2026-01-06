@@ -10,11 +10,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -28,26 +26,18 @@ import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.ui.theme.autoTextColorChange
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionFloatingButton(
     updateOnModelBottomSheetShow: (Boolean) -> Unit,
-    sheetState: SheetState,
-    scope: CoroutineScope,
 ) {
-    FloatingActionButton(
+    IconButton(
         onClick = {
             updateOnModelBottomSheetShow(true)
-            scope.launch {
-                sheetState.show()
-            }
         },
         shape = CircleShape,
-        containerColor = MaterialTheme.colorScheme.background,
     ) {
         Icon(
             imageVector = Icons.Default.KeyboardArrowUp,
