@@ -1,6 +1,9 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -120,7 +123,14 @@ fun ItemListArea(datasets: List<Dataset>) {
                 when (recentFilterState.value) {
                     "All" -> {
                         Row(
-                            modifier = Modifier.animateItem()
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = tween(durationMillis = 250),
+                                fadeOutSpec = tween(durationMillis = 100),
+                                placementSpec = spring(
+                                    stiffness = Spring.StiffnessLow,
+                                    dampingRatio = Spring.DampingRatioMediumBouncy
+                                )
+                            )
                         ) {
                             ItemCard(
                                 label = dataset.label,
@@ -129,14 +139,25 @@ fun ItemListArea(datasets: List<Dataset>) {
                                 dataType = dataset.dataType,
                                 colorResId = dataset.dataType.color,
                                 description = dataset.description,
-                                dateTime = dataset.dateTime
+                                dateTime = dataset.dateTime,
+                                isRepay = if (dataset.dataType == DataType.DEBT ||
+                                    dataset.dataType == DataType.LENT
+                                )
+                                    dataset.wasRepaid() else false
                             )
                         }
                         val repayments = dataset.repay
                         if (repayments.isNotEmpty()) {
                             for (repay in repayments) {
                                 Row(
-                                    modifier = Modifier.animateItem()
+                                    modifier = Modifier.animateItem(
+                                        fadeInSpec = tween(durationMillis = 250),
+                                        fadeOutSpec = tween(durationMillis = 100),
+                                        placementSpec = spring(
+                                            stiffness = Spring.StiffnessLow,
+                                            dampingRatio = Spring.DampingRatioMediumBouncy
+                                        )
+                                    )
                                 ) {
                                     ItemCard(
                                         label = repay.label,
@@ -155,7 +176,14 @@ fun ItemListArea(datasets: List<Dataset>) {
                     "Earnings" -> {
                         if (dataset.dataType == DataType.EARNINGS) {
                             Row(
-                                modifier = Modifier.animateItem()
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(durationMillis = 250),
+                                    fadeOutSpec = tween(durationMillis = 100),
+                                    placementSpec = spring(
+                                        stiffness = Spring.StiffnessLow,
+                                        dampingRatio = Spring.DampingRatioMediumBouncy
+                                    )
+                                )
                             ) {
                                 ItemCard(
                                     label = dataset.label,
@@ -173,7 +201,14 @@ fun ItemListArea(datasets: List<Dataset>) {
                     "Expense" -> {
                         if (dataset.dataType == DataType.EXPENSE) {
                             Row(
-                                modifier = Modifier.animateItem()
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(durationMillis = 250),
+                                    fadeOutSpec = tween(durationMillis = 100),
+                                    placementSpec = spring(
+                                        stiffness = Spring.StiffnessLow,
+                                        dampingRatio = Spring.DampingRatioMediumBouncy
+                                    )
+                                )
                             ) {
                                 ItemCard(
                                     label = dataset.label,
@@ -191,7 +226,14 @@ fun ItemListArea(datasets: List<Dataset>) {
                     "Debt" -> {
                         if (dataset.dataType == DataType.DEBT) {
                             Row(
-                                modifier = Modifier.animateItem()
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(durationMillis = 250),
+                                    fadeOutSpec = tween(durationMillis = 100),
+                                    placementSpec = spring(
+                                        stiffness = Spring.StiffnessLow,
+                                        dampingRatio = Spring.DampingRatioMediumBouncy
+                                    )
+                                )
                             ) {
                                 ItemCard(
                                     label = dataset.label,
@@ -200,7 +242,8 @@ fun ItemListArea(datasets: List<Dataset>) {
                                     dataType = dataset.dataType,
                                     colorResId = dataset.dataType.color,
                                     description = dataset.description,
-                                    dateTime = dataset.dateTime
+                                    dateTime = dataset.dateTime,
+                                    isRepay = dataset.wasRepaid()
                                 )
                             }
                         }
@@ -211,7 +254,14 @@ fun ItemListArea(datasets: List<Dataset>) {
                         if (repayments.isNotEmpty()) {
                             for (repay in repayments) {
                                 Row(
-                                    modifier = Modifier.animateItem()
+                                    modifier = Modifier.animateItem(
+                                        fadeInSpec = tween(durationMillis = 250),
+                                        fadeOutSpec = tween(durationMillis = 100),
+                                        placementSpec = spring(
+                                            stiffness = Spring.StiffnessLow,
+                                            dampingRatio = Spring.DampingRatioMediumBouncy
+                                        )
+                                    )
                                 ) {
                                     ItemCard(
                                         label = repay.label,
@@ -230,7 +280,14 @@ fun ItemListArea(datasets: List<Dataset>) {
                     "Lent" -> {
                         if (dataset.dataType == DataType.LENT) {
                             Row(
-                                modifier = Modifier.animateItem()
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(durationMillis = 250),
+                                    fadeOutSpec = tween(durationMillis = 100),
+                                    placementSpec = spring(
+                                        stiffness = Spring.StiffnessLow,
+                                        dampingRatio = Spring.DampingRatioMediumBouncy
+                                    )
+                                )
                             ) {
                                 ItemCard(
                                     label = dataset.label,
@@ -239,7 +296,8 @@ fun ItemListArea(datasets: List<Dataset>) {
                                     dataType = dataset.dataType,
                                     colorResId = dataset.dataType.color,
                                     description = dataset.description,
-                                    dateTime = dataset.dateTime
+                                    dateTime = dataset.dateTime,
+                                    isRepay = dataset.wasRepaid()
                                 )
                             }
                         }
@@ -248,7 +306,14 @@ fun ItemListArea(datasets: List<Dataset>) {
                     "Savings" -> {
                         if (dataset.dataType == DataType.SAVINGS) {
                             Row(
-                                modifier = Modifier.animateItem()
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(durationMillis = 250),
+                                    fadeOutSpec = tween(durationMillis = 100),
+                                    placementSpec = spring(
+                                        stiffness = Spring.StiffnessLow,
+                                        dampingRatio = Spring.DampingRatioMediumBouncy
+                                    )
+                                )
                             ) {
                                 ItemCard(
                                     label = dataset.label,
@@ -276,7 +341,8 @@ fun ItemCard(
     dataType: DataType? = null,
     colorResId: Int,
     description: String,
-    dateTime: Timestamp
+    dateTime: Timestamp,
+    isRepay: Boolean = false
 ) {
     val color = colorResource(colorResId)
 
@@ -326,7 +392,12 @@ fun ItemCard(
                     val year = dateTime.year
                     val dateTimeAsString = "$day $month $year, $hour:$minute"
 
-                    Text(text = label, fontWeight = FontWeight.Bold)
+                    Text(
+                        text = label,
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = if (isRepay) TextDecoration.LineThrough
+                        else TextDecoration.None
+                    )
                     if (description.isNotEmpty()) {
                         Text(text = description)
                     }

@@ -1,7 +1,9 @@
 // Bless is he who comes in the name of LORD.
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
-import androidx.compose.foundation.Image
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,16 +31,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.theme.autoTextColorChange
-import kotlin.time.Duration.Companion.seconds
 
 
 private val ICONS_TEXT_SIZE = 11.sp
@@ -101,7 +102,7 @@ fun IconList(
                             .padding(8.dp),
                         columns = GridCells.Fixed(4),
                     ) {
-                        items(ICONS.size, key = { it.seconds }) { index ->
+                        items(ICONS.size, key = { it }) { index ->
                             val icon = ICONS[index]
 
                             var modifier = Modifier
@@ -114,6 +115,14 @@ fun IconList(
                             ) else modifier
 
                             Column(
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(durationMillis = 250),
+                                    fadeOutSpec = tween(durationMillis = 100),
+                                    placementSpec = spring(
+                                        stiffness = Spring.StiffnessLow,
+                                        dampingRatio = Spring.DampingRatioMediumBouncy
+                                    )
+                                ),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center,
                             ) {
@@ -123,9 +132,10 @@ fun IconList(
                                     },
                                     modifier = modifier
                                 ) {
-                                    Image(
-                                        painter = painterResource(id = icon.second),
-                                        contentDescription = "Icon",
+                                    // Replace Image(painter = painterResource(...)) with:
+                                    AsyncImage(
+                                        model = icon.second,
+                                        contentDescription = null,
                                         modifier = Modifier.size(ICON_SIZE)
                                     )
                                 }

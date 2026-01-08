@@ -18,3 +18,5 @@ Project tracks
 - Improve the insight and repay [05/01/26 00:27]
 - Improve the model bottom drawer appearance speed by adding loader and firestore data storage
 for adding repay offline [06/01/26 02:00]
+- Fix the Icon list for description [08/01/26 00:25]
+- Added a deleted text if debt or lend was repay [08/01/26 02:24]

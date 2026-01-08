@@ -344,7 +344,7 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
                             colorResId = R.color.Repay,
                             barColorResId = R.color.Debt
                         ) {
-                            if (debtRepay >= debt) {
+                            if (debtRepay == debt) {
                                 buildAnnotatedString {
                                     append("You have repaid your debt")
                                 }
@@ -367,7 +367,7 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
                             colorResId = R.color.Repay,
                             barColorResId = R.color.Lent
                         ) {
-                            if (lentRepay > lent) {
+                            if (lentRepay == lent) {
                                 buildAnnotatedString {
                                     append("All your lent has been repaid")
                                 }

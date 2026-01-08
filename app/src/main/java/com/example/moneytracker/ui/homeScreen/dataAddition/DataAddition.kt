@@ -560,12 +560,12 @@ fun ModelDrawerContent(
                 }
             }
         }
-    }
 
-    // Show all icons for label and description.
-    IconList(
-        labelIconState,
-        viewModel = viewModel
-    )
+        // Show all icons for label and description.
+        IconList(
+            labelIconState,
+            viewModel = viewModel
+        )
+    }
 }
 
