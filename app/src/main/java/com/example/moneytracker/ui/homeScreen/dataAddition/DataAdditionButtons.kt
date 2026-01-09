@@ -2,9 +2,13 @@
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -16,6 +20,7 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
@@ -23,6 +28,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.ui.theme.autoTextColorChange
@@ -52,8 +58,11 @@ fun DataAdditionFloatingButton(
 fun ModelDrawerButton(
     text: String,
     colorResId: Int,
+    modifier: Modifier = Modifier,
+    icon: Int? = null,
     wasSuccess: MutableState<State>? = null,
     shape: Shape = ButtonDefaults.outlinedShape,
+    filledColor: Color? = null,
     onClick: () -> Unit,
 ) {
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
@@ -62,22 +71,44 @@ fun ModelDrawerButton(
     val color = if (wasSuccess != null && wasSuccess.value == State.ERROR)
         colorResource(R.color.error_color) else
         colorResource(id = colorResId)
-
     OutlinedButton(
         onClick = onClick,
-        modifier = Modifier
+        modifier = modifier
             .padding(bottom = 10.dp)
             .height(height),
         colors = ButtonDefaults.outlinedButtonColors().copy(
             contentColor = color,
-            containerColor = color.copy(alpha = 0.2f),
+            containerColor = filledColor ?: color.copy(alpha = 0.2f),
         ),
         shape = shape,
         border = BorderStroke(1.dp, color)
     ) {
-        Text(
-            text = text,
-            fontSize = fontSize
-        )
+        if (icon != null) {
+            Row(
+                modifier = modifier,
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                AsyncImage(
+                    model = icon,
+                    contentDescription = text,
+                    modifier = Modifier.size(ICON_SIZE)
+                )
+
+                Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
+
+                Text(
+                    text = text,
+                    fontSize = fontSize,
+                    fontWeight = FONT_WEIGHT
+                )
+
+            }
+        } else {
+            Text(
+                text = text,
+                fontSize = fontSize
+            )
+        }
     }
 }

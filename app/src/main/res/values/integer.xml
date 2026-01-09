@@ -3,7 +3,7 @@
     <integer name="authButtonIconSize">20</integer>
     <integer name="authButtonSpacerWidth">16</integer>
     <integer name="authButtonRoundedCornerShape">20</integer>
-    <integer name="textFieldAndButtonHeight">50</integer>
+    <integer name="textFieldAndButtonHeight">53</integer>
     <integer name="modelDrawerPadding">10</integer>
     <integer name="modelDrawerFontSize">15</integer>
 </resources>

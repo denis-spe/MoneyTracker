@@ -11,6 +11,7 @@ data class Dataset(
     val description: String,
     val dateTime: Timestamp,
     val labelIcon: Int,
+    val paymentMethod: PaymentMethod,
     val repay: List<Repay> = emptyList()
 ) {
     fun wasRepaid(): Boolean {

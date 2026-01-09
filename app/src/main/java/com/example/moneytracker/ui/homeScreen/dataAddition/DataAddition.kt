@@ -29,6 +29,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -37,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Repay
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.subtractedRepay
@@ -251,6 +253,7 @@ fun DataAdditionModelDrawerContent(
         when (tabToDisplay.value) {
             DataType.EARNINGS -> {
                 ModelDrawerContent(
+                    placeholder = "Earned from",
                     colorResId = R.color.Earnings,
                     icon = R.drawable.filled_earnings,
                     dataType = DataType.EARNINGS,
@@ -267,6 +270,7 @@ fun DataAdditionModelDrawerContent(
 
             DataType.EXPENSE -> {
                 ModelDrawerContent(
+                    placeholder = "Spent on",
                     colorResId = R.color.Expense,
                     icon = R.drawable.filled_expenditure,
                     dataType = DataType.EXPENSE,
@@ -283,6 +287,7 @@ fun DataAdditionModelDrawerContent(
 
             DataType.DEBT -> {
                 ModelDrawerContent(
+                    placeholder = "Borrowed from",
                     colorResId = R.color.Debt,
                     icon = R.drawable.filled_debt,
                     dataType = DataType.DEBT,
@@ -299,6 +304,7 @@ fun DataAdditionModelDrawerContent(
 
             DataType.LENT -> {
                 ModelDrawerContent(
+                    placeholder = "Lent to",
                     colorResId = R.color.Lent,
                     icon = R.drawable.filled_lent,
                     dataType = DataType.LENT,
@@ -315,6 +321,7 @@ fun DataAdditionModelDrawerContent(
 
             DataType.SAVINGS -> {
                 ModelDrawerContent(
+                    placeholder = "Savings from",
                     colorResId = R.color.Savings,
                     icon = R.drawable.filled_savings,
                     dataType = DataType.SAVINGS,
@@ -337,6 +344,7 @@ fun DataAdditionModelDrawerContent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModelDrawerContent(
+    placeholder: String,
     colorResId: Int,
     icon: Int,
     dataType: DataType,
@@ -357,6 +365,7 @@ fun ModelDrawerContent(
     val wasRepaySuccess = remember { mutableStateOf(State.INITIAL) }
     val labelIconState = remember { mutableIntStateOf(R.drawable.description) }
     val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
+    val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val repayAmountState = rememberTextFieldState()
 
 
@@ -417,7 +426,7 @@ fun ModelDrawerContent(
                 // Amount
                 ModelDrawerAmountField(
                     state = amountState,
-                    placeholder = "0.0",
+                    placeholder = "0",
                     colorResId = colorResId,
                     wasSuccess = wasSuccess,
                 )
@@ -427,7 +436,7 @@ fun ModelDrawerContent(
                 // Label
                 ModelDrawerTextField(
                     state = labelState,
-                    placeholder = "Label",
+                    placeholder = placeholder,
                     colorResId = colorResId,
                     iconState = labelIconState,
                     viewModel = viewModel,
@@ -440,7 +449,7 @@ fun ModelDrawerContent(
                 // Description
                 ModelDrawerTextField(
                     state = descriptionState,
-                    placeholder = "Description (Optional)",
+                    placeholder = "Note (Optional)",
                     colorResId = colorResId,
                     viewModel = viewModel
                 )
@@ -484,6 +493,14 @@ fun ModelDrawerContent(
             }
 
             item {
+                // Payment method
+                PaymentMethodDropdown(
+                    colorResId = colorResId,
+                    selectedPaymentMethod = selectedPaymentMethod,
+                )
+            }
+
+            item {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
@@ -492,7 +509,8 @@ fun ModelDrawerContent(
                     ModelDrawerButton(
                         text = buttonText,
                         wasSuccess = wasSuccess,
-                        colorResId = colorResId
+                        colorResId = colorResId,
+                        filledColor = Color.Transparent
                     ) {
                         if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
                             viewModel.addData(
@@ -503,7 +521,8 @@ fun ModelDrawerContent(
                                     label = labelState.text.toString(),
                                     description = descriptionState.text.toString(),
                                     dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                    labelIcon = labelIconState.intValue
+                                    labelIcon = labelIconState.intValue,
+                                    paymentMethod = selectedPaymentMethod.value
                                 )
                             )
                             wasSuccess.value = State.SUCCESS
@@ -527,7 +546,8 @@ fun ModelDrawerContent(
                         ModelDrawerButton(
                             text = "Repay",
                             wasSuccess = wasRepaySuccess,
-                            colorResId = R.color.Repay
+                            colorResId = R.color.Repay,
+                            filledColor = Color.Transparent
                         ) {
                             if (repayAsDouble != null) {
                                 selectedDataset.value?.let {
@@ -542,7 +562,8 @@ fun ModelDrawerContent(
                                             dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
                                             label = "${it.dataType.text} Repaid: ${it.label}",
                                             description = it.description,
-                                            repayIcon = it.labelIcon
+                                            repayIcon = it.labelIcon,
+                                            paymentMethod = selectedPaymentMethod.value
                                         )
                                     )
                                 } ?: run {

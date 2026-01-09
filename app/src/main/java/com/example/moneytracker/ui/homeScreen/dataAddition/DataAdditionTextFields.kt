@@ -3,6 +3,7 @@ package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -32,6 +33,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
@@ -41,9 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.subtractedRepay
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
@@ -52,11 +56,15 @@ import java.text.NumberFormat
 import java.util.Locale
 
 
+const val MaxWidth = 0.7f
+val BOTTOM_SHEET_PADDING = 10.dp
+
 @Composable
 fun ModelDrawerTextField(
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
+    modifier: Modifier = Modifier.fillMaxWidth(MaxWidth),
     iconState: MutableState<Int>? = null,
     textLength: Int? = null,
     wasSuccess: MutableState<State>? = null,
@@ -66,7 +74,6 @@ fun ModelDrawerTextField(
     val color = if (isError)
         colorResource(R.color.error_color) else
         colorResource(id = colorResId)
-    val modifier = Modifier.fillMaxWidth(0.7f)
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val modifiedPlaceholder = if (isError)
@@ -74,7 +81,7 @@ fun ModelDrawerTextField(
 
     OutlinedTextField(
         modifier = modifier
-            .padding(bottom = 10.dp)
+            .padding(bottom = BOTTOM_SHEET_PADDING)
             .height(height),
         state = state,
         lineLimits = TextFieldLineLimits.SingleLine,
@@ -82,7 +89,7 @@ fun ModelDrawerTextField(
             Text(
                 text = modifiedPlaceholder,
                 color = color,
-                fontSize = fontSize
+                fontSize = 20.sp
             )
         },
         colors = OutlinedTextFieldDefaults.colors().copy(
@@ -126,7 +133,7 @@ fun ModelDrawerAmountField(
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier.fillMaxWidth(MaxWidth),
     shape: Shape = CircleShape,
     wasSuccess: MutableState<State>? = null,
 ) {
@@ -143,8 +150,7 @@ fun ModelDrawerAmountField(
 
     OutlinedTextField(
         modifier = modifier
-            .fillMaxWidth(0.7f)
-            .padding(bottom = 10.dp)
+            .padding(bottom = BOTTOM_SHEET_PADDING)
             .height(height),
         state = state,
         shape = shape,
@@ -154,7 +160,7 @@ fun ModelDrawerAmountField(
                 text = placeholder,
                 color = color,
                 fontWeight = FontWeight.Bold,
-                fontSize = fontSize
+                fontSize = 20.sp
             )
         },
         colors = OutlinedTextFieldDefaults.colors().copy(
@@ -227,8 +233,7 @@ fun RepayField(
      * ---------------------------------------------------------- */
     Row(
         modifier = modifier
-            .fillMaxWidth(0.8f)
-            .padding(bottom = 10.dp),
+            .fillMaxWidth(MaxWidth),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -268,8 +273,10 @@ fun RepayField(
                 topStart = corner,
                 bottomStart = corner
             ),
+            modifier = Modifier.weight(0.5f),
             wasSuccess = wasRepaySuccess,
-            colorResId = R.color.Repay
+            colorResId = R.color.Repay,
+            filledColor = Color.Transparent
         ) {
             expanded = true
         }
@@ -279,6 +286,7 @@ fun RepayField(
             state = amountState,
             placeholder = "0",
             colorResId = R.color.Repay,
+            modifier = Modifier.weight(0.5f),
             shape = RoundedCornerShape(
                 topEnd = corner,
                 bottomEnd = corner
@@ -302,4 +310,59 @@ fun RepayField(
             amountState.setTextAndPlaceCursorAtEnd(newValue)
         }
     }
+}
+
+@Composable
+fun PaymentMethodDropdown(
+    colorResId: Int,
+    selectedPaymentMethod: MutableState<PaymentMethod>,
+) {
+    val expanded = remember { mutableStateOf(false) }
+    val paymentMethods = PaymentMethod.entries.toTypedArray()
+        .toList()
+    val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
+
+    Column(
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        ModelDrawerButton(
+            text = selectedPaymentMethod.value.text,
+            wasSuccess = null,
+            colorResId = colorResId,
+            filledColor = Color.Transparent,
+            icon = selectedPaymentMethod.value.icon,
+            modifier = Modifier.fillMaxWidth(MaxWidth)
+        ) {
+            expanded.value = true
+        }
+
+        DropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false }
+        ) {
+            paymentMethods
+                .forEach { paymentMethod ->
+
+                    DropdownMenuItem(
+                        text = {
+                            Text(paymentMethod.text, fontSize = fontSize)
+                        },
+                        onClick = {
+                            expanded.value = false
+                            selectedPaymentMethod.value = paymentMethod
+                        },
+                        leadingIcon = {
+                            // Replace Image(painter = painterResource(...)) with:
+                            AsyncImage(
+                                model = paymentMethod.icon,
+                                contentDescription = paymentMethod.text,
+                                modifier = Modifier.size(ICON_SIZE)
+                            )
+                        }
+                    )
+                }
+        }
+    }
+
 }

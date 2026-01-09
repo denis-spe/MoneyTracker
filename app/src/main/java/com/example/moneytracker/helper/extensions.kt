@@ -5,6 +5,7 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Repay
 import com.google.firebase.Timestamp
 import java.time.LocalDate
@@ -95,7 +96,8 @@ val Repay.repayToMap: Map<String, Any>
         "label" to label,
         "description" to description,
         "dateTime" to dateTime,
-        "repayIcon" to repayIcon
+        "repayIcon" to repayIcon,
+        "paymentMethod" to paymentMethod
     )
 
 
@@ -121,6 +123,25 @@ fun Map<*, *>.toRepay(): Repay {
         is String -> (dateTimeRaw.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
         else -> Timestamp(0, 0)
     }
+    val paymentMethod = when (val dt = this["paymentMethod"]) {
+        is String -> try {
+            PaymentMethod.valueOf(dt)
+        } catch (_: Exception) {
+            PaymentMethod.CASH
+        }
+
+        is Number -> PaymentMethod.entries.getOrNull(dt.toInt()) ?: PaymentMethod.CASH
+        is Map<*, *> -> {
+            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
+            if (name != null) try {
+                PaymentMethod.valueOf(name)
+            } catch (_: Exception) {
+                PaymentMethod.CASH
+            } else PaymentMethod.CASH
+        }
+
+        else -> PaymentMethod.CASH
+    }
     val repayIcon = (this["repayIcon"] as Number).toInt()
 
     return Repay(
@@ -128,7 +149,8 @@ fun Map<*, *>.toRepay(): Repay {
         label = label,
         description = description,
         dateTime = dateTime,
-        repayIcon = repayIcon
+        repayIcon = repayIcon,
+        paymentMethod = paymentMethod
     )
 }
 
@@ -177,6 +199,27 @@ fun Map<*, *>.toDataset(): Dataset {
         else -> DataType.EARNINGS
     }
 
+
+    val paymentMethod = when (val dt = this["paymentMethod"]) {
+        is String -> try {
+            PaymentMethod.valueOf(dt)
+        } catch (_: Exception) {
+            PaymentMethod.CASH
+        }
+
+        is Number -> PaymentMethod.entries.getOrNull(dt.toInt()) ?: PaymentMethod.CASH
+        is Map<*, *> -> {
+            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
+            if (name != null) try {
+                PaymentMethod.valueOf(name)
+            } catch (_: Exception) {
+                PaymentMethod.CASH
+            } else PaymentMethod.CASH
+        }
+
+        else -> PaymentMethod.CASH
+    }
+
     // repay may be stored as a list of maps; ensure each item is a Map before calling toRepay()
     val repay: List<Repay> = (this["repay"] as? List<*>)?.mapNotNull { item ->
         (item as? Map<*, *>)?.toRepay()
@@ -200,6 +243,7 @@ fun Map<*, *>.toDataset(): Dataset {
         description = description,
         dateTime = dateTime,
         labelIcon = labelIcon,
-        repay = repay
+        repay = repay,
+        paymentMethod = paymentMethod
     )
 }

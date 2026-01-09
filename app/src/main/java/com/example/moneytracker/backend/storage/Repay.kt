@@ -11,4 +11,5 @@ data class Repay(
     val description: String,
     val dateTime: Timestamp,
     val repayIcon: Int,
+    val paymentMethod: PaymentMethod
 )
