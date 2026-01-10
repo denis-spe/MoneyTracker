@@ -39,7 +39,7 @@ interface DataStorage {
      * Add a repay entry into a dataset (identified by its id) for the given user.
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      */
-    suspend fun addRepayToDataset(userId: String, datasetId: String, repay: Repay)
+    suspend fun addAdjustmentDataset(userId: String, datasetId: String, adjustment: Adjustment)
 
     /**
      * Ensure every dataset stored for the user has a non-null id; assign UUIDs to missing ones.

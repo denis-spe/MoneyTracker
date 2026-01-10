@@ -5,6 +5,8 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -25,6 +29,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -36,8 +42,11 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.Adjustment
+import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.title
@@ -109,7 +118,11 @@ fun ItemListArea(datasets: List<Dataset>) {
             modifier = Modifier.padding(bottom = 8.dp)
         ) {
             ItemFilter(
-                items = listOf("All", "Earnings", "Expense", "Debt", "Lent", "Repay", "Savings"),
+                items = listOf(
+                    "All", "Earnings", "Expense",
+                    "Debt", "Lent", "Repay", "Savings",
+                    "Goal", "Score"
+                ),
                 selected = recentFilterState
             )
         }
@@ -122,6 +135,11 @@ fun ItemListArea(datasets: List<Dataset>) {
 
                 when (recentFilterState.value) {
                     "All" -> {
+                        val wasCompleted = if (dataset.dataType == DataType.DEBT ||
+                            dataset.dataType == DataType.LENT ||
+                            dataset.dataType == DataType.GOAL
+                        )
+                            dataset.isAmountEqualToAdjustAmount() else false
                         Row(
                             modifier = Modifier.animateItem(
                                 fadeInSpec = tween(durationMillis = 250),
@@ -140,15 +158,23 @@ fun ItemListArea(datasets: List<Dataset>) {
                                 colorResId = dataset.dataType.color,
                                 description = dataset.description,
                                 dateTime = dataset.dateTime,
-                                isRepay = if (dataset.dataType == DataType.DEBT ||
-                                    dataset.dataType == DataType.LENT
-                                )
-                                    dataset.wasRepaid() else false
+                                paymentMethod = dataset.paymentMethod,
+                                dataset = dataset,
+                                isCompleted = wasCompleted
                             )
                         }
-                        val repayments = dataset.repay
-                        if (repayments.isNotEmpty()) {
-                            for (repay in repayments) {
+                        val adjustments = dataset.adjustment
+                        if (adjustments.isNotEmpty()) {
+                            for (adjustment in adjustments) {
+
+                                val colorResId = when (adjustment.adjustmentType) {
+                                    AdjustmentType.GOAL -> R.color.SetGoal
+                                    AdjustmentType.REPAY -> {
+                                        if (dataset.dataType == DataType.DEBT)
+                                            R.color.RepayDebt else R.color.RepayLoan
+                                    }
+                                }
+
                                 Row(
                                     modifier = Modifier.animateItem(
                                         fadeInSpec = tween(durationMillis = 250),
@@ -160,13 +186,15 @@ fun ItemListArea(datasets: List<Dataset>) {
                                     )
                                 ) {
                                     ItemCard(
-                                        label = repay.label,
-                                        labelIcon = repay.repayIcon,
-                                        amount = repay.amount,
+                                        label = adjustment.label,
+                                        labelIcon = adjustment.adjustmentIcon,
+                                        amount = adjustment.amount,
                                         dataType = null,
-                                        colorResId = R.color.Repay,
-                                        description = repay.description,
-                                        dateTime = repay.dateTime
+                                        colorResId = colorResId,
+                                        description = adjustment.description,
+                                        dateTime = adjustment.dateTime,
+                                        paymentMethod = adjustment.paymentMethod,
+                                        adjustment = adjustment
                                     )
                                 }
                             }
@@ -192,7 +220,9 @@ fun ItemListArea(datasets: List<Dataset>) {
                                     dataType = dataset.dataType,
                                     colorResId = dataset.dataType.color,
                                     description = dataset.description,
-                                    dateTime = dataset.dateTime
+                                    dateTime = dataset.dateTime,
+                                    dataset = dataset,
+                                    paymentMethod = dataset.paymentMethod
                                 )
                             }
                         }
@@ -217,7 +247,9 @@ fun ItemListArea(datasets: List<Dataset>) {
                                     dataType = dataset.dataType,
                                     colorResId = dataset.dataType.color,
                                     description = dataset.description,
-                                    dateTime = dataset.dateTime
+                                    dateTime = dataset.dateTime,
+                                    dataset = dataset,
+                                    paymentMethod = dataset.paymentMethod
                                 )
                             }
                         }
@@ -243,35 +275,74 @@ fun ItemListArea(datasets: List<Dataset>) {
                                     colorResId = dataset.dataType.color,
                                     description = dataset.description,
                                     dateTime = dataset.dateTime,
-                                    isRepay = dataset.wasRepaid()
+                                    dataset = dataset,
+                                    isCompleted = dataset.isAmountEqualToAdjustAmount(),
+                                    paymentMethod = dataset.paymentMethod
                                 )
                             }
                         }
                     }
 
                     "Repay" -> {
-                        val repayments = dataset.repay
-                        if (repayments.isNotEmpty()) {
-                            for (repay in repayments) {
-                                Row(
-                                    modifier = Modifier.animateItem(
-                                        fadeInSpec = tween(durationMillis = 250),
-                                        fadeOutSpec = tween(durationMillis = 100),
-                                        placementSpec = spring(
-                                            stiffness = Spring.StiffnessLow,
-                                            dampingRatio = Spring.DampingRatioMediumBouncy
+                        val adjustments = dataset.adjustment
+                        if (adjustments.isNotEmpty()) {
+                            for (adjustment in adjustments) {
+                                if (adjustment.adjustmentType == AdjustmentType.REPAY) {
+                                    Row(
+                                        modifier = Modifier.animateItem(
+                                            fadeInSpec = tween(durationMillis = 250),
+                                            fadeOutSpec = tween(durationMillis = 100),
+                                            placementSpec = spring(
+                                                stiffness = Spring.StiffnessLow,
+                                                dampingRatio = Spring.DampingRatioMediumBouncy
+                                            )
                                         )
-                                    )
-                                ) {
-                                    ItemCard(
-                                        label = repay.label,
-                                        labelIcon = repay.repayIcon,
-                                        amount = repay.amount,
-                                        dataType = null,
-                                        colorResId = R.color.Repay,
-                                        description = repay.description,
-                                        dateTime = repay.dateTime
-                                    )
+                                    ) {
+                                        ItemCard(
+                                            label = adjustment.label,
+                                            labelIcon = adjustment.adjustmentIcon,
+                                            amount = adjustment.amount,
+                                            dataType = DataType.REPAY,
+                                            colorResId = if (dataset.dataType == DataType.DEBT)
+                                                R.color.RepayDebt else R.color.RepayLoan,
+                                            description = adjustment.description,
+                                            dateTime = adjustment.dateTime,
+                                            adjustment = adjustment,
+                                            paymentMethod = adjustment.paymentMethod
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    "Score" -> {
+                        val adjustments = dataset.adjustment
+                        if (adjustments.isNotEmpty()) {
+                            for (adjustment in adjustments) {
+                                if (adjustment.adjustmentType == AdjustmentType.GOAL) {
+                                    Row(
+                                        modifier = Modifier.animateItem(
+                                            fadeInSpec = tween(durationMillis = 250),
+                                            fadeOutSpec = tween(durationMillis = 100),
+                                            placementSpec = spring(
+                                                stiffness = Spring.StiffnessLow,
+                                                dampingRatio = Spring.DampingRatioMediumBouncy
+                                            )
+                                        )
+                                    ) {
+                                        ItemCard(
+                                            label = adjustment.label,
+                                            labelIcon = adjustment.adjustmentIcon,
+                                            amount = adjustment.amount,
+                                            dataType = DataType.GOAL,
+                                            colorResId = R.color.SetGoal,
+                                            description = adjustment.description,
+                                            dateTime = adjustment.dateTime,
+                                            adjustment = adjustment,
+                                            paymentMethod = adjustment.paymentMethod
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -297,7 +368,9 @@ fun ItemListArea(datasets: List<Dataset>) {
                                     colorResId = dataset.dataType.color,
                                     description = dataset.description,
                                     dateTime = dataset.dateTime,
-                                    isRepay = dataset.wasRepaid()
+                                    dataset = dataset,
+                                    isCompleted = dataset.isAmountEqualToAdjustAmount(),
+                                    paymentMethod = dataset.paymentMethod
                                 )
                             }
                         }
@@ -322,7 +395,37 @@ fun ItemListArea(datasets: List<Dataset>) {
                                     dataType = dataset.dataType,
                                     colorResId = dataset.dataType.color,
                                     description = dataset.description,
-                                    dateTime = dataset.dateTime
+                                    dateTime = dataset.dateTime,
+                                    dataset = dataset,
+                                    paymentMethod = dataset.paymentMethod
+                                )
+                            }
+                        }
+                    }
+
+                    "Goal" -> {
+                        if (dataset.dataType == DataType.GOAL) {
+                            Row(
+                                modifier = Modifier.animateItem(
+                                    fadeInSpec = tween(durationMillis = 250),
+                                    fadeOutSpec = tween(durationMillis = 100),
+                                    placementSpec = spring(
+                                        stiffness = Spring.StiffnessLow,
+                                        dampingRatio = Spring.DampingRatioMediumBouncy
+                                    )
+                                )
+                            ) {
+                                ItemCard(
+                                    label = dataset.label,
+                                    labelIcon = dataset.labelIcon,
+                                    amount = dataset.amount,
+                                    dataType = dataset.dataType,
+                                    colorResId = dataset.dataType.color,
+                                    description = dataset.description,
+                                    dateTime = dataset.dateTime,
+                                    paymentMethod = dataset.paymentMethod,
+                                    dataset = dataset,
+                                    isCompleted = dataset.isAmountEqualToAdjustAmount()
                                 )
                             }
                         }
@@ -342,21 +445,32 @@ fun ItemCard(
     colorResId: Int,
     description: String,
     dateTime: Timestamp,
-    isRepay: Boolean = false
+    paymentMethod: PaymentMethod,
+    dataset: Dataset? = null,
+    adjustment: Adjustment? = null,
+    isCompleted: Boolean = false
 ) {
+
     val color = colorResource(colorResId)
+    val onShowDialog = remember { mutableStateOf(false) }
+
 
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(bottom = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth(0.8f)
+                .clip(RoundedCornerShape(5.dp))
+                .clickable {
+                    onShowDialog.value = true
+                }
         ) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -395,7 +509,7 @@ fun ItemCard(
                     Text(
                         text = label,
                         fontWeight = FontWeight.Bold,
-                        textDecoration = if (isRepay) TextDecoration.LineThrough
+                        textDecoration = if (isCompleted) TextDecoration.LineThrough
                         else TextDecoration.None
                     )
                     if (description.isNotEmpty()) {
@@ -417,10 +531,37 @@ fun ItemCard(
                     else -> amount
                 }
 
-                Text(
-                    text = amount,
-                    color = color
-                )
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = amount,
+                        color = color
+                    )
+
+                    Column(
+                        modifier = Modifier.border(
+                            1.dp,
+                            Brush.linearGradient(
+                                colors = listOf(
+                                    color,
+                                    color.copy(alpha = 0.5f),
+                                    color.copy(alpha = 0.2f)
+                                )
+                            ),
+                            CircleShape
+                        )
+                    ) {
+                        Image(
+                            painter = painterResource(paymentMethod.icon),
+                            contentDescription = "payment method icon",
+                            modifier = Modifier
+                                .size(ICON_SIZE)
+                                .padding(3.dp)
+                        )
+                    }
+                }
             }
 
         }
@@ -433,4 +574,11 @@ fun ItemCard(
         )
     }
 
+    if (onShowDialog.value) {
+        Receipt(
+            dataset = dataset,
+            adjustment = adjustment,
+            onShowDialog = onShowDialog,
+        )
+    }
 }

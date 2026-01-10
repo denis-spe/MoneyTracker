@@ -5,7 +5,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.example.moneytracker.helper.repayToMap
+import com.example.moneytracker.helper.adjustmentToMap
 import com.example.moneytracker.helper.toDataset
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -176,14 +176,14 @@ class DataStorageImpl(
             }
     }
 
-    override suspend fun addRepayToDataset(
+    override suspend fun addAdjustmentDataset(
         userId: String,
         datasetId: String,
-        repay: Repay
+        adjustment: Adjustment
     ) {
         Log.d(
             "DataStorageImpl",
-            "addRepayToDataset called: $repay for datasetId=$datasetId userId=$userId"
+            "addRepayToDataset called: $adjustment for datasetId=$datasetId userId=$userId"
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
@@ -200,9 +200,10 @@ class DataStorageImpl(
 
         // mutate target dataset's items
         val datasetMap = mutableDatasets[idx].toMutableMap()
-        val items = (datasetMap["repay"] as? List<Map<String, Any>> ?: emptyList()).toMutableList()
-        items.add(repay.repayToMap)                         // your map representation
-        datasetMap["repay"] = items
+        val items =
+            (datasetMap["adjustment"] as? List<Map<String, Any>> ?: emptyList()).toMutableList()
+        items.add(adjustment.adjustmentToMap)                         // your map representation
+        datasetMap["adjustment"] = items
         mutableDatasets[idx] = datasetMap
 
         // write whole datasets array back (queued when offline)

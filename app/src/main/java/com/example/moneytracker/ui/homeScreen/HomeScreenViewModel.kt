@@ -7,10 +7,10 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
-import com.example.moneytracker.backend.storage.Repay
 import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -56,7 +56,7 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun addRepayData(dataset: Dataset, repay: Repay) {
+    fun addRepayData(dataset: Dataset, adjustment: Adjustment) {
         // Log early so we can see UI triggered this method
         Log.d(
             "HomeScreenViewModel",
@@ -85,10 +85,10 @@ class HomeScreenViewModel @Inject constructor(
 
         viewModelScope.launch {
             try {
-                dataStorage.addRepayToDataset(
+                dataStorage.addAdjustmentDataset(
                     userState.value!!.uid,
                     datasetId = targetId,
-                    repay = repay
+                    adjustment = adjustment
                 )
             } catch (e: Exception) {
                 Log.e("HomeScreenViewModel", "addRepayData failed", e)

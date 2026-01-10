@@ -12,8 +12,11 @@
     <color name="fillAuthBtnContainerColor">#4CAF50</color>
     <color name="Earnings">#51AF4C</color>
     <color name="Expense">#FF3D00</color>
-    <color name="Debt">#2467DB</color>
-    <color name="Lent">#FFAE4C</color>
-    <color name="Savings">#76476E</color>
-    <color name="Repay">#08DB8A</color>
+    <color name="Debt">#FF2467DB</color>
+    <color name="Lent">#FFF77F00</color>
+    <color name="Savings">#FF76476E</color>
+    <color name="RepayLoan">#FFDD6031</color>
+    <color name="RepayDebt">#FF006E90</color>
+    <color name="Goal">#FF8AA29E</color>
+    <color name="SetGoal">#FF5C4742</color>
 </resources>

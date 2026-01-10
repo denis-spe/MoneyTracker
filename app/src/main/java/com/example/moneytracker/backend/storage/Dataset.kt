@@ -12,9 +12,9 @@ data class Dataset(
     val dateTime: Timestamp,
     val labelIcon: Int,
     val paymentMethod: PaymentMethod,
-    val repay: List<Repay> = emptyList()
+    val adjustment: List<Adjustment> = emptyList()
 ) {
-    fun wasRepaid(): Boolean {
-        return repay.sumOf { it.amount } == amount
+    fun isAmountEqualToAdjustAmount(): Boolean {
+        return adjustment.sumOf { it.amount } == amount
     }
 }

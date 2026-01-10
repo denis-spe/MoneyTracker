@@ -8,5 +8,6 @@ enum class DataType(val text: String, val color: Int) {
     LENT(text = "Lent", color = R.color.Lent),
     DEBT(text = "Debt", color = R.color.Debt),
     SAVINGS(text = "Savings", color = R.color.Savings),
-    REPAY(text = "Repay", color = R.color.Repay)
+    REPAY(text = "Repay", color = R.color.RepayLoan),
+    GOAL(text = "Goal", color = R.color.Goal),
 }

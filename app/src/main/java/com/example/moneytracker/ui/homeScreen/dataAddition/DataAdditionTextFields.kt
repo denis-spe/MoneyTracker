@@ -89,7 +89,7 @@ fun ModelDrawerTextField(
             Text(
                 text = modifiedPlaceholder,
                 color = color,
-                fontSize = 20.sp
+                fontSize = fontSize
             )
         },
         colors = OutlinedTextFieldDefaults.colors().copy(
@@ -160,7 +160,7 @@ fun ModelDrawerAmountField(
                 text = placeholder,
                 color = color,
                 fontWeight = FontWeight.Bold,
-                fontSize = 20.sp
+                fontSize = fontSize
             )
         },
         colors = OutlinedTextFieldDefaults.colors().copy(
@@ -197,11 +197,12 @@ fun ModelDrawerAmountField(
 }
 
 @Composable
-fun RepayField(
+fun AdjustmentField(
     sheetVisible: Boolean,
     datatype: DataType,
     amountState: TextFieldState,
     datasets: List<Dataset>,
+    colorResId: Int,
     selectedDataset: MutableState<Dataset?>,
     modifier: Modifier = Modifier,
     wasRepaySuccess: MutableState<State>
@@ -244,7 +245,7 @@ fun RepayField(
             onDismissRequest = { expanded = false }
         ) {
             datasets
-                .filterNot { it.wasRepaid() }
+                .filterNot { it.isAmountEqualToAdjustAmount() }
                 .forEach { dataset ->
 
                     DropdownMenuItem(
@@ -275,7 +276,7 @@ fun RepayField(
             ),
             modifier = Modifier.weight(0.5f),
             wasSuccess = wasRepaySuccess,
-            colorResId = R.color.Repay,
+            colorResId = colorResId,
             filledColor = Color.Transparent
         ) {
             expanded = true
@@ -285,7 +286,7 @@ fun RepayField(
         ModelDrawerAmountField(
             state = amountState,
             placeholder = "0",
-            colorResId = R.color.Repay,
+            colorResId = colorResId,
             modifier = Modifier.weight(0.5f),
             shape = RoundedCornerShape(
                 topEnd = corner,

@@ -156,7 +156,6 @@ fun CurrentPagerIndicator(
         label = "Current Width"
     )
 
-    pagerState.currentPage
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -231,13 +230,21 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
     val savings =
         datasets.filter { it.dataType == DataType.SAVINGS }.sumOf { it.amount }
     val debtRepay =
-        datasets.filter { it.dataType == DataType.DEBT }.map { it.repay }
+        datasets.filter { it.dataType == DataType.DEBT }.map { it.adjustment }
             .flatten()
             .sumOf { it.amount }
     val lentRepay =
-        datasets.filter { it.dataType == DataType.LENT }.map { it.repay }
+        datasets.filter { it.dataType == DataType.LENT }.map { it.adjustment }
             .flatten()
             .sumOf { it.amount }
+    val goal =
+        datasets.filter { it.dataType == DataType.GOAL }.sumOf { it.amount }
+    val score = datasets.filter { it.dataType == DataType.GOAL }
+        .map { it.adjustment }
+        .flatten()
+        .sumOf { it.amount }
+
+
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -299,6 +306,25 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
                         }
                     }
 
+                    "GoalVsEarnings" -> {
+                        Insights(
+                            firstFinancial = earnings,
+                            secondFinancial = goal,
+                            colorResId = R.color.Goal,
+                            barColorResId = R.color.Earnings,
+                        ) {
+                            buildAnnotatedString {
+                                if (goal == earnings) {
+                                    append("You have more goal than your earnings")
+                                } else if (earnings > 0) {
+                                    append("Earnings are more then your goal")
+                                } else {
+                                    append("You have no goal")
+                                }
+                            }
+                        }
+                    }
+
                     "LentVsEarnings" -> {
                         Insights(
                             firstFinancial = earnings,
@@ -341,7 +367,7 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
                         Insights(
                             firstFinancial = debt,
                             secondFinancial = debtRepay,
-                            colorResId = R.color.Repay,
+                            colorResId = R.color.RepayDebt,
                             barColorResId = R.color.Debt
                         ) {
                             if (debtRepay == debt) {
@@ -364,12 +390,12 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
                         Insights(
                             firstFinancial = lent,
                             secondFinancial = lentRepay,
-                            colorResId = R.color.Repay,
+                            colorResId = R.color.RepayLoan,
                             barColorResId = R.color.Lent
                         ) {
                             if (lentRepay == lent) {
                                 buildAnnotatedString {
-                                    append("All your lent has been repaid")
+                                    append("All your loans has been repaid")
                                 }
                             } else if (lent > 0) {
                                 buildAnnotatedString {
@@ -380,6 +406,27 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
                                     append("You haven't lent to anyone")
                                 }
                             }
+                        }
+                    }
+
+                    "GoalVsScore" -> {
+                        Insights(
+                            firstFinancial = goal,
+                            secondFinancial = score,
+                            colorResId = R.color.SetGoal,
+                            barColorResId = R.color.Goal
+                        ) {
+
+                            buildAnnotatedString {
+                                if (score == goal) {
+                                    append("You have met your goal")
+                                } else if (goal > 0) {
+                                    append("You have not met your goal")
+                                } else {
+                                    append("You have no goal")
+                                }
+                            }
+
                         }
                     }
 
