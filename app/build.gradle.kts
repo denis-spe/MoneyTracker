@@ -1,3 +1,7 @@
+import com.android.build.api.dsl.ApplicationExtension
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -8,7 +12,7 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-android {
+extensions.configure<ApplicationExtension> {
     namespace = "com.example.moneytracker"
     compileSdk = 36
 
@@ -45,11 +49,17 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-    buildFeatures {
-        compose = true
+}
+
+kotlin {
+    // 🔑 This fixes the Java/Kotlin mismatch
+    jvmToolchain(11)
+
+    compilerOptions {
+        jvmTarget.set(JvmTarget.JVM_11)
+
+        // ✅ Your opt-in stays
+        optIn.add("kotlin.RequiresOptIn")
     }
 }
 
