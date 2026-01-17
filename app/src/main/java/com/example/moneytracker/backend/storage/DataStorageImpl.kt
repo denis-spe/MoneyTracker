@@ -6,6 +6,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
+import com.example.moneytracker.helper.casting
 import com.example.moneytracker.helper.toDataset
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -183,13 +184,13 @@ class DataStorageImpl(
     ) {
         Log.d(
             "DataStorageImpl",
-            "addRepayToDataset called: $adjustment for datasetId=$datasetId userId=$userId"
+            "addAdjustmentDataset called: $adjustment for datasetId=$datasetId userId=$userId"
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
         // read (may be served from cache if offline)
         val snapshot = docRef.get().await()
-        val datasets = snapshot.get("datasets") as? List<Map<String, Any>> ?: emptyList()
+        val datasets = casting(snapshot.get("datasets")) ?: emptyList()
 
         val mutableDatasets = datasets.toMutableList()
         val idx = mutableDatasets.indexOfFirst { (it["id"] as? String) == datasetId }
@@ -201,8 +202,12 @@ class DataStorageImpl(
         // mutate target dataset's items
         val datasetMap = mutableDatasets[idx].toMutableMap()
         val items =
-            (datasetMap["adjustment"] as? List<Map<String, Any>> ?: emptyList()).toMutableList()
-        items.add(adjustment.adjustmentToMap)                         // your map representation
+            (casting(datasetMap["adjustment"]) ?: emptyList()).toMutableList()
+        items.add(
+            adjustment.copy(
+                adjustmentId = UUID.randomUUID().toString()
+            ).adjustmentToMap
+        )                         // your map representation
         datasetMap["adjustment"] = items
         mutableDatasets[idx] = datasetMap
 
@@ -254,6 +259,59 @@ class DataStorageImpl(
             Log.e("DataStorageImpl", "Failed to ensure dataset ids", e)
             throw e
         }
+    }
+
+    override suspend fun removeDataset(
+        userId: String,
+        dataset: Dataset
+    ) {
+        Log.d(
+            "DataStorageImpl",
+            "removeDataset user=$userId dataset.id=${dataset.id} label=${dataset.label}"
+        )
+        db.collection(COLLECTION_NAME)
+            .document(userId)
+            .update("datasets", FieldValue.arrayRemove(dataset))
+            .addOnSuccessListener {
+                Log.d("Firestore", "Successfully wrote data for user $userId")
+            }
+            .addOnFailureListener {
+                Log.e("Firestore", "Failed to write user data for $userId", it)
+            }
+    }
+
+    override suspend fun removeAdjustmentDataset(
+        userId: String,
+        datasetId: String,
+        adjustment: Adjustment
+    ) {
+        Log.d(
+            "DataStorageImpl",
+            "removeAdjustmentDataset called: $adjustment for datasetId=$datasetId userId=$userId"
+        )
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+
+        // read (may be served from cache if offline)
+        val snapshot = docRef.get().await()
+        val datasets = casting(snapshot.get("datasets")) ?: emptyList()
+
+        val mutableDatasets = datasets.toMutableList()
+        val idx = mutableDatasets.indexOfFirst { (it["id"] as? String) == datasetId }
+
+        if (idx == -1) {
+            throw IllegalArgumentException("Dataset $datasetId not found for user $userId")
+        }
+
+        // mutate target dataset's items
+        val datasetMap = mutableDatasets[idx].toMutableMap()
+        val items =
+            (casting(datasetMap["adjustment"]) ?: emptyList()).toMutableList()
+        items.removeAll { (it["adjustmentId"] as? String) == adjustment.adjustmentId }
+        datasetMap["adjustment"] = items
+        mutableDatasets[idx] = datasetMap
+
+        // write whole datasets array back (queued when offline)
+        docRef.update("datasets", mutableDatasets).await()
     }
 
     companion object {

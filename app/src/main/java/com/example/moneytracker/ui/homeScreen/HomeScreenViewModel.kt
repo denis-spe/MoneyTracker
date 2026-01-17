@@ -56,6 +56,22 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    fun removeData(dataset: Dataset) {
+        viewModelScope.launch {
+            dataStorage.removeDataset(userState.value!!.uid, dataset = dataset)
+        }
+    }
+
+    fun removeAdjustmentDataset(datasetId: String, adjustment: Adjustment) {
+        viewModelScope.launch {
+            dataStorage.removeAdjustmentDataset(
+                userState.value!!.uid,
+                datasetId = datasetId,
+                adjustment = adjustment
+            )
+        }
+    }
+
     fun addRepayData(dataset: Dataset, adjustment: Adjustment) {
         // Log early so we can see UI triggered this method
         Log.d(

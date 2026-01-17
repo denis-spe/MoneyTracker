@@ -49,7 +49,7 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.State
-import com.example.moneytracker.helper.subtractedRepay
+import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import kotlinx.coroutines.android.awaitFrame
 import java.text.NumberFormat
@@ -306,7 +306,7 @@ fun AdjustmentField(
         // wait for BottomSheet to render first frame
         awaitFrame()
 
-        val newValue = selected.subtractedRepay.toLong().toString()
+        val newValue = selected.remainingAmount.toLong().toString()
         if (amountState.text.toString() != newValue) {
             amountState.setTextAndPlaceCursorAtEnd(newValue)
         }

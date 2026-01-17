@@ -413,7 +413,7 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
                         Insights(
                             firstFinancial = goal,
                             secondFinancial = score,
-                            colorResId = R.color.SetGoal,
+                            colorResId = R.color.Attain,
                             barColorResId = R.color.Goal
                         ) {
 

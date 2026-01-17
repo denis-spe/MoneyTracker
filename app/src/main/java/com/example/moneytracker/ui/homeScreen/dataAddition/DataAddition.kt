@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -46,7 +47,7 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.State
-import com.example.moneytracker.helper.subtractedRepay
+import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
@@ -79,7 +80,8 @@ fun DataAdditionModelDrawer(
                 viewModel.updateOnModelBottomSheetShow(false)
                 viewModel.updateIsBottomSheetContentLoading(true)
             },
-            containerColor = BottomSheetDefaults.ContainerColor.copy(0.97f)
+            containerColor = BottomSheetDefaults.ContainerColor.copy(0.97f),
+
         ) {
             LaunchedEffect(viewModel.isBottomSheetContentLoading) {
                 delay(800)
@@ -193,8 +195,11 @@ fun DataAdditionModelDrawerContent(
     Column {
         HorizontalPager(
             pagerState,
-            modifier = Modifier.fillMaxWidth(),
-            key = { it }
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 200.dp, max = 500.dp),
+            key = { it },
+            beyondViewportPageCount = 2,
         ) {
             val dataTypeTab = dataTypes[it]
 
@@ -473,7 +478,7 @@ fun ModelDrawerContent(
                                 },
                                 wasRepaySuccess = wasRepaySuccess,
                                 selectedDataset = selectedDataset,
-                                colorResId = R.color.SetGoal
+                                colorResId = R.color.Attain
                             )
                         }
                     }
@@ -578,13 +583,14 @@ fun ModelDrawerContent(
                         ) {
                             if (adjustAsDouble != null) {
                                 selectedDataset.value?.let {
-                                    if (adjustAsDouble > it.subtractedRepay) {
+                                    if (adjustAsDouble > it.remainingAmount) {
                                         wasRepaySuccess.value = State.ERROR
                                         return@ModelDrawerButton
                                     }
                                     viewModel.addRepayData(
                                         it,
                                         Adjustment(
+                                            adjustmentId = UUID.randomUUID().toString(),
                                             amount = adjustAsDouble,
                                             dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
                                             label = "${it.dataType.text} Repaid: ${it.label}",
@@ -611,25 +617,26 @@ fun ModelDrawerContent(
                         ModelDrawerButton(
                             text = "Add",
                             wasSuccess = wasRepaySuccess,
-                            colorResId = R.color.SetGoal,
+                            colorResId = R.color.Attain,
                             filledColor = Color.Transparent
                         ) {
                             if (adjustAsDouble != null) {
                                 selectedDataset.value?.let {
-                                    if (adjustAsDouble > it.subtractedRepay) {
+                                    if (adjustAsDouble > it.remainingAmount) {
                                         wasRepaySuccess.value = State.ERROR
                                         return@ModelDrawerButton
                                     }
                                     viewModel.addRepayData(
                                         it,
                                         Adjustment(
+                                            adjustmentId = UUID.randomUUID().toString(),
                                             amount = adjustAsDouble,
                                             dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
                                             label = "Goal: ${it.label}",
                                             description = descriptionState.text.toString(),
                                             adjustmentIcon = it.labelIcon,
                                             paymentMethod = selectedPaymentMethod.value,
-                                            adjustmentType = AdjustmentType.GOAL,
+                                            adjustmentType = AdjustmentType.ATTAIN,
                                         )
                                     )
                                 } ?: run {

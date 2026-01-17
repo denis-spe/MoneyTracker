@@ -86,7 +86,7 @@ val Dataset.isForToday: Boolean
         return dataDate == today
     }
 
-val Dataset.subtractedRepay: Double
+val Dataset.remainingAmount: Double
     get() = amount - adjustment.sumOf { it.amount }
 
 
@@ -166,6 +166,7 @@ fun Map<*, *>.asAdjustment(): Adjustment {
     }
 
     val adjustmentIcon = (this["adjustmentIcon"] as Number).toInt()
+    val adjustmentId = this["adjustmentId"] as String
 
     return Adjustment(
         amount = amount,
@@ -174,7 +175,8 @@ fun Map<*, *>.asAdjustment(): Adjustment {
         dateTime = dateTime,
         adjustmentIcon = adjustmentIcon,
         paymentMethod = paymentMethod,
-        adjustmentType = adjustmentType
+        adjustmentType = adjustmentType,
+        adjustmentId = adjustmentId
     )
 }
 
@@ -270,4 +272,12 @@ fun Map<*, *>.toDataset(): Dataset {
         adjustment = adjustment,
         paymentMethod = paymentMethod
     )
+}
+
+fun casting(any: Any?): List<Map<String, Any>>? {
+    if (any != null) {
+        val map: List<Map<String, Any>> = (any as List<*>).filterIsInstance<Map<String, Any>>()
+        return map
+    }
+    return null
 }

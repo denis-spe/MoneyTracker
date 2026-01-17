@@ -46,4 +46,19 @@ interface DataStorage {
      * This is a migration helper to avoid dataset.id being null for older documents.
      */
     suspend fun ensureDatasetIds(userId: String)
+
+    /**
+     * Remove a dataset from the storage
+     * @param userId the user id
+     * @param dataset the dataset to remove
+     */
+    suspend fun removeDataset(userId: String, dataset: Dataset)
+
+    /**
+     * Remove adjusted dataset from the storage
+     * @param userId the user id
+     * @param datasetId the dataset id
+     * @param adjustment the adjustment
+     */
+    suspend fun removeAdjustmentDataset(userId: String, datasetId: String, adjustment: Adjustment)
 }

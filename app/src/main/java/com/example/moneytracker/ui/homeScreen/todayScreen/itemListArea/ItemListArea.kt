@@ -168,7 +168,7 @@ fun ItemListArea(datasets: List<Dataset>) {
                             for (adjustment in adjustments) {
 
                                 val colorResId = when (adjustment.adjustmentType) {
-                                    AdjustmentType.GOAL -> R.color.SetGoal
+                                    AdjustmentType.ATTAIN -> R.color.Attain
                                     AdjustmentType.REPAY -> {
                                         if (dataset.dataType == DataType.DEBT)
                                             R.color.RepayDebt else R.color.RepayLoan
@@ -194,7 +194,8 @@ fun ItemListArea(datasets: List<Dataset>) {
                                         description = adjustment.description,
                                         dateTime = adjustment.dateTime,
                                         paymentMethod = adjustment.paymentMethod,
-                                        adjustment = adjustment
+                                        adjustment = adjustment,
+                                        dataset = dataset
                                     )
                                 }
                             }
@@ -308,7 +309,8 @@ fun ItemListArea(datasets: List<Dataset>) {
                                             description = adjustment.description,
                                             dateTime = adjustment.dateTime,
                                             adjustment = adjustment,
-                                            paymentMethod = adjustment.paymentMethod
+                                            paymentMethod = adjustment.paymentMethod,
+                                            dataset = dataset
                                         )
                                     }
                                 }
@@ -320,7 +322,7 @@ fun ItemListArea(datasets: List<Dataset>) {
                         val adjustments = dataset.adjustment
                         if (adjustments.isNotEmpty()) {
                             for (adjustment in adjustments) {
-                                if (adjustment.adjustmentType == AdjustmentType.GOAL) {
+                                if (adjustment.adjustmentType == AdjustmentType.ATTAIN) {
                                     Row(
                                         modifier = Modifier.animateItem(
                                             fadeInSpec = tween(durationMillis = 250),
@@ -336,11 +338,12 @@ fun ItemListArea(datasets: List<Dataset>) {
                                             labelIcon = adjustment.adjustmentIcon,
                                             amount = adjustment.amount,
                                             dataType = DataType.GOAL,
-                                            colorResId = R.color.SetGoal,
+                                            colorResId = R.color.Attain,
                                             description = adjustment.description,
                                             dateTime = adjustment.dateTime,
                                             adjustment = adjustment,
-                                            paymentMethod = adjustment.paymentMethod
+                                            paymentMethod = adjustment.paymentMethod,
+                                            dataset = dataset
                                         )
                                     }
                                 }
@@ -441,12 +444,12 @@ fun ItemCard(
     label: String,
     labelIcon: Int,
     amount: Double,
+    dataset: Dataset,
     dataType: DataType? = null,
     colorResId: Int,
     description: String,
     dateTime: Timestamp,
     paymentMethod: PaymentMethod,
-    dataset: Dataset? = null,
     adjustment: Adjustment? = null,
     isCompleted: Boolean = false
 ) {

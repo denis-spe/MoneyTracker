@@ -216,7 +216,7 @@ fun StatArea(
         ),
         PagerItem(
             "GoalVsScore",
-            Pair(R.color.Goal, R.color.SetGoal)
+            Pair(R.color.Goal, R.color.Attain)
         )
         )
     val pagerState = rememberPagerState(pageCount = { items.size })
