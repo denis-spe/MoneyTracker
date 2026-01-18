@@ -52,7 +52,6 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
-import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
@@ -111,13 +110,14 @@ fun DatasetReceipt(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+
             val label = when (dataset.dataType) {
                 DataType.EARNINGS -> "Received from:"
                 DataType.EXPENSE -> "Spent on:"
                 DataType.DEBT -> "Debt from:"
                 DataType.GOAL -> "Your goal:"
                 DataType.LENT -> "Lent to:"
-                else -> throw Exception("Unknown data type")
+                DataType.SAVINGS -> "Savings for:"
             }
 
             Text(text = label, fontSize = fontSize, fontWeight = FONT_WEIGHT)
@@ -200,6 +200,47 @@ fun DatasetReceipt(
             ) {
                 Text(text = "Last Payment Time:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
                 Text(text = time, fontSize = fontSize)
+            }
+        }
+
+        if (dataset.dataType == DataType.GOAL) {
+            val deadlineDateTime = dataset.deadlineDateTime.toLocalDateTimeUtc()
+            val deadlineDay = deadlineDateTime.day.addZeroIfLessThenTen
+            val deadlineMonth = deadlineDateTime.month.name.title.take(3)
+            val deadlineYear = deadlineDateTime.year
+            val deadlineHour = deadlineDateTime.hour.addZeroIfLessThenTen
+            val deadlineMinute = deadlineDateTime.minute.addZeroIfLessThenTen
+
+            val deadlineDate = "$deadlineDay $deadlineMonth $deadlineYear"
+            val deadlineTime = "$deadlineHour:$deadlineMinute"
+
+            Text("")
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Status:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = dataset.status.text, fontSize = fontSize)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Deadline Date:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = deadlineDate, fontSize = fontSize)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Deadline Time:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = deadlineTime, fontSize = fontSize)
             }
         }
 
@@ -398,7 +439,7 @@ fun AdjustmentReceipt(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val label = when (adjustment.adjustmentType) {
-                AdjustmentType.REPAY -> "Repaying:"
+                AdjustmentType.REPAYMENT -> "Repaying:"
                 AdjustmentType.ATTAIN -> "Attaining:"
             }
 

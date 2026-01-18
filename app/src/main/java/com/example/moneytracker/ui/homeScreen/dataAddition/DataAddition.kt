@@ -44,12 +44,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
+import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.State
-import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
@@ -72,7 +72,7 @@ fun DataAdditionModelDrawer(
     viewModel: HomeScreenViewModel,
     isBottomSheetOpen: Boolean,
 ) {
-    val dataTypes = DataType.entries.toList().filter { it != DataType.REPAY }
+    val dataTypes = DataType.entries.toList()
     val pagerState = rememberPagerState { dataTypes.size }
     val scope = rememberCoroutineScope()
 
@@ -309,8 +309,6 @@ fun DataAdditionModelDrawerContent(
                         viewModel.updateIsBottomSheetContentLoading(true)
                     }
                 }
-
-                else -> {}
             }
         }
     }
@@ -367,6 +365,7 @@ fun ModelDrawerContent(
 
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
     val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
+
 
     Column(
         modifier = Modifier
@@ -567,7 +566,9 @@ fun ModelDrawerContent(
                                     description = descriptionState.text.toString(),
                                     dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
                                     labelIcon = labelIconState.intValue,
-                                    paymentMethod = selectedPaymentMethod.value
+                                    paymentMethod = selectedPaymentMethod.value,
+                                    deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
+                                    adjustmentStatus = AdjustmentStatus.PENDING
                                 )
                             )
                             wasSuccess.value = State.SUCCESS
@@ -611,7 +612,7 @@ fun ModelDrawerContent(
                                             description = descriptionState.text.toString(),
                                             adjustmentIcon = it.labelIcon,
                                             paymentMethod = selectedPaymentMethod.value,
-                                            adjustmentType = AdjustmentType.REPAY,
+                                            adjustmentType = AdjustmentType.REPAYMENT,
                                         )
                                     )
                                 } ?: run {
@@ -646,7 +647,7 @@ fun ModelDrawerContent(
                                             adjustmentId = UUID.randomUUID().toString(),
                                             amount = adjustAsDouble,
                                             dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                            label = "Goal: ${it.label}",
+                                            label = "Attained: ${it.label}",
                                             description = descriptionState.text.toString(),
                                             adjustmentIcon = it.labelIcon,
                                             paymentMethod = selectedPaymentMethod.value,

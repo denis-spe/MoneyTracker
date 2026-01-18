@@ -4,6 +4,7 @@ package com.example.moneytracker.helper
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.moneytracker.backend.storage.Adjustment
+import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
@@ -86,9 +87,6 @@ val Dataset.isForToday: Boolean
         return dataDate == today
     }
 
-val Dataset.remainingAmount: Double
-    get() = amount - adjustment.sumOf { it.amount }
-
 
 val Adjustment.adjustmentToMap: Map<String, Any>
     get() = mapOf(
@@ -149,20 +147,20 @@ fun Map<*, *>.asAdjustment(): Adjustment {
         is String -> try {
             AdjustmentType.valueOf(dt)
         } catch (_: Exception) {
-            AdjustmentType.REPAY
+            AdjustmentType.REPAYMENT
         }
 
-        is Number -> AdjustmentType.entries.getOrNull(dt.toInt()) ?: AdjustmentType.REPAY
+        is Number -> AdjustmentType.entries.getOrNull(dt.toInt()) ?: AdjustmentType.REPAYMENT
         is Map<*, *> -> {
             val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
             if (name != null) try {
                 AdjustmentType.valueOf(name)
             } catch (_: Exception) {
-                AdjustmentType.REPAY
-            } else AdjustmentType.REPAY
+                AdjustmentType.REPAYMENT
+            } else AdjustmentType.REPAYMENT
         }
 
-        else -> AdjustmentType.REPAY
+        else -> AdjustmentType.REPAYMENT
     }
 
     val adjustmentIcon = (this["adjustmentIcon"] as Number).toInt()
@@ -183,6 +181,23 @@ fun Map<*, *>.asAdjustment(): Adjustment {
 fun Map<*, *>.toDataset(): Dataset {
     // Parse dateTime which may be stored as a Timestamp, a map (with seconds/nanoseconds), or a numeric seconds value
     val dateTime = when (val dateTimeRaw = this["dateTime"]) {
+        is Timestamp -> dateTimeRaw
+        is Map<*, *> -> {
+            val seconds = (dateTimeRaw["seconds"] as? Number)?.toLong()
+                ?: (dateTimeRaw["seconds"] as? String)?.toLongOrNull()
+                ?: 0L
+            val nanoseconds = (dateTimeRaw["nanoseconds"] as? Number)?.toInt()
+                ?: (dateTimeRaw["nanoseconds"] as? String)?.toIntOrNull()
+                ?: 0
+            Timestamp(seconds, nanoseconds)
+        }
+
+        is Number -> Timestamp(dateTimeRaw.toLong(), 0)
+        is String -> (dateTimeRaw.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
+        else -> Timestamp(0, 0)
+    }
+
+    val deadlineDateTime = when (val dateTimeRaw = this["deadlineDateTime"]) {
         is Timestamp -> dateTimeRaw
         is Map<*, *> -> {
             val seconds = (dateTimeRaw["seconds"] as? Number)?.toLong()
@@ -246,6 +261,26 @@ fun Map<*, *>.toDataset(): Dataset {
         else -> PaymentMethod.CASH
     }
 
+    val adjustmentStatus = when (val dt = this["adjustmentStatus"]) {
+        is String -> try {
+            AdjustmentStatus.valueOf(dt)
+        } catch (_: Exception) {
+            AdjustmentStatus.PENDING
+        }
+
+        is Number -> AdjustmentStatus.entries.getOrNull(dt.toInt()) ?: AdjustmentStatus.PENDING
+        is Map<*, *> -> {
+            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
+            if (name != null) try {
+                AdjustmentStatus.valueOf(name)
+            } catch (_: Exception) {
+                AdjustmentStatus.PENDING
+            } else AdjustmentStatus.PENDING
+        }
+
+        else -> AdjustmentStatus.PENDING
+    }
+
     // repay may be stored as a list of maps; ensure each item is a Map before calling toRepay()
     val adjustment: List<Adjustment> = (this["adjustment"] as? List<*>)?.mapNotNull { item ->
         (item as? Map<*, *>)?.asAdjustment()
@@ -270,7 +305,9 @@ fun Map<*, *>.toDataset(): Dataset {
         dateTime = dateTime,
         labelIcon = labelIcon,
         adjustment = adjustment,
-        paymentMethod = paymentMethod
+        paymentMethod = paymentMethod,
+        deadlineDateTime = deadlineDateTime,
+        adjustmentStatus = adjustmentStatus
     )
 }
 

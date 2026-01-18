@@ -12,6 +12,6 @@ enum class AdjustmentType(
     val colorAttain: Int = R.color.Attain,
     val icon: Int,
 ) {
-    REPAY("Repay", icon = R.drawable.outlined_repay),
+    REPAYMENT("Repay", icon = R.drawable.outlined_repay),
     ATTAIN("Attain", icon = R.drawable.oulined_attain),
 }

@@ -169,7 +169,7 @@ fun ItemListArea(datasets: List<Dataset>) {
 
                                 val colorResId = when (adjustment.adjustmentType) {
                                     AdjustmentType.ATTAIN -> R.color.Attain
-                                    AdjustmentType.REPAY -> {
+                                    AdjustmentType.REPAYMENT -> {
                                         if (dataset.dataType == DataType.DEBT)
                                             R.color.RepayDebt else R.color.RepayLoan
                                     }
@@ -288,7 +288,7 @@ fun ItemListArea(datasets: List<Dataset>) {
                         val adjustments = dataset.adjustment
                         if (adjustments.isNotEmpty()) {
                             for (adjustment in adjustments) {
-                                if (adjustment.adjustmentType == AdjustmentType.REPAY) {
+                                if (adjustment.adjustmentType == AdjustmentType.REPAYMENT) {
                                     Row(
                                         modifier = Modifier.animateItem(
                                             fadeInSpec = tween(durationMillis = 250),
@@ -303,7 +303,6 @@ fun ItemListArea(datasets: List<Dataset>) {
                                             label = adjustment.label,
                                             labelIcon = adjustment.adjustmentIcon,
                                             amount = adjustment.amount,
-                                            dataType = DataType.REPAY,
                                             colorResId = if (dataset.dataType == DataType.DEBT)
                                                 R.color.RepayDebt else R.color.RepayLoan,
                                             description = adjustment.description,

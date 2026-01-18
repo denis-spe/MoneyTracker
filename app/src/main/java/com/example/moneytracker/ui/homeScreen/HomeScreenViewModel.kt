@@ -84,7 +84,7 @@ class HomeScreenViewModel @Inject constructor(
         if (targetId == null) {
             val match =
                 _uiState.value.datasets.find { it.label == dataset.label && it.dateTime == dataset.dateTime }
-            if (match != null && match.id != null) {
+            if (match != null) {
                 targetId = match.id
                 Log.d(
                     "HomeScreenViewModel",

@@ -35,12 +35,13 @@ enum class DataType(val text: String, val color: Int, val outlinedIcon: Int, val
         outlinedIcon = R.drawable.outline_savings,
         filledIcon = R.drawable.filled_savings
     ),
-    REPAY(
-        text = "Repay",
-        color = R.color.RepayLoan,
-        outlinedIcon = R.drawable.outlined_repay,
-        filledIcon = R.drawable.filled_repay
-    ),
+
+    //    REPAY(
+//        text = "Repay",
+//        color = R.color.RepayLoan,
+//        outlinedIcon = R.drawable.outlined_repay,
+//        filledIcon = R.drawable.filled_repay
+//    ),
     GOAL(
         text = "Goal",
         color = R.color.Goal,

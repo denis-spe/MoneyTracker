@@ -49,7 +49,6 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.State
-import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import kotlinx.coroutines.android.awaitFrame
 import java.text.NumberFormat
@@ -61,10 +60,10 @@ val BOTTOM_SHEET_PADDING = 10.dp
 
 @Composable
 fun ModelDrawerTextField(
+    modifier: Modifier = Modifier.fillMaxWidth(MaxWidth),
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
-    modifier: Modifier = Modifier.fillMaxWidth(MaxWidth),
     iconState: MutableState<Int>? = null,
     textLength: Int? = null,
     wasSuccess: MutableState<State>? = null,
