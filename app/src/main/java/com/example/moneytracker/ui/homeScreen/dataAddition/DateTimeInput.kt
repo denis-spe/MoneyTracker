@@ -1,9 +1,12 @@
 // Great is the LORD of host.
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -15,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.EditCalendar
@@ -23,6 +27,7 @@ import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.DisplayMode
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -43,6 +48,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.res.painterResource
@@ -51,12 +58,15 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.example.moneytracker.R
+import com.example.moneytracker.helper.addZeroIfLessThenTen
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
+import kotlinx.datetime.number
 import kotlinx.datetime.toKotlinLocalDate
 import java.time.LocalDate
 import java.util.Calendar
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerComponent(
@@ -171,10 +181,96 @@ fun TimePickerComponent(
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateTimeButton(
+fun DoubleTimePickerComponent(
+    onConfirm: (TimePickerState, TimePickerState) -> Unit,
+    onDismiss: () -> Unit
+) {
+
+    val currentTime = Calendar.getInstance()
+
+    val firstTimePickerState = rememberTimePickerState(
+        initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
+        initialMinute = currentTime.get(Calendar.MINUTE),
+        is24Hour = true,
+    )
+    val secondTimePickerState = rememberTimePickerState(
+        initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
+        initialMinute = currentTime.get(Calendar.MINUTE),
+        is24Hour = true,
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Surface(
+            shape = MaterialTheme.shapes.extraLarge,
+            tonalElevation = 6.dp,
+            modifier =
+                Modifier
+                    .width(IntrinsicSize.Min)
+                    .height(IntrinsicSize.Min)
+                    .background(
+                        shape = MaterialTheme.shapes.extraLarge,
+                        color = MaterialTheme.colorScheme.surface
+                    ),
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
+                    text = "Your starting time",
+                    style = MaterialTheme.typography.labelMedium
+                )
+
+                TimeInput(
+                    state = firstTimePickerState,
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 20.dp),
+                    text = "Your ending time",
+                    style = MaterialTheme.typography.labelMedium
+                )
+
+                TimeInput(
+                    state = secondTimePickerState,
+                )
+
+                Row(
+                    modifier = Modifier
+                        .height(40.dp)
+                        .fillMaxWidth()
+                ) {
+                    Spacer(modifier = Modifier.weight(1f))
+                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = {
+                        onConfirm(
+                            firstTimePickerState,
+                            secondTimePickerState
+                        )
+                    }) { Text("OK") }
+                }
+            }
+        }
+    }
+}
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DateTimeInput(
     showTime: MutableState<Boolean>,
     showDate: MutableState<Boolean>,
     localDateTimeState: MutableState<LocalDateTime>,
@@ -280,5 +376,149 @@ fun DateTimeButton(
             showTime.value = false
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun DateTimeRange(
+    startLocalDateTimeState: MutableState<LocalDateTime>,
+    endLocalDateTimeState: MutableState<LocalDateTime>,
+    colorResId: Int
+) {
+    val isPresentStartDateDialogOpen = remember { mutableStateOf(false) }
+    val isPresentEndDateDialogOpen = remember { mutableStateOf(false) }
+    val isTimeDialogOpen = remember { mutableStateOf(false) }
+
+    val startDate = startLocalDateTimeState.value.date
+    val day = startDate.day.addZeroIfLessThenTen
+    val month = startDate.month.number.addZeroIfLessThenTen
+    val year = startDate.year
+
+    val endDate = endLocalDateTimeState.value.date
+    val endingDay = endDate.day.addZeroIfLessThenTen
+    val endingMonth = endDate.month.number.addZeroIfLessThenTen
+    val endingYear = endDate.year
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth(MaxWidth)
+            .padding(bottom = integerResource(R.integer.modelDrawerPadding).dp)
+
+    ) {
+        val shape = RoundedCornerShape(10.dp)
+        colorResource(colorResId)
+
+        Column {
+            IconButton(
+                modifier = Modifier.border(1.dp, Color.Gray, CircleShape),
+                onClick = { isTimeDialogOpen.value = true }
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.clock),
+                    contentDescription = "Calendar",
+                    modifier = Modifier.size(ICON_SIZE)
+                )
+            }
+        }
+
+        Column {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .clickable { isPresentStartDateDialogOpen.value = true },
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Start date")
+                Text("$year/$month/$day")
+            }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(shape)
+                    .clickable { isPresentEndDateDialogOpen.value = true },
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("End date")
+                Text("$endingYear/$endingMonth/$endingDay")
+            }
+        }
+
+        if (isPresentStartDateDialogOpen.value) {
+            DatePickerComponent({ localDate ->
+                localDate.getSelectedDate()?.let {
+                    // Change the date to kotlin date
+                    val localDate = it.toKotlinLocalDate()
+
+                    // Add the time to the date
+                    val localDateTime = localDate.atTime(startLocalDateTimeState.value.time)
+
+                    // Update the state
+                    startLocalDateTimeState.value = localDateTime
+
+                    // Close the date picker
+                    isPresentStartDateDialogOpen.value = false
+                }
+            }) {
+                isPresentStartDateDialogOpen.value = false
+            }
+        }
+
+        if (isPresentEndDateDialogOpen.value) {
+            DatePickerComponent({ localDate ->
+                localDate.getSelectedDate()?.let {
+                    // Change the date to kotlin date
+                    val localDate = it.toKotlinLocalDate()
+
+                    // Add the time to the date
+                    val localDateTime = localDate.atTime(endLocalDateTimeState.value.time)
+
+                    // Update the state
+                    endLocalDateTimeState.value = localDateTime
+
+                    // Close the date picker
+                    isPresentEndDateDialogOpen.value = false
+
+                }
+            }) {
+                isPresentEndDateDialogOpen.value = false
+            }
+        }
+    }
+
+    if (isTimeDialogOpen.value) {
+        DoubleTimePickerComponent(
+            onConfirm = { firstTimePickerState, secondTimePickerState ->
+                // Hour and minute from time picker
+                val firstHour = firstTimePickerState.hour
+                val firstMinute = firstTimePickerState.minute
+                val secondHour = secondTimePickerState.hour
+                val secondMinute = secondTimePickerState.minute
+
+                // Add the time to the date
+                val startLocalDateTime = startLocalDateTimeState.value.date.atTime(
+                    firstHour, firstMinute
+                )
+                val endLocalDateTime = endLocalDateTimeState.value.date.atTime(
+                    secondHour, secondMinute
+                )
+
+
+                // Update the state
+                startLocalDateTimeState.value = startLocalDateTime
+                endLocalDateTimeState.value = endLocalDateTime
+
+                // Close the time picker
+                isTimeDialogOpen.value = false
+            }
+        ) {
+            isTimeDialogOpen.value = false
+        }
+    }
+
 }
 

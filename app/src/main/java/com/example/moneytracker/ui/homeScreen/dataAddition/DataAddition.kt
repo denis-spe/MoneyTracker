@@ -1,6 +1,8 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -62,6 +64,7 @@ private val MODEL_DRAWER_ICON_SIZE = 25.dp
 val FONT_WEIGHT = FontWeight.Bold
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawer(
@@ -183,6 +186,7 @@ fun DataAdditionModelDrawerTopTitle(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawerContent(
@@ -312,6 +316,7 @@ fun DataAdditionModelDrawerContent(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ModelDrawerContent(
@@ -330,6 +335,7 @@ fun ModelDrawerContent(
     val showDate = remember { mutableStateOf(false) }
     val showTime = remember { mutableStateOf(false) }
     val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
+    val endLocalDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
     val amountState = rememberTextFieldState()
     val labelState = rememberTextFieldState()
     val descriptionState = rememberTextFieldState()
@@ -507,12 +513,20 @@ fun ModelDrawerContent(
                 Row(
                     modifier = Modifier.animateItem()
                 ) {
-                    DateTimeButton(
-                        showTime = showTime,
-                        showDate = showDate,
-                        localDateTimeState = localDateTimeState,
-                        colorResId = colorResId
-                    )
+                    if (dataType == DataType.GOAL) {
+                        DateTimeRange(
+                            startLocalDateTimeState = localDateTimeState,
+                            endLocalDateTimeState = endLocalDateTimeState,
+                            colorResId = colorResId
+                        )
+                    } else {
+                        DateTimeInput(
+                            showTime = showTime,
+                            showDate = showDate,
+                            localDateTimeState = localDateTimeState,
+                            colorResId = colorResId
+                        )
+                    }
                 }
             }
 
