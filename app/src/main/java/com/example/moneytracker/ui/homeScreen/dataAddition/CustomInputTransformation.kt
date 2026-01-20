@@ -7,7 +7,7 @@ import androidx.core.text.isDigitsOnly
 
 class CustomInputTransformation : InputTransformation {
     override fun TextFieldBuffer.transformInput() {
-        if (!asCharSequence().isDigitsOnly()) {
+        if (!asCharSequence().isDigitsOnly() && !asCharSequence().contains(".")) {
             revertAllChanges()
         }
 

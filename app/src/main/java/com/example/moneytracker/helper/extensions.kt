@@ -1,6 +1,7 @@
 // Great is the LORD of hosts
 package com.example.moneytracker.helper
 
+import android.icu.text.DecimalFormat
 import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.moneytracker.backend.storage.Adjustment
@@ -11,6 +12,12 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.google.firebase.Timestamp
 import network.chaintech.kmp_date_time_picker.utils.now
+import java.math.BigDecimal
+import java.math.RoundingMode
+import java.text.NumberFormat
+import java.util.Locale
+import kotlin.math.ln
+import kotlin.math.pow
 
 /**
  * Formats a double to a string with two decimal places.
@@ -262,3 +269,42 @@ val Dataset.status: AdjustmentStatus
         isAmountEqualToAdjustAmount() -> AdjustmentStatus.COMPLETED
         else -> AdjustmentStatus.PENDING
     }
+
+fun Long.formatToAmount(): String {
+    val locale = Locale.getDefault()
+    val numberFormat = NumberFormat.getCurrencyInstance(locale)
+    val symbol = numberFormat.currency?.symbol ?: "$"
+
+    if (this < 1_000_000) {
+        val amount = toDouble()
+        val formattedAmount = amount.toString()
+            .replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")
+            .replace(Regex("\\.0$"), "")
+        return "$symbol$formattedAmount"
+    }
+    val suffixes = charArrayOf('M', 'B', 'T') // M for Million, etc.
+    val formatter = DecimalFormat("#.0")
+    val exp = (ln(this.toDouble()) / ln(1000.0)).toInt()
+    return "$symbol${formatter.format(this / 1000.0.pow(exp.toDouble())) + suffixes[exp - 1]}"
+}
+
+fun Float.formatToAmount(): String {
+    return this.toLong().formatToAmount()
+}
+
+fun Double.formatToAmount(): String {
+    val locale = Locale.getDefault()
+    val numberFormat = NumberFormat.getCurrencyInstance(locale)
+    val symbol = numberFormat.currency?.symbol ?: "$"
+
+    if (this < 1_000_000) {
+        val rounding = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
+
+        val formattedAmount = rounding.toString()
+            .replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")
+            .replace(Regex("\\.00$"), "")
+        return "$symbol$formattedAmount"
+    }
+
+    return this.toLong().formatToAmount()
+}
