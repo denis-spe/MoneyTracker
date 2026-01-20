@@ -4,6 +4,7 @@ package com.example.moneytracker.ui.homeScreen.dataAddition
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -23,20 +24,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.theme.autoTextColorChange
@@ -66,113 +63,93 @@ private val ICONS = listOf(
 
 @Composable
 fun IconList(
-    iconState: MutableState<Int>,
-    viewModel: HomeScreenViewModel
+    viewModel: HomeScreenViewModel,
+    onIconConfirmed: (Pair<String, Int>) -> Unit
 ) {
+    val isVisible by viewModel.isIconDialogVisible.collectAsState()
+    val selectedIcon by viewModel.selectedIcon.collectAsState()
 
-    var innerIconState by remember { mutableIntStateOf(R.drawable.description) }
+    if (!isVisible) return
 
-    if (viewModel.isDescriptionIconVisible) {
-
-        Dialog(onDismissRequest = {
-            viewModel.updateIsDescriptionIconVisible(false)
-        }) {
-            // Draw a rectangle shape with rounded corners inside the dialog
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(375.dp)
-                    .padding(16.dp),
-                shape = RoundedCornerShape(16.dp),
+    Dialog(onDismissRequest = viewModel::hideIconDialog) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(375.dp)
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Column(
+
+                Text("Select an icon", modifier = Modifier.padding(16.dp))
+
+                LazyVerticalGrid(
                     modifier = Modifier
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally,
+                        .fillMaxHeight(0.7f)
+                        .padding(8.dp),
+                    columns = GridCells.Fixed(4),
                 ) {
-                    Text(
-                        text = "Select an icon",
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
+                    items(ICONS.size, key = { it }) { idx ->
+                        val icon = ICONS[idx]
+                        val borderModifier =
+                            if (selectedIcon.second == icon.second)
+                                Modifier.border(
+                                    2.dp,
+                                    Color.autoTextColorChange,
+                                    CircleShape
+                                )
+                            else Modifier
 
-                    LazyVerticalGrid(
-                        modifier = Modifier
-                            .fillMaxHeight(0.7f)
-                            .padding(8.dp),
-                        columns = GridCells.Fixed(4),
-                    ) {
-                        items(ICONS.size, key = { it }) { index ->
-                            val icon = ICONS[index]
-
-                            var modifier = Modifier
-                                .padding(4.dp)
-
-                            modifier = if (innerIconState == icon.second) modifier.border(
-                                width = 2.dp,
-                                color = Color.autoTextColorChange,
-                                shape = CircleShape
-                            ) else modifier
-
-                            Column(
-                                modifier = Modifier.animateItem(
-                                    fadeInSpec = tween(durationMillis = 250),
-                                    fadeOutSpec = tween(durationMillis = 100),
-                                    placementSpec = spring(
-                                        stiffness = Spring.StiffnessLow,
-                                        dampingRatio = Spring.DampingRatioMediumBouncy
-                                    )
-                                ),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center,
-                            ) {
-                                IconButton(
-                                    onClick = {
-                                        innerIconState = icon.second
-                                    },
-                                    modifier = modifier
-                                ) {
-                                    // Replace Image(painter = painterResource(...)) with:
-                                    AsyncImage(
-                                        model = icon.second,
-                                        contentDescription = null,
-                                        modifier = Modifier.size(ICON_SIZE)
-                                    )
+                        Column(
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = tween(250),
+                                fadeOutSpec = tween(100),
+                                placementSpec = spring(
+                                    stiffness = Spring.StiffnessLow,
+                                    dampingRatio = Spring.DampingRatioMediumBouncy
+                                )
+                            ),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            IconButton(
+                                modifier = borderModifier.padding(4.dp),
+                                onClick = {
+                                    viewModel.selectIcon(icon)
                                 }
-
-                                Text(
-                                    text = icon.first,
-                                    fontSize = ICONS_TEXT_SIZE,
-                                    style = TextStyle(
-                                        textAlign = TextAlign.Center,
-                                    )
+                            ) {
+                                Image(
+                                    painter = painterResource(icon.second),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(ICON_SIZE)
                                 )
                             }
+
+                            Text(
+                                text = icon.first,
+                                fontSize = ICONS_TEXT_SIZE,
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
+                }
 
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    TextButton(onClick = viewModel::hideIconDialog) {
+                        Text("Dismiss")
+                    }
+
+                    TextButton(
+                        onClick = {
+                            viewModel.confirmIconSelection(onIconConfirmed)
+                        }
                     ) {
-                        TextButton(
-                            onClick = {
-                                viewModel.updateIsDescriptionIconVisible(false)
-                            },
-                            modifier = Modifier.padding(8.dp),
-                        ) {
-                            Text("Dismiss")
-                        }
-                        TextButton(
-                            onClick = {
-                                iconState.value = innerIconState
-                                viewModel.updateIsDescriptionIconVisible(false)
-                            },
-                            modifier = Modifier.padding(8.dp),
-                        ) {
-                            Text("Confirm")
-                        }
+                        Text("Confirm")
                     }
                 }
             }

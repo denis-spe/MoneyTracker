@@ -50,6 +50,7 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
@@ -672,9 +673,10 @@ fun ModelDrawerContent(
 
         // Show all icons for label and description.
         IconList(
-            labelIconState,
             viewModel = viewModel
-        )
+        ) {
+            labelIconState.intValue = it.second
+        }
     }
 }
 

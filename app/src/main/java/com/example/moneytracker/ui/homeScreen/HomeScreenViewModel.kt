@@ -1,22 +1,31 @@
 package com.example.moneytracker.ui.homeScreen
 
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.moneytracker.R
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
+import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -25,10 +34,17 @@ class HomeScreenViewModel @Inject constructor(
     val accountService: AccountServices,
     private val dataStorage: DataStorage
 ) : ViewModel() {
+
     val userState = accountService.userState
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    private val _isIconDialogVisible = MutableStateFlow(false)
+    val isIconDialogVisible = _isIconDialogVisible.asStateFlow()
+
+    private val _selectedIcon = MutableStateFlow(Pair("description", R.drawable.description))
+    val selectedIcon = _selectedIcon.asStateFlow()
+
     var isDescriptionIconVisible by mutableStateOf(false)
         private set
     var isBottomSheetContentLoading by mutableStateOf(true)
@@ -36,19 +52,43 @@ class HomeScreenViewModel @Inject constructor(
     var datasetUiState by mutableStateOf<DatasetUiState>(DatasetUiState.Loading)
         private set
 
-    /**
-     * Create a new user with the current user id
-     */
-    fun createUserWithId() {
-        viewModelScope.launch {
-            dataStorage.createUserWithId(id = userState.value!!.uid)
-        }
-    }
-
-
     init {
-        fetchDataset()
+        observeUserAndDatasets()
     }
+
+    /*******************
+     * Public actions
+     *******************/
+
+    fun showIconDialog(isShowing: Boolean) {
+        _isIconDialogVisible.value = isShowing
+    }
+
+    fun hideIconDialog() {
+        _isIconDialogVisible.value = false
+    }
+
+    fun selectIcon(iconRes: Pair<String, Int>) {
+        _selectedIcon.value = iconRes
+    }
+
+    fun confirmIconSelection(onConfirmed: (Pair<String, Int>) -> Unit) {
+        onConfirmed(_selectedIcon.value)
+        hideIconDialog()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    val todayDatasets: StateFlow<List<Dataset>> =
+        uiState
+            .map { state ->
+                state.datasets.filter { it.isForToday }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
+
 
     fun addData(dataset: Dataset) {
         viewModelScope.launch {
@@ -73,37 +113,11 @@ class HomeScreenViewModel @Inject constructor(
     }
 
     fun addRepayData(dataset: Dataset, adjustment: Adjustment) {
-        // Log early so we can see UI triggered this method
-        Log.d(
-            "HomeScreenViewModel",
-            "addRepayData called for dataset=${dataset.label} id=${dataset.id}"
-        )
-
-        // If id is null, attempt to find a matching dataset that may have been migrated/updated
-        var targetId: String? = dataset.id
-        if (targetId == null) {
-            val match =
-                _uiState.value.datasets.find { it.label == dataset.label && it.dateTime == dataset.dateTime }
-            if (match != null) {
-                targetId = match.id
-                Log.d(
-                    "HomeScreenViewModel",
-                    "Found matching migrated dataset id=$targetId for label=${dataset.label}"
-                )
-            } else {
-                Log.w(
-                    "HomeScreenViewModel",
-                    "Dataset.id is null and no matching migrated dataset found. Dataset: $dataset"
-                )
-                return
-            }
-        }
-
         viewModelScope.launch {
             try {
                 dataStorage.addAdjustmentDataset(
                     userState.value!!.uid,
-                    datasetId = targetId,
+                    datasetId = dataset.id,
                     adjustment = adjustment
                 )
             } catch (e: Exception) {
@@ -136,55 +150,79 @@ class HomeScreenViewModel @Inject constructor(
         isBottomSheetContentLoading = isLoading
     }
 
-
-    private fun fetchDataset() {
-        viewModelScope.launch {
-            // ensure we have a user id to subscribe with
-            val uid = userState.value?.uid ?: return@launch
-
-            // Migration: ensure stored datasets have ids so repay can match by id
-            try {
-                dataStorage.ensureDatasetIds(uid)
-            } catch (e: Exception) {
-                Log.e("HomeScreenViewModel", "ensureDatasetIds failed", e)
-            }
-
-            // Launch two concurrent collectors so neither flow blocks the other
-            launch {
-                dataStorage.getWholeDatasets(
-                    uid,
-                    onSuccess = {
-                        datasetUiState = DatasetUiState.Success
-                    },
-                    onFailure = {
-                        datasetUiState = DatasetUiState.Error(it?.message)
-                    }
-                )
-                    .catch { e ->
-                        _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
-                    }
-                    .collect { data ->
-                        // Update datasets directly without artificial delays to avoid UI jank
-                        _uiState.value = _uiState.value.copy(datasets = data)
-                    }
-            }
-
-            launch {
-                dataStorage.getInfo(uid)
-                    .catch { e ->
-                        _uiState.value = uiState.value.copy(error = e.message ?: "Unknown error")
-                    }
-                    .collect { info ->
-                        Log.d("HomeScreenColor", info.toString())
-                        _uiState.value = _uiState.value.copy(info = info)
-                    }
-            }
-        }
-    }
-
     fun signOut() {
         viewModelScope.launch {
             accountService.signOut()
+        }
+    }
+
+    /*******************
+     * Private: observe user and start collectors when uid exists
+     *******************/
+    private fun observeUserAndDatasets() {
+        viewModelScope.launch {
+            // collectLatest ensures the inner block is canceled when user changes.
+            userState.collectLatest { user ->
+                if (user == null) {
+                    // user signed out or not ready yet -> clear UI state
+                    datasetUiState = DatasetUiState.Loading
+                    _uiState.value = _uiState.value.copy(datasets = emptyList())
+                    _uiState.value =
+                        _uiState.value.copy(info = _uiState.value.info) // keep current info if you want
+                    return@collectLatest
+                }
+
+                val uid = user.uid
+
+                // Migration attempt; failures are logged but should not crash the collector
+                try {
+                    dataStorage.ensureDatasetIds(uid)
+                } catch (e: Exception) {
+                    Log.e("HomeScreenViewModel", "ensureDatasetIds failed", e)
+                }
+
+                // When user becomes available, run the two collectors concurrently.
+                // If user changes, collectLatest cancels this coroutine and restarts.
+                try {
+                    coroutineScope {
+                        // datasets collector
+                        launch {
+                            dataStorage.getWholeDatasets(
+                                uid,
+                                onSuccess = { datasetUiState = DatasetUiState.Success },
+                                onFailure = { datasetUiState = DatasetUiState.Error(it?.message) }
+                            )
+                                .catch { e ->
+                                    Log.e("HomeScreenViewModel", "getWholeDatasets flow error", e)
+                                    _uiState.value =
+                                        _uiState.value.copy(error = e.message ?: "Unknown error")
+                                }
+                                .collect { list ->
+                                    Log.d("HomeScreenViewModel", "datasets received=${list.size}")
+                                    _uiState.value = _uiState.value.copy(datasets = list)
+                                }
+                        }
+
+                        // info collector
+                        launch {
+                            dataStorage.getInfo(uid)
+                                .catch { e ->
+                                    Log.e("HomeScreenViewModel", "getInfo flow error", e)
+                                    _uiState.value =
+                                        _uiState.value.copy(error = e.message ?: "Unknown error")
+                                }
+                                .collect { info ->
+                                    Log.d("HomeScreenViewModel", "info received=$info")
+                                    _uiState.value = _uiState.value.copy(info = info)
+                                }
+                        }
+                    }
+                } catch (e: Exception) {
+                    Log.e("HomeScreenViewModel", "Error while collecting after user available", e)
+                    // keep datasetUiState updated on failure
+                    datasetUiState = DatasetUiState.Error(e.message)
+                }
+            }
         }
     }
 }

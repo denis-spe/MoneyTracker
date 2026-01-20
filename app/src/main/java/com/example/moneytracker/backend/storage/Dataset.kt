@@ -1,34 +1,21 @@
+// Glory to the LORD our GOD
 package com.example.moneytracker.backend.storage
 
+import androidx.annotation.Keep
 import com.google.firebase.Timestamp
 
 
+@Keep
 data class Dataset(
     val id: String = "",
-    val dataType: DataType,
-    val amount: Double,
-    val label: String,
-    val description: String,
-    val dateTime: Timestamp,
-    val deadlineDateTime: Timestamp,
-    val labelIcon: Int,
-    val paymentMethod: PaymentMethod,
-    val adjustmentStatus: AdjustmentStatus,
+    val dataType: DataType = DataType.EARNINGS,
+    val amount: Double = 0.0,
+    val label: String = "",
+    val description: String = "",
+    val dateTime: Timestamp = Timestamp.now(),
+    val deadlineDateTime: Timestamp = Timestamp.now(),
+    val labelIcon: Int = 0,
+    val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+    val adjustmentStatus: AdjustmentStatus = AdjustmentStatus.PENDING,
     val adjustment: List<Adjustment> = emptyList()
-) {
-    fun isAmountEqualToAdjustAmount(): Boolean {
-        return adjustment.sumOf { it.amount } == amount
-    }
-
-    val remainingAmount: Double
-        get() = amount - adjustment.sumOf { it.amount }
-
-    val isOverdue: Boolean
-        get() = deadlineDateTime.toDate().before(Timestamp.now().toDate())
-
-    val status = when {
-        isOverdue -> AdjustmentStatus.FAILED
-        isAmountEqualToAdjustAmount() -> AdjustmentStatus.COMPLETED
-        else -> AdjustmentStatus.PENDING
-    }
-}
+)

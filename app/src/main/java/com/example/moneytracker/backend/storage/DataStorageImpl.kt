@@ -1,3 +1,4 @@
+// Glory be the name of LORD our GOD
 package com.example.moneytracker.backend.storage
 
 import android.os.Build
@@ -20,6 +21,23 @@ import kotlin.random.Random
 class DataStorageImpl(
     override val db: FirebaseFirestore
 ) : DataStorage {
+
+    fun Dataset.toMap(): Map<String, Any?> {
+        return mapOf(
+            "id" to id,
+            "dataType" to dataType.name, // store enum as String
+            "amount" to amount,
+            "label" to label,
+            "description" to description,
+            "dateTime" to dateTime, // Firestore Timestamp as-is
+            "deadlineDateTime" to deadlineDateTime,
+            "labelIcon" to labelIcon, // change model to use a string key
+            "paymentMethod" to paymentMethod.name,
+            "adjustmentStatus" to adjustmentStatus.name,
+            "adjustment" to adjustment.map { it.adjustmentToMap } // already map form
+        )
+    }
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun getWholeDatasets(
@@ -168,7 +186,7 @@ class DataStorageImpl(
         )
         db.collection(COLLECTION_NAME)
             .document(userId)
-            .update("datasets", FieldValue.arrayUnion(dataset))
+            .update("datasets", FieldValue.arrayUnion(dataset.toMap()))
             .addOnSuccessListener {
                 Log.d("Firestore", "Successfully wrote data for user $userId")
             }
@@ -271,7 +289,7 @@ class DataStorageImpl(
         )
         db.collection(COLLECTION_NAME)
             .document(userId)
-            .update("datasets", FieldValue.arrayRemove(dataset))
+            .update("datasets", FieldValue.arrayRemove(dataset.toMap()))
             .addOnSuccessListener {
                 Log.d("Firestore", "Successfully wrote data for user $userId")
             }

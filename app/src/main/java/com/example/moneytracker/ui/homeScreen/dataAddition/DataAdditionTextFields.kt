@@ -45,10 +45,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.helper.remainingAmount
+import com.example.moneytracker.helper.status
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import kotlinx.coroutines.android.awaitFrame
 import java.text.NumberFormat
@@ -60,7 +64,7 @@ val BOTTOM_SHEET_PADDING = 10.dp
 
 @Composable
 fun ModelDrawerTextField(
-    modifier: Modifier = Modifier.fillMaxWidth(MaxWidth),
+    modifier: Modifier = Modifier,
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
@@ -69,6 +73,7 @@ fun ModelDrawerTextField(
     wasSuccess: MutableState<State>? = null,
     viewModel: HomeScreenViewModel,
 ) {
+    val modifier = modifier.fillMaxWidth(MaxWidth)
     val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
     val color = if (isError)
         colorResource(R.color.error_color) else
@@ -109,7 +114,7 @@ fun ModelDrawerTextField(
             if (iconState != null) {
                 IconButton(
                     onClick = {
-                        viewModel.updateIsDescriptionIconVisible(true)
+                        viewModel.showIconDialog(true)
                     }
                 ) {
                     Image(
@@ -244,7 +249,7 @@ fun AdjustmentField(
             onDismissRequest = { expanded = false }
         ) {
             datasets
-                .filterNot { it.isAmountEqualToAdjustAmount() }
+                .filterNot { it.isAmountEqualToAdjustAmount() && it.status == AdjustmentStatus.PENDING }
                 .forEach { dataset ->
 
                     DropdownMenuItem(
@@ -332,7 +337,8 @@ fun PaymentMethodDropdown(
             colorResId = colorResId,
             filledColor = Color.Transparent,
             icon = selectedPaymentMethod.value.icon,
-            modifier = Modifier.fillMaxWidth(MaxWidth)
+            modifier = Modifier.fillMaxWidth(MaxWidth),
+            fontSize = 10.sp
         ) {
             expanded.value = true
         }

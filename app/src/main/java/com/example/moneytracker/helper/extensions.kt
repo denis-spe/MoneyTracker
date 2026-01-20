@@ -10,8 +10,7 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.google.firebase.Timestamp
-import java.time.LocalDate
-import java.time.ZoneId
+import network.chaintech.kmp_date_time_picker.utils.now
 
 /**
  * Formats a double to a string with two decimal places.
@@ -79,13 +78,13 @@ val List<Dataset>.std: Double
 val Dataset.isForToday: Boolean
     @RequiresApi(Build.VERSION_CODES.O)
     get() {
-        val today = LocalDate.now(ZoneId.systemDefault())
-        val dataDate = dateTime.toDate().toInstant()
-            .atZone(ZoneId.systemDefault())
-            .toLocalDate()
 
-        return dataDate == today
+        val today = kotlinx.datetime.LocalDateTime.now().date
+        val dataDate = dateTime.toLocalDateTimeUtc().date
+
+        return today == dataDate
     }
+
 
 
 val Adjustment.adjustmentToMap: Map<String, Any>
@@ -179,137 +178,56 @@ fun Map<*, *>.asAdjustment(): Adjustment {
 }
 
 fun Map<*, *>.toDataset(): Dataset {
-    // Parse dateTime which may be stored as a Timestamp, a map (with seconds/nanoseconds), or a numeric seconds value
-    val dateTime = when (val dateTimeRaw = this["dateTime"]) {
-        is Timestamp -> dateTimeRaw
+
+    fun parseTimestamp(value: Any?): Timestamp = when (value) {
+        is Timestamp -> value
         is Map<*, *> -> {
-            val seconds = (dateTimeRaw["seconds"] as? Number)?.toLong()
-                ?: (dateTimeRaw["seconds"] as? String)?.toLongOrNull()
-                ?: 0L
-            val nanoseconds = (dateTimeRaw["nanoseconds"] as? Number)?.toInt()
-                ?: (dateTimeRaw["nanoseconds"] as? String)?.toIntOrNull()
-                ?: 0
-            Timestamp(seconds, nanoseconds)
+            val sec = (value["seconds"] as? Number)?.toLong() ?: 0L
+            val nano = (value["nanoseconds"] as? Number)?.toInt() ?: 0
+            Timestamp(sec, nano)
         }
 
-        is Number -> Timestamp(dateTimeRaw.toLong(), 0)
-        is String -> (dateTimeRaw.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
-        else -> Timestamp(0, 0)
+        is Number -> Timestamp(value.toLong(), 0)
+        else -> Timestamp.now()
     }
 
-    val deadlineDateTime = when (val dateTimeRaw = this["deadlineDateTime"]) {
-        is Timestamp -> dateTimeRaw
-        is Map<*, *> -> {
-            val seconds = (dateTimeRaw["seconds"] as? Number)?.toLong()
-                ?: (dateTimeRaw["seconds"] as? String)?.toLongOrNull()
-                ?: 0L
-            val nanoseconds = (dateTimeRaw["nanoseconds"] as? Number)?.toInt()
-                ?: (dateTimeRaw["nanoseconds"] as? String)?.toIntOrNull()
-                ?: 0
-            Timestamp(seconds, nanoseconds)
-        }
-
-        is Number -> Timestamp(dateTimeRaw.toLong(), 0)
-        is String -> (dateTimeRaw.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
-        else -> Timestamp(0, 0)
+    fun <T : Enum<T>> parseEnum(
+        value: Any?,
+        values: Array<T>,
+        fallback: T
+    ): T = when (value) {
+        is String -> values.firstOrNull { it.name == value } ?: fallback
+        is Number -> values.getOrNull(value.toInt()) ?: fallback
+        else -> fallback
     }
-
-    // amount may be stored as Double or Long (Number) or String
-    val amount = (this["amount"] as? Number)?.toDouble()
-        ?: (this["amount"] as? String)?.toDoubleOrNull()
-        ?: 0.0
-
-    // dataType may be stored as a String (enum name), a Number (ordinal), or a map/pojo
-    val dataType = when (val dt = this["dataType"]) {
-        is String -> try {
-            DataType.valueOf(dt)
-        } catch (_: Exception) {
-            DataType.EARNINGS
-        }
-
-        is Number -> DataType.entries.getOrNull(dt.toInt()) ?: DataType.EARNINGS
-        is Map<*, *> -> {
-            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
-            if (name != null) try {
-                DataType.valueOf(name)
-            } catch (_: Exception) {
-                DataType.EARNINGS
-            } else DataType.EARNINGS
-        }
-
-        else -> DataType.EARNINGS
-    }
-
-
-    val paymentMethod = when (val dt = this["paymentMethod"]) {
-        is String -> try {
-            PaymentMethod.valueOf(dt)
-        } catch (_: Exception) {
-            PaymentMethod.CASH
-        }
-
-        is Number -> PaymentMethod.entries.getOrNull(dt.toInt()) ?: PaymentMethod.CASH
-        is Map<*, *> -> {
-            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
-            if (name != null) try {
-                PaymentMethod.valueOf(name)
-            } catch (_: Exception) {
-                PaymentMethod.CASH
-            } else PaymentMethod.CASH
-        }
-
-        else -> PaymentMethod.CASH
-    }
-
-    val adjustmentStatus = when (val dt = this["adjustmentStatus"]) {
-        is String -> try {
-            AdjustmentStatus.valueOf(dt)
-        } catch (_: Exception) {
-            AdjustmentStatus.PENDING
-        }
-
-        is Number -> AdjustmentStatus.entries.getOrNull(dt.toInt()) ?: AdjustmentStatus.PENDING
-        is Map<*, *> -> {
-            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
-            if (name != null) try {
-                AdjustmentStatus.valueOf(name)
-            } catch (_: Exception) {
-                AdjustmentStatus.PENDING
-            } else AdjustmentStatus.PENDING
-        }
-
-        else -> AdjustmentStatus.PENDING
-    }
-
-    // repay may be stored as a list of maps; ensure each item is a Map before calling toRepay()
-    val adjustment: List<Adjustment> = (this["adjustment"] as? List<*>)?.mapNotNull { item ->
-        (item as? Map<*, *>)?.asAdjustment()
-    } ?: emptyList()
-
-    val label = this["label"] as? String ?: ""
-    val description = this["description"] as? String ?: ""
-
-    val labelIcon = (this["labelIcon"] as? Number)?.toInt()
-        ?: (this["labelIcon"] as? String)?.toIntOrNull()
-        ?: 0
-
-    // Map stored 'id' (if any) into the Dataset.id field
-    val id = this["id"] as String
 
     return Dataset(
-        id = id,
-        dataType = dataType,
-        amount = amount,
-        label = label,
-        description = description,
-        dateTime = dateTime,
-        labelIcon = labelIcon,
-        adjustment = adjustment,
-        paymentMethod = paymentMethod,
-        deadlineDateTime = deadlineDateTime,
-        adjustmentStatus = adjustmentStatus
+        id = this["id"] as? String ?: "",
+        dataType = parseEnum(this["dataType"], DataType.entries.toTypedArray(), DataType.EARNINGS),
+        amount = (this["amount"] as? Number)?.toDouble()
+            ?: (this["amount"] as? String)?.toDoubleOrNull()
+            ?: 0.0,
+        label = this["label"] as? String ?: "",
+        description = this["description"] as? String ?: "",
+        dateTime = parseTimestamp(this["dateTime"]),
+        deadlineDateTime = parseTimestamp(this["deadlineDateTime"]),
+        labelIcon = (this["labelIcon"] as? Number)?.toInt() ?: 0,
+        paymentMethod = parseEnum(
+            this["paymentMethod"],
+            PaymentMethod.entries.toTypedArray(),
+            PaymentMethod.CASH
+        ),
+        adjustmentStatus = parseEnum(
+            this["adjustmentStatus"],
+            AdjustmentStatus.entries.toTypedArray(),
+            AdjustmentStatus.PENDING
+        ),
+        adjustment = (this["adjustment"] as? List<*>)
+            ?.mapNotNull { (it as? Map<*, *>)?.asAdjustment() }
+            ?: emptyList()
     )
 }
+
 
 fun casting(any: Any?): List<Map<String, Any>>? {
     if (any != null) {
@@ -318,3 +236,29 @@ fun casting(any: Any?): List<Map<String, Any>>? {
     }
     return null
 }
+
+// extension for Firebase Timestamp
+fun Timestamp.toEpochMillis(): Long =
+    this.seconds * 1000L + (this.nanoseconds / 1_000_000L)
+
+
+fun Dataset.isAmountEqualToAdjustAmount(): Boolean {
+    return adjustment.sumOf { it.amount } == amount
+}
+
+val Dataset.remainingAmount: Double
+    get() = amount - adjustment.sumOf { it.amount }
+
+val Dataset.isOverdue: Boolean
+    get() {
+        val currentTime = kotlinx.datetime.LocalDateTime.now()
+        val deadlineDateTime = deadlineDateTime.toLocalDateTimeUtc()
+        return currentTime >= deadlineDateTime
+    }
+
+val Dataset.status: AdjustmentStatus
+    get() = when {
+        isOverdue -> AdjustmentStatus.FAILED
+        isAmountEqualToAdjustAmount() -> AdjustmentStatus.COMPLETED
+        else -> AdjustmentStatus.PENDING
+    }

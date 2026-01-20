@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -47,18 +48,23 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
+import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.remainingAmount
+import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.dataAddition.MaxWidth
 import com.example.moneytracker.ui.theme.autoTextColorChange
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.number
+import network.chaintech.kmp_date_time_picker.utils.now
 
 @Composable
 fun DatasetReceipt(
@@ -214,6 +220,13 @@ fun DatasetReceipt(
             val deadlineDate = "$deadlineDay $deadlineMonth $deadlineYear"
             val deadlineTime = "$deadlineHour:$deadlineMinute"
 
+            val adjustStatue = remember { mutableStateOf(dataset.status) }
+
+            LaunchedEffect(LocalDateTime.now()) {
+                adjustStatue.value = dataset.status
+            }
+
+
             Text("")
 
             Row(
@@ -222,7 +235,7 @@ fun DatasetReceipt(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Status:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
-                Text(text = dataset.status.text, fontSize = fontSize)
+                Text(text = adjustStatue.value.text, fontSize = fontSize)
             }
 
             Row(
@@ -272,23 +285,34 @@ fun DatasetReceipt(
             }
         }
 
-        if (dataset.dataType in listOf(DataType.DEBT, DataType.LENT, DataType.GOAL)
-            && dataset.adjustment.isNotEmpty()
-        ) {
-            val adjustment = dataset.adjustment
-            val lastPayment = adjustment[adjustment.size - 1]
+        if (dataset.dataType in listOf(DataType.DEBT, DataType.LENT, DataType.GOAL)) {
 
-            if (dataset.remainingAmount == 0.0) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(top = 10.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 10.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (
+                    (dataset.dataType == DataType.GOAL &&
+                            dataset.status == AdjustmentStatus.COMPLETED &&
+                            dataset.remainingAmount == 0.0) || (
+                            dataset.dataType != DataType.GOAL &&
+                                    dataset.remainingAmount == 0.0)
                 ) {
                     AsyncImage(
                         model = R.drawable.done,
-                        contentDescription = lastPayment.paymentMethod.text,
+                        contentDescription = "done",
+                        modifier = Modifier.size(32.dp)
+                    )
+                } else if (dataset.dataType == DataType.GOAL &&
+                    dataset.status == AdjustmentStatus.FAILED &&
+                    dataset.remainingAmount != 0.0
+                ) {
+                    AsyncImage(
+                        model = R.drawable.failed,
+                        contentDescription = "failed",
                         modifier = Modifier.size(32.dp)
                     )
                 }

@@ -1,36 +1,43 @@
 // Bless be the name of LORD of hosts
 package com.example.moneytracker.ui.homeScreen.todayScreen
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
-import com.example.moneytracker.backend.storage.Dataset
-import com.example.moneytracker.helper.isForToday
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
+import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.ItemListArea
 import com.example.moneytracker.ui.homeScreen.todayScreen.statArea.StatArea
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TodayScreen(
     paddingValues: PaddingValues,
-    datasets: List<Dataset>
 ) {
-    val filteredDatasets = datasets.filter { it.isForToday }
+    val viewModel: HomeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
+    val todayDatasets by viewModel.todayDatasets.collectAsState()
+
+
 
     val context = LocalContext.current
-    val donutChartDataCollection = remember(filteredDatasets, context) {
+    val donutChartDataCollection = remember(todayDatasets, context) {
         DonutChartDataCollection(
-            filteredDatasets
+            todayDatasets
                 .groupBy { it.dataType }
                 .values.toList()
                 .map { lst ->
@@ -57,10 +64,10 @@ fun TodayScreen(
         verticalArrangement = Arrangement.SpaceBetween
     ) {
         // Statistic
-        StatArea(donutChartDataCollection, datasets = filteredDatasets)
+        StatArea(donutChartDataCollection, datasets = todayDatasets)
 
         // Items list
-        ItemListArea(filteredDatasets)
+        ItemListArea(todayDatasets)
     }
 }
 

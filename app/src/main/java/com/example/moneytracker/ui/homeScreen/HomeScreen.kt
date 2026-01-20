@@ -1,6 +1,8 @@
 // Bless be the Name of the Lord
 package com.example.moneytracker.ui.homeScreen
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -37,6 +39,7 @@ import com.example.moneytracker.ui.homeScreen.topPanel.TopTitlePanel
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import kotlinx.coroutines.delay
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Suppress("UNUSED_PARAMETER")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -121,7 +124,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             ) { paddingValues ->
 
                 // Today's screen
-                TodayScreen(paddingValues, datasets = datasets)
+                TodayScreen(paddingValues)
 
 
                 // Drop down user profile

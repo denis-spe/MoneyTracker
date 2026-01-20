@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
@@ -63,10 +64,10 @@ fun ModelDrawerButton(
     wasSuccess: MutableState<State>? = null,
     shape: Shape = ButtonDefaults.outlinedShape,
     filledColor: Color? = null,
+    fontSize: TextUnit = 15.sp,
     onClick: () -> Unit,
 ) {
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
-    val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
 
     val color = if (wasSuccess != null && wasSuccess.value == State.ERROR)
         colorResource(R.color.error_color) else
