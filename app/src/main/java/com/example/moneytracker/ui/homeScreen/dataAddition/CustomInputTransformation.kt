@@ -11,6 +11,6 @@ class CustomInputTransformation : InputTransformation {
             revertAllChanges()
         }
 
-        placeCursorBeforeCharAt(length)
+//        placeCursorBeforeCharAt(length)
     }
 }

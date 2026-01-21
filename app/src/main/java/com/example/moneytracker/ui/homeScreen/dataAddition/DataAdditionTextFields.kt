@@ -2,6 +2,8 @@
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,12 +20,15 @@ import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.input.then
+import androidx.compose.material3.Card
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -43,6 +48,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.AdjustmentStatus
@@ -50,6 +56,7 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.status
@@ -65,6 +72,8 @@ val BOTTOM_SHEET_PADDING = 10.dp
 @Composable
 fun ModelDrawerTextField(
     modifier: Modifier = Modifier,
+    title: String = "",
+    description: String = "",
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
@@ -83,64 +92,126 @@ fun ModelDrawerTextField(
     val modifiedPlaceholder = if (isError)
         "Fill the Label" else placeholder
 
-    OutlinedTextField(
+    val onDialogShow = remember { mutableStateOf(false) }
+    val text = remember { mutableStateOf("No Text") }
+
+
+    if (onDialogShow.value) {
+        Dialog(
+            onDismissRequest = { onDialogShow.value = false },
+        ) {
+            Card {
+                Column(
+                    modifier = Modifier.padding(top = 10.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(title, fontSize = fontSize, fontWeight = FontWeight.Bold)
+                    Text(description)
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                    OutlinedTextField(
+                        modifier = modifier
+                            .padding(bottom = BOTTOM_SHEET_PADDING)
+                            .height(height),
+                        state = state,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        placeholder = {
+                            Text(
+                                text = modifiedPlaceholder,
+                                color = color,
+                                fontSize = fontSize
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors().copy(
+                            focusedTextColor = color,
+                            unfocusedTextColor = color.copy(alpha = 0.5f),
+                            cursorColor = color,
+                            focusedIndicatorColor = color,
+                            unfocusedIndicatorColor = color.copy(alpha = 0.5f),
+                            focusedContainerColor = color.copy(alpha = 0.1f),
+                            unfocusedContainerColor = color.copy(alpha = 0.2f),
+                        ),
+                        textStyle = TextStyle(
+                            color = color,
+                            fontSize = fontSize
+                        ),
+                        shape = CircleShape,
+                        leadingIcon = {
+                            if (iconState != null) {
+                                IconButton(
+                                    onClick = {
+                                        viewModel.showIconDialog(true)
+                                    }
+                                ) {
+                                    Image(
+                                        painter = painterResource(id = iconState.value),
+                                        contentDescription = "Icon",
+                                        modifier = Modifier.size(ICON_SIZE)
+                                    )
+                                }
+                            }
+                        },
+                        inputTransformation = if (textLength != null)
+                            InputTransformation.maxLength(textLength) else
+                            null
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp, bottom = 10.dp)
+                    ) {
+                        TextButton(
+                            onClick = { onDialogShow.value = false }
+                        ) {
+                            Text("Cancel", fontSize = fontSize)
+                        }
+
+                        TextButton(
+                            onClick = {
+                                onDialogShow.value = false
+                                text.value = state.text.toString()
+                            }
+                        ) {
+                            Text("OK", fontSize = fontSize)
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    Row(
         modifier = modifier
             .padding(bottom = BOTTOM_SHEET_PADDING)
-            .height(height),
-        state = state,
-        lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = {
-            Text(
-                text = modifiedPlaceholder,
-                color = color,
-                fontSize = fontSize
-            )
-        },
-        colors = OutlinedTextFieldDefaults.colors().copy(
-            focusedTextColor = color,
-            unfocusedTextColor = color.copy(alpha = 0.5f),
-            cursorColor = color,
-            focusedIndicatorColor = color,
-            unfocusedIndicatorColor = color.copy(alpha = 0.5f),
-            focusedContainerColor = color.copy(alpha = 0.1f),
-            unfocusedContainerColor = color.copy(alpha = 0.2f),
-        ),
-        textStyle = TextStyle(
-            color = color,
-            fontSize = fontSize
-        ),
-        shape = CircleShape,
-        leadingIcon = {
-            if (iconState != null) {
-                IconButton(
-                    onClick = {
-                        viewModel.showIconDialog(true)
-                    }
-                ) {
-                    Image(
-                        painter = painterResource(id = iconState.value),
-                        contentDescription = "Icon",
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
-                }
+            .height(height)
+            .clickable {
+                onDialogShow.value = true
             }
-        },
-        inputTransformation = if (textLength != null)
-            InputTransformation.maxLength(textLength) else
-            null
-    )
+            .background(color.copy(0.03f)),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+        Text(text.value.take(9), color = color, fontSize = fontSize)
+    }
 }
 
 
 @Composable
 fun ModelDrawerAmountField(
+    modifier: Modifier = Modifier,
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
-    modifier: Modifier = Modifier.fillMaxWidth(MaxWidth),
     shape: Shape = CircleShape,
     wasSuccess: MutableState<State>? = null,
 ) {
+    val modifier = modifier.fillMaxWidth(MaxWidth)
     val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
     val color = if (isError)
         colorResource(R.color.error_color) else
@@ -148,56 +219,118 @@ fun ModelDrawerAmountField(
 
     val locale = Locale.getDefault()
     val numberFormat = remember(locale) { NumberFormat.getCurrencyInstance(locale) }
+    val symbol = numberFormat.currency?.symbol ?: "$"
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
+    val onDialogShow = remember { mutableStateOf(false) }
+    var amountToDisplay by remember { mutableStateOf("${symbol}0.0") }
 
 
-    OutlinedTextField(
+    if (onDialogShow.value) {
+        Dialog(
+            onDismissRequest = { onDialogShow.value = false },
+        ) {
+            Card {
+                Column(
+                    modifier = Modifier.padding(top = 10.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Amount", fontSize = fontSize, fontWeight = FontWeight.Bold)
+                    Text("Enter the amount")
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                    OutlinedTextField(
+                        state = state,
+                        shape = shape,
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                        placeholder = {
+                            Text(
+                                text = placeholder,
+                                color = color,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = fontSize
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors().copy(
+                            focusedTextColor = color,
+                            unfocusedTextColor = color.copy(alpha = 0.5f),
+                            cursorColor = color,
+                            focusedIndicatorColor = color,
+                            unfocusedIndicatorColor = color.copy(alpha = 0.5f),
+                            focusedContainerColor = color.copy(alpha = 0.1f),
+                            unfocusedContainerColor = color.copy(alpha = 0.2f),
+                        ),
+                        textStyle = TextStyle(
+                            color = color,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = fontSize
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number // only digits expected
+                        ),
+                        leadingIcon = {
+                            Text(
+                                text = symbol,
+                                color = color,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = fontSize
+                            )
+                        },
+
+                        inputTransformation = InputTransformation.maxLength(16).then(
+                            CustomInputTransformation()
+                        ),
+                        outputTransformation = CustomOutputTransformation(),
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp, bottom = 10.dp)
+                    ) {
+                        TextButton(
+                            onClick = { onDialogShow.value = false }
+                        ) {
+                            Text("Cancel", fontSize = fontSize)
+                        }
+
+                        TextButton(
+                            onClick = {
+                                onDialogShow.value = false
+                                amountToDisplay = if (state.text.isNotEmpty())
+                                    state.text.toString().toDouble().formatToAmount() else
+                                    "${symbol}0.0"
+                            }
+                        ) {
+                            Text("OK", fontSize = fontSize)
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    Row(
         modifier = modifier
             .padding(bottom = BOTTOM_SHEET_PADDING)
-            .height(height),
-        state = state,
-        shape = shape,
-        lineLimits = TextFieldLineLimits.SingleLine,
-        placeholder = {
-            Text(
-                text = placeholder,
-                color = color,
-                fontWeight = FontWeight.Bold,
-                fontSize = fontSize
-            )
-        },
-        colors = OutlinedTextFieldDefaults.colors().copy(
-            focusedTextColor = color,
-            unfocusedTextColor = color.copy(alpha = 0.5f),
-            cursorColor = color,
-            focusedIndicatorColor = color,
-            unfocusedIndicatorColor = color.copy(alpha = 0.5f),
-            focusedContainerColor = color.copy(alpha = 0.1f),
-            unfocusedContainerColor = color.copy(alpha = 0.2f),
-        ),
-        textStyle = TextStyle(
-            color = color,
-            fontWeight = FontWeight.Bold,
-            fontSize = fontSize
-        ),
-        keyboardOptions = KeyboardOptions(
-            keyboardType = KeyboardType.Number // only digits expected
-        ),
-        leadingIcon = {
-            Text(
-                text = numberFormat.currency?.symbol ?: "$",
-                color = color,
-                fontWeight = FontWeight.Bold,
-                fontSize = fontSize
-            )
-        },
+            .height(height)
+            .clickable {
+                onDialogShow.value = true
+            }
+            .background(color.copy(0.03f)),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("Amount", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+        Text(amountToDisplay, color = color, fontSize = fontSize)
+    }
 
-        inputTransformation = InputTransformation.maxLength(16).then(
-            CustomInputTransformation()
-        ),
-        outputTransformation = CustomOutputTransformation(),
-    )
+
 }
 
 @Composable

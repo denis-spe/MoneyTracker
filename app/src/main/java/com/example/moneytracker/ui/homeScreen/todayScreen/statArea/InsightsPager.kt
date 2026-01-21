@@ -6,6 +6,7 @@ import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,8 +22,15 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TooltipAnchorPosition
+import androidx.compose.material3.TooltipBox
+import androidx.compose.material3.TooltipDefaults
+import androidx.compose.material3.rememberTooltipState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,8 +54,13 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.ui.components.charts.InsightBar
 import kotlinx.coroutines.launch
 
+
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Insights(
+    modifier: Modifier = Modifier,
+    richTooltipSubheadText: String = "",
+    richTooltipActionText: String = "",
     firstFinancial: Double,
     secondFinancial: Double,
     colorResId: Int,
@@ -63,6 +76,8 @@ fun Insights(
         var percentage by remember { mutableDoubleStateOf(0.0) }
         var marginRatio by remember { mutableDoubleStateOf(0.0) }
         var text by remember { mutableStateOf(buildAnnotatedString { "" }) }
+        val tooltipState = rememberTooltipState()
+        val coroutineScope = rememberCoroutineScope()
 
         LaunchedEffect(firstFinancial, secondFinancial) {
             if (firstFinancial == 0.0) {
@@ -93,18 +108,6 @@ fun Insights(
             text = builder()
         }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.ExtraBold,
-                textAlign = TextAlign.Center
-            )
-        }
-
         val barColor = when {
             firstFinancial > 0
                     && firstFinancial > secondFinancial
@@ -120,13 +123,47 @@ fun Insights(
             }
         }
 
-        InsightBar(
-            percentage.toFloat(),
-            modifier = Modifier.fillMaxWidth(0.6f),
-            color = colorResource(colorResId),
-            barColor = barColor
 
-        )
+        TooltipBox(
+            modifier = modifier,
+            positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
+                TooltipAnchorPosition.Below
+            ),
+            tooltip = {
+                RichTooltip(
+                    title = { Text(richTooltipSubheadText) },
+                    action = {
+                        Row {
+                            TextButton(onClick = {
+                                coroutineScope.launch {
+                                    tooltipState.dismiss()
+                                }
+                            }) {
+                                Text(richTooltipActionText)
+                            }
+                        }
+                    },
+                ) {
+                    Text(text, textAlign = TextAlign.Start)
+                }
+            },
+            state = tooltipState
+        ) {
+            InsightBar(
+                percentage.toFloat(),
+                modifier = Modifier
+                    .fillMaxWidth(0.6f)
+                    .clickable {
+                        coroutineScope.launch {
+                            tooltipState.show()
+                        }
+                    },
+                color = colorResource(colorResId),
+                barColor = barColor
+            )
+        }
+
+
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center

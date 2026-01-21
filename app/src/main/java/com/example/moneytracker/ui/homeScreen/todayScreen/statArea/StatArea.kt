@@ -224,7 +224,7 @@ fun StatArea(
     Column(
         modifier = Modifier
             .fillMaxWidth(0.5f)
-            .fillMaxHeight(0.38f),
+            .fillMaxHeight(0.40f),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

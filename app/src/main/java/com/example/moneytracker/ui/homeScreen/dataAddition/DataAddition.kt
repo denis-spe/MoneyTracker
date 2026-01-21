@@ -106,7 +106,7 @@ fun DataAdditionModelDrawer(
             ) {
                 HorizontalDivider(
                     modifier = Modifier
-                        .fillMaxWidth(0.8f)
+                        .fillMaxWidth()
                         .padding(bottom = 10.dp)
                 )
             }
@@ -407,7 +407,7 @@ fun ModelDrawerContent(
                 ) {
                     ModelDrawerAmountField(
                         state = amountState,
-                        placeholder = "0",
+                        placeholder = "0.0",
                         colorResId = colorResId,
                         wasSuccess = wasSuccess,
                     )
@@ -421,6 +421,8 @@ fun ModelDrawerContent(
                 ) {
                     ModelDrawerTextField(
                         state = labelState,
+                        title = "Label",
+                        description = "Add a label for the given amount",
                         placeholder = placeholder,
                         colorResId = colorResId,
                         iconState = labelIconState,
@@ -501,6 +503,8 @@ fun ModelDrawerContent(
                     ModelDrawerTextField(
                         state = descriptionState,
                         placeholder = "Note (Optional)",
+                        title = "Note",
+                        description = "Add a note for the given amount",
                         colorResId = colorResId,
                         viewModel = viewModel
                     )
