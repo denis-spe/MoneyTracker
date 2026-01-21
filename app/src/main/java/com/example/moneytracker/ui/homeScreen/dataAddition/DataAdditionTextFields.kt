@@ -29,6 +29,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -68,6 +69,13 @@ import java.util.Locale
 
 const val MaxWidth = 0.7f
 val BOTTOM_SHEET_PADDING = 10.dp
+val MODIFIER_DRAWER = Modifier
+    .fillMaxWidth()
+    .padding(vertical = 6.dp, horizontal = 13.dp)
+val INNER_MODIFIER_DRAWER = Modifier
+    .fillMaxWidth()
+    .padding(start = 10.dp, end = 10.dp)
+val SHAPE = RoundedCornerShape(30.dp)
 
 @Composable
 fun ModelDrawerTextField(
@@ -127,16 +135,16 @@ fun ModelDrawerTextField(
                             focusedTextColor = color,
                             unfocusedTextColor = color.copy(alpha = 0.5f),
                             cursorColor = color,
-                            focusedIndicatorColor = color,
-                            unfocusedIndicatorColor = color.copy(alpha = 0.5f),
-                            focusedContainerColor = color.copy(alpha = 0.1f),
-                            unfocusedContainerColor = color.copy(alpha = 0.2f),
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
                         ),
                         textStyle = TextStyle(
                             color = color,
                             fontSize = fontSize
                         ),
-                        shape = CircleShape,
+                        shape = SHAPE,
                         leadingIcon = {
                             if (iconState != null) {
                                 IconButton(
@@ -186,18 +194,23 @@ fun ModelDrawerTextField(
     }
 
     Row(
-        modifier = modifier
-            .padding(bottom = BOTTOM_SHEET_PADDING)
+        modifier = MODIFIER_DRAWER
             .height(height)
+            .background(color.copy(alpha = 0.1f))
             .clickable {
                 onDialogShow.value = true
-            }
-            .background(color.copy(0.03f)),
+            },
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
-        Text(text.value.take(9), color = color, fontSize = fontSize)
+        Row(
+            modifier = INNER_MODIFIER_DRAWER,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+            Text(text.value.take(9), color = color, fontSize = fontSize)
+        }
     }
 }
 
@@ -211,7 +224,7 @@ fun ModelDrawerAmountField(
     shape: Shape = CircleShape,
     wasSuccess: MutableState<State>? = null,
 ) {
-    val modifier = modifier.fillMaxWidth(MaxWidth)
+    modifier.fillMaxWidth(MaxWidth)
     val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
     val color = if (isError)
         colorResource(R.color.error_color) else
@@ -316,18 +329,23 @@ fun ModelDrawerAmountField(
     }
 
     Row(
-        modifier = modifier
-            .padding(bottom = BOTTOM_SHEET_PADDING)
+        modifier = MODIFIER_DRAWER
             .height(height)
+            .background(color.copy(alpha = 0.1f))
             .clickable {
                 onDialogShow.value = true
-            }
-            .background(color.copy(0.03f)),
+            },
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text("Amount", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
-        Text(amountToDisplay, color = color, fontSize = fontSize)
+        Row(
+            modifier = INNER_MODIFIER_DRAWER,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Amount", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+            Text(amountToDisplay, color = color, fontSize = fontSize)
+        }
     }
 
 
@@ -347,7 +365,8 @@ fun AdjustmentField(
     var expanded by remember { mutableStateOf(false) }
 
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
-    val corner = 30.dp
+    val height = integerResource(R.integer.textFieldAndButtonHeight).dp
+    30.dp
 
     /* ----------------------------------------------------------
      * 1) React to Firestore datasets ONLY when sheet is visible
@@ -369,68 +388,144 @@ fun AdjustmentField(
     /* ----------------------------------------------------------
      * 2) UI
      * ---------------------------------------------------------- */
-    Row(
-        modifier = modifier
-            .fillMaxWidth(MaxWidth),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
+    val locale = Locale.getDefault()
+    val numberFormat = remember(locale) { NumberFormat.getCurrencyInstance(locale) }
+    val symbol = numberFormat.currency?.symbol ?: "$"
+    val onDialogShow = remember { mutableStateOf(false) }
+    var amountToDisplay by remember { mutableStateOf("${symbol}0.0") }
+    val color = colorResource(colorResId)
 
-        /* ---------- Dropdown ---------- */
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
+    if (onDialogShow.value) {
+        Dialog(
+            onDismissRequest = { onDialogShow.value = false },
         ) {
-            datasets
-                .filterNot { it.isAmountEqualToAdjustAmount() && it.status == AdjustmentStatus.PENDING }
-                .forEach { dataset ->
+            Card {
+                Column(
+                    modifier = Modifier.padding(top = 10.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
 
-                    DropdownMenuItem(
-                        text = {
-                            Text(dataset.label, fontSize = fontSize)
-                        },
-                        onClick = {
-                            expanded = false
-                            selectedDataset.value = dataset
-                        },
-                        leadingIcon = {
-                            Image(
-                                painter = painterResource(dataset.labelIcon),
-                                contentDescription = dataset.label,
-                                modifier = Modifier.size(ICON_SIZE)
+                    /* ---------- Dropdown ---------- */
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        datasets
+                            .filterNot { it.isAmountEqualToAdjustAmount() && it.status == AdjustmentStatus.PENDING }
+                            .forEach { dataset ->
+
+                                DropdownMenuItem(
+                                    text = {
+                                        Text(dataset.label, fontSize = fontSize)
+                                    },
+                                    onClick = {
+                                        expanded = false
+                                        selectedDataset.value = dataset
+                                    },
+                                    leadingIcon = {
+                                        Image(
+                                            painter = painterResource(dataset.labelIcon),
+                                            contentDescription = dataset.label,
+                                            modifier = Modifier.size(ICON_SIZE)
+                                        )
+                                    }
+                                )
+                            }
+                    }
+
+                    /* ---------- Dataset button ---------- */
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        TextButton(
+                            onClick = { expanded = true }
+                        ) {
+                            Text(
+                                selectedDataset.value?.label ?: "Select ${datatype.text}",
+                                fontSize = fontSize,
                             )
                         }
+
+                        /* ---------- Amount field ---------- */
+                        TextField(
+                            state = amountState,
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            placeholder = {
+                                Text(
+                                    text = "0.00",
+                                    color = color,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = fontSize
+                                )
+                            },
+                            colors = OutlinedTextFieldDefaults.colors().copy(
+                                focusedTextColor = color,
+                                unfocusedTextColor = color.copy(alpha = 0.5f),
+                                cursorColor = color,
+                                focusedIndicatorColor = color,
+                                unfocusedIndicatorColor = color.copy(alpha = 0.5f),
+                                focusedContainerColor = color.copy(alpha = 0.1f),
+                                unfocusedContainerColor = color.copy(alpha = 0.2f),
+                            ),
+                            textStyle = TextStyle(
+                                color = color,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = fontSize
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number // only digits expected
+                            ),
+                            leadingIcon = {
+                                Text(
+                                    text = symbol,
+                                    color = color,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = fontSize
+                                )
+                            },
+
+                            inputTransformation = InputTransformation.maxLength(16).then(
+                                CustomInputTransformation()
+                            ),
+                            outputTransformation = CustomOutputTransformation(),
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    Row(
+        modifier = MODIFIER_DRAWER
+            .height(height)
+            .background(color.copy(alpha = 0.1f))
+            .clickable {
+                onDialogShow.value = true
+            },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = INNER_MODIFIER_DRAWER,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(datatype.text, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                if (selectedDataset.value != null && selectedDataset.value?.label?.isEmpty() == false) {
+                    Text(
+                        selectedDataset.value?.label ?: "",
+                        color = color, fontSize = fontSize
                     )
                 }
+                Text(amountToDisplay, color = color, fontSize = fontSize)
+            }
         }
-
-        /* ---------- Dataset button ---------- */
-        ModelDrawerButton(
-            text = selectedDataset.value?.label ?: "Select ${datatype.text}",
-            shape = RoundedCornerShape(
-                topStart = corner,
-                bottomStart = corner
-            ),
-            modifier = Modifier.weight(0.5f),
-            wasSuccess = wasRepaySuccess,
-            colorResId = colorResId,
-            filledColor = Color.Transparent
-        ) {
-            expanded = true
-        }
-
-        /* ---------- Amount field ---------- */
-        ModelDrawerAmountField(
-            state = amountState,
-            placeholder = "0",
-            colorResId = colorResId,
-            modifier = Modifier.weight(0.5f),
-            shape = RoundedCornerShape(
-                topEnd = corner,
-                bottomEnd = corner
-            ),
-            wasSuccess = wasRepaySuccess
-        )
     }
 
     /* ----------------------------------------------------------
