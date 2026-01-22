@@ -70,6 +70,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -198,7 +199,12 @@ fun ModelDrawerTextField(
         "Fill the Label" else placeholder
 
     val onDialogShow = remember { mutableStateOf(false) }
-    val text = remember { mutableStateOf("No Text") }
+    val text = remember {
+        mutableStateOf(
+            if (title == "Label") "Required" else
+                "Optional"
+        )
+    }
 
 
     if (onDialogShow.value) {
@@ -213,10 +219,24 @@ fun ModelDrawerTextField(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text(title, fontSize = fontSize, fontWeight = FontWeight.Bold)
-                    Text(description)
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Image(
+                            painter = painterResource(
+                                id = if (title == "Label") R.drawable.label
+                                else R.drawable.note
+                            ),
+                            contentDescription = "LabelOrNote"
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(title, fontSize = fontSize, fontWeight = FontWeight.Bold)
+                    }
+                    Text(description, textAlign = TextAlign.Center)
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
                     OutlinedTextField(
                         modifier = modifier
                             .fillMaxWidth()
@@ -354,8 +374,18 @@ fun ModelDrawerAmountField(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Text("Amount", fontSize = fontSize, fontWeight = FontWeight.Bold)
-                    Text("Enter the amount")
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.amount),
+                            contentDescription = "Amount"
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text("Amount", fontSize = fontSize, fontWeight = FontWeight.Bold)
+                    }
+                    Text("Enter the amount", textAlign = TextAlign.Center)
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
@@ -528,9 +558,23 @@ fun AdjustmentField(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    val title = if (datatype == DataType.GOAL) "Attain" else "Repayment"
+                    val desc = if (datatype == DataType.GOAL) "Attain Your Goal"
+                    else "Repayment of ${datatype.text}"
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.repay),
+                            contentDescription = "Repay"
+                        )
 
-                    Text("Adjust Amount", fontSize = fontSize, fontWeight = FontWeight.Bold)
-                    Text("Adjust the amount")
+                        Spacer(modifier = Modifier.width(5.dp))
+
+                        Text(title, fontSize = fontSize, fontWeight = FontWeight.Bold)
+                    }
+                    Text(desc)
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
@@ -684,7 +728,10 @@ fun AdjustmentField(
                 )
 
                 Spacer(modifier = Modifier.width(5.dp))
-                Text(datatype.text, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+                val dataTypeText = if (datatype == DataType.GOAL) "Attain A Goal"
+                else "Repay of ${datatype.text}"
+
+                Text(dataTypeText, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
             }
             Column(
                 horizontalAlignment = Alignment.End,
@@ -1033,13 +1080,15 @@ fun DateTimeInput(
 
                     Spacer(modifier = Modifier.width(5.dp))
 
-                    Text("Select date", color = color, fontSize = fontSize)
+                    Text(
+                        "Select date", color = color, fontSize = fontSize,
+                        fontWeight = FONT_WEIGHT
+                    )
                 }
 
                 Text(
                     "${dayOfWeek.take(3).title} $day.$month.$year",
                     color = color,
-                    fontSize = fontSize
                 )
             }
         }
@@ -1074,7 +1123,12 @@ fun DateTimeInput(
 
                     Spacer(modifier = Modifier.width(5.dp))
 
-                    Text("Select time", color = color, fontSize = fontSize)
+                    Text(
+                        "Select time",
+                        color = color,
+                        fontSize = fontSize,
+                        fontWeight = FONT_WEIGHT
+                    )
                 }
                 Text("$hour:$minute", color = color, fontSize = fontSize)
             }
@@ -1147,15 +1201,15 @@ fun DateTimeRange(
     val day = startDate.day.addZeroIfLessThenTen
     val month = startDate.month.number.addZeroIfLessThenTen
     val year = startDate.year
-    val hour = startLocalDateTimeState.value.time.hour
-    val minute = startLocalDateTimeState.value.time.minute
+    val hour = startLocalDateTimeState.value.time.hour.addZeroIfLessThenTen
+    val minute = startLocalDateTimeState.value.time.minute.addZeroIfLessThenTen
 
     val endDate = endLocalDateTimeState.value.date
     val endingDay = endDate.day.addZeroIfLessThenTen
     val endingMonth = endDate.month.number.addZeroIfLessThenTen
     val endingYear = endDate.year
-    val endingHour = endLocalDateTimeState.value.time.hour
-    val endingMinute = endLocalDateTimeState.value.time.minute
+    val endingHour = endLocalDateTimeState.value.time.hour.addZeroIfLessThenTen
+    val endingMinute = endLocalDateTimeState.value.time.minute.addZeroIfLessThenTen
 
 
     Column(
@@ -1190,7 +1244,12 @@ fun DateTimeRange(
 
                     Spacer(modifier = Modifier.width(5.dp))
 
-                    Text("Select time", color = color, fontSize = fontSize)
+                    Text(
+                        "Select time",
+                        color = color,
+                        fontSize = fontSize,
+                        fontWeight = FONT_WEIGHT
+                    )
                 }
                 Column(
                     horizontalAlignment = Alignment.End,
@@ -1232,9 +1291,14 @@ fun DateTimeRange(
 
                     Spacer(modifier = Modifier.width(5.dp))
 
-                    Text("Select starting date")
+                    Text(
+                        "Select starting date",
+                        color = color,
+                        fontSize = fontSize,
+                        fontWeight = FONT_WEIGHT
+                    )
                 }
-                Text("$year.$month.$day")
+                Text("$year.$month.$day", color = color)
             }
         }
 
@@ -1262,15 +1326,20 @@ fun DateTimeRange(
                 ) {
                     Image(
                         painter = painterResource(id = R.drawable.calendar),
-                        contentDescription = "Clock",
+                        contentDescription = "Calendar",
                         modifier = Modifier.size(ICON_SIZE)
                     )
 
                     Spacer(modifier = Modifier.width(5.dp))
 
-                    Text("Select ending date")
+                    Text(
+                        "Select ending date",
+                        color = color,
+                        fontSize = fontSize,
+                        fontWeight = FONT_WEIGHT
+                    )
                 }
-                Text("$endingYear.$endingMonth.$endingDay")
+                Text("$endingYear.$endingMonth.$endingDay", color = color)
             }
         }
 

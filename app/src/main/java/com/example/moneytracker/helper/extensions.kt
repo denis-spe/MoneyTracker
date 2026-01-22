@@ -16,7 +16,7 @@ import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.NumberFormat
 import java.util.Locale
-import kotlin.math.ln
+import kotlin.math.log10
 import kotlin.math.pow
 
 /**
@@ -282,11 +282,13 @@ fun Long.formatToAmount(): String {
             .replace(Regex("\\.0$"), "")
         return "$symbol$formattedAmount"
     }
-    val suffixes = charArrayOf('M', 'B', 'T') // M for Million, etc.
-    val formatter = DecimalFormat("#.0")
-    val exp = (ln(this.toDouble()) / ln(1000.0)).toInt()
-    return "$symbol${formatter.format(this / 1000.0.pow(exp.toDouble())) + suffixes[exp - 1]}"
+    val suffixes = charArrayOf('M', 'B', 'T', 'Q') // M for Million, etc.
+    val formatter = DecimalFormat("#.#")
+    val base = (log10(this.toDouble()) / 3).toInt()
+    val scaledNumber = this / 1000.0.pow(base.toDouble())
+    return "$symbol${formatter.format(scaledNumber) + suffixes[base - 2]}"
 }
+
 
 fun Float.formatToAmount(): String {
     return this.toLong().formatToAmount()

@@ -9,6 +9,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,6 +21,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,11 +88,27 @@ fun IconList(
             shape = RoundedCornerShape(16.dp),
         ) {
             Column(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                Row(
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.tag),
+                        contentDescription = "tag",
+                    )
+                    Spacer(modifier = Modifier.padding(5.dp))
+                    Text("Tag", fontWeight = FONT_WEIGHT)
+                }
+                Text(
+                    "Select an icon",
+                )
 
-                Text("Select an icon", modifier = Modifier.padding(16.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
                 LazyVerticalGrid(
                     modifier = Modifier
@@ -143,11 +161,14 @@ fun IconList(
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp, bottom = 10.dp)
                 ) {
                     TextButton(onClick = { onDialogOpen.value = false }) {
-                        Text("Dismiss")
+                        Text("Cancel")
                     }
 
                     TextButton(
@@ -156,7 +177,7 @@ fun IconList(
                             onConfirm.value = selectionIcon
                         }
                     ) {
-                        Text("Confirm")
+                        Text("Select")
                     }
                 }
             }
