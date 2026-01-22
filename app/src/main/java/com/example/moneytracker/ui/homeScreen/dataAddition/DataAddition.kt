@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -340,7 +339,7 @@ fun ModelDrawerContent(
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
     val wasRepaySuccess = remember { mutableStateOf(State.INITIAL) }
-    val labelIconState = remember { mutableIntStateOf(R.drawable.description) }
+    val labelIconState = remember { mutableStateOf(Pair("description", R.drawable.description)) }
     val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val adjustAmountState = rememberTextFieldState()
@@ -425,10 +424,21 @@ fun ModelDrawerContent(
                         description = "Add a label for the given amount",
                         placeholder = placeholder,
                         colorResId = colorResId,
-                        iconState = labelIconState,
-                        viewModel = viewModel,
                         wasSuccess = wasSuccess,
                         textLength = 15
+                    )
+                }
+            }
+
+            // Tag
+            item {
+                Row(
+                    modifier = Modifier.animateItem()
+                ) {
+                    ModelDrawerTag(
+                        colorResId = colorResId,
+                        title = "Tag",
+                        iconState = labelIconState
                     )
                 }
             }
@@ -504,9 +514,9 @@ fun ModelDrawerContent(
                         state = descriptionState,
                         placeholder = "Note (Optional)",
                         title = "Note",
-                        description = "Add a note for the given amount",
+                        description = "Take a note for the given amount",
                         colorResId = colorResId,
-                        viewModel = viewModel
+                        wasSuccess = wasSuccess
                     )
                 }
             }
@@ -570,7 +580,7 @@ fun ModelDrawerContent(
                                     label = labelState.text.toString(),
                                     description = descriptionState.text.toString(),
                                     dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                    labelIcon = labelIconState.intValue,
+                                    labelIcon = labelIconState.value.second,
                                     paymentMethod = selectedPaymentMethod.value,
                                     deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
                                     adjustmentStatus = AdjustmentStatus.PENDING
@@ -582,7 +592,10 @@ fun ModelDrawerContent(
                             amountState.clearText()
                             labelState.clearText()
                             descriptionState.clearText()
-                            labelIconState.intValue = R.drawable.description
+                            labelIconState.value = Pair(
+                                "description",
+                                R.drawable.description
+                            )
 
                             // Dismiss the model drawer.
                             onDismiss()
@@ -673,13 +686,6 @@ fun ModelDrawerContent(
                     }
                 }
             }
-        }
-
-        // Show all icons for label and description.
-        IconList(
-            viewModel = viewModel
-        ) {
-            labelIconState.intValue = it.second
         }
     }
 }
