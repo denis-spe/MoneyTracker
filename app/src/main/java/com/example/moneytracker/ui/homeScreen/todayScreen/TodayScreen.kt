@@ -1,11 +1,13 @@
 // Bless be the name of LORD of hosts
 package com.example.moneytracker.ui.homeScreen.todayScreen
 
+import android.content.res.Configuration.ORIENTATION_PORTRAIT
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -15,6 +17,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -31,6 +34,7 @@ fun TodayScreen(
 ) {
     val viewModel: HomeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
     val todayDatasets by viewModel.todayDatasets.collectAsState()
+    val configuration = LocalConfiguration.current
 
 
 
@@ -56,18 +60,34 @@ fun TodayScreen(
         )
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(paddingValues),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        // Statistic
-        StatArea(donutChartDataCollection, datasets = todayDatasets)
+    if (configuration.orientation == ORIENTATION_PORTRAIT) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Statistic
+            StatArea(donutChartDataCollection, datasets = todayDatasets)
 
-        // Items list
-        ItemListArea(todayDatasets)
+            // Items list
+            ItemListArea(todayDatasets)
+        }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Statistic
+            StatArea(donutChartDataCollection, datasets = todayDatasets)
+
+            // Items list
+            ItemListArea(todayDatasets)
+        }
     }
 }
 

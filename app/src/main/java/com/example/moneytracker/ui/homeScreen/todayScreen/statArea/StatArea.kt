@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -223,8 +224,8 @@ fun StatArea(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth(0.5f)
-            .fillMaxHeight(0.40f),
+            .fillMaxWidth(0.4f)
+            .heightIn(max = 280.dp, min = 180.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

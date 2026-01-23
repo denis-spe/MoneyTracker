@@ -11,6 +11,7 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.google.firebase.Timestamp
+import kotlinx.datetime.minus
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -91,6 +92,20 @@ val Dataset.isForToday: Boolean
 
         return today == dataDate
     }
+
+/**
+ * Check if the dataset is for yesterday.
+ */
+val Dataset.isForYesterday: Boolean
+    @RequiresApi(Build.VERSION_CODES.O)
+    get() {
+        val yesterday = kotlinx.datetime.LocalDateTime.now()
+            .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
+        val dataDate = dateTime.toLocalDateTimeUtc().date
+
+        return yesterday == dataDate
+    }
+
 
 
 

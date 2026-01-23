@@ -15,6 +15,7 @@ import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.helper.isForToday
+import com.example.moneytracker.helper.isForYesterday
 import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
@@ -40,10 +41,8 @@ class HomeScreenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
     private val _isIconDialogVisible = MutableStateFlow(false)
-    val isIconDialogVisible = _isIconDialogVisible.asStateFlow()
 
     private val _selectedIcon = MutableStateFlow(Pair("description", R.drawable.description))
-    val selectedIcon = _selectedIcon.asStateFlow()
 
     var isDescriptionIconVisible by mutableStateOf(false)
         private set
@@ -60,23 +59,6 @@ class HomeScreenViewModel @Inject constructor(
      * Public actions
      *******************/
 
-    fun showIconDialog(isShowing: Boolean) {
-        _isIconDialogVisible.value = isShowing
-    }
-
-    fun hideIconDialog() {
-        _isIconDialogVisible.value = false
-    }
-
-    fun selectIcon(iconRes: Pair<String, Int>) {
-        _selectedIcon.value = iconRes
-    }
-
-    fun confirmIconSelection(onConfirmed: (Pair<String, Int>) -> Unit) {
-        onConfirmed(_selectedIcon.value)
-        hideIconDialog()
-    }
-
     @RequiresApi(Build.VERSION_CODES.O)
     val todayDatasets: StateFlow<List<Dataset>> =
         uiState
@@ -88,6 +70,19 @@ class HomeScreenViewModel @Inject constructor(
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = emptyList()
             )
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    val yesterdayDatasets: StateFlow<List<Dataset>> =
+        uiState
+            .map { state ->
+                state.datasets.filter { it.isForYesterday }
+            }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
+
 
 
     fun addData(dataset: Dataset) {

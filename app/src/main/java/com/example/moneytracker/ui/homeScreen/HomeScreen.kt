@@ -35,7 +35,9 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDraw
 import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
+import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 import com.example.moneytracker.ui.homeScreen.topPanel.TopTitlePanel
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import kotlinx.coroutines.delay
 
@@ -124,7 +126,19 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             ) { paddingValues ->
 
                 // Today's screen
-                TodayScreen(paddingValues)
+                when (uiStates.value.topTitle) {
+                    CurrentTopTitle.TODAY -> {
+                        TodayScreen(paddingValues)
+                    }
+
+                    CurrentTopTitle.YESTERDAY -> {
+                        YesterdayScreen(paddingValues)
+                    }
+
+                    CurrentTopTitle.ALL -> {
+                        // AllScreen(paddingValues)
+                    }
+                }
 
 
                 // Drop down user profile
