@@ -46,13 +46,18 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.rotate
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
@@ -73,6 +78,36 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.theme.autoColorChange
+
+
+@Composable
+fun DottedDivider(
+    color: Color = Color.Gray,
+    strokeWidth: Dp = 2.dp,
+    dotLength: Dp = 2.dp,
+    gap: Dp = 8.dp,
+    modifier: Modifier = Modifier
+) {
+    LocalDensity.current
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(strokeWidth)
+            .drawBehind {
+                val stroke = strokeWidth.toPx()
+                val on = dotLength.toPx()
+                val off = gap.toPx()
+                drawLine(
+                    color = color,
+                    start = Offset(0f, size.height / 2f),
+                    end = Offset(size.width, size.height / 2f),
+                    strokeWidth = stroke,
+                    cap = StrokeCap.Round,
+                    pathEffect = PathEffect.dashPathEffect(floatArrayOf(on, off), 0f)
+                )
+            }
+    )
+}
 
 
 @Composable

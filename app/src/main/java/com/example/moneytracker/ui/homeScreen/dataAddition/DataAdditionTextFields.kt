@@ -6,6 +6,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.focusable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -62,6 +64,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
@@ -69,6 +73,7 @@ import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -199,11 +204,10 @@ fun ModelDrawerTextField(
         "Fill the Label" else placeholder
 
     val onDialogShow = remember { mutableStateOf(false) }
+    val optionsTitle = if (title == "Label") "Required" else
+        "Optional"
     val text = remember {
-        mutableStateOf(
-            if (title == "Label") "Required" else
-                "Optional"
-        )
+        mutableStateOf(optionsTitle)
     }
 
 
@@ -266,6 +270,15 @@ fun ModelDrawerTextField(
                             color = color,
                             fontSize = fontSize
                         ),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done
+                        ),
+                        onKeyboardAction = KeyAction {
+                            if (state.text.isNotEmpty()) {
+                                onDialogShow.value = false
+                                text.value = state.text.toString()
+                            }
+                        },
                         shape = SHAPE,
                         inputTransformation = if (textLength != null)
                             InputTransformation.maxLength(textLength) else
@@ -280,15 +293,21 @@ fun ModelDrawerTextField(
                             .padding(top = 10.dp, bottom = 10.dp)
                     ) {
                         TextButton(
-                            onClick = { onDialogShow.value = false }
+                            onClick = {
+                                state.setTextAndPlaceCursorAtEnd("")
+                                text.value = optionsTitle
+                                onDialogShow.value = false
+                            }
                         ) {
                             Text("Cancel", fontSize = fontSize)
                         }
 
                         TextButton(
                             onClick = {
-                                onDialogShow.value = false
-                                text.value = state.text.toString()
+                                if (state.text.isNotEmpty()) {
+                                    onDialogShow.value = false
+                                    text.value = state.text.toString()
+                                }
                             }
                         ) {
                             Text("OK", fontSize = fontSize)
@@ -332,7 +351,11 @@ fun ModelDrawerTextField(
 
                 Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
             }
-            Text(text.value.take(9), color = color, fontSize = fontSize)
+
+            val textValue = if (text.value.length > MAX_LABEL_LENGTH)
+                text.value.take(MAX_LABEL_LENGTH) + "..." else text.value
+
+            Text(textValue, color = color, fontSize = fontSize)
         }
     }
 }
@@ -364,7 +387,11 @@ fun ModelDrawerAmountField(
 
     if (onDialogShow.value) {
         Dialog(
-            onDismissRequest = { onDialogShow.value = false },
+            onDismissRequest = {
+                amountToDisplay = "${symbol}0.0"
+                state.setTextAndPlaceCursorAtEnd("")
+                onDialogShow.value = false
+            },
         ) {
             Card(
                 modifier = DIALOG_CARD_MODIFIER
@@ -409,10 +436,6 @@ fun ModelDrawerAmountField(
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedContainerColor = Color.Transparent,
                             unfocusedContainerColor = Color.Transparent
-//                            focusedIndicatorColor = color,
-//                            unfocusedIndicatorColor = color.copy(alpha = 0.5f),
-//                            focusedContainerColor = color.copy(alpha = 0.1f),
-//                            unfocusedContainerColor = color.copy(alpha = 0.2f),
                         ),
                         textStyle = TextStyle(
                             color = color,
@@ -420,8 +443,17 @@ fun ModelDrawerAmountField(
                             fontSize = AMOUNT_FONT_SIZE
                         ),
                         keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number // only digits expected
+                            keyboardType = KeyboardType.Number, // only digits expected
+                            imeAction = ImeAction.Done
                         ),
+                        onKeyboardAction = KeyAction {
+                            if (state.text.isNotEmpty()) {
+                                onDialogShow.value = false
+                                amountToDisplay = if (state.text.isNotEmpty())
+                                    state.text.toString().toDouble().formatToAmount() else
+                                    "${symbol}0.0"
+                            }
+                        },
                         leadingIcon = {
                             Text(
                                 text = symbol,
@@ -445,17 +477,23 @@ fun ModelDrawerAmountField(
                             .padding(top = 10.dp, bottom = 10.dp)
                     ) {
                         TextButton(
-                            onClick = { onDialogShow.value = false }
+                            onClick = {
+                                state.setTextAndPlaceCursorAtEnd("")
+                                amountToDisplay = "${symbol}0.0"
+                                onDialogShow.value = false
+                            }
                         ) {
                             Text("Cancel", fontSize = fontSize)
                         }
 
                         TextButton(
                             onClick = {
-                                onDialogShow.value = false
-                                amountToDisplay = if (state.text.isNotEmpty())
-                                    state.text.toString().toDouble().formatToAmount() else
-                                    "${symbol}0.0"
+                                if (state.text.isNotEmpty()) {
+                                    onDialogShow.value = false
+                                    amountToDisplay = if (state.text.isNotEmpty())
+                                        state.text.toString().toDouble().formatToAmount() else
+                                        "${symbol}0.0"
+                                }
                             }
                         ) {
                             Text("OK", fontSize = fontSize)
@@ -544,11 +582,26 @@ fun AdjustmentField(
     val symbol = numberFormat.currency?.symbol ?: "$"
     val onDialogShow = remember { mutableStateOf(false) }
     var amountToDisplay by remember { mutableStateOf("${symbol}0.0") }
+    var datasetToDisplay by remember { mutableStateOf<Dataset?>(null) }
+    val focusRequester = remember { FocusRequester() }
+    val interactionSource = remember { MutableInteractionSource() }
+
+    var filteredDataset = datasets
+        .filterNot { it.isAmountEqualToAdjustAmount() }
+    if (datatype == DataType.GOAL) {
+        filteredDataset = filteredDataset.filter { it.status == AdjustmentStatus.PENDING }
+    }
+
     val color = colorResource(colorResId)
 
     if (onDialogShow.value) {
         Dialog(
-            onDismissRequest = { onDialogShow.value = false },
+            onDismissRequest = {
+                amountState.setTextAndPlaceCursorAtEnd("")
+                selectedDataset.value = null
+                amountToDisplay = "${symbol}0.0"
+                onDialogShow.value = false
+            },
         ) {
             Card(
                 modifier = DIALOG_CARD_MODIFIER
@@ -583,9 +636,7 @@ fun AdjustmentField(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        datasets
-                            .filterNot { it.isAmountEqualToAdjustAmount() && it.status == AdjustmentStatus.PENDING }
-                            .forEach { dataset ->
+                        filteredDataset.forEach { dataset ->
 
                                 DropdownMenuItem(
                                     text = {
@@ -593,6 +644,7 @@ fun AdjustmentField(
                                     },
                                     onClick = {
                                         expanded = false
+                                        focusRequester.requestFocus()
                                         selectedDataset.value = dataset
                                     },
                                     leadingIcon = {
@@ -624,6 +676,11 @@ fun AdjustmentField(
 
                         /* ---------- Amount field ---------- */
                         OutlinedTextField(
+                            modifier = Modifier
+                                .focusRequester(focusRequester)
+                                .focusable(
+                                    interactionSource = interactionSource
+                                ),
                             state = amountState,
                             lineLimits = TextFieldLineLimits.SingleLine,
                             placeholder = {
@@ -649,8 +706,17 @@ fun AdjustmentField(
                                 fontSize = AMOUNT_FONT_SIZE
                             ),
                             keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number // only digits expected
+                                keyboardType = KeyboardType.Number, // only digits expected
+                                imeAction = ImeAction.Done
                             ),
+                            onKeyboardAction = KeyAction {
+                                if (amountState.text.isNotEmpty()) {
+                                    onDialogShow.value = false
+                                    amountToDisplay = if (amountState.text.isNotEmpty())
+                                        amountState.text.toString().toDouble().formatToAmount() else
+                                        "${symbol}0.0"
+                                }
+                            },
                             leadingIcon = {
                                 Text(
                                     text = symbol,
@@ -678,17 +744,25 @@ fun AdjustmentField(
                             colors = ButtonDefaults.textButtonColors(
                                 contentColor = color
                             ),
-                            onClick = { onDialogShow.value = false }
+                            onClick = {
+                                amountState.setTextAndPlaceCursorAtEnd("")
+                                selectedDataset.value = null
+                                amountToDisplay = "${symbol}0.0"
+                                onDialogShow.value = false
+                            }
                         ) {
                             Text("Cancel", fontSize = fontSize, color = color)
                         }
 
                         TextButton(
                             onClick = {
-                                onDialogShow.value = false
-                                amountToDisplay = if (amountState.text.isNotEmpty())
-                                    amountState.text.toString().toDouble().formatToAmount() else
-                                    "${symbol}0.0"
+                                if (amountState.text.isNotEmpty()) {
+                                    onDialogShow.value = false
+                                    datasetToDisplay = selectedDataset.value
+                                    amountToDisplay = if (amountState.text.isNotEmpty())
+                                        amountState.text.toString().toDouble().formatToAmount() else
+                                        "${symbol}0.0"
+                                }
                             }
                         ) {
                             Text("OK", fontSize = fontSize)
@@ -704,7 +778,9 @@ fun AdjustmentField(
             .height(height)
             .background(color.copy(alpha = 0.1f))
             .clickable {
-                onDialogShow.value = true
+                if (filteredDataset.isNotEmpty()) {
+                    onDialogShow.value = true
+                }
             },
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically,
@@ -737,9 +813,9 @@ fun AdjustmentField(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
             ) {
-                if (selectedDataset.value != null && selectedDataset.value?.label?.isEmpty() == false) {
+                if (datasetToDisplay != null) {
                     Text(
-                        selectedDataset.value?.label ?: "",
+                        datasetToDisplay?.label ?: "",
                         color = color, fontSize = fontSize
                     )
                 }
@@ -758,7 +834,7 @@ fun AdjustmentField(
         // wait for BottomSheet to render first frame
         awaitFrame()
 
-        val newValue = selected.remainingAmount.toLong().toString()
+        val newValue = selected.remainingAmount.toString()
         if (amountState.text.toString() != newValue) {
             amountState.setTextAndPlaceCursorAtEnd(newValue)
         }
@@ -774,22 +850,24 @@ fun PaymentMethodDropdown(
     val paymentMethods = PaymentMethod.entries.toTypedArray()
         .toList()
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
+    val height = integerResource(R.integer.textFieldAndButtonHeight).dp
+    val color = colorResource(id = colorResId)
 
     Column(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        ModelDrawerButton(
-            text = selectedPaymentMethod.value.text,
-            wasSuccess = null,
-            colorResId = colorResId,
-            filledColor = Color.Transparent,
-            icon = selectedPaymentMethod.value.icon,
-            modifier = Modifier.fillMaxWidth(MaxWidth),
-            fontSize = 10.sp
-        ) {
-            expanded.value = true
-        }
+//        ModelDrawerButton(
+//            text = selectedPaymentMethod.value.text,
+//            wasSuccess = null,
+//            colorResId = colorResId,
+//            filledColor = Color.Transparent,
+//            icon = selectedPaymentMethod.value.icon,
+//            modifier = Modifier.fillMaxWidth(MaxWidth),
+//            fontSize = 10.sp
+//        ) {
+//            expanded.value = true
+//        }
 
         DropdownMenu(
             expanded = expanded.value,
@@ -816,6 +894,38 @@ fun PaymentMethodDropdown(
                         }
                     )
                 }
+        }
+    }
+
+    Row(
+        modifier = MODIFIER_DRAWER
+            .height(height)
+            .background(color.copy(alpha = 0.1f))
+            .clickable {
+                expanded.value = true
+            },
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = INNER_MODIFIER_DRAWER,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(
+                    painter = painterResource(id = selectedPaymentMethod.value.icon),
+                    contentDescription = "Calendar",
+                    modifier = Modifier.size(ICON_SIZE)
+                )
+
+                Spacer(modifier = Modifier.width(5.dp))
+                Text("Payment method", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+            }
+            Text(selectedPaymentMethod.value.text, color = color, fontSize = fontSize)
         }
     }
 

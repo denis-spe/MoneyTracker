@@ -5,7 +5,6 @@
 package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -27,6 +25,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -35,7 +34,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -58,6 +56,7 @@ import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.dataAddition.MaxWidth
@@ -65,6 +64,8 @@ import com.example.moneytracker.ui.theme.autoTextColorChange
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.number
 import network.chaintech.kmp_date_time_picker.utils.now
+
+private val ICON_SIZE = 25.dp
 
 @Composable
 fun DatasetReceipt(
@@ -110,7 +111,9 @@ fun DatasetReceipt(
         )
         Text(text = "On ${weekDay}, $date", fontSize = fontSize)
         Text(text = "At $time", fontSize = fontSize)
-        Text(buildString { repeat(40) { append("-") } })
+
+        DottedDivider(color = color, modifier = Modifier.padding(vertical = 10.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -258,7 +261,7 @@ fun DatasetReceipt(
         }
 
         if (dataset.description.isNotBlank()) {
-            Text(buildString { repeat(40) { append("-") } })
+            DottedDivider(color = color, modifier = Modifier.padding(vertical = 10.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -365,37 +368,48 @@ fun DatasetReceipt(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
+            IconButton(
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors().copy(
+                    containerColor = color.copy(alpha = 0.1f)
+                )
+            ) {
+                Icon(
+                    painter = painterResource(dataset.dataType.outlinedIcon),
+                    contentDescription = dataset.dataType.text,
+                    tint = color,
+                    modifier = Modifier
+                        .size(ICON_SIZE)
+                )
+            }
 
-            Icon(
-                painter = painterResource(dataset.dataType.outlinedIcon),
-                contentDescription = dataset.dataType.text,
-                tint = color,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f))
-                    .padding(3.dp)
-            )
+            IconButton(
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors().copy(
+                    containerColor = color.copy(alpha = 0.1f)
+                )
+            ) {
+                Image(
+                    painter = painterResource(dataset.labelIcon),
+                    contentDescription = dataset.dataType.text,
+                    modifier = Modifier
+                        .size(ICON_SIZE)
+                )
+            }
 
-            Image(
-                painter = painterResource(dataset.labelIcon),
-                contentDescription = dataset.dataType.text,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f))
-                    .padding(3.dp)
-            )
-
-            Image(
-                painter = painterResource(dataset.paymentMethod.icon),
-                contentDescription = dataset.dataType.text,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f))
-                    .padding(3.dp)
-            )
+            IconButton(
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors().copy(
+                    containerColor = color.copy(alpha = 0.1f)
+                )
+            ) {
+                Image(
+                    painter = painterResource(dataset.paymentMethod.icon),
+                    contentDescription = dataset.dataType.text,
+                    modifier = Modifier
+                        .size(ICON_SIZE)
+                )
+            }
         }
     }
 }
@@ -456,7 +470,9 @@ fun AdjustmentReceipt(
         )
         Text(text = "On ${weekDay}, $date", fontSize = fontSize)
         Text(text = "At $time", fontSize = fontSize)
-        Text(buildString { repeat(40) { append("-") } })
+
+        DottedDivider(color = color, modifier = Modifier.padding(vertical = 10.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -550,7 +566,7 @@ fun AdjustmentReceipt(
         }
 
         if (adjustment.description.isNotBlank()) {
-            Text(buildString { repeat(40) { append("-") } })
+            DottedDivider(color = color, modifier = Modifier.padding(vertical = 10.dp))
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
@@ -646,37 +662,48 @@ fun AdjustmentReceipt(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
+            IconButton(
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors().copy(
+                    containerColor = color.copy(alpha = 0.1f)
+                )
+            ) {
+                Icon(
+                    painter = painterResource(adjustment.adjustmentType.icon),
+                    contentDescription = adjustment.adjustmentType.text,
+                    tint = color,
+                    modifier = Modifier
+                        .size(ICON_SIZE)
+                )
+            }
 
-            Icon(
-                painter = painterResource(adjustment.adjustmentType.icon),
-                contentDescription = adjustment.adjustmentType.text,
-                tint = color,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f))
-                    .padding(3.dp)
-            )
+            IconButton(
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors().copy(
+                    containerColor = color.copy(alpha = 0.1f)
+                )
+            ) {
+                Image(
+                    painter = painterResource(adjustment.adjustmentIcon),
+                    contentDescription = adjustment.adjustmentType.text,
+                    modifier = Modifier
+                        .size(ICON_SIZE)
+                )
+            }
 
-            Image(
-                painter = painterResource(adjustment.adjustmentIcon),
-                contentDescription = adjustment.adjustmentType.text,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f))
-                    .padding(3.dp)
-            )
-
-            Image(
-                painter = painterResource(adjustment.paymentMethod.icon),
-                contentDescription = adjustment.paymentMethod.text,
-                modifier = Modifier
-                    .size(32.dp)
-                    .clip(CircleShape)
-                    .background(color.copy(alpha = 0.1f))
-                    .padding(3.dp)
-            )
+            IconButton(
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors().copy(
+                    containerColor = color.copy(alpha = 0.1f)
+                )
+            ) {
+                Image(
+                    painter = painterResource(adjustment.paymentMethod.icon),
+                    contentDescription = adjustment.paymentMethod.text,
+                    modifier = Modifier
+                        .size(ICON_SIZE)
+                )
+            }
         }
     }
 }

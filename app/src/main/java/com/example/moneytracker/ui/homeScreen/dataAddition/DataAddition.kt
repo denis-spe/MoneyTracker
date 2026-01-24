@@ -62,6 +62,7 @@ import java.util.UUID
 
 private val MODEL_DRAWER_ICON_SIZE = 25.dp
 val FONT_WEIGHT = FontWeight.Bold
+val MAX_LABEL_LENGTH = 15
 
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -425,7 +426,7 @@ fun ModelDrawerContent(
                         placeholder = placeholder,
                         colorResId = colorResId,
                         wasSuccess = wasSuccess,
-                        textLength = 15
+                        textLength = MAX_LABEL_LENGTH
                     )
                 }
             }
