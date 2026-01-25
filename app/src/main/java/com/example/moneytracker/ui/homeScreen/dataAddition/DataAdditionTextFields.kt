@@ -599,6 +599,7 @@ fun AdjustmentField(
             onDismissRequest = {
                 amountState.setTextAndPlaceCursorAtEnd("")
                 selectedDataset.value = null
+                datasetToDisplay = null
                 amountToDisplay = "${symbol}0.0"
                 onDialogShow.value = false
             },
@@ -747,6 +748,7 @@ fun AdjustmentField(
                             onClick = {
                                 amountState.setTextAndPlaceCursorAtEnd("")
                                 selectedDataset.value = null
+                                datasetToDisplay = null
                                 amountToDisplay = "${symbol}0.0"
                                 onDialogShow.value = false
                             }

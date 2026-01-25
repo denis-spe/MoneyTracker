@@ -61,6 +61,7 @@ internal fun rememberMarker(
     val indicatorFrontComponent =
         rememberShapeComponent(fill(MaterialTheme.colorScheme.surface), CorneredShape.Pill)
     val guideline = rememberAxisGuidelineComponent()
+
     return rememberDefaultCartesianMarker(
         label = label,
         valueFormatter = valueFormatter,

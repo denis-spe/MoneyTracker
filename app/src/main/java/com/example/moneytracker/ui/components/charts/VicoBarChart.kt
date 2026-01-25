@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.components.charts.marker.rememberMarker
 import com.example.moneytracker.ui.theme.autoTextColorChange
@@ -49,7 +48,6 @@ fun VicoBarChart(
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     markerFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
-    placeholderValueSize: Int = 6,
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val chartData = chartDataCollection.chartData
@@ -103,12 +101,13 @@ fun VicoBarChart(
         }),
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
-            valueFormatter = { _, value, _ -> xValueFormatter(value) },
+            valueFormatter = { _, value, _ -> xValueFormatter(value) }
+            // Removed itemPlacer for compatibility
         ),
         startAxis = VerticalAxis.rememberStart(
             line = rememberLineComponent(Fill.Transparent),
             title = "X",
-            valueFormatter = { _, value, _ -> yValueFormatter(value) }
+            valueFormatter = { _, value, _ -> yValueFormatter(value) },
         ),
         legend = if (showLegend) legend else null // Show legend
     )
@@ -135,20 +134,5 @@ fun VicoBarChart(
         modelProducer = modelProducer,
         modifier = modifier
             .height(280.dp),
-        placeholder = {
-            VicoPlaceholderChart(
-                chartDataCollection = ChartDataCollection(
-                    chartData = listOf(
-                        ChartData(
-                            x = (0..placeholderValueSize).toList(),
-                            y = List(placeholderValueSize) { 0 },
-                            label = "Placeholder"
-                        )
-                    )
-                ),
-                xValueFormatter = xValueFormatter,
-                yValueFormatter = { _ -> yValueFormatter(0.0) },
-            )
-        }
     )
 }

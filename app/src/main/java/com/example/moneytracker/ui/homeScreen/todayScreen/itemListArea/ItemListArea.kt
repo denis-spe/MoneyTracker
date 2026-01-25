@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,6 +57,7 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.google.firebase.Timestamp
 
 private val spacerWith = 14.dp
+private val labelFontSize = 13.sp
 
 @Composable
 fun ItemFilter(
@@ -129,7 +131,10 @@ fun ItemListArea(datasets: List<Dataset>) {
         }
 
         LazyColumn(
-            modifier = Modifier.fillMaxHeight(0.9f),
+            modifier = Modifier
+                .fillMaxHeight(0.9f)
+                .clip(RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp))
+                .background(Color.LightGray.copy(0.1f)),
         ) {
             items(datasets.size, key = { it }) {
                 val dataset = datasets[it]
@@ -469,13 +474,14 @@ fun ItemCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
-                .fillMaxWidth(0.8f)
+                .fillMaxWidth(0.9f)
                 .clip(RoundedCornerShape(5.dp))
                 .clickable {
                     onShowDialog.value = true
                 }
         ) {
             Row(
+                modifier = Modifier.padding(start = 5.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 // Icon column
@@ -512,9 +518,15 @@ fun ItemCard(
                     Text(
                         text = label,
                         fontWeight = FontWeight.Bold,
+                        fontSize = labelFontSize,
                         textDecoration = if (isCompleted) TextDecoration.LineThrough
                         else TextDecoration.None
                     )
+
+                    if (adjustment != null) {
+                        Text(text = dataset.label, color = color, fontSize = labelFontSize)
+                    }
+
                     if (description.isNotEmpty()) {
                         Text(text = description)
                     }
@@ -524,6 +536,7 @@ fun ItemCard(
 
             // Amount column
             Column(
+                modifier = Modifier.padding(end = 5.dp),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.End
             ) {
@@ -536,7 +549,7 @@ fun ItemCard(
 
                 Column(
                     verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    horizontalAlignment = Alignment.End
                 ) {
                     Text(
                         text = amount,

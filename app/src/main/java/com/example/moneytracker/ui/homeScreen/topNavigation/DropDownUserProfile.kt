@@ -84,6 +84,7 @@ fun DropDownUserProfile(
             modifier = Modifier
                 .padding(paddingValues)
                 .fillMaxSize()
+
         ) {
             Box(
                 modifier = Modifier

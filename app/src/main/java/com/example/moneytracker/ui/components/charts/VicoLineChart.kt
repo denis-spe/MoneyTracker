@@ -13,7 +13,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.components.charts.marker.rememberMarker
 import com.example.moneytracker.ui.theme.autoTextColorChange
@@ -23,17 +22,21 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.continuous
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberLineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.common.rememberHorizontalLegend
 import com.patrykandpatrick.vico.compose.common.shader.toShaderProvider
 import com.patrykandpatrick.vico.core.cartesian.CartesianDrawingContext
 import com.patrykandpatrick.vico.core.cartesian.CartesianMeasuringContext
+import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.lineSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.LineCartesianLayer
+import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
+import com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.common.Fill
 import com.patrykandpatrick.vico.core.common.Insets
 import com.patrykandpatrick.vico.core.common.LegendItem
@@ -49,10 +52,27 @@ fun VicoLineChart(
     lineType: LineCartesianLayer.PointConnector = LineCartesianLayer.PointConnector.cubic(),
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
-    markerFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
-    placeholderValueSize: Int = 6
+    markerFormatter: (x: Double, y: Double) -> CharSequence =
+        { x, y -> "$x, $y" },
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
+    val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
+
+    val markerFormatter = DefaultCartesianMarker.ValueFormatter { context, targets ->
+        // Get the first highlighted point's data
+        val primaryTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
+        val entry = primaryTarget?.points?.firstOrNull()?.entry
+
+        if (entry != null) {
+            // Format as "X: Value, Y: Value" or any layout you prefer
+            markerFormatter(entry.x, entry.y)
+        } else {
+            ""
+        }
+    }
+
+    val marker = rememberMarker(valueFormatter = markerFormatter)
+
 
     val chartData = chartDataCollection.chartData
 
@@ -60,7 +80,7 @@ fun VicoLineChart(
     val textComponent = rememberTextComponent(color = Color.autoTextColorChange)
 
     val legend = rememberHorizontalLegend<CartesianMeasuringContext, CartesianDrawingContext>(
-        items = { extraStore -> // 'this' is the AdditionScope<LegendItem>
+        items = { _ ->
             chartData.forEach { lineData ->
                 add(
                     LegendItem(
@@ -77,7 +97,7 @@ fun VicoLineChart(
         iconSize = 8.dp,
         iconLabelSpacing = 4.dp,
         columnSpacing = 16.dp,
-        padding = Insets(topDp = 16f) // Note: Insets usually take Floats in the core class
+        padding = Insets(topDp = 16f)
     )
 
     // Create and configure the line layer only when we have data.
@@ -115,9 +135,7 @@ fun VicoLineChart(
 
     val chart = rememberCartesianChart(
         lineLayer,
-        marker = rememberMarker(valueFormatter = { _, value ->
-            markerFormatter(value[0].x)
-        }),
+        marker = marker,
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
             valueFormatter = { _, value, _ -> xValueFormatter(value) }
@@ -125,12 +143,15 @@ fun VicoLineChart(
         startAxis = VerticalAxis.rememberStart(
             line = rememberLineComponent(Fill.Transparent),
             title = "X",
-            valueFormatter = { _, value, _ -> yValueFormatter(value) }
+            valueFormatter = { _, value, _ -> yValueFormatter(value) },
+            itemPlacer = VerticalAxis.ItemPlacer.count({
+                chartDataCollection.chartData.size + 2
+            }),
         ),
-        legend = if (showLegend) legend else null // Show legend
+        legend = if (showLegend) legend else null // Always show legend
     )
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(chartData) {
         modelProducer.runTransaction {
 
             if (!(chartDataCollection.allAreNotEmpty())) {
@@ -154,20 +175,6 @@ fun VicoLineChart(
         modelProducer = modelProducer,
         modifier = modifier
             .height(280.dp),
-        placeholder = {
-            VicoPlaceholderChart(
-                chartDataCollection = ChartDataCollection(
-                    chartData = listOf(
-                        ChartData(
-                            x = (0..placeholderValueSize).toList(),
-                            y = List(placeholderValueSize) { 0 },
-                            label = "Placeholder"
-                        )
-                    )
-                ),
-                xValueFormatter = xValueFormatter,
-                yValueFormatter = yValueFormatter,
-            )
-        }
+        zoomState = zoomState
     )
 }

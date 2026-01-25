@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.rememberPagerState
@@ -224,39 +226,60 @@ fun StatArea(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth(0.4f)
-            .heightIn(max = 280.dp, min = 180.dp),
+            .widthIn(max = 200.dp, min = 160.dp)
+            .heightIn(max = 260.dp, min = 160.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
 
         // Chart Area
-        Box(modifier = Modifier.weight(0.8f)) {
-            DonutChartPager(
-                donutChartDataCollection,
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
+        Box(
+            modifier = Modifier
+                .weight(0.4f)
+        ) {
+            Column(
+                modifier = Modifier.padding(bottom = 15.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                DonutChartPager(
+                    donutChartDataCollection,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 16.sp
+                )
+            }
         }
 
         // Pager Area
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.4f), // Using weight is safer than fillMaxHeight(0.2f)
+                .weight(0.1f),
             contentAlignment = Alignment.Center
         ) {
-            InsightsPager(datasets, pagerState, items)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                InsightsPager(datasets, pagerState, items)
+            }
         }
 
         // Pager Indicator
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.1f),
+                .weight(0.08f),
             contentAlignment = Alignment.Center
         ) {
-            CurrentPagerIndicator(pagerState = pagerState, items = items)
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                CurrentPagerIndicator(pagerState = pagerState, items = items)
+            }
         }
     }
 

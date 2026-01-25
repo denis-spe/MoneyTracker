@@ -627,7 +627,7 @@ fun ModelDrawerContent(
                                             adjustmentId = UUID.randomUUID().toString(),
                                             amount = adjustAsDouble,
                                             dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                            label = "${it.dataType.text} Repaid: ${it.label}",
+                                            label = "${it.dataType.text} Repaid ->",
                                             description = descriptionState.text.toString(),
                                             adjustmentIcon = it.labelIcon,
                                             paymentMethod = selectedPaymentMethod.value,

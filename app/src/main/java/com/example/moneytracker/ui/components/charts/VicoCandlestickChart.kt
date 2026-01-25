@@ -8,8 +8,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.ui.components.charts.collections.CandlestickDataCollection
-import com.example.moneytracker.ui.components.charts.collections.ChartData
-import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.components.charts.marker.rememberMarker
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
@@ -73,20 +71,5 @@ fun VicoCandlestick(
         modelProducer = modelProducer,
         modifier = modifier
             .height(280.dp),
-        placeholder = {
-            VicoPlaceholderChart(
-                chartDataCollection = ChartDataCollection(
-                    chartData = listOf(
-                        ChartData(
-                            x = (0..placeholderValueSize).toList(),
-                            y = List(placeholderValueSize) { 0 },
-                            label = "Placeholder"
-                        )
-                    )
-                ),
-                xValueFormatter = xValueFormatter,
-                yValueFormatter = yValueFormatter,
-            )
-        }
     )
 }
