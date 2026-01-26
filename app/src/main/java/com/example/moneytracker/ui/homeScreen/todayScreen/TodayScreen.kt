@@ -4,6 +4,11 @@ package com.example.moneytracker.ui.homeScreen.todayScreen
 import android.content.res.Configuration.ORIENTATION_PORTRAIT
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -13,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +41,7 @@ fun TodayScreen(
     val viewModel: HomeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
     val todayDatasets by viewModel.todayDatasets.collectAsState()
     val configuration = LocalConfiguration.current
+    val onActivateShow = remember { mutableStateOf(true) }
 
 
 
@@ -68,11 +75,17 @@ fun TodayScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            // Statistic
-            StatArea(donutChartDataCollection, datasets = todayDatasets)
+            AnimatedVisibility(
+                onActivateShow.value,
+                exit = fadeOut(animationSpec = tween(easing = LinearEasing)) +
+                        shrinkVertically(animationSpec = tween(easing = LinearEasing))
+            ) {
+                // Statistic
+                StatArea(donutChartDataCollection, datasets = todayDatasets)
+            }
 
             // Items list
-            ItemListArea(todayDatasets)
+            ItemListArea(todayDatasets, onActivateShow)
         }
     } else {
         Row(
@@ -86,7 +99,7 @@ fun TodayScreen(
             StatArea(donutChartDataCollection, datasets = todayDatasets)
 
             // Items list
-            ItemListArea(todayDatasets)
+            ItemListArea(todayDatasets, onActivateShow)
         }
     }
 }

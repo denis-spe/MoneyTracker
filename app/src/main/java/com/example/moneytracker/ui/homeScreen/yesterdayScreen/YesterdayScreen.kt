@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
-import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatChart
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -42,7 +42,7 @@ fun YesterdayScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            YesterdayStatChart(yesterdayDatasets)
+            YesterdayStatArea(yesterdayDatasets)
         }
     } else {
         Row(
@@ -52,7 +52,7 @@ fun YesterdayScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            YesterdayStatChart(yesterdayDatasets)
+            YesterdayStatArea(yesterdayDatasets)
         }
     }
 }
