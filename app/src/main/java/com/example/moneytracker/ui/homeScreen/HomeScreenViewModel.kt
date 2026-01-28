@@ -14,9 +14,11 @@ import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
+import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.DatasetItem
+import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
@@ -85,7 +87,14 @@ class HomeScreenViewModel @Inject constructor(
         )
 
     @RequiresApi(Build.VERSION_CODES.O)
-    val sortedDataWithAdjustByDateTime: StateFlow<List<DatasetItem>> =
+    fun sortedDataWithAdjustByDateTime(
+        timeSorting: SortType,
+        categorySorting: String?,
+        paymentSorting: PaymentMethod?,
+        alphabeticalOrder: SortType,
+        amountSorting: SortType,
+        take: Int? = null
+    ): StateFlow<List<DatasetItem>> =
         uiState.map { state ->
             val adjust = state.datasets.map { dataset ->
                 dataset.adjustment.map { adjustment ->
@@ -96,17 +105,95 @@ class HomeScreenViewModel @Inject constructor(
             val data = state.datasets.map { dataset ->
                 DatasetItem.Data(dataset)
             }
-            (adjust.flatten() + data).filter {
+            var coupledData = (adjust.flatten() + data).filter {
                 when (it) {
                     is DatasetItem.Data -> it.dataset.isForToday
                     is DatasetItem.Adjust -> it.adjustment.isForToday
                 }
-            }.sortedBy {
-                when (it) {
-                    is DatasetItem.Data -> it.dataset.dateTime
-                    is DatasetItem.Adjust -> it.adjustment.dateTime
-                }
             }
+
+            // Sorting with time
+            coupledData = when (timeSorting) {
+                SortType.Ascending -> coupledData.sortedBy {
+                    when (it) {
+                        is DatasetItem.Data -> it.dataset.dateTime
+                        is DatasetItem.Adjust -> it.adjustment.dateTime
+                    }
+                }
+
+                SortType.Descending -> coupledData.sortedByDescending {
+                    when (it) {
+                        is DatasetItem.Data -> it.dataset.dateTime
+                        is DatasetItem.Adjust -> it.adjustment.dateTime
+                    }
+                }
+
+                SortType.Initial -> coupledData
+            }
+
+            coupledData =
+                if (categorySorting == null || categorySorting == "Initial") coupledData else
+                    coupledData.filter {
+                        when (it) {
+                            is DatasetItem.Data ->
+                                it.dataset.dataType.text == categorySorting
+
+                            is DatasetItem.Adjust ->
+                                it.adjustment.adjustmentType.text == categorySorting
+                        }
+                    }
+
+            coupledData = if (paymentSorting == null) coupledData else
+                coupledData.filter {
+                    when (it) {
+                        is DatasetItem.Data -> it.dataset.paymentMethod == paymentSorting
+                        is DatasetItem.Adjust -> it.adjustment.paymentMethod == paymentSorting
+                    }
+                }
+
+            coupledData = when (alphabeticalOrder) {
+                SortType.Ascending -> coupledData.sortedBy {
+                    when (it) {
+                        is DatasetItem.Data -> it.dataset.label
+                        is DatasetItem.Adjust -> it.adjustment.label
+                    }
+                }
+
+                SortType.Descending -> coupledData.sortedByDescending {
+                    when (it) {
+                        is DatasetItem.Data -> it.dataset.label
+                        is DatasetItem.Adjust -> it.adjustment.label
+                    }
+                }
+
+                SortType.Initial -> coupledData
+            }
+
+            coupledData = when (amountSorting) {
+                SortType.Ascending -> coupledData.sortedBy {
+                    when (it) {
+                        is DatasetItem.Data -> it.dataset.amount
+                        is DatasetItem.Adjust -> it.adjustment.amount
+                    }
+                }
+
+                SortType.Descending -> coupledData.sortedByDescending {
+                    when (it) {
+                        is DatasetItem.Data -> it.dataset.amount
+                        is DatasetItem.Adjust -> it.adjustment.amount
+                    }
+                }
+
+                SortType.Initial -> coupledData
+            }
+
+
+            if (take != null)
+                coupledData = coupledData.take(take)
+
+
+            coupledData
+
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -141,10 +228,6 @@ class HomeScreenViewModel @Inject constructor(
             started = SharingStarted.WhileSubscribed(5_000),
             initialValue = emptyList()
         )
-
-
-
-
 
 
     @RequiresApi(Build.VERSION_CODES.O)

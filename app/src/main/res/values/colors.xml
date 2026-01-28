@@ -19,4 +19,5 @@
     <color name="RepayDebt">#FF006E90</color>
     <color name="Goal">#FF8AA29E</color>
     <color name="Attain">#FF5C4742</color>
+    <color name="gray">#FF808080</color>
 </resources>

@@ -26,6 +26,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -38,16 +39,18 @@ import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.outlined.AccessTime
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Payments
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
@@ -59,6 +62,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -146,17 +151,22 @@ fun ItemListAreaSort(
     val isPaymentModelBottomOpen = remember { mutableStateOf(false) }
     val isAlphabeticalOrderModelBottomOpen = remember { mutableStateOf(false) }
 
+    val categoryState = remember { mutableStateOf("") }
+    val amountState = remember { mutableStateOf(SortType.Initial) }
+    val paymentState = remember { mutableStateOf<PaymentMethod?>(null) }
+
+
+
+
 
 
     Column(
         modifier = Modifier
-            .fillMaxWidth(0.9f),
+            .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         Row(
-            modifier = if (onFilterClick.value) Modifier else
-                Modifier.padding(bottom = 8.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -198,7 +208,6 @@ fun ItemListAreaSort(
             exit = slideOutVertically() + shrinkVertically() + fadeOut()
         ) {
             Row(
-                modifier = Modifier.padding(bottom = 8.dp),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -291,11 +300,23 @@ fun ItemListAreaSort(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text(
-                        "Sort by time",
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AccessTimeFilled,
+                            contentDescription = "Time",
+                            modifier = Modifier
+                                .size(FilterIconSize)
+                                .padding(end = 8.dp)
+                        )
+
+                        Text(
+                            "Sort by time",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                     HorizontalDivider()
                     TextButton(
                         onClick = {
@@ -334,7 +355,7 @@ fun ItemListAreaSort(
                         colors = ButtonDefaults.textButtonColors()
                             .copy(contentColor = Color.Gray)
                     ) {
-                        Text("Initial")
+                        Text("Don't sort")
                     }
                 }
             }
@@ -343,7 +364,6 @@ fun ItemListAreaSort(
         if (isCategoryModelBottomOpen.value) {
             var category = DataType.entries.map { it.text }
             category = category + AdjustmentType.entries.map { it.text }
-            val categoryState = remember { mutableStateOf("") }
 
             ModalBottomSheet(
                 onDismissRequest = {
@@ -355,7 +375,22 @@ fun ItemListAreaSort(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Text("Sort by category", modifier = Modifier.padding(bottom = 8.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Category,
+                            contentDescription = "Category",
+                            modifier = Modifier
+                                .size(FilterIconSize)
+                                .padding(end = 8.dp)
+                        )
+                        Text(
+                            "Sort by category",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
                     HorizontalDivider()
 
                     LazyVerticalGrid(
@@ -364,17 +399,35 @@ fun ItemListAreaSort(
 
                     ) {
                         items(category.size) {
-                            val modifier = if (categoryState.value == category[it])
+                            if (categoryState.value == category[it])
                                 Modifier.border(1.dp, Color.Gray, CircleShape)
                             else Modifier
+
+                            val colorResId = when (categoryState.value) {
+                                "Goal" -> R.color.Goal
+                                "Debt" -> R.color.Debt
+                                "Lent" -> R.color.Lent
+                                "Expense" -> R.color.Expense
+                                "Savings" -> R.color.Savings
+                                "Earnings" -> R.color.Earnings
+                                "Repay" -> R.color.RepayLoan
+                                "Attain" -> R.color.Attain
+                                else -> R.color.gray
+                            }
 
                             TextButton(
                                 onClick = {
                                     categoryState.value = category[it]
                                 },
-                                modifier = modifier
                             ) {
-                                Text(category[it])
+                                Text(
+                                    category[it],
+                                    color = if (categoryState.value == category[it])
+                                        colorResource(id = colorResId) else
+                                        colorResource(id = R.color.gray),
+                                    fontSize = if (categoryState.value == category[it]) 18.sp
+                                    else 15.sp,
+                                )
                             }
                         }
                     }
@@ -388,21 +441,275 @@ fun ItemListAreaSort(
                         TextButton(
                             onClick = {
                                 categorySorting.value = "Initial"
+                                categoryState.value = ""
                                 isCategoryModelBottomOpen.value = false
-                            }
+                            },
+                            colors = ButtonDefaults.textButtonColors()
+                                .copy(contentColor = Color.autoTextColorChange)
                         ) {
                             Text("Cancel")
                         }
 
-                        TextButton(
+                        Button(
                             onClick = {
                                 categorySorting.value = categoryState.value
                                 isCategoryModelBottomOpen.value = false
-                            }
+                            },
+                            colors = ButtonDefaults.buttonColors()
+                                .copy(
+                                    contentColor = Color.autoTextColorChange,
+                                    containerColor = Color.LightGray.copy(alpha = 0.3f)
+                                )
                         ) {
                             Text("Apply")
                         }
                     }
+                }
+            }
+        }
+
+        if (isAlphabeticalOrderModelBottomOpen.value) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    isAlphabeticalOrderModelBottomOpen.value = false
+                }
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.sort),
+                            contentDescription = "Sort",
+                            modifier = Modifier
+                                .size(FilterIconSize)
+                                .padding(end = 8.dp)
+                        )
+
+                        Text(
+                            "Sort with label",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    HorizontalDivider()
+                    TextButton(
+                        onClick = {
+                            alphabeticalOrder.value = SortType.Ascending
+                            isAlphabeticalOrderModelBottomOpen.value = false
+                        },
+                        colors = ButtonDefaults.textButtonColors()
+                            .copy(
+                                contentColor =
+                                    if (alphabeticalOrder.value == SortType.Ascending) Color.Green
+                                    else Color.Gray
+                            )
+                    ) {
+                        Text("Ascending")
+                    }
+                    TextButton(
+                        onClick = {
+                            alphabeticalOrder.value = SortType.Descending
+                            isAlphabeticalOrderModelBottomOpen.value = false
+                        },
+                        colors = ButtonDefaults.textButtonColors()
+                            .copy(
+                                contentColor =
+                                    if (alphabeticalOrder.value == SortType.Descending) Color.Red
+                                    else Color.Gray
+                            )
+                    ) {
+                        Text("Descending")
+                    }
+
+                    TextButton(
+                        onClick = {
+                            alphabeticalOrder.value = SortType.Initial
+                            isAlphabeticalOrderModelBottomOpen.value = false
+                        },
+                        colors = ButtonDefaults.textButtonColors()
+                            .copy(contentColor = Color.Gray)
+                    ) {
+                        Text("Don't sort")
+                    }
+                }
+            }
+        }
+
+        if (isPaymentModelBottomOpen.value) {
+            ModalBottomSheet(
+                onDismissRequest = {
+                    isPaymentModelBottomOpen.value = false
+                }
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Payments,
+                            contentDescription = "Payment",
+                            modifier = Modifier
+                                .size(FilterIconSize)
+                                .padding(end = 8.dp)
+                        )
+
+                        Text(
+                            "Sort by Payment",
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+                    HorizontalDivider()
+
+                    Row(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                    ) {
+                        val selectedColor = Color.Yellow.copy(0.4f)
+                        val unselectedColor = Color.Gray.copy(0.4f)
+
+                        Column {
+                            PaymentMethod.entries.forEach {
+                                TextButton(
+                                    onClick = {
+                                        paymentState.value = it
+                                    }) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        Image(
+                                            painter = painterResource(id = it.icon),
+                                            contentDescription = it.text,
+                                            modifier = Modifier
+                                                .size(30.dp)
+                                                .padding(end = 8.dp)
+                                        )
+                                        Text(
+                                            it.text,
+                                            fontSize = 15.sp,
+                                            color = if (paymentState.value == it) selectedColor
+                                            else unselectedColor
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        Column(Modifier.selectableGroup()) {
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = amountState.value == SortType.Ascending,
+                                    onClick = { amountState.value = SortType.Ascending },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "Localized Description"
+                                    },
+                                    colors = RadioButtonDefaults.colors().copy(
+                                        selectedColor = selectedColor,
+                                        unselectedColor = unselectedColor
+                                    )
+                                )
+                                Text(
+                                    "Ascending", color =
+                                        if (amountState.value == SortType.Ascending) selectedColor
+                                        else unselectedColor
+                                )
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = amountState.value == SortType.Descending,
+                                    onClick = { amountState.value = SortType.Descending },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "Localized Description"
+                                    },
+                                    colors = RadioButtonDefaults.colors().copy(
+                                        selectedColor = selectedColor,
+                                        unselectedColor = unselectedColor
+                                    )
+                                )
+                                Text(
+                                    "Descending",
+                                    color = if (amountState.value == SortType.Descending) selectedColor
+                                    else unselectedColor
+                                )
+                            }
+
+                            Row(
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                RadioButton(
+                                    selected = amountState.value == SortType.Initial,
+                                    onClick = { amountState.value = SortType.Initial },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = "Localized Description"
+                                    },
+                                    colors = RadioButtonDefaults.colors().copy(
+                                        selectedColor = selectedColor,
+                                        unselectedColor = unselectedColor
+                                    )
+                                )
+                                Text(
+                                    "Don't sort",
+                                    color = if (amountState.value == SortType.Initial) selectedColor
+                                    else unselectedColor
+                                )
+                            }
+                        }
+                    }
+
+                    HorizontalDivider()
+                    Row(
+                        modifier = Modifier.padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = {
+                                paymentSorting.value = null
+                                paymentState.value = null
+                                amountState.value = SortType.Initial
+                                amountSorting.value = SortType.Initial
+                                isPaymentModelBottomOpen.value = false
+                            },
+                            colors = ButtonDefaults.textButtonColors()
+                                .copy(contentColor = Color.autoTextColorChange)
+                        ) {
+                            Text("Cancel")
+                        }
+
+                        Button(
+                            onClick = {
+                                paymentSorting.value = paymentState.value
+                                amountSorting.value = amountState.value
+                                isPaymentModelBottomOpen.value = false
+                            },
+                            colors = ButtonDefaults.buttonColors()
+                                .copy(
+                                    contentColor = Color.autoTextColorChange,
+                                    containerColor = Color.LightGray.copy(alpha = 0.3f)
+                                )
+                        ) {
+                            Text("Apply")
+                        }
+                    }
+
                 }
             }
         }
@@ -425,109 +732,106 @@ fun ItemListArea(
     val paymentSorting = remember { mutableStateOf<PaymentMethod?>(null) }
     val alphabeticalOrder = remember { mutableStateOf(SortType.Initial) }
 
-    var datasetWithAdjust = viewModel.combinedDataWithAdjust
+    // Sort with date time
+    val datasetWithAdjust = viewModel.sortedDataWithAdjustByDateTime(
+        timeSorting.value,
+        categorySorting.value,
+        paymentSorting.value,
+        alphabeticalOrder.value,
+        amountSorting.value,
+        if (onActivateShow.value) 4 else null
+    )
 
-    if (timeSorting.value == SortType.Descending) {
-        datasetWithAdjust = viewModel.descendingSortedDataWithAdjustByDateTime
-    }
-    if (timeSorting.value == SortType.Ascending) {
-        datasetWithAdjust = viewModel.sortedDataWithAdjustByDateTime
-    }
-
-    LaunchedEffect(timeSorting.value) {
-
-    }
 
     val datasetItems = datasetWithAdjust.collectAsState(initial = emptyList()).value
 
 
+    Column {
+        ItemListAreaSort(
+            onFilterClick,
+            onActivateShow = onActivateShow,
+            categorySorting = categorySorting,
+            timeSorting = timeSorting,
+            amountSorting = amountSorting,
+            paymentSorting = paymentSorting,
+            alphabeticalOrder = alphabeticalOrder
+        )
 
 
-
-    ItemListAreaSort(
-        onFilterClick,
-        onActivateShow = onActivateShow,
-        categorySorting = categorySorting,
-        timeSorting = timeSorting,
-        amountSorting = amountSorting,
-        paymentSorting = paymentSorting,
-        alphabeticalOrder = alphabeticalOrder
-    )
-
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxHeight(0.9f)
-    ) {
-        items(datasetItems.size, key = { it }) { index ->
-            when (val dataset = datasetItems[index]) {
-                is DatasetItem.Data -> {
-                    val wasCompleted = if (dataset.dataset.dataType == DataType.DEBT ||
-                        dataset.dataset.dataType == DataType.LENT ||
-                        dataset.dataset.dataType == DataType.GOAL
-                    )
-                        dataset.dataset.isAmountEqualToAdjustAmount() else false
-                    Row(
-                        modifier = Modifier.animateItem(
-                            fadeInSpec = tween(durationMillis = 250),
-                            fadeOutSpec = tween(durationMillis = 100),
-                            placementSpec = spring(
-                                stiffness = Spring.StiffnessLow,
-                                dampingRatio = Spring.DampingRatioMediumBouncy
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxHeight(0.9f)
+        ) {
+            items(datasetItems.size, key = { it }) { index ->
+                when (val dataset = datasetItems[index]) {
+                    is DatasetItem.Data -> {
+                        val wasCompleted = if (dataset.dataset.dataType == DataType.DEBT ||
+                            dataset.dataset.dataType == DataType.LENT ||
+                            dataset.dataset.dataType == DataType.GOAL
+                        )
+                            dataset.dataset.isAmountEqualToAdjustAmount() else false
+                        Row(
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = tween(durationMillis = 250),
+                                fadeOutSpec = tween(durationMillis = 100),
+                                placementSpec = spring(
+                                    stiffness = Spring.StiffnessLow,
+                                    dampingRatio = Spring.DampingRatioMediumBouncy
+                                )
                             )
-                        )
-                    ) {
-                        ItemCard(
-                            label = dataset.dataset.label,
-                            labelIcon = dataset.dataset.labelIcon,
-                            amount = dataset.dataset.amount,
-                            dataType = dataset.dataset.dataType,
-                            colorResId = dataset.dataset.dataType.color,
-                            description = dataset.dataset.description,
-                            dateTime = dataset.dataset.dateTime,
-                            paymentMethod = dataset.dataset.paymentMethod,
-                            dataset = dataset.dataset,
-                            isCompleted = wasCompleted
-                        )
-                    }
-                }
-
-                is DatasetItem.Adjust -> {
-                    val dataset = dataset.adjustment
-
-                    val colorResId = when (dataset.adjustmentType) {
-                        AdjustmentType.ATTAIN -> R.color.Attain
-                        AdjustmentType.REPAYMENT -> {
-                            if (dataset.dataset?.dataType == DataType.DEBT)
-                                R.color.RepayDebt else R.color.RepayLoan
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.animateItem(
-                            fadeInSpec = tween(durationMillis = 250),
-                            fadeOutSpec = tween(durationMillis = 100),
-                            placementSpec = spring(
-                                stiffness = Spring.StiffnessLow,
-                                dampingRatio = Spring.DampingRatioMediumBouncy
-                            )
-                        )
-                    ) {
-                        dataset.dataset?.let {
+                        ) {
                             ItemCard(
-                                label = dataset.label,
-                                labelIcon = dataset.adjustmentIcon,
-                                amount = dataset.amount,
-                                dataType = null,
-                                colorResId = colorResId,
-                                description = dataset.description,
-                                dateTime = dataset.dateTime,
-                                paymentMethod = dataset.paymentMethod,
-                                adjustment = dataset,
-                                dataset = it
+                                label = dataset.dataset.label,
+                                labelIcon = dataset.dataset.labelIcon,
+                                amount = dataset.dataset.amount,
+                                dataType = dataset.dataset.dataType,
+                                colorResId = dataset.dataset.dataType.color,
+                                description = dataset.dataset.description,
+                                dateTime = dataset.dataset.dateTime,
+                                paymentMethod = dataset.dataset.paymentMethod,
+                                dataset = dataset.dataset,
+                                isCompleted = wasCompleted
                             )
                         }
+                    }
 
+                    is DatasetItem.Adjust -> {
+                        val dataset = dataset.adjustment
+
+                        val colorResId = when (dataset.adjustmentType) {
+                            AdjustmentType.ATTAIN -> R.color.Attain
+                            AdjustmentType.REPAYMENT -> {
+                                if (dataset.dataset?.dataType == DataType.DEBT)
+                                    R.color.RepayDebt else R.color.RepayLoan
+                            }
+                        }
+
+                        Row(
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = tween(durationMillis = 250),
+                                fadeOutSpec = tween(durationMillis = 100),
+                                placementSpec = spring(
+                                    stiffness = Spring.StiffnessLow,
+                                    dampingRatio = Spring.DampingRatioMediumBouncy
+                                )
+                            )
+                        ) {
+                            dataset.dataset?.let {
+                                ItemCard(
+                                    label = dataset.label,
+                                    labelIcon = dataset.adjustmentIcon,
+                                    amount = dataset.amount,
+                                    dataType = null,
+                                    colorResId = colorResId,
+                                    description = dataset.description,
+                                    dateTime = dataset.dateTime,
+                                    paymentMethod = dataset.paymentMethod,
+                                    adjustment = dataset,
+                                    dataset = it
+                                )
+                            }
+
+                        }
                     }
                 }
             }
