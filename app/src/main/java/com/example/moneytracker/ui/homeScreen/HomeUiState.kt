@@ -3,6 +3,7 @@ package com.example.moneytracker.ui.homeScreen
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.Info
+import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.DatasetItem
 import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 
 
@@ -16,4 +17,5 @@ data class HomeUiState(
     val isUserDropdownVisible: Boolean = false,
     val isLogOutLoading: Boolean = false,
     val isBottomSheetOpen: Boolean = false,
+    val combinedDataWithAdjust: List<DatasetItem> = emptyList(),
 )

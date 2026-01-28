@@ -40,7 +40,6 @@ fun TodayScreen(
 ) {
     val viewModel: HomeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
     val todayDatasets by viewModel.todayDatasets.collectAsState()
-    val todayAdjustment by viewModel.todayAdjustment.collectAsState()
 
     val configuration = LocalConfiguration.current
     val onActivateShow = remember { mutableStateOf(true) }
@@ -87,7 +86,7 @@ fun TodayScreen(
             }
 
             // Items list
-            ItemListArea(todayDatasets, todayAdjustment, onActivateShow)
+            ItemListArea(viewModel, onActivateShow)
         }
     } else {
         Row(
@@ -101,7 +100,7 @@ fun TodayScreen(
             StatArea(donutChartDataCollection, datasets = todayDatasets)
 
             // Items list
-            ItemListArea(todayDatasets, todayAdjustment, onActivateShow)
+            ItemListArea(viewModel, onActivateShow)
         }
     }
 }

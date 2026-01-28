@@ -16,6 +16,7 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
+import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.DatasetItem
 import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
@@ -60,6 +61,93 @@ class HomeScreenViewModel @Inject constructor(
      *******************/
 
     @RequiresApi(Build.VERSION_CODES.O)
+    val combinedDataWithAdjust: StateFlow<List<DatasetItem>> =
+        uiState.map { state ->
+            val adjust = state.datasets.map { dataset ->
+                dataset.adjustment.map { adjustment ->
+                    adjustment.dataset = dataset
+                    DatasetItem.Adjust(adjustment)
+                }
+            }
+            val data = state.datasets.map { dataset ->
+                DatasetItem.Data(dataset)
+            }
+            (adjust.flatten() + data).filter {
+                when (it) {
+                    is DatasetItem.Data -> it.dataset.isForToday
+                    is DatasetItem.Adjust -> it.adjustment.isForToday
+                }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    val sortedDataWithAdjustByDateTime: StateFlow<List<DatasetItem>> =
+        uiState.map { state ->
+            val adjust = state.datasets.map { dataset ->
+                dataset.adjustment.map { adjustment ->
+                    adjustment.dataset = dataset
+                    DatasetItem.Adjust(adjustment)
+                }
+            }
+            val data = state.datasets.map { dataset ->
+                DatasetItem.Data(dataset)
+            }
+            (adjust.flatten() + data).filter {
+                when (it) {
+                    is DatasetItem.Data -> it.dataset.isForToday
+                    is DatasetItem.Adjust -> it.adjustment.isForToday
+                }
+            }.sortedBy {
+                when (it) {
+                    is DatasetItem.Data -> it.dataset.dateTime
+                    is DatasetItem.Adjust -> it.adjustment.dateTime
+                }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    val descendingSortedDataWithAdjustByDateTime: StateFlow<List<DatasetItem>> =
+        uiState.map { state ->
+            val adjust = state.datasets.map { dataset ->
+                dataset.adjustment.map { adjustment ->
+                    adjustment.dataset = dataset
+                    DatasetItem.Adjust(adjustment)
+                }
+            }
+            val data = state.datasets.map { dataset ->
+                DatasetItem.Data(dataset)
+            }
+            (adjust.flatten() + data).filter {
+                when (it) {
+                    is DatasetItem.Data -> it.dataset.isForToday
+                    is DatasetItem.Adjust -> it.adjustment.isForToday
+                }
+            }.sortedByDescending {
+                when (it) {
+                    is DatasetItem.Data -> it.dataset.dateTime
+                    is DatasetItem.Adjust -> it.adjustment.dateTime
+                }
+            }
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+
+
+
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
     val todayDatasets: StateFlow<List<Dataset>> =
         uiState
             .map { state ->
@@ -71,6 +159,7 @@ class HomeScreenViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
+    @RequiresApi(Build.VERSION_CODES.O)
     val todayAdjustment: StateFlow<List<Adjustment>> =
         uiState.map { state ->
             state.datasets.map { dataset ->
@@ -98,7 +187,6 @@ class HomeScreenViewModel @Inject constructor(
                 started = SharingStarted.WhileSubscribed(5_000),
                 initialValue = emptyList()
             )
-
 
 
     fun addData(dataset: Dataset) {

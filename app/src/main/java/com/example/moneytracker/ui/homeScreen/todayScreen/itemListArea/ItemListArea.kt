@@ -1,6 +1,8 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -47,6 +49,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -74,6 +77,7 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.theme.autoTextColorChange
 import com.google.firebase.Timestamp
@@ -217,15 +221,18 @@ fun ItemListAreaSort(
                         isTimeModelBottomOpen.value = true
                     }
                 ) {
+                    val color = if (timeSorting.value != SortType.Initial) Color.Gray
+                    else Color.autoTextColorChange
+                    val imageVec = if (
+                        timeSorting.value == SortType.Ascending ||
+                        timeSorting.value == SortType.Descending
+                    ) Icons.Default.AccessTimeFilled else Icons.Outlined.AccessTime
+
                     Icon(
-                        imageVector = if (
-                            timeSorting.value == SortType.Ascending ||
-                            timeSorting.value == SortType.Descending
-                        ) Icons.Default.AccessTimeFilled
-                        else Icons.Outlined.AccessTime,
+                        imageVector = imageVec,
                         contentDescription = "timeline",
                         modifier = Modifier.size(FilterIconSize),
-                        tint = if (isTimeModelBottomOpen.value) Color.Gray else Color.autoTextColorChange
+                        tint = color
                     )
                 }
 
@@ -403,92 +410,38 @@ fun ItemListAreaSort(
 }
 
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ItemListArea(
-    datasets: List<Dataset>,
-    todayAdjustment: List<Adjustment>,
+    viewModel: HomeScreenViewModel,
     onActivateShow: MutableState<Boolean>
 ) {
     // States
     val onFilterClick = remember { mutableStateOf(false) }
 
     val categorySorting = remember { mutableStateOf("Initial") }
-    val timeSorting = remember { mutableStateOf(SortType.Ascending) }
+    val timeSorting = remember { mutableStateOf(SortType.Descending) }
     val amountSorting = remember { mutableStateOf(SortType.Initial) }
     val paymentSorting = remember { mutableStateOf<PaymentMethod?>(null) }
     val alphabeticalOrder = remember { mutableStateOf(SortType.Initial) }
 
-    val dataItems = datasets.map { DatasetItem.Data(it) }
-    val adjustmentItems = todayAdjustment.map { DatasetItem.Adjust(it) }
-    val datasetWithAdjust = dataItems + adjustmentItems
-    val datasetItems = remember { mutableStateOf(emptyList<DatasetItem>()) }
+    var datasetWithAdjust = viewModel.combinedDataWithAdjust
 
-    LaunchedEffect(
-        datasets,
-        onActivateShow.value,
-        timeSorting.value,
-        categorySorting.value,
-        amountSorting.value,
-        paymentSorting.value,
-        alphabeticalOrder.value
-    ) {
-        if (onActivateShow.value) {
-            datasetItems.value = datasetWithAdjust.take(4)
-        } else {
-            datasetItems.value = datasetWithAdjust
-        }
+    if (timeSorting.value == SortType.Descending) {
+        datasetWithAdjust = viewModel.descendingSortedDataWithAdjustByDateTime
+    }
+    if (timeSorting.value == SortType.Ascending) {
+        datasetWithAdjust = viewModel.sortedDataWithAdjustByDateTime
+    }
 
-        // Sort by time
-        when (timeSorting.value) {
-            SortType.Ascending -> {
-                datasetItems.value = datasetWithAdjust.sortedBy {
-                    when (it) {
-                        is DatasetItem.Data -> it.dataset.dateTime
-                        is DatasetItem.Adjust -> it.adjustment.dateTime
-                    }
-                }
-            }
-
-            SortType.Descending -> {
-                datasetItems.value = datasetWithAdjust.sortedByDescending {
-                    when (it) {
-                        is DatasetItem.Data -> it.dataset.dateTime
-                        is DatasetItem.Adjust -> it.adjustment.dateTime
-                    }
-                }
-            }
-
-            else -> {
-                datasetItems.value = datasetWithAdjust
-            }
-        }
-
-        // Sort by category
-        when (categorySorting.value) {
-            "Initial" -> {
-                datasetItems.value = datasetWithAdjust
-            }
-
-            "Earnings" -> {
-                datasetItems.value = datasetWithAdjust.filter {
-                    when (it) {
-                        is DatasetItem.Data -> it.dataset.dataType == DataType.EARNINGS
-                        is DatasetItem.Adjust -> it.adjustment.dataset?.dataType == DataType.EARNINGS
-                    }
-                }
-            }
-
-            "Expense" -> {
-                datasetItems.value = datasetWithAdjust.filter {
-                    when (it) {
-                        is DatasetItem.Data -> it.dataset.dataType == DataType.EXPENSE
-                        is DatasetItem.Adjust -> it.adjustment.dataset?.dataType == DataType.EXPENSE
-                    }
-                }
-            }
-        }
+    LaunchedEffect(timeSorting.value) {
 
     }
+
+    val datasetItems = datasetWithAdjust.collectAsState(initial = emptyList()).value
+
+
+
 
 
     ItemListAreaSort(
@@ -506,8 +459,8 @@ fun ItemListArea(
         modifier = Modifier
             .fillMaxHeight(0.9f)
     ) {
-        items(datasetItems.value.size, key = { it }) { index ->
-            when (val dataset = datasetItems.value[index]) {
+        items(datasetItems.size, key = { it }) { index ->
+            when (val dataset = datasetItems[index]) {
                 is DatasetItem.Data -> {
                     val wasCompleted = if (dataset.dataset.dataType == DataType.DEBT ||
                         dataset.dataset.dataType == DataType.LENT ||
