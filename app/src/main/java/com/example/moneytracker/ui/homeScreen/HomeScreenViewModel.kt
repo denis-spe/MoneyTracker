@@ -71,6 +71,22 @@ class HomeScreenViewModel @Inject constructor(
                 initialValue = emptyList()
             )
 
+    val todayAdjustment: StateFlow<List<Adjustment>> =
+        uiState.map { state ->
+            state.datasets.map { dataset ->
+                dataset.adjustment.map { adjustment ->
+                    adjustment.dataset = dataset
+                    adjustment
+                }
+            }.flatten()
+                .filter { it.isForToday }
+        }
+            .stateIn(
+                scope = viewModelScope,
+                started = SharingStarted.WhileSubscribed(5_000),
+                initialValue = emptyList()
+            )
+
     @RequiresApi(Build.VERSION_CODES.O)
     val yesterdayDatasets: StateFlow<List<Dataset>> =
         uiState

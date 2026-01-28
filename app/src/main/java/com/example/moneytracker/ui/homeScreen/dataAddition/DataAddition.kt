@@ -621,18 +621,22 @@ fun ModelDrawerContent(
                                         wasRepaySuccess.value = State.ERROR
                                         return@ModelDrawerButton
                                     }
+                                    val adjustment = Adjustment(
+                                        adjustmentId = UUID.randomUUID().toString(),
+                                        amount = adjustAsDouble,
+                                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                        label = "${it.dataType.text} Repaid ->",
+                                        description = descriptionState.text.toString(),
+                                        adjustmentIcon = it.labelIcon,
+                                        paymentMethod = selectedPaymentMethod.value,
+                                        adjustmentType = AdjustmentType.REPAYMENT,
+                                    )
+
+                                    adjustment.dataset = it
+
                                     viewModel.addRepayData(
                                         it,
-                                        Adjustment(
-                                            adjustmentId = UUID.randomUUID().toString(),
-                                            amount = adjustAsDouble,
-                                            dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                            label = "${it.dataType.text} Repaid ->",
-                                            description = descriptionState.text.toString(),
-                                            adjustmentIcon = it.labelIcon,
-                                            paymentMethod = selectedPaymentMethod.value,
-                                            adjustmentType = AdjustmentType.REPAYMENT,
-                                        )
+                                        adjustment
                                     )
                                 } ?: run {
                                     wasRepaySuccess.value = State.ERROR
@@ -660,18 +664,21 @@ fun ModelDrawerContent(
                                         wasRepaySuccess.value = State.ERROR
                                         return@ModelDrawerButton
                                     }
+                                    val adjustment = Adjustment(
+                                        adjustmentId = UUID.randomUUID().toString(),
+                                        amount = adjustAsDouble,
+                                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                        label = "Attained: ${it.label}",
+                                        description = descriptionState.text.toString(),
+                                        adjustmentIcon = it.labelIcon,
+                                        paymentMethod = selectedPaymentMethod.value,
+                                        adjustmentType = AdjustmentType.ATTAIN,
+                                    )
+                                    adjustment.dataset = it
+
                                     viewModel.addRepayData(
                                         it,
-                                        Adjustment(
-                                            adjustmentId = UUID.randomUUID().toString(),
-                                            amount = adjustAsDouble,
-                                            dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                            label = "Attained: ${it.label}",
-                                            description = descriptionState.text.toString(),
-                                            adjustmentIcon = it.labelIcon,
-                                            paymentMethod = selectedPaymentMethod.value,
-                                            adjustmentType = AdjustmentType.ATTAIN,
-                                        )
+                                        adjustment
                                     )
                                 } ?: run {
                                     wasRepaySuccess.value = State.ERROR

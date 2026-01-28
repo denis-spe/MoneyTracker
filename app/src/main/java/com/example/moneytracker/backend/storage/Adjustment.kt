@@ -3,6 +3,7 @@ package com.example.moneytracker.backend.storage
 
 import androidx.annotation.Keep
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Exclude
 
 @Keep
 data class Adjustment(
@@ -14,4 +15,8 @@ data class Adjustment(
     val adjustmentIcon: Int,
     val adjustmentType: AdjustmentType,
     val paymentMethod: PaymentMethod
-)
+) {
+    @Exclude
+    var dataset: Dataset? = null
+}
+

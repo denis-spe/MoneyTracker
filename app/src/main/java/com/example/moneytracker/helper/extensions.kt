@@ -93,6 +93,14 @@ val Dataset.isForToday: Boolean
         return today == dataDate
     }
 
+val Adjustment.isForToday: Boolean
+    @RequiresApi(Build.VERSION_CODES.O)
+    get() {
+        val today = kotlinx.datetime.LocalDateTime.now().date
+        val dataDate = dateTime.toLocalDateTimeUtc().date
+        return today == dataDate
+    }
+
 /**
  * Check if the dataset is for yesterday.
  */
@@ -120,7 +128,6 @@ val Adjustment.adjustmentToMap: Map<String, Any>
         "paymentMethod" to paymentMethod,
         "adjustmentType" to adjustmentType
     )
-
 
 fun Map<*, *>.asAdjustment(): Adjustment {
     val amount = (this["amount"] as? Number)?.toDouble()

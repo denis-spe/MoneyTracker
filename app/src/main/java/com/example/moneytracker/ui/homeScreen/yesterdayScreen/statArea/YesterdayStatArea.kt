@@ -210,7 +210,8 @@ fun YesterdayStatArea(datasets: List<Dataset>) {
                     }
                 },
                 colors = ButtonDefaults.textButtonColors().copy(
-                    contentColor = Color.autoTextColorChange,
+                    contentColor = if (pageState.currentPage == 0)
+                        Color.White else Color.autoTextColorChange,
                     containerColor = if (pageState.currentPage == 0) {
                         Color.Blue
                     } else {
@@ -227,7 +228,8 @@ fun YesterdayStatArea(datasets: List<Dataset>) {
                     }
                 },
                 colors = ButtonDefaults.textButtonColors().copy(
-                    contentColor = Color.autoTextColorChange,
+                    contentColor = if (pageState.currentPage == 1)
+                        Color.White else Color.autoTextColorChange,
                     containerColor = if (pageState.currentPage == 1) {
                         Color.Blue
                     } else {
