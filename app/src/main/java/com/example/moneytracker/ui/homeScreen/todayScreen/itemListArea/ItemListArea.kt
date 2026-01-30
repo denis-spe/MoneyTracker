@@ -74,6 +74,7 @@ import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentType
+import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
@@ -129,10 +130,7 @@ fun ItemFilter(
     }
 }
 
-sealed class DatasetItem {
-    data class Data(val dataset: Dataset) : DatasetItem()
-    data class Adjust(val adjustment: Adjustment) : DatasetItem()
-}
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -167,38 +165,44 @@ fun ItemListAreaSort(
         verticalArrangement = Arrangement.Center
     ) {
         Row(
+            modifier = Modifier.fillMaxWidth(0.9f),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Recently activates",
+                "Recent Transactions",
                 fontWeight = FontWeight.Bold,
-                fontSize = 15.sp
+                fontSize = 18.sp
             )
 
-            IconButton(
-                onClick = {
-                    onActivateShow.value = !onActivateShow.value
-                }
+            Row(
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = if (onActivateShow.value) Icons.Default.KeyboardArrowDown
-                    else Icons.Default.KeyboardArrowUp,
-                    contentDescription = "arrow",
-                    modifier = Modifier.size(20.dp)
-                )
-            }
+                IconButton(
+                    onClick = {
+                        onActivateShow.value = !onActivateShow.value
+                    }
+                ) {
+                    Icon(
+                        imageVector = if (onActivateShow.value) Icons.Default.KeyboardArrowDown
+                        else Icons.Default.KeyboardArrowUp,
+                        contentDescription = "arrow",
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
 
-            IconButton(
-                onClick = {
-                    onFilterClick.value = !onFilterClick.value
+                IconButton(
+                    onClick = {
+                        onFilterClick.value = !onFilterClick.value
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.FilterList,
+                        contentDescription = "filter",
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FilterList,
-                    contentDescription = "filter",
-                    modifier = Modifier.size(20.dp)
-                )
             }
 
         }
@@ -733,7 +737,7 @@ fun ItemListArea(
     val alphabeticalOrder = remember { mutableStateOf(SortType.Initial) }
 
     // Sort with date time
-    val datasetWithAdjust = viewModel.sortedDataWithAdjustByDateTime(
+    val datasetWithAdjust = viewModel.sortTodayDataAdjust(
         timeSorting.value,
         categorySorting.value,
         paymentSorting.value,
@@ -764,7 +768,7 @@ fun ItemListArea(
         ) {
             items(datasetItems.size, key = { it }) { index ->
                 when (val dataset = datasetItems[index]) {
-                    is DatasetItem.Data -> {
+                    is DataAdjust.Data -> {
                         val wasCompleted = if (dataset.dataset.dataType == DataType.DEBT ||
                             dataset.dataset.dataType == DataType.LENT ||
                             dataset.dataset.dataType == DataType.GOAL
@@ -795,7 +799,7 @@ fun ItemListArea(
                         }
                     }
 
-                    is DatasetItem.Adjust -> {
+                    is DataAdjust.Adjust -> {
                         val dataset = dataset.adjustment
 
                         val colorResId = when (dataset.adjustmentType) {

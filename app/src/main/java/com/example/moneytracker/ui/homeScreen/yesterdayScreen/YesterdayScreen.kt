@@ -18,9 +18,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayItems
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -30,8 +30,8 @@ fun YesterdayScreen(
 ) {
     val viewModel: HomeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
     val yesterdayDatasets by viewModel.yesterdayDatasets.collectAsState()
+    val sortAbleDataAdjust by viewModel.sortYesterdayDataAdjust().collectAsState()
     val configuration = LocalConfiguration.current
-    LocalContext.current
 
 
     if (configuration.orientation == ORIENTATION_PORTRAIT) {
@@ -43,6 +43,7 @@ fun YesterdayScreen(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             YesterdayStatArea(yesterdayDatasets)
+            YesterdayItems(sortAbleDataAdjust)
         }
     } else {
         Row(
@@ -53,6 +54,7 @@ fun YesterdayScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             YesterdayStatArea(yesterdayDatasets)
+            YesterdayItems(sortAbleDataAdjust)
         }
     }
 }

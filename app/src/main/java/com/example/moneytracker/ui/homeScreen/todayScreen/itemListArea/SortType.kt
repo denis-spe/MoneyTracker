@@ -4,5 +4,4 @@ package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
 enum class SortType {
     Ascending, Descending, Initial
-
 }

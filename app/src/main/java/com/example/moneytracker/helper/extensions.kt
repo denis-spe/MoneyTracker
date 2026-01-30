@@ -114,8 +114,15 @@ val Dataset.isForYesterday: Boolean
         return yesterday == dataDate
     }
 
+val Adjustment.isForYesterday: Boolean
+    @RequiresApi(Build.VERSION_CODES.O)
+    get() {
+        val yesterday = kotlinx.datetime.LocalDateTime.now()
+            .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
+        val dataDate = dateTime.toLocalDateTimeUtc().date
 
-
+        return yesterday == dataDate
+    }
 
 val Adjustment.adjustmentToMap: Map<String, Any>
     get() = mapOf(

@@ -8,16 +8,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneytracker.R
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
+import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
-import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.DatasetItem
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -43,9 +42,6 @@ class HomeScreenViewModel @Inject constructor(
 
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
-    private val _isIconDialogVisible = MutableStateFlow(false)
-
-    private val _selectedIcon = MutableStateFlow(Pair("description", R.drawable.description))
 
     var isDescriptionIconVisible by mutableStateOf(false)
         private set
@@ -62,53 +58,30 @@ class HomeScreenViewModel @Inject constructor(
      * Public actions
      *******************/
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    val combinedDataWithAdjust: StateFlow<List<DatasetItem>> =
-        uiState.map { state ->
-            val adjust = state.datasets.map { dataset ->
-                dataset.adjustment.map { adjustment ->
-                    adjustment.dataset = dataset
-                    DatasetItem.Adjust(adjustment)
-                }
-            }
-            val data = state.datasets.map { dataset ->
-                DatasetItem.Data(dataset)
-            }
-            (adjust.flatten() + data).filter {
-                when (it) {
-                    is DatasetItem.Data -> it.dataset.isForToday
-                    is DatasetItem.Adjust -> it.adjustment.isForToday
-                }
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000),
-            initialValue = emptyList()
-        )
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun sortedDataWithAdjustByDateTime(
+    fun sortTodayDataAdjust(
         timeSorting: SortType,
         categorySorting: String?,
         paymentSorting: PaymentMethod?,
         alphabeticalOrder: SortType,
         amountSorting: SortType,
         take: Int? = null
-    ): StateFlow<List<DatasetItem>> =
+    ): StateFlow<List<DataAdjust>> =
         uiState.map { state ->
             val adjust = state.datasets.map { dataset ->
                 dataset.adjustment.map { adjustment ->
                     adjustment.dataset = dataset
-                    DatasetItem.Adjust(adjustment)
+                    DataAdjust.Adjust(adjustment)
                 }
             }
             val data = state.datasets.map { dataset ->
-                DatasetItem.Data(dataset)
+                DataAdjust.Data(dataset)
             }
             var coupledData = (adjust.flatten() + data).filter {
                 when (it) {
-                    is DatasetItem.Data -> it.dataset.isForToday
-                    is DatasetItem.Adjust -> it.adjustment.isForToday
+                    is DataAdjust.Data -> it.dataset.isForToday
+                    is DataAdjust.Adjust -> it.adjustment.isForToday
                 }
             }
 
@@ -116,15 +89,15 @@ class HomeScreenViewModel @Inject constructor(
             coupledData = when (timeSorting) {
                 SortType.Ascending -> coupledData.sortedBy {
                     when (it) {
-                        is DatasetItem.Data -> it.dataset.dateTime
-                        is DatasetItem.Adjust -> it.adjustment.dateTime
+                        is DataAdjust.Data -> it.dataset.dateTime
+                        is DataAdjust.Adjust -> it.adjustment.dateTime
                     }
                 }
 
                 SortType.Descending -> coupledData.sortedByDescending {
                     when (it) {
-                        is DatasetItem.Data -> it.dataset.dateTime
-                        is DatasetItem.Adjust -> it.adjustment.dateTime
+                        is DataAdjust.Data -> it.dataset.dateTime
+                        is DataAdjust.Adjust -> it.adjustment.dateTime
                     }
                 }
 
@@ -135,10 +108,10 @@ class HomeScreenViewModel @Inject constructor(
                 if (categorySorting == null || categorySorting == "Initial") coupledData else
                     coupledData.filter {
                         when (it) {
-                            is DatasetItem.Data ->
+                            is DataAdjust.Data ->
                                 it.dataset.dataType.text == categorySorting
 
-                            is DatasetItem.Adjust ->
+                            is DataAdjust.Adjust ->
                                 it.adjustment.adjustmentType.text == categorySorting
                         }
                     }
@@ -146,23 +119,23 @@ class HomeScreenViewModel @Inject constructor(
             coupledData = if (paymentSorting == null) coupledData else
                 coupledData.filter {
                     when (it) {
-                        is DatasetItem.Data -> it.dataset.paymentMethod == paymentSorting
-                        is DatasetItem.Adjust -> it.adjustment.paymentMethod == paymentSorting
+                        is DataAdjust.Data -> it.dataset.paymentMethod == paymentSorting
+                        is DataAdjust.Adjust -> it.adjustment.paymentMethod == paymentSorting
                     }
                 }
 
             coupledData = when (alphabeticalOrder) {
                 SortType.Ascending -> coupledData.sortedBy {
                     when (it) {
-                        is DatasetItem.Data -> it.dataset.label
-                        is DatasetItem.Adjust -> it.adjustment.label
+                        is DataAdjust.Data -> it.dataset.label
+                        is DataAdjust.Adjust -> it.adjustment.label
                     }
                 }
 
                 SortType.Descending -> coupledData.sortedByDescending {
                     when (it) {
-                        is DatasetItem.Data -> it.dataset.label
-                        is DatasetItem.Adjust -> it.adjustment.label
+                        is DataAdjust.Data -> it.dataset.label
+                        is DataAdjust.Adjust -> it.adjustment.label
                     }
                 }
 
@@ -172,15 +145,15 @@ class HomeScreenViewModel @Inject constructor(
             coupledData = when (amountSorting) {
                 SortType.Ascending -> coupledData.sortedBy {
                     when (it) {
-                        is DatasetItem.Data -> it.dataset.amount
-                        is DatasetItem.Adjust -> it.adjustment.amount
+                        is DataAdjust.Data -> it.dataset.amount
+                        is DataAdjust.Adjust -> it.adjustment.amount
                     }
                 }
 
                 SortType.Descending -> coupledData.sortedByDescending {
                     when (it) {
-                        is DatasetItem.Data -> it.dataset.amount
-                        is DatasetItem.Adjust -> it.adjustment.amount
+                        is DataAdjust.Data -> it.dataset.amount
+                        is DataAdjust.Adjust -> it.adjustment.amount
                     }
                 }
 
@@ -201,28 +174,25 @@ class HomeScreenViewModel @Inject constructor(
         )
 
     @RequiresApi(Build.VERSION_CODES.O)
-    val descendingSortedDataWithAdjustByDateTime: StateFlow<List<DatasetItem>> =
+    fun sortYesterdayDataAdjust(): StateFlow<List<DataAdjust>> =
         uiState.map { state ->
             val adjust = state.datasets.map { dataset ->
                 dataset.adjustment.map { adjustment ->
                     adjustment.dataset = dataset
-                    DatasetItem.Adjust(adjustment)
+                    DataAdjust.Adjust(adjustment)
                 }
             }
             val data = state.datasets.map { dataset ->
-                DatasetItem.Data(dataset)
+                DataAdjust.Data(dataset)
             }
-            (adjust.flatten() + data).filter {
+            val coupledData = (adjust.flatten() + data).filter {
                 when (it) {
-                    is DatasetItem.Data -> it.dataset.isForToday
-                    is DatasetItem.Adjust -> it.adjustment.isForToday
-                }
-            }.sortedByDescending {
-                when (it) {
-                    is DatasetItem.Data -> it.dataset.dateTime
-                    is DatasetItem.Adjust -> it.adjustment.dateTime
+                    is DataAdjust.Data -> it.dataset.isForYesterday
+                    is DataAdjust.Adjust -> it.adjustment.isForYesterday
                 }
             }
+
+            coupledData
         }.stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -236,23 +206,6 @@ class HomeScreenViewModel @Inject constructor(
             .map { state ->
                 state.datasets.filter { it.isForToday }
             }
-            .stateIn(
-                scope = viewModelScope,
-                started = SharingStarted.WhileSubscribed(5_000),
-                initialValue = emptyList()
-            )
-
-    @RequiresApi(Build.VERSION_CODES.O)
-    val todayAdjustment: StateFlow<List<Adjustment>> =
-        uiState.map { state ->
-            state.datasets.map { dataset ->
-                dataset.adjustment.map { adjustment ->
-                    adjustment.dataset = dataset
-                    adjustment
-                }
-            }.flatten()
-                .filter { it.isForToday }
-        }
             .stateIn(
                 scope = viewModelScope,
                 started = SharingStarted.WhileSubscribed(5_000),
