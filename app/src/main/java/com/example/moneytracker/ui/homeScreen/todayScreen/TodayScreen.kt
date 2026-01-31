@@ -13,7 +13,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -22,12 +24,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.content.ContextCompat
+import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.ItemListArea
@@ -47,26 +47,7 @@ fun TodayScreen(
 
 
     val context = LocalContext.current
-    val donutChartDataCollection = remember(todayDatasets, context) {
-        DonutChartDataCollection(
-            todayDatasets
-                .groupBy { it.dataType }
-                .values.toList()
-                .map { lst ->
-                    val firstItemInList = lst[0]
-                    val amount = lst.sumOf { it.amount }.toFloat()
-                    val colorInt = ContextCompat.getColor(context, firstItemInList.dataType.color)
-                    val color = Color(colorInt)
-                    val title = firstItemInList.dataType.text
-
-                    DonutChartData(
-                        amount,
-                        color = color,
-                        title = title
-                    )
-                }
-        )
-    }
+    val donutChartDataCollection = viewModel.todayChartData(context).collectAsState(emptyList())
 
     if (configuration.orientation == ORIENTATION_PORTRAIT) {
         Column(
@@ -82,11 +63,26 @@ fun TodayScreen(
                         shrinkVertically(animationSpec = tween(easing = LinearEasing))
             ) {
                 // Statistic
-                StatArea(donutChartDataCollection, datasets = todayDatasets)
+                StatArea(
+                    modifier = Modifier
+                        .fillMaxHeight(0.4f)
+                        .fillMaxWidth(0.85f)
+                        .padding(bottom = 10.dp),
+                    donutChartDataCollection = DonutChartDataCollection(
+                        donutChartDataCollection.value
+                    ),
+                    datasets = todayDatasets
+                )
             }
 
             // Items list
-            ItemListArea(viewModel, onActivateShow)
+            ItemListArea(
+                modifier = Modifier
+                    .fillMaxHeight(1f)
+                    .fillMaxWidth(0.85f),
+                viewModel = viewModel,
+                onActivateShow = onActivateShow
+            )
         }
     } else {
         Row(
@@ -97,10 +93,24 @@ fun TodayScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Statistic
-            StatArea(donutChartDataCollection, datasets = todayDatasets)
+            StatArea(
+                modifier = Modifier
+                    .fillMaxHeight(1f)
+                    .fillMaxWidth(0.3f),
+                donutChartDataCollection = DonutChartDataCollection(
+                    donutChartDataCollection.value
+                ),
+                datasets = todayDatasets
+            )
 
             // Items list
-            ItemListArea(viewModel, onActivateShow)
+            ItemListArea(
+                Modifier
+                    .fillMaxHeight(1f)
+                    .fillMaxWidth(0.8f),
+                viewModel = viewModel,
+                onActivateShow = onActivateShow
+            )
         }
     }
 }

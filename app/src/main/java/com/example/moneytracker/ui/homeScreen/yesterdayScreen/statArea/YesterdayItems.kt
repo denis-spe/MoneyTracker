@@ -140,10 +140,11 @@ fun <T> YesterdayItem(dataAdjust: T) {
 
 @Composable
 fun YesterdayItems(
+    modifier: Modifier = Modifier,
     dataAdjust: List<DataAdjust>
 ) {
     Column(
-        modifier = Modifier.fillMaxWidth()
+        modifier = modifier
     ) {
         Row(
             horizontalArrangement = Arrangement.Start,

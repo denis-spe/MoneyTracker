@@ -9,13 +9,13 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.rememberPagerState
@@ -131,60 +131,64 @@ fun DonutChartPager(
     fontWeight: FontWeight,
     fontSize: TextUnit
 ) {
-    Column(
-        modifier = Modifier.fillMaxHeight(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        DonutChart(
-            data = donutChartDataCollection,
-            chartSize = 150.dp,
-            gapPercentage = 0.06f,
-            strokeCap = StrokeCap.Round,
-            strokeWidthSelected = 30.dp
-        ) {
-            Column(
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                it?.let { donutChartData ->
-                    Text(
-                        text = donutChartData.title,
-                        fontWeight = fontWeight, fontSize = fontSize
-                    )
-                    Text(
-                        text = donutChartData.amount.formatToAmount(),
-                        fontWeight = fontWeight, fontSize = fontSize
-                    )
-                } ?: run {
-                    var enabled by remember { mutableStateOf(true) }
-                    val totalAmount: Float by animateFloatAsState(
-                        if (enabled)
-                            donutChartDataCollection.totalAmount
-                        else 0f,
-                        label = "Overall Amount",
-                        animationSpec = tween(
-                            durationMillis = 1000,
-                            easing = LinearEasing,
-                        )
-                    )
+        Text("Overall")
+    }
 
-                    Text(
-                        text = "Overall",
-                        fontWeight = fontWeight, fontSize = fontSize
+    DonutChart(
+        data = donutChartDataCollection,
+        chartSize = 150.dp,
+        gapPercentage = 0.06f,
+        strokeCap = StrokeCap.Round,
+        strokeWidthSelected = 30.dp
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            it?.let { donutChartData ->
+                Text(
+                    text = donutChartData.title,
+                    fontWeight = fontWeight, fontSize = fontSize
+                )
+                Text(
+                    text = donutChartData.amount.formatToAmount(),
+                    fontWeight = fontWeight, fontSize = fontSize
+                )
+            } ?: run {
+                var enabled by remember { mutableStateOf(true) }
+                val totalAmount: Float by animateFloatAsState(
+                    if (enabled)
+                        donutChartDataCollection.totalAmount
+                    else 0f,
+                    label = "Overall Amount",
+                    animationSpec = tween(
+                        durationMillis = 1000,
+                        easing = LinearEasing,
                     )
-                    Text(
-                        text = totalAmount.formatToAmount(),
-                        fontWeight = fontWeight, fontSize = fontSize
-                    )
-                }
+                )
+
+                Text(
+                    text = "Overall",
+                    fontWeight = fontWeight, fontSize = fontSize
+                )
+                Text(
+                    text = totalAmount.formatToAmount(),
+                    fontWeight = fontWeight, fontSize = fontSize
+                )
             }
         }
     }
 }
 
+
 @Composable
 fun StatArea(
+    modifier: Modifier = Modifier,
     donutChartDataCollection: DonutChartDataCollection,
     datasets: List<Dataset>,
 ) {
@@ -221,13 +225,11 @@ fun StatArea(
             "GoalVsScore",
             Pair(R.color.Goal, R.color.Attain)
         )
-        )
+    )
     val pagerState = rememberPagerState(pageCount = { items.size })
 
     Column(
-        modifier = Modifier
-            .widthIn(max = 200.dp, min = 160.dp)
-            .heightIn(max = 260.dp, min = 160.dp),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -235,10 +237,13 @@ fun StatArea(
         // Chart Area
         Box(
             modifier = Modifier
-                .weight(0.4f)
+                .weight(1.1f),
+            contentAlignment = Alignment.Center
         ) {
             Column(
-                modifier = Modifier.padding(bottom = 15.dp),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(bottom = 10.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
@@ -253,8 +258,8 @@ fun StatArea(
         // Pager Area
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.1f),
+                .weight(0.3f)
+                .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -269,8 +274,8 @@ fun StatArea(
         // Pager Indicator
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.08f),
+                .weight(0.1f)
+                .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -282,5 +287,4 @@ fun StatArea(
             }
         }
     }
-
 }

@@ -42,8 +42,14 @@ fun YesterdayScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            YesterdayStatArea(yesterdayDatasets)
-            YesterdayItems(sortAbleDataAdjust)
+            YesterdayStatArea(
+                modifier = Modifier.weight(0.4f),
+                datasets = yesterdayDatasets
+            )
+            YesterdayItems(
+                modifier = Modifier.weight(0.6f),
+                dataAdjust = sortAbleDataAdjust
+            )
         }
     } else {
         Row(
@@ -53,8 +59,14 @@ fun YesterdayScreen(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            YesterdayStatArea(yesterdayDatasets)
-            YesterdayItems(sortAbleDataAdjust)
+            YesterdayStatArea(
+                modifier = Modifier.weight(0.4f),
+                datasets = yesterdayDatasets
+            )
+            YesterdayItems(
+                modifier = Modifier.weight(0.6f),
+                dataAdjust = sortAbleDataAdjust
+            )
         }
     }
 }

@@ -1,11 +1,14 @@
 package com.example.moneytracker.ui.homeScreen
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
@@ -17,10 +20,12 @@ import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
+import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -58,6 +63,30 @@ class HomeScreenViewModel @Inject constructor(
      * Public actions
      *******************/
 
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun todayChartData(context: Context): Flow<List<DonutChartData>> = uiState.map { state ->
+        state.datasets.filter { it.isForToday }
+            .groupBy { it.dataType }
+            .values.toList()
+            .map { lst ->
+                val firstItemInList = lst[0]
+                val amount = lst.sumOf { it.amount }.toFloat()
+                val colorInt = ContextCompat.getColor(context, firstItemInList.dataType.color)
+                val color = Color(colorInt)
+                val title = firstItemInList.dataType.text
+
+
+                DonutChartData(
+                    amount,
+                    color = color,
+                    title = title
+                )
+            }
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun sortTodayDataAdjust(

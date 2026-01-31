@@ -186,15 +186,16 @@ fun YesterdayChart(datasets: List<Dataset>) {
 }
 
 @Composable
-fun YesterdayStatArea(datasets: List<Dataset>) {
+fun YesterdayStatArea(
+    modifier: Modifier = Modifier,
+    datasets: List<Dataset>
+) {
     // Page state
     val pageState = rememberPagerState { 2 }
     val scope = rememberCoroutineScope()
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(min = 230.dp, max = 400.dp),
+        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {

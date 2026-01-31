@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -165,7 +165,8 @@ fun ItemListAreaSort(
         verticalArrangement = Arrangement.Center
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(0.9f),
+            modifier = Modifier
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -724,6 +725,7 @@ fun ItemListAreaSort(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ItemListArea(
+    modifier: Modifier = Modifier,
     viewModel: HomeScreenViewModel,
     onActivateShow: MutableState<Boolean>
 ) {
@@ -750,7 +752,9 @@ fun ItemListArea(
     val datasetItems = datasetWithAdjust.collectAsState(initial = emptyList()).value
 
 
-    Column {
+    Column(
+        modifier = modifier
+    ) {
         ItemListAreaSort(
             onFilterClick,
             onActivateShow = onActivateShow,
@@ -764,7 +768,7 @@ fun ItemListArea(
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxHeight(0.9f)
+                .fillMaxSize()
         ) {
             items(datasetItems.size, key = { it }) { index ->
                 when (val dataset = datasetItems[index]) {
@@ -873,7 +877,7 @@ fun ItemCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
-                .fillMaxWidth(0.9f)
+                .fillMaxWidth()
                 .clip(RoundedCornerShape(5.dp))
                 .clickable {
                     onShowDialog.value = true
