@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -344,6 +345,8 @@ fun ModelDrawerContent(
     val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val adjustAmountState = rememberTextFieldState()
+    val lazyState = rememberLazyListState()
+
 
 
     LaunchedEffect(amountState.text.toString()) {
@@ -397,11 +400,12 @@ fun ModelDrawerContent(
 
         LazyColumn(
             modifier = Modifier.fillMaxWidth(),
+            state = lazyState,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
             // Amount
-            item {
+            item(key = 39) {
                 Row(
                     modifier = Modifier.animateItem()
                 ) {
@@ -415,7 +419,7 @@ fun ModelDrawerContent(
             }
 
             // Label
-            item {
+            item(key = 71) {
                 Row(
                     modifier = Modifier.animateItem()
                 ) {
@@ -432,7 +436,7 @@ fun ModelDrawerContent(
             }
 
             // Tag
-            item {
+            item(key = 58) {
                 Row(
                     modifier = Modifier.animateItem()
                 ) {
@@ -446,7 +450,7 @@ fun ModelDrawerContent(
 
 
             // Adjust amount
-            item {
+            item(key = 100) {
                 when (dataType) {
                     DataType.LENT -> {
                         Row(
@@ -507,7 +511,7 @@ fun ModelDrawerContent(
             }
 
             // Description
-            item {
+            item(key = 45) {
                 Row(
                     modifier = Modifier.animateItem()
                 ) {
@@ -523,7 +527,7 @@ fun ModelDrawerContent(
             }
 
             // Date time picker
-            item {
+            item(key = 12) {
                 // Show date time picker.
                 Row(
                     modifier = Modifier.animateItem()
@@ -545,8 +549,18 @@ fun ModelDrawerContent(
                 }
             }
 
+            // Repeatable transaction
+            item(key = 120) {
+                if (dataType == DataType.GOAL) {
+                    RepeatableTransaction(
+                        DataType.GOAL,
+                        wasRepaySuccess = wasRepaySuccess,
+                    )
+                }
+            }
+
             // Payment method
-            item {
+            item(key = 5) {
                 Row(
                     modifier = Modifier.animateItem()
                 ) {
@@ -558,7 +572,7 @@ fun ModelDrawerContent(
             }
 
             // Submit buttons
-            item {
+            item(key = 6) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -570,7 +584,8 @@ fun ModelDrawerContent(
                         text = buttonText,
                         wasSuccess = wasSuccess,
                         colorResId = colorResId,
-                        filledColor = Color.Transparent
+                        filledColor = colorResource(colorResId),
+                        textColor = Color.White
                     ) {
                         if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
                             viewModel.addData(

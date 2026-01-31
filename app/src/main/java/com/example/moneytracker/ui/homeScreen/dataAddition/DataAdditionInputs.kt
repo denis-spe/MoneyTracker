@@ -7,12 +7,14 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -25,11 +27,14 @@ import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
 import androidx.compose.foundation.text.input.maxLength
+import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.input.then
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.EditCalendar
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
@@ -48,6 +53,7 @@ import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerState
@@ -68,6 +74,8 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.res.painterResource
@@ -80,6 +88,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.AdjustmentStatus
@@ -93,6 +102,7 @@ import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
+import com.example.moneytracker.ui.theme.autoColorChange
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
@@ -639,24 +649,24 @@ fun AdjustmentField(
                     ) {
                         filteredDataset.forEach { dataset ->
 
-                                DropdownMenuItem(
-                                    text = {
-                                        Text(dataset.label, fontSize = fontSize)
-                                    },
-                                    onClick = {
-                                        expanded = false
-                                        focusRequester.requestFocus()
-                                        selectedDataset.value = dataset
-                                    },
-                                    leadingIcon = {
-                                        Image(
-                                            painter = painterResource(dataset.labelIcon),
-                                            contentDescription = dataset.label,
-                                            modifier = Modifier.size(ICON_SIZE)
-                                        )
-                                    }
-                                )
-                            }
+                            DropdownMenuItem(
+                                text = {
+                                    Text(dataset.label, fontSize = fontSize)
+                                },
+                                onClick = {
+                                    expanded = false
+                                    focusRequester.requestFocus()
+                                    selectedDataset.value = dataset
+                                },
+                                leadingIcon = {
+                                    Image(
+                                        painter = painterResource(dataset.labelIcon),
+                                        contentDescription = dataset.label,
+                                        modifier = Modifier.size(ICON_SIZE)
+                                    )
+                                }
+                            )
+                        }
                     }
 
                     /* ---------- Dataset button ---------- */
@@ -778,7 +788,10 @@ fun AdjustmentField(
     Row(
         modifier = MODIFIER_DRAWER
             .height(height)
-            .background(color.copy(alpha = 0.1f))
+            .background(
+                if (wasRepaySuccess.value == State.ERROR) Color.Red
+                else color.copy(alpha = 0.1f)
+            )
             .clickable {
                 if (filteredDataset.isNotEmpty()) {
                     onDialogShow.value = true
@@ -839,6 +852,201 @@ fun AdjustmentField(
         val newValue = selected.remainingAmount.toString()
         if (amountState.text.toString() != newValue) {
             amountState.setTextAndPlaceCursorAtEnd(newValue)
+        }
+    }
+}
+
+@Composable
+fun RepeatableTransaction(
+    dataType: DataType,
+    wasRepaySuccess: MutableState<State>,
+
+    ) {
+    val color = colorResource(dataType.color)
+    val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
+    val onDialogShow = remember { mutableStateOf(false) }
+    val onDropDownOpen = remember { mutableStateOf(false) }
+    val repeatBy = remember { mutableStateOf(RepeatBy.Nothing) }
+    val dailyState = rememberTextFieldState(initialText = "1")
+
+    val height = integerResource(R.integer.textFieldAndButtonHeight).dp
+
+    if (onDialogShow.value) {
+        Dialog(
+            onDismissRequest = {
+                onDropDownOpen.value = false
+                onDialogShow.value = false
+            },
+        ) {
+            Card(
+                modifier = DIALOG_CARD_MODIFIER
+                    .pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = {
+                                onDropDownOpen.value = false
+                            }
+                        )
+                    }
+                    .fillMaxHeight(0.5f)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+
+                ) {
+                    Text(
+                        "Specify when to reset the goal",
+                        textAlign = TextAlign.Center,
+                        fontWeight = FONT_WEIGHT,
+                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
+                    )
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                    Column(
+                        modifier = Modifier.fillMaxWidth(0.6f),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        LocalDensity.current
+
+                        TextButton(
+                            onClick = {
+                                onDropDownOpen.value = !onDropDownOpen.value
+                            },
+                            colors = ButtonDefaults.textButtonColors().copy(
+                                contentColor = color
+                            ),
+                            shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                val text = if (repeatBy.value == RepeatBy.Nothing)
+                                    "Nothing" else repeatBy.value.text
+                                Text(text)
+                                Icon(
+                                    imageVector = if (onDropDownOpen.value)
+                                        Icons.Default.KeyboardArrowUp
+                                    else Icons.Default.KeyboardArrowDown,
+                                    contentDescription = "Arrow"
+                                )
+                            }
+                        }
+
+                        if (onDropDownOpen.value) {
+                            DropdownMenu(
+                                modifier = Modifier.fillMaxWidth(0.6f),
+                                expanded = onDropDownOpen.value,
+                                onDismissRequest = { onDropDownOpen.value = false },
+                                containerColor = Color.autoColorChange.copy(0.9f)
+                            ) {
+
+                                RepeatBy.entries.forEach {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(it.text)
+                                        },
+                                        onClick = {
+                                            repeatBy.value = it
+                                            onDropDownOpen.value = false
+                                        },
+                                    )
+                                }
+
+                            }
+                        }
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .zIndex(0.5f)
+                            .padding(10.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        when (repeatBy.value) {
+                            RepeatBy.Nothing -> {
+                                Text(
+                                    "Select the drop down to set the reset options",
+                                    textAlign = TextAlign.Center,
+                                    fontWeight = FONT_WEIGHT,
+                                    color = color
+                                )
+                            }
+
+                            RepeatBy.EveryDay -> {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextField(
+                                        state = dailyState,
+                                        modifier = Modifier.width(50.dp),
+                                        inputTransformation = InputTransformation
+                                            .maxLength(2),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Done
+                                        ),
+                                        lineLimits = TextFieldLineLimits.SingleLine,
+                                    )
+
+                                    Text("number of day")
+                                }
+                            }
+
+                            else -> {}
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+    Row(
+        modifier = MODIFIER_DRAWER
+            .height(height)
+            .background(
+                if (wasRepaySuccess.value == State.ERROR) Color.Red
+                else colorResource(dataType.color).copy(alpha = 0.1f)
+            )
+            .clickable {
+                onDialogShow.value = true
+            },
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Row(
+            modifier = INNER_MODIFIER_DRAWER,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Image(
+                    painter = painterResource(
+                        id = R.drawable.repeat,
+                    ),
+                    modifier = Modifier.size(ICON_SIZE),
+                    contentDescription = "Repeat"
+                )
+
+                Spacer(modifier = Modifier.width(5.dp))
+
+                Text("Reset in", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+            }
+
+            Row(
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(repeatBy.value.text, color = color, fontSize = fontSize)
+            }
         }
     }
 }

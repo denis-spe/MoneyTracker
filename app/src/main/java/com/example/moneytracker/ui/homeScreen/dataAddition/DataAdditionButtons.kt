@@ -64,6 +64,7 @@ fun ModelDrawerButton(
     wasSuccess: MutableState<State>? = null,
     shape: Shape = ButtonDefaults.outlinedShape,
     filledColor: Color? = null,
+    textColor: Color? = null,
     fontSize: TextUnit = 15.sp,
     onClick: () -> Unit,
 ) {
@@ -78,7 +79,7 @@ fun ModelDrawerButton(
             .padding(bottom = 10.dp)
             .height(height),
         colors = ButtonDefaults.outlinedButtonColors().copy(
-            contentColor = color,
+            contentColor = textColor ?: color,
             containerColor = filledColor ?: color.copy(alpha = 0.2f),
         ),
         shape = shape,
@@ -108,7 +109,8 @@ fun ModelDrawerButton(
         } else {
             Text(
                 text = text,
-                fontSize = fontSize
+                fontSize = fontSize,
+                fontWeight = FONT_WEIGHT
             )
         }
     }

@@ -9,7 +9,6 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
@@ -131,14 +130,6 @@ fun DonutChartPager(
     fontWeight: FontWeight,
     fontSize: TextUnit
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Text("Overall")
-    }
-
     DonutChart(
         data = donutChartDataCollection,
         chartSize = 150.dp,
@@ -174,11 +165,13 @@ fun DonutChartPager(
 
                 Text(
                     text = "Overall",
-                    fontWeight = fontWeight, fontSize = fontSize
+                    fontWeight = fontWeight,
+                    fontSize = fontSize
                 )
                 Text(
                     text = totalAmount.formatToAmount(),
-                    fontWeight = fontWeight, fontSize = fontSize
+                    fontWeight = fontWeight,
+                    fontSize = fontSize
                 )
             }
         }

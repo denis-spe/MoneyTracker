@@ -139,7 +139,7 @@ fun IconList(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             IconButton(
-                                modifier = borderModifier.padding(4.dp),
+                                modifier = borderModifier,
                                 onClick = {
                                     selectionIcon = icon
                                 }

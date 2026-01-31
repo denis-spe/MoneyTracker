@@ -45,7 +45,6 @@ fun TodayScreen(
     val onActivateShow = remember { mutableStateOf(true) }
 
 
-
     val context = LocalContext.current
     val donutChartDataCollection = viewModel.todayChartData(context).collectAsState(emptyList())
 
@@ -65,7 +64,7 @@ fun TodayScreen(
                 // Statistic
                 StatArea(
                     modifier = Modifier
-                        .fillMaxHeight(0.4f)
+                        .fillMaxHeight(0.5f)
                         .fillMaxWidth(0.85f)
                         .padding(bottom = 10.dp),
                     donutChartDataCollection = DonutChartDataCollection(

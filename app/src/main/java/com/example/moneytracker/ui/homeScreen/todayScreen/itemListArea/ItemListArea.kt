@@ -279,8 +279,8 @@ fun ItemListAreaSort(
                     }
                 ) {
                     val iconResId = when (alphabeticalOrder.value) {
-                        SortType.Ascending -> R.drawable.sort_up
-                        SortType.Descending -> R.drawable.sort_down
+                        SortType.Descending -> R.drawable.sort_up
+                        SortType.Ascending -> R.drawable.sort_down
                         else -> R.drawable.sort
                     }
 
@@ -579,7 +579,7 @@ fun ItemListAreaSort(
                         modifier = Modifier.padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
-                        val selectedColor = Color.Yellow.copy(0.4f)
+                        val selectedColor = Color.Blue.copy(0.4f)
                         val unselectedColor = Color.Gray.copy(0.4f)
 
                         Column {
