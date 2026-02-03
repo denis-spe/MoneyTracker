@@ -806,13 +806,7 @@ fun ItemListArea(
                     is DataAdjust.Adjust -> {
                         val dataset = dataset.adjustment
 
-                        val colorResId = when (dataset.adjustmentType) {
-                            AdjustmentType.ATTAIN -> R.color.Attain
-                            AdjustmentType.REPAYMENT -> {
-                                if (dataset.dataset?.dataType == DataType.DEBT)
-                                    R.color.RepayDebt else R.color.RepayLoan
-                            }
-                        }
+                        val colorResId = dataset.adjustmentType.color
 
                         Row(
                             modifier = Modifier.animateItem(

@@ -133,6 +133,7 @@ fun DatasetReceipt(
             Text(
                 text = dataset.label,
                 textDecoration = textDecoration,
+                fontSize = fontSize
             )
         }
 
@@ -435,12 +436,7 @@ fun AdjustmentReceipt(
 
     val fontSize = 13.sp
 
-    val color = when (data.dataType) {
-        DataType.DEBT -> colorResource(adjustment.adjustmentType.colorDebt)
-        DataType.LENT -> colorResource(adjustment.adjustmentType.colorLent)
-        DataType.GOAL -> colorResource(adjustment.adjustmentType.colorAttain)
-        else -> colorResource(data.dataType.color)
-    }
+    val color = colorResource(adjustment.adjustmentType.color)
 
     val textDecoration = if (
         data.remainingAmount == 0.0
@@ -479,14 +475,17 @@ fun AdjustmentReceipt(
             verticalAlignment = Alignment.CenterVertically
         ) {
             val label = when (adjustment.adjustmentType) {
-                AdjustmentType.REPAYMENT -> "Repaying:"
-                AdjustmentType.ATTAIN -> "Attaining:"
+                AdjustmentType.LENT_REPAY -> "Lent Repayment:"
+                AdjustmentType.DEBT_REPAY -> "Debt Repayment:"
+                AdjustmentType.GOAL_ATTAIN -> "Attained:"
+                else -> throw Exception("Unknown adjustment type")
             }
 
             Text(text = label, fontSize = fontSize, fontWeight = FONT_WEIGHT)
             Text(
                 text = data.label,
                 textDecoration = textDecoration,
+                fontSize = fontSize
             )
         }
 

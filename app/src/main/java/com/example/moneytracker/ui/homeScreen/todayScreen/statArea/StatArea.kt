@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.mean
@@ -151,12 +152,31 @@ fun DonutChartPager(
                     fontWeight = fontWeight, fontSize = fontSize
                 )
             } ?: run {
+                val earnings = donutChartDataCollection.items.filter { donutChartData ->
+                    donutChartData.title == DataType.EARNINGS.text
+                }.map { donutChartData -> donutChartData.amount }
+                val expense = donutChartDataCollection.items.filter { donutChartData ->
+                    donutChartData.title == DataType.EXPENSE.text
+                }.map { donutChartData -> donutChartData.amount }
+                val debt = donutChartDataCollection.items.filter { donutChartData ->
+                    donutChartData.title == DataType.DEBT.text
+                }.map { donutChartData -> donutChartData.amount }
+                val lent = donutChartDataCollection.items.filter { donutChartData ->
+                    donutChartData.title == DataType.LENT.text
+                }.map { donutChartData -> donutChartData.amount }
+                val savings = donutChartDataCollection.items.filter { donutChartData ->
+                    donutChartData.title == DataType.SAVINGS.text
+                }.map { donutChartData -> donutChartData.amount }
+
+                val flowIn = earnings.sum() + debt.sum()
+                val flowOut = expense.sum() + lent.sum() + savings.sum()
+
                 var enabled by remember { mutableStateOf(true) }
                 val totalAmount: Float by animateFloatAsState(
                     if (enabled)
-                        donutChartDataCollection.totalAmount
+                        flowIn - flowOut
                     else 0f,
-                    label = "Overall Amount",
+                    label = "Amount flow",
                     animationSpec = tween(
                         durationMillis = 1000,
                         easing = LinearEasing,
@@ -164,7 +184,7 @@ fun DonutChartPager(
                 )
 
                 Text(
-                    text = "Overall",
+                    text = "Flow",
                     fontWeight = fontWeight,
                     fontSize = fontSize
                 )

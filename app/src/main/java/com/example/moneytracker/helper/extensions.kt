@@ -182,20 +182,20 @@ fun Map<*, *>.asAdjustment(): Adjustment {
         is String -> try {
             AdjustmentType.valueOf(dt)
         } catch (_: Exception) {
-            AdjustmentType.REPAYMENT
+            AdjustmentType.INITIAL
         }
 
-        is Number -> AdjustmentType.entries.getOrNull(dt.toInt()) ?: AdjustmentType.REPAYMENT
+        is Number -> AdjustmentType.entries.getOrNull(dt.toInt()) ?: AdjustmentType.INITIAL
         is Map<*, *> -> {
             val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
             if (name != null) try {
                 AdjustmentType.valueOf(name)
             } catch (_: Exception) {
-                AdjustmentType.REPAYMENT
-            } else AdjustmentType.REPAYMENT
+                AdjustmentType.INITIAL
+            } else AdjustmentType.INITIAL
         }
 
-        else -> AdjustmentType.REPAYMENT
+        else -> AdjustmentType.INITIAL
     }
 
     val adjustmentIcon = (this["adjustmentIcon"] as Number).toInt()

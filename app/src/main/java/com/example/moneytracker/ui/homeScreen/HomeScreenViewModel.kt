@@ -15,6 +15,7 @@ import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataStorage
+import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.PaymentMethod
@@ -66,6 +67,7 @@ class HomeScreenViewModel @Inject constructor(
     @RequiresApi(Build.VERSION_CODES.O)
     fun todayChartData(context: Context): Flow<List<DonutChartData>> = uiState.map { state ->
         state.datasets.filter { it.isForToday }
+            .filter { it.dataType != DataType.GOAL }
             .groupBy { it.dataType }
             .values.toList()
             .map { lst ->
@@ -74,7 +76,6 @@ class HomeScreenViewModel @Inject constructor(
                 val colorInt = ContextCompat.getColor(context, firstItemInList.dataType.color)
                 val color = Color(colorInt)
                 val title = firstItemInList.dataType.text
-
 
                 DonutChartData(
                     amount,

@@ -35,6 +35,7 @@ import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
@@ -88,7 +89,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import androidx.compose.ui.zIndex
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.AdjustmentStatus
@@ -103,7 +103,9 @@ import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.theme.autoColorChange
+import com.example.moneytracker.ui.theme.autoTextColorChange
 import kotlinx.coroutines.android.awaitFrame
+import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
 import kotlinx.datetime.number
@@ -856,18 +858,30 @@ fun AdjustmentField(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RepeatableTransaction(
     dataType: DataType,
     wasRepaySuccess: MutableState<State>,
-
     ) {
+
+    val dayOfWeek = DayOfWeek.entries
+
+    val currentDate = LocalDate.now()
+    val currentDayOfWeek = currentDate.dayOfWeek.name
+
     val color = colorResource(dataType.color)
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val onDialogShow = remember { mutableStateOf(false) }
     val onDropDownOpen = remember { mutableStateOf(false) }
     val repeatBy = remember { mutableStateOf(RepeatBy.Nothing) }
     val dailyState = rememberTextFieldState(initialText = "1")
+    val hourState = rememberTextFieldState(initialText = "01")
+    val minutesState = rememberTextFieldState(initialText = "00")
+    val weekState = rememberTextFieldState("1")
+    val yearState = rememberTextFieldState("1")
+    val dayOfWeekState = remember { mutableStateOf(currentDayOfWeek) }
+    val showDayOfWeekDropDown = remember { mutableStateOf(false) }
 
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
 
@@ -890,7 +904,7 @@ fun RepeatableTransaction(
                     .fillMaxHeight(0.5f)
             ) {
                 Column(
-                    verticalArrangement = Arrangement.Center,
+                    verticalArrangement = Arrangement.SpaceBetween,
                     horizontalAlignment = Alignment.CenterHorizontally
 
                 ) {
@@ -962,7 +976,6 @@ fun RepeatableTransaction(
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .zIndex(0.5f)
                             .padding(10.dp),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -984,9 +997,9 @@ fun RepeatableTransaction(
                                 ) {
                                     TextField(
                                         state = dailyState,
-                                        modifier = Modifier.width(50.dp),
+                                        modifier = Modifier.width(60.dp),
                                         inputTransformation = InputTransformation
-                                            .maxLength(2),
+                                            .maxLength(3),
                                         keyboardOptions = KeyboardOptions(
                                             keyboardType = KeyboardType.Number,
                                             imeAction = ImeAction.Done
@@ -998,10 +1011,172 @@ fun RepeatableTransaction(
                                 }
                             }
 
+                            RepeatBy.EveryHour -> {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextField(
+                                        state = hourState,
+                                        modifier = Modifier.width(60.dp),
+                                        inputTransformation = InputTransformation
+                                            .maxLength(2),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Done
+                                        ),
+                                        lineLimits = TextFieldLineLimits.SingleLine,
+                                    )
+
+                                    Text(":")
+
+                                    TextField(
+                                        state = minutesState,
+                                        modifier = Modifier.width(60.dp),
+                                        inputTransformation = InputTransformation
+                                            .maxLength(2),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Done
+                                        ),
+                                        lineLimits = TextFieldLineLimits.SingleLine,
+                                    )
+                                }
+                            }
+
+                            RepeatBy.Weekly -> {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextField(
+                                        state = weekState,
+                                        modifier = Modifier.width(60.dp),
+                                        inputTransformation = InputTransformation
+                                            .maxLength(3),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Done
+                                        ),
+                                        lineLimits = TextFieldLineLimits.SingleLine,
+                                    )
+
+                                    Text("number of weeks")
+                                }
+                            }
+
+                            RepeatBy.Yearly -> {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextField(
+                                        state = yearState,
+                                        modifier = Modifier.width(60.dp),
+                                        inputTransformation = InputTransformation
+                                            .maxLength(4),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Done
+                                        ),
+                                        lineLimits = TextFieldLineLimits.SingleLine,
+                                    )
+
+                                    Text("number of years")
+                                }
+                            }
+
+                            RepeatBy.Monthly -> {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    TextField(
+                                        state = yearState,
+                                        modifier = Modifier.width(60.dp),
+                                        inputTransformation = InputTransformation
+                                            .maxLength(2),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Done
+                                        ),
+                                        lineLimits = TextFieldLineLimits.SingleLine,
+                                    )
+
+                                    Text("number of months")
+                                }
+                            }
+
+                            RepeatBy.SpecifyDayOfTheWeek -> {
+                                Row(
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Column {
+                                        Button(
+                                            onClick = { showDayOfWeekDropDown.value = true },
+                                            colors = ButtonDefaults.buttonColors().copy(
+                                                containerColor = color,
+                                                contentColor = Color.autoTextColorChange
+                                            )
+                                        ) {
+                                            Text(dayOfWeekState.value.title)
+                                        }
+
+                                        if (showDayOfWeekDropDown.value) {
+                                            DropdownMenu(
+                                                expanded = showDayOfWeekDropDown.value,
+                                                onDismissRequest = {
+                                                    showDayOfWeekDropDown.value = false
+                                                }
+                                            ) {
+                                                dayOfWeek.forEach {
+                                                    DropdownMenuItem(
+                                                        text = {
+                                                            Text(it.name.title)
+                                                        },
+                                                        onClick = {
+                                                            dayOfWeekState.value = it.name
+                                                            showDayOfWeekDropDown.value = false
+                                                        }
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                    }
+
+                                    Text("will reset the goal")
+                                }
+                            }
+
                             else -> {}
                         }
                     }
 
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TextButton(
+                            onClick = {},
+                            colors = ButtonDefaults.textButtonColors().copy(
+                                contentColor = color
+                            )
+                        ) {
+                            Text("Cancel")
+                        }
+
+                        TextButton(
+                            onClick = {},
+                            colors = ButtonDefaults.textButtonColors().copy(
+                                contentColor = color
+                            )
+                        ) {
+                            Text("Use")
+                        }
+                    }
                 }
             }
         }

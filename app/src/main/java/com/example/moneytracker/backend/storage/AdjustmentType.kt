@@ -7,11 +7,11 @@ import com.example.moneytracker.R
 @Keep
 enum class AdjustmentType(
     val text: String,
-    val colorDebt: Int = R.color.RepayDebt,
-    val colorLent: Int = R.color.RepayLoan,
-    val colorAttain: Int = R.color.Attain,
+    val color: Int,
     val icon: Int,
 ) {
-    REPAYMENT("Repay", icon = R.drawable.outlined_repay),
-    ATTAIN("Attain", icon = R.drawable.oulined_attain),
+    DEBT_REPAY("Debt Repay", icon = R.drawable.outlined_repay, color = R.color.RepayDebt),
+    LENT_REPAY("Lent Repay", icon = R.drawable.outlined_repay, color = R.color.RepayLoan),
+    GOAL_ATTAIN("Goal Attain", icon = R.drawable.oulined_attain, color = R.color.Attain),
+    INITIAL("Initial", icon = R.drawable.outlined_repay, color = R.color.gray),
 }

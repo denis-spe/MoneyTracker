@@ -521,7 +521,7 @@ fun ModelDrawerContent(
                         title = "Note",
                         description = "Take a note for the given amount",
                         colorResId = colorResId,
-                        wasSuccess = wasSuccess
+                        wasSuccess = null
                     )
                 }
             }
@@ -644,7 +644,9 @@ fun ModelDrawerContent(
                                         description = descriptionState.text.toString(),
                                         adjustmentIcon = it.labelIcon,
                                         paymentMethod = selectedPaymentMethod.value,
-                                        adjustmentType = AdjustmentType.REPAYMENT,
+                                        adjustmentType = if (dataType == DataType.DEBT)
+                                            AdjustmentType.DEBT_REPAY
+                                        else AdjustmentType.LENT_REPAY,
                                     )
 
                                     adjustment.dataset = it
@@ -687,7 +689,7 @@ fun ModelDrawerContent(
                                         description = descriptionState.text.toString(),
                                         adjustmentIcon = it.labelIcon,
                                         paymentMethod = selectedPaymentMethod.value,
-                                        adjustmentType = AdjustmentType.ATTAIN,
+                                        adjustmentType = AdjustmentType.GOAL_ATTAIN,
                                     )
                                     adjustment.dataset = it
 
