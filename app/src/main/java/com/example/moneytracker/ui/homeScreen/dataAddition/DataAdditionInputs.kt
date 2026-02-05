@@ -32,6 +32,7 @@ import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.text.input.then
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -199,6 +200,7 @@ fun ModelDrawerTextField(
     title: String = "",
     description: String = "",
     state: TextFieldState,
+    displayText: MutableState<String>,
     placeholder: String,
     colorResId: Int,
     textLength: Int? = null,
@@ -218,14 +220,14 @@ fun ModelDrawerTextField(
     val onDialogShow = remember { mutableStateOf(false) }
     val optionsTitle = if (title == "Label") "Required" else
         "Optional"
-    val text = remember {
-        mutableStateOf(optionsTitle)
-    }
 
 
     if (onDialogShow.value) {
         Dialog(
-            onDismissRequest = { onDialogShow.value = false },
+            onDismissRequest = {
+                state.setTextAndPlaceCursorAtEnd(displayText.value)
+                onDialogShow.value = false
+            },
         ) {
             Card(
                 modifier = DIALOG_CARD_MODIFIER
@@ -288,7 +290,22 @@ fun ModelDrawerTextField(
                         onKeyboardAction = KeyAction {
                             if (state.text.isNotEmpty()) {
                                 onDialogShow.value = false
-                                text.value = state.text.toString()
+                                displayText.value = state.text.toString()
+                            }
+                        },
+                        trailingIcon = {
+                            if (state.text.isNotEmpty()) {
+                                IconButton(
+                                    onClick = {
+                                        state.setTextAndPlaceCursorAtEnd("")
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+
+                                        contentDescription = "clear text"
+                                    )
+                                }
                             }
                         },
                         shape = SHAPE,
@@ -306,8 +323,7 @@ fun ModelDrawerTextField(
                     ) {
                         TextButton(
                             onClick = {
-                                state.setTextAndPlaceCursorAtEnd("")
-                                text.value = optionsTitle
+                                state.setTextAndPlaceCursorAtEnd(displayText.value)
                                 onDialogShow.value = false
                             }
                         ) {
@@ -318,7 +334,7 @@ fun ModelDrawerTextField(
                             onClick = {
                                 if (state.text.isNotEmpty()) {
                                     onDialogShow.value = false
-                                    text.value = state.text.toString()
+                                    displayText.value = state.text.toString()
                                 }
                             }
                         ) {
@@ -364,8 +380,9 @@ fun ModelDrawerTextField(
                 Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
             }
 
-            val textValue = if (text.value.length > MAX_LABEL_LENGTH)
-                text.value.take(MAX_LABEL_LENGTH) + "..." else text.value
+            val textValue = if (displayText.value.length > MAX_LABEL_LENGTH)
+                displayText.value.take(MAX_LABEL_LENGTH) + "..." else
+                (displayText.value.ifEmpty { optionsTitle })
 
             Text(textValue, color = color, fontSize = fontSize)
         }
@@ -380,7 +397,9 @@ fun ModelDrawerAmountField(
     placeholder: String,
     colorResId: Int,
     shape: Shape = CircleShape,
+    showInRow: Boolean = false,
     wasSuccess: MutableState<State>? = null,
+    displayState: MutableState<String>,
 ) {
     modifier.fillMaxWidth(MaxWidth)
     val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
@@ -394,15 +413,14 @@ fun ModelDrawerAmountField(
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val onDialogShow = remember { mutableStateOf(false) }
-    var amountToDisplay by remember { mutableStateOf("${symbol}0.0") }
+
 
 
     if (onDialogShow.value) {
         Dialog(
             onDismissRequest = {
-                amountToDisplay = "${symbol}0.0"
-                state.setTextAndPlaceCursorAtEnd("")
                 onDialogShow.value = false
+                state.setTextAndPlaceCursorAtEnd(displayState.value)
             },
         ) {
             Card(
@@ -461,9 +479,9 @@ fun ModelDrawerAmountField(
                         onKeyboardAction = KeyAction {
                             if (state.text.isNotEmpty()) {
                                 onDialogShow.value = false
-                                amountToDisplay = if (state.text.isNotEmpty())
-                                    state.text.toString().toDouble().formatToAmount() else
-                                    "${symbol}0.0"
+                                displayState.value = if (state.text.isNotEmpty())
+                                    state.text.toString() else
+                                    "0.0"
                             }
                         },
                         leadingIcon = {
@@ -473,6 +491,22 @@ fun ModelDrawerAmountField(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = AMOUNT_FONT_SIZE
                             )
+                        },
+
+                        trailingIcon = {
+                            if (state.text.isNotEmpty()) {
+                                IconButton(
+                                    onClick = {
+                                        state.setTextAndPlaceCursorAtEnd("")
+                                    }
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Clear,
+
+                                        contentDescription = "clear amount"
+                                    )
+                                }
+                            }
                         },
 
                         inputTransformation = InputTransformation.maxLength(16).then(
@@ -490,9 +524,8 @@ fun ModelDrawerAmountField(
                     ) {
                         TextButton(
                             onClick = {
-                                state.setTextAndPlaceCursorAtEnd("")
-                                amountToDisplay = "${symbol}0.0"
                                 onDialogShow.value = false
+                                state.setTextAndPlaceCursorAtEnd(displayState.value)
                             }
                         ) {
                             Text("Cancel", fontSize = fontSize)
@@ -500,12 +533,8 @@ fun ModelDrawerAmountField(
 
                         TextButton(
                             onClick = {
-                                if (state.text.isNotEmpty()) {
-                                    onDialogShow.value = false
-                                    amountToDisplay = if (state.text.isNotEmpty())
-                                        state.text.toString().toDouble().formatToAmount() else
-                                        "${symbol}0.0"
-                                }
+                                onDialogShow.value = false
+                                displayState.value = state.text.toString()
                             }
                         ) {
                             Text("OK", fontSize = fontSize)
@@ -538,14 +567,16 @@ fun ModelDrawerAmountField(
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.amount),
-                    contentDescription = "Calendar",
+                    contentDescription = "Amount",
                     modifier = Modifier.size(ICON_SIZE)
                 )
 
                 Spacer(modifier = Modifier.width(5.dp))
                 Text("Amount", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
             }
-            Text(amountToDisplay, color = color, fontSize = fontSize)
+            val amount = if (displayState.value.isEmpty()) "${symbol}0.0" else
+                displayState.value.toDouble().formatToAmount()
+            Text(amount, color = color, fontSize = fontSize)
         }
     }
 

@@ -34,6 +34,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,7 +62,7 @@ import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
 
-private val MODEL_DRAWER_ICON_SIZE = 25.dp
+val MODEL_DRAWER_ICON_SIZE = 25.dp
 val FONT_WEIGHT = FontWeight.Bold
 val MAX_LABEL_LENGTH = 15
 
@@ -337,6 +338,7 @@ fun ModelDrawerContent(
     val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
     val endLocalDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
     val amountState = rememberTextFieldState()
+    val amountToDisplay = rememberSaveable { mutableStateOf("") }
     val labelState = rememberTextFieldState()
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
@@ -414,6 +416,7 @@ fun ModelDrawerContent(
                         placeholder = "0.0",
                         colorResId = colorResId,
                         wasSuccess = wasSuccess,
+                        displayState = amountToDisplay
                     )
                 }
             }
@@ -430,7 +433,8 @@ fun ModelDrawerContent(
                         placeholder = placeholder,
                         colorResId = colorResId,
                         wasSuccess = wasSuccess,
-                        textLength = MAX_LABEL_LENGTH
+                        textLength = MAX_LABEL_LENGTH,
+                        displayText = rememberSaveable { mutableStateOf("") }
                     )
                 }
             }
@@ -521,7 +525,8 @@ fun ModelDrawerContent(
                         title = "Note",
                         description = "Take a note for the given amount",
                         colorResId = colorResId,
-                        wasSuccess = null
+                        wasSuccess = null,
+                        displayText = rememberSaveable { mutableStateOf("") }
                     )
                 }
             }
@@ -651,7 +656,7 @@ fun ModelDrawerContent(
 
                                     adjustment.dataset = it
 
-                                    viewModel.addRepayData(
+                                    viewModel.addAdjustmentData(
                                         it,
                                         adjustment
                                     )
@@ -693,7 +698,7 @@ fun ModelDrawerContent(
                                     )
                                     adjustment.dataset = it
 
-                                    viewModel.addRepayData(
+                                    viewModel.addAdjustmentData(
                                         it,
                                         adjustment
                                     )

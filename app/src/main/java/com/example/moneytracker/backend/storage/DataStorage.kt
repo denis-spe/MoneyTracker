@@ -61,4 +61,30 @@ interface DataStorage {
      * @param adjustment the adjustment
      */
     suspend fun removeAdjustmentDataset(userId: String, datasetId: String, adjustment: Adjustment)
+
+    /**
+     * Update a dataset to the storage
+     * @param userId the user id
+     * @param oldDataset the dataset to update
+     * @param newDataset the dataset to update the old one
+     */
+    suspend fun updateDataset(
+        userId: String,
+        oldDataset: Dataset,
+        newDataset: Dataset
+    )
+
+    /**
+     * Update a dataset to the storage
+     * @param userId the user id
+     * @param datasetId of the dataset
+     * @param oldAdjustment to update with the new one
+     * @param newAdjustment to update the old one
+     */
+    suspend fun updateAdjustmentDataset(
+        userId: String,
+        datasetId: String,
+        oldAdjustment: Adjustment,
+        newAdjustment: Adjustment
+    )
 }

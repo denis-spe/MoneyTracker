@@ -22,7 +22,7 @@ class DataStorageImpl(
     override val db: FirebaseFirestore
 ) : DataStorage {
 
-    fun Dataset.toMap(): Map<String, Any?> {
+    fun Dataset.toMap(): Map<String, Any> {
         return mapOf(
             "id" to id,
             "dataType" to dataType.name, // store enum as String
@@ -195,6 +195,43 @@ class DataStorageImpl(
             }
     }
 
+    override suspend fun updateDataset(
+        userId: String,
+        oldDataset: Dataset,
+        newDataset: Dataset
+    ) {
+        Log.d(
+            "DataStorageImpl",
+            "Update user=$userId dataset.id=${oldDataset.id} label=${oldDataset.label}"
+        )
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+
+        // read (may be served from cache if offline)
+        val snapshot = docRef.get().await()
+        val datasets = casting(snapshot.get("datasets")) ?: emptyList()
+
+        val mutableDatasets = datasets.toMutableList()
+        val isRemoved = mutableDatasets.removeAll { (it["id"] as? String) == oldDataset.id }
+
+        if (isRemoved) {
+            Log.d("Dataset update", "Removed for update")
+        } else {
+            Log.d("Dataset update", "Failed to remove")
+        }
+
+        // Add the new dataset
+        val wasAdded = mutableDatasets.add(newDataset.toMap())
+
+        if (wasAdded) {
+            Log.d("Dataset update", "Added new dataset for update")
+        } else {
+            Log.d("Dataset update", "Failed to add dataset")
+        }
+
+        // write whole datasets array back (queued when offline)
+        docRef.update("datasets", mutableDatasets).await()
+    }
+
     override suspend fun addAdjustmentDataset(
         userId: String,
         datasetId: String,
@@ -325,6 +362,51 @@ class DataStorageImpl(
         val items =
             (casting(datasetMap["adjustment"]) ?: emptyList()).toMutableList()
         items.removeAll { (it["adjustmentId"] as? String) == adjustment.adjustmentId }
+        datasetMap["adjustment"] = items
+        mutableDatasets[idx] = datasetMap
+
+        // write whole datasets array back (queued when offline)
+        docRef.update("datasets", mutableDatasets).await()
+    }
+
+    override suspend fun updateAdjustmentDataset(
+        userId: String,
+        datasetId: String,
+        oldAdjustment: Adjustment,
+        newAdjustment: Adjustment
+    ) {
+        Log.d(
+            "DataStorageImpl",
+            "removeAdjustmentDataset called: $oldAdjustment for datasetId=$datasetId userId=$userId"
+        )
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+
+        // read (may be served from cache if offline)
+        val snapshot = docRef.get().await()
+        val datasets = casting(snapshot.get("datasets")) ?: emptyList()
+
+        val mutableDatasets = datasets.toMutableList()
+        val idx = mutableDatasets.indexOfFirst { (it["id"] as? String) == datasetId }
+
+        if (idx == -1) {
+            throw IllegalArgumentException("Dataset $datasetId not found for user $userId")
+        }
+
+        // mutate target dataset's items
+        val datasetMap = mutableDatasets[idx].toMutableMap()
+        val items =
+            (casting(datasetMap["adjustment"]) ?: emptyList()).toMutableList()
+        items.removeAll { (it["adjustmentId"] as? String) == oldAdjustment.adjustmentId }
+        val wasUpdated = items.add(newAdjustment.adjustmentToMap)
+        if (wasUpdated) {
+            Log.d(
+                "Adjustment update",
+                "${oldAdjustment.dataset?.label} = ${oldAdjustment.adjustmentId}"
+            )
+        } else {
+            Log.d("Adjustment update", "Failed to update")
+        }
+
         datasetMap["adjustment"] = items
         mutableDatasets[idx] = datasetMap
 

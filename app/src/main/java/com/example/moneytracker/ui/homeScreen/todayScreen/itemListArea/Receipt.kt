@@ -15,6 +15,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.input.clearText
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
@@ -22,16 +26,19 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -51,17 +58,26 @@ import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
+import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
+import com.example.moneytracker.ui.homeScreen.dataAddition.MAX_LABEL_LENGTH
+import com.example.moneytracker.ui.homeScreen.dataAddition.MODEL_DRAWER_ICON_SIZE
 import com.example.moneytracker.ui.homeScreen.dataAddition.MaxWidth
+import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerAmountField
+import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerButton
+import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTextField
 import com.example.moneytracker.ui.theme.autoTextColorChange
+import kotlinx.coroutines.android.awaitFrame
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.number
 import network.chaintech.kmp_date_time_picker.utils.now
@@ -780,12 +796,248 @@ fun OnDeleteReceipt(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun OnUpdate(
+    dataAdjust: DataAdjust,
+    viewModel: HomeScreenViewModel,
+    isUpdateModelBottonOpen: MutableState<Boolean>
+) {
+    remember { mutableStateOf(false) }
+    remember { mutableStateOf(false) }
+    val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
+    val endLocalDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
+    val amountState = rememberTextFieldState()
+    val displayAmountState = rememberSaveable { mutableStateOf("") }
+    val labelState = rememberTextFieldState()
+    val displayLabel = rememberSaveable { mutableStateOf("") }
+    val descriptionState = rememberTextFieldState()
+    val wasSuccess = remember { mutableStateOf(State.INITIAL) }
+    remember { mutableStateOf(State.INITIAL) }
+    val labelIconState = remember { mutableStateOf(Pair("description", R.drawable.description)) }
+    remember { mutableStateOf<Dataset?>(null) }
+    val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
+    rememberTextFieldState()
+    val lazyState = rememberLazyListState()
+
+    val dataType = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.dataType.text
+        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.text
+    }
+
+    val colorResId = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.dataType.color
+        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
+    }
+
+    val icon = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.dataType.filledIcon
+        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.icon
+    }
+
+    val description = when (dataAdjust) {
+        is DataAdjust.Data -> "Updating ${dataAdjust.dataset.label} " +
+                dataAdjust.dataset.dataType.text
+
+        is DataAdjust.Adjust -> "Updating ${dataAdjust.adjustment.dataset?.label} " +
+                dataAdjust.adjustment.adjustmentType.text
+    }
+
+    if (isUpdateModelBottonOpen.value) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                isUpdateModelBottonOpen.value = false
+            }
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val color = colorResource(id = colorResId)
+
+                    Icon(
+                        modifier = Modifier
+                            .size(MODEL_DRAWER_ICON_SIZE)
+                            .padding(end = 5.dp),
+                        painter = painterResource(id = icon),
+                        contentDescription = dataType,
+                        tint = color
+                    )
+
+                    Text(description, color = color, fontWeight = FONT_WEIGHT)
+                }
+
+                LazyColumn(
+                    modifier = Modifier.fillMaxWidth(),
+                    state = lazyState,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center,
+                ) {
+                    // Amount
+                    item(key = 322) {
+                        Row(
+                            modifier = Modifier.animateItem()
+                        ) {
+                            ModelDrawerAmountField(
+                                state = amountState,
+                                placeholder = "0.0",
+                                colorResId = colorResId,
+                                showInRow = true,
+                                wasSuccess = wasSuccess,
+                                displayState = displayAmountState
+                            )
+                        }
+                    }
+
+                    // Label
+                    item(key = 171) {
+                        when (dataAdjust) {
+                            is DataAdjust.Data -> {
+                                Row(
+                                    modifier = Modifier.animateItem()
+                                ) {
+                                    ModelDrawerTextField(
+                                        state = labelState,
+                                        title = "Label",
+                                        description = "Add a label for the given amount",
+                                        placeholder = dataAdjust.dataset.label,
+                                        colorResId = colorResId,
+                                        wasSuccess = wasSuccess,
+                                        textLength = MAX_LABEL_LENGTH,
+                                        displayText = displayLabel
+                                    )
+                                }
+                            }
+
+                            is DataAdjust.Adjust -> {}
+                        }
+                    }
+
+                    // Updating dataset
+                    item(key = 6) {
+                        val amountAsDouble = amountState.text.toString().toDoubleOrNull()
+
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateItem(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            when (dataAdjust) {
+                                is DataAdjust.Data -> {
+                                    ModelDrawerButton(
+                                        text = "Apply changes",
+                                        wasSuccess = wasSuccess,
+                                        colorResId = colorResId,
+                                        filledColor = colorResource(colorResId),
+                                        textColor = Color.White
+                                    ) {
+                                        if (amountAsDouble != null && labelState.text.toString()
+                                                .isNotEmpty()
+                                        ) {
+                                            val dataset = dataAdjust.dataset
+                                            viewModel.updateData(
+                                                Dataset(
+                                                    id = dataset.id,
+                                                    dataType = dataset.dataType,
+                                                    amount = dataset.amount,
+                                                    label = dataset.label,
+                                                    description = dataset.description,
+                                                    dateTime = dataset.dateTime,
+                                                    labelIcon = dataset.labelIcon,
+                                                    paymentMethod = dataset.paymentMethod,
+                                                    deadlineDateTime = dataset.deadlineDateTime,
+                                                    adjustmentStatus = dataset.adjustmentStatus
+                                                ),
+                                                newDataset = Dataset(
+                                                    id = dataset.id,
+                                                    dataType = dataset.dataType,
+                                                    amount = amountAsDouble,
+                                                    label = labelState.text.toString(),
+                                                    description = descriptionState.text.toString(),
+                                                    dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                                    labelIcon = labelIconState.value.second,
+                                                    paymentMethod = selectedPaymentMethod.value,
+                                                    deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
+                                                    adjustmentStatus = AdjustmentStatus.PENDING
+                                                )
+                                            )
+
+
+                                            wasSuccess.value = State.SUCCESS
+
+                                            // Reset all state
+                                            amountState.clearText()
+                                            labelState.clearText()
+                                            descriptionState.clearText()
+                                            labelIconState.value = Pair(
+                                                "description",
+                                                R.drawable.description
+                                            )
+
+                                            isUpdateModelBottonOpen.value = false
+
+                                        } else {
+                                            wasSuccess.value = State.ERROR
+                                        }
+                                    }
+                                }
+
+                                is DataAdjust.Adjust -> {}
+
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+    }
+
+
+    LaunchedEffect(isUpdateModelBottonOpen.value) {
+        if (!isUpdateModelBottonOpen.value) return@LaunchedEffect
+
+        // wait for BottomSheet to render first frame
+        awaitFrame()
+
+        val amount = when (dataAdjust) {
+            is DataAdjust.Data -> dataAdjust.dataset.amount
+            is DataAdjust.Adjust -> dataAdjust.adjustment.amount
+        }
+        val label = if (dataAdjust is DataAdjust.Data) {
+            dataAdjust.dataset.label
+        } else ""
+
+        if (amountState.text.toString() != amount.toString()) {
+            amountState.setTextAndPlaceCursorAtEnd(amount.toString())
+            displayAmountState.value = amount.toString()
+
+            labelState.setTextAndPlaceCursorAtEnd(label)
+            displayLabel.value = label
+        }
+    }
+
+}
+
 @Composable
 fun Receipt(
     dataAdjust: DataAdjust,
     onShowDialog: MutableState<Boolean>
 ) {
     val onShowDeleteDialog = remember { mutableStateOf(false) }
+    val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
     val viewModel: HomeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
 
     Dialog(
@@ -803,7 +1055,9 @@ fun Receipt(
                     is DataAdjust.Data ->
                         DatasetReceipt(
                             dataset = dataAdjust.dataset,
-                            onEdit = {},
+                            onEdit = {
+                                isUpdateModelBottonOpen.value = true
+                            },
                             onDelete = {
                                 onShowDeleteDialog.value = true
                             }
@@ -815,7 +1069,9 @@ fun Receipt(
                         AdjustmentReceipt(
                             adjustment = dataAdjust.adjustment,
                             data = dataAdjust.adjustment.dataset!!,
-                            onEdit = {},
+                            onEdit = {
+                                isUpdateModelBottonOpen.value = true
+                            },
                             onDelete = {
                                 onShowDeleteDialog.value = true
                             }
@@ -843,5 +1099,11 @@ fun Receipt(
         onShowDialog.value = false
         onShowDialog.value = false
     }
+
+    OnUpdate(
+        dataAdjust = dataAdjust,
+        viewModel = viewModel,
+        isUpdateModelBottonOpen = isUpdateModelBottonOpen
+    )
 }
 

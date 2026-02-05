@@ -261,6 +261,16 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    fun updateData(oldDataset: Dataset, newDataset: Dataset) {
+        viewModelScope.launch {
+            dataStorage.updateDataset(
+                userState.value!!.uid,
+                oldDataset = oldDataset,
+                newDataset = newDataset
+            )
+        }
+    }
+
     fun removeData(dataset: Dataset) {
         viewModelScope.launch {
             dataStorage.removeDataset(userState.value!!.uid, dataset = dataset)
@@ -277,7 +287,7 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun addRepayData(dataset: Dataset, adjustment: Adjustment) {
+    fun addAdjustmentData(dataset: Dataset, adjustment: Adjustment) {
         viewModelScope.launch {
             try {
                 dataStorage.addAdjustmentDataset(
@@ -286,7 +296,26 @@ class HomeScreenViewModel @Inject constructor(
                     adjustment = adjustment
                 )
             } catch (e: Exception) {
-                Log.e("HomeScreenViewModel", "addRepayData failed", e)
+                Log.e("HomeScreenViewModel", "addAdjustmentData failed", e)
+            }
+        }
+    }
+
+    fun updateAdjustmentData(
+        dataset: Dataset,
+        oldAdjustment: Adjustment,
+        newAdjustment: Adjustment
+    ) {
+        viewModelScope.launch {
+            try {
+                dataStorage.updateAdjustmentDataset(
+                    userState.value!!.uid,
+                    datasetId = dataset.id,
+                    oldAdjustment = oldAdjustment,
+                    newAdjustment = newAdjustment
+                )
+            } catch (e: Exception) {
+                Log.e("HomeScreenViewModel", "addAdjustmentData failed", e)
             }
         }
     }
