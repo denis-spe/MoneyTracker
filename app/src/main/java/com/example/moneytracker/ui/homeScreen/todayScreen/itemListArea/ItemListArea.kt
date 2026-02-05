@@ -4,15 +4,13 @@ package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -72,11 +70,9 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
@@ -86,7 +82,6 @@ import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.theme.autoTextColorChange
-import com.google.firebase.Timestamp
 
 private val spacerWith = 14.dp
 private val labelFontSize = 13.sp
@@ -367,8 +362,14 @@ fun ItemListAreaSort(
         }
 
         if (isCategoryModelBottomOpen.value) {
-            var category = DataType.entries.map { it.text }
-            category = category + AdjustmentType.entries.map { it.text }
+            var category = DataType.entries.map { Pair(it.text, it.color) }
+            category = category + AdjustmentType.entries.map {
+                if (it == AdjustmentType.INITIAL) {
+                    Pair("Don't sort", it.color)
+                } else {
+                    Pair(it.text, it.color)
+                }
+            }
 
             ModalBottomSheet(
                 onDismissRequest = {
@@ -404,36 +405,33 @@ fun ItemListAreaSort(
 
                     ) {
                         items(category.size) {
-                            if (categoryState.value == category[it])
-                                Modifier.border(1.dp, Color.Gray, CircleShape)
-                            else Modifier
 
-                            val colorResId = when (categoryState.value) {
-                                "Goal" -> R.color.Goal
-                                "Debt" -> R.color.Debt
-                                "Lent" -> R.color.Lent
-                                "Expense" -> R.color.Expense
-                                "Savings" -> R.color.Savings
-                                "Earnings" -> R.color.Earnings
-                                "Repay" -> R.color.RepayLoan
-                                "Attain" -> R.color.Attain
-                                else -> R.color.gray
-                            }
+
+                            val selectedCategory = category[it].first
+                            val colorResId = category[it].second
+
 
                             TextButton(
                                 onClick = {
-                                    categoryState.value = category[it]
+                                    if (selectedCategory == "Don't sort") {
+                                        categoryState.value = ""
+                                        categorySorting.value = "Initial"
+                                        isCategoryModelBottomOpen.value = false
+                                    } else {
+                                        categoryState.value = selectedCategory
+                                    }
                                 },
                             ) {
                                 Text(
-                                    category[it],
-                                    color = if (categoryState.value == category[it])
-                                        colorResource(id = colorResId) else
-                                        colorResource(id = R.color.gray),
-                                    fontSize = if (categoryState.value == category[it]) 18.sp
+                                    text = selectedCategory,
+                                    color = if (selectedCategory == categoryState.value)
+                                        colorResource(colorResId)
+                                    else Color.Gray.copy(alpha = 0.5f),
+                                    fontSize = if (categoryState.value == selectedCategory) 18.sp
                                     else 15.sp,
                                 )
                             }
+
                         }
                     }
 
@@ -579,7 +577,7 @@ fun ItemListAreaSort(
                         modifier = Modifier.padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
-                        val selectedColor = Color.Blue.copy(0.4f)
+                        val selectedColor = if (isSystemInDarkTheme()) Color.White else Color.Black
                         val unselectedColor = Color.Gray.copy(0.4f)
 
                         Column {
@@ -771,71 +769,7 @@ fun ItemListArea(
                 .fillMaxSize()
         ) {
             items(datasetItems.size, key = { it }) { index ->
-                when (val dataset = datasetItems[index]) {
-                    is DataAdjust.Data -> {
-                        val wasCompleted = if (dataset.dataset.dataType == DataType.DEBT ||
-                            dataset.dataset.dataType == DataType.LENT ||
-                            dataset.dataset.dataType == DataType.GOAL
-                        )
-                            dataset.dataset.isAmountEqualToAdjustAmount() else false
-                        Row(
-                            modifier = Modifier.animateItem(
-                                fadeInSpec = tween(durationMillis = 250),
-                                fadeOutSpec = tween(durationMillis = 100),
-                                placementSpec = spring(
-                                    stiffness = Spring.StiffnessLow,
-                                    dampingRatio = Spring.DampingRatioMediumBouncy
-                                )
-                            )
-                        ) {
-                            ItemCard(
-                                label = dataset.dataset.label,
-                                labelIcon = dataset.dataset.labelIcon,
-                                amount = dataset.dataset.amount,
-                                dataType = dataset.dataset.dataType,
-                                colorResId = dataset.dataset.dataType.color,
-                                description = dataset.dataset.description,
-                                dateTime = dataset.dataset.dateTime,
-                                paymentMethod = dataset.dataset.paymentMethod,
-                                dataset = dataset.dataset,
-                                isCompleted = wasCompleted
-                            )
-                        }
-                    }
-
-                    is DataAdjust.Adjust -> {
-                        val dataset = dataset.adjustment
-
-                        val colorResId = dataset.adjustmentType.color
-
-                        Row(
-                            modifier = Modifier.animateItem(
-                                fadeInSpec = tween(durationMillis = 250),
-                                fadeOutSpec = tween(durationMillis = 100),
-                                placementSpec = spring(
-                                    stiffness = Spring.StiffnessLow,
-                                    dampingRatio = Spring.DampingRatioMediumBouncy
-                                )
-                            )
-                        ) {
-                            dataset.dataset?.let {
-                                ItemCard(
-                                    label = dataset.label,
-                                    labelIcon = dataset.adjustmentIcon,
-                                    amount = dataset.amount,
-                                    dataType = null,
-                                    colorResId = colorResId,
-                                    description = dataset.description,
-                                    dateTime = dataset.dateTime,
-                                    paymentMethod = dataset.paymentMethod,
-                                    adjustment = dataset,
-                                    dataset = it
-                                )
-                            }
-
-                        }
-                    }
-                }
+                ItemCard(dataAdjust = datasetItems[index])
             }
         }
     }
@@ -843,18 +777,56 @@ fun ItemListArea(
 
 @Composable
 fun ItemCard(
-    label: String,
-    labelIcon: Int,
-    amount: Double,
-    dataset: Dataset,
-    dataType: DataType? = null,
-    colorResId: Int,
-    description: String,
-    dateTime: Timestamp,
-    paymentMethod: PaymentMethod,
-    adjustment: Adjustment? = null,
-    isCompleted: Boolean = false
+    dataAdjust: DataAdjust,
 ) {
+
+    val colorResId = when (dataAdjust) {
+        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
+        is DataAdjust.Data -> dataAdjust.dataset.dataType.color
+    }
+
+    val labelIcon = when (dataAdjust) {
+        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentIcon
+        is DataAdjust.Data -> dataAdjust.dataset.labelIcon
+    }
+    val label = when (dataAdjust) {
+        is DataAdjust.Adjust -> dataAdjust.adjustment.label
+        is DataAdjust.Data -> dataAdjust.dataset.label
+    }
+    val description = when (dataAdjust) {
+        is DataAdjust.Adjust -> dataAdjust.adjustment.description
+        is DataAdjust.Data -> dataAdjust.dataset.description
+    }
+    val dateTime = when (dataAdjust) {
+        is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime
+        is DataAdjust.Data -> dataAdjust.dataset.dateTime
+    }
+    val paymentMethod = when (dataAdjust) {
+        is DataAdjust.Adjust -> dataAdjust.adjustment.paymentMethod
+        is DataAdjust.Data -> dataAdjust.dataset.paymentMethod
+    }
+
+    val amount = when (dataAdjust) {
+        is DataAdjust.Adjust -> dataAdjust.adjustment.amount
+        is DataAdjust.Data -> dataAdjust.dataset.amount
+    }
+
+    val dataType = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.dataType
+        else -> null
+    }
+
+    val isCompleted = when (dataAdjust) {
+        is DataAdjust.Data -> {
+            if (dataAdjust.dataset.dataType == DataType.DEBT ||
+                dataAdjust.dataset.dataType == DataType.LENT ||
+                dataAdjust.dataset.dataType == DataType.GOAL
+            )
+                dataAdjust.dataset.isAmountEqualToAdjustAmount() else false
+        }
+
+        is DataAdjust.Adjust -> false
+    }
 
     val color = colorResource(colorResId)
     val onShowDialog = remember { mutableStateOf(false) }
@@ -920,8 +892,16 @@ fun ItemCard(
                         else TextDecoration.None
                     )
 
-                    if (adjustment != null) {
-                        Text(text = dataset.label, color = color, fontSize = labelFontSize)
+                    when (dataAdjust) {
+                        is DataAdjust.Adjust -> {
+                            Text(
+                                text = dataAdjust.adjustment.dataset!!.label,
+                                color = color,
+                                fontSize = labelFontSize
+                            )
+                        }
+
+                        else -> {}
                     }
 
                     if (description.isNotEmpty()) {
@@ -938,6 +918,7 @@ fun ItemCard(
                 horizontalAlignment = Alignment.End
             ) {
                 var amount = amount.formatToAmount()
+
                 amount = when (dataType) {
                     DataType.EXPENSE -> "-$amount"
                     DataType.DEBT -> "-$amount"
@@ -989,8 +970,7 @@ fun ItemCard(
 
     if (onShowDialog.value) {
         Receipt(
-            dataset = dataset,
-            adjustment = adjustment,
+            dataAdjust = dataAdjust,
             onShowDialog = onShowDialog,
         )
     }

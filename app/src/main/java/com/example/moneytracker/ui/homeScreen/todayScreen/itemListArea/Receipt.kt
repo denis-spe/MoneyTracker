@@ -48,6 +48,7 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.AdjustmentType
+import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.addZeroIfLessThenTen
@@ -709,14 +710,14 @@ fun AdjustmentReceipt(
 
 @Composable
 fun OnDeleteReceipt(
-    data: Dataset? = null,
-    adjustment: Adjustment? = null,
+    dataAdjust: DataAdjust,
     onShowDeleteDialog: MutableState<Boolean>,
     onConfirm: () -> Unit
 ) {
-    val item = if (adjustment != null && data != null) {
-        adjustment.adjustmentType.text
-    } else data?.dataType?.text ?: ""
+    val item = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.dataType.text
+        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.text
+    }
 
     if (onShowDeleteDialog.value) {
         Dialog(
@@ -781,8 +782,7 @@ fun OnDeleteReceipt(
 
 @Composable
 fun Receipt(
-    dataset: Dataset,
-    adjustment: Adjustment? = null,
+    dataAdjust: DataAdjust,
     onShowDialog: MutableState<Boolean>
 ) {
     val onShowDeleteDialog = remember { mutableStateOf(false) }
@@ -799,44 +799,46 @@ fun Receipt(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                if (adjustment == null) {
-                    DatasetReceipt(
-                        dataset = dataset,
-                        onEdit = {},
-                        onDelete = {
-                            onShowDeleteDialog.value = true
+                when (dataAdjust) {
+                    is DataAdjust.Data ->
+                        DatasetReceipt(
+                            dataset = dataAdjust.dataset,
+                            onEdit = {},
+                            onDelete = {
+                                onShowDeleteDialog.value = true
+                            }
+                        ) {
+                            onShowDialog.value = false
                         }
-                    ) {
-                        onShowDialog.value = false
-                    }
-                } else {
-                    AdjustmentReceipt(
-                        adjustment = adjustment,
-                        data = dataset,
-                        onEdit = {},
-                        onDelete = {
-                            onShowDeleteDialog.value = true
+
+                    is DataAdjust.Adjust -> {
+                        AdjustmentReceipt(
+                            adjustment = dataAdjust.adjustment,
+                            data = dataAdjust.adjustment.dataset!!,
+                            onEdit = {},
+                            onDelete = {
+                                onShowDeleteDialog.value = true
+                            }
+                        ) {
+                            onShowDialog.value = false
                         }
-                    ) {
-                        onShowDialog.value = false
                     }
                 }
+
             }
         }
     }
 
     OnDeleteReceipt(
-        data = dataset,
-        adjustment = adjustment,
+        dataAdjust = dataAdjust,
         onShowDeleteDialog = onShowDeleteDialog,
     ) {
-        if (adjustment != null) {
-            viewModel.removeAdjustmentDataset(
-                dataset.id,
-                adjustment
+        when (dataAdjust) {
+            is DataAdjust.Data -> viewModel.removeData(dataAdjust.dataset)
+            is DataAdjust.Adjust -> viewModel.removeAdjustmentDataset(
+                dataAdjust.adjustment.dataset!!.id,
+                dataAdjust.adjustment
             )
-        } else {
-            viewModel.removeData(dataset)
         }
         onShowDialog.value = false
         onShowDialog.value = false
