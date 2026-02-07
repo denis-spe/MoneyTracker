@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.ui.theme.autoTextColorChange
 
 
@@ -67,13 +68,13 @@ private val ICONS = listOf(
 
 @Composable
 fun IconList(
-    onConfirm: MutableState<Pair<String, Int>>,
+    onConfirm: MutableState<TagIcon>,
     onDialogOpen: MutableState<Boolean>
 ) {
 
     var selectionIcon by remember {
         mutableStateOf(
-            Pair("description", R.drawable.description)
+            TagIcon("description", R.drawable.description)
         )
     }
 
@@ -119,7 +120,7 @@ fun IconList(
                     items(ICONS.size, key = { it }) { idx ->
                         val icon = ICONS[idx]
                         val borderModifier =
-                            if (selectionIcon.second == icon.second)
+                            if (selectionIcon.icon == icon.second)
                                 Modifier.border(
                                     2.dp,
                                     Color.autoTextColorChange,
@@ -141,7 +142,10 @@ fun IconList(
                             IconButton(
                                 modifier = borderModifier,
                                 onClick = {
-                                    selectionIcon = icon
+                                    selectionIcon = TagIcon(
+                                        icon.first,
+                                        icon.second
+                                    )
                                 }
                             ) {
                                 Image(

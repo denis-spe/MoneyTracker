@@ -12,7 +12,7 @@ data class Adjustment(
     val label: String,
     val description: String,
     val dateTime: Timestamp,
-    val adjustmentIcon: Int,
+    val tagIcon: TagIcon,
     val adjustmentType: AdjustmentType,
     val paymentMethod: PaymentMethod
 ) {

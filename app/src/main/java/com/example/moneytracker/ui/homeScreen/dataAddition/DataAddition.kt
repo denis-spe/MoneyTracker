@@ -50,6 +50,7 @@ import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
@@ -343,7 +344,7 @@ fun ModelDrawerContent(
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
     val wasRepaySuccess = remember { mutableStateOf(State.INITIAL) }
-    val labelIconState = remember { mutableStateOf(Pair("description", R.drawable.description)) }
+    val labelIconState = remember { mutableStateOf(TagIcon("description", R.drawable.description)) }
     val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val adjustAmountState = rememberTextFieldState()
@@ -601,7 +602,7 @@ fun ModelDrawerContent(
                                     label = labelState.text.toString(),
                                     description = descriptionState.text.toString(),
                                     dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                    labelIcon = labelIconState.value.second,
+                                    tagIcon = labelIconState.value,
                                     paymentMethod = selectedPaymentMethod.value,
                                     deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
                                     adjustmentStatus = AdjustmentStatus.PENDING
@@ -613,7 +614,7 @@ fun ModelDrawerContent(
                             amountState.clearText()
                             labelState.clearText()
                             descriptionState.clearText()
-                            labelIconState.value = Pair(
+                            labelIconState.value = TagIcon(
                                 "description",
                                 R.drawable.description
                             )
@@ -647,7 +648,7 @@ fun ModelDrawerContent(
                                         dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
                                         label = "${it.dataType.text} Repaid ->",
                                         description = descriptionState.text.toString(),
-                                        adjustmentIcon = it.labelIcon,
+                                        tagIcon = it.tagIcon,
                                         paymentMethod = selectedPaymentMethod.value,
                                         adjustmentType = if (dataType == DataType.DEBT)
                                             AdjustmentType.DEBT_REPAY
@@ -692,7 +693,7 @@ fun ModelDrawerContent(
                                         dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
                                         label = "Attained: ${it.label}",
                                         description = descriptionState.text.toString(),
-                                        adjustmentIcon = it.labelIcon,
+                                        tagIcon = it.tagIcon,
                                         paymentMethod = selectedPaymentMethod.value,
                                         adjustmentType = AdjustmentType.GOAL_ATTAIN,
                                     )

@@ -104,7 +104,7 @@ fun <T> YesterdayItem(dataAdjust: T) {
 
                             // Payment Method Image
                             Image(
-                                painter = painterResource(id = dataAdjust.labelIcon),
+                                painter = painterResource(id = dataAdjust.tagIcon.icon),
                                 contentDescription = null,
                                 modifier = Modifier.size(ICON_SIZE)
                             )

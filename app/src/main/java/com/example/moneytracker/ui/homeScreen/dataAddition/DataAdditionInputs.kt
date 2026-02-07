@@ -96,6 +96,7 @@ import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
@@ -133,7 +134,7 @@ private val AMOUNT_FONT_SIZE = 20.sp
 fun ModelDrawerTag(
     colorResId: Int,
     title: String,
-    iconState: MutableState<Pair<String, Int>>,
+    iconState: MutableState<TagIcon>,
 ) {
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
@@ -176,10 +177,10 @@ fun ModelDrawerTag(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(iconState.value.first.title, color = color, fontSize = fontSize)
+                Text(iconState.value.name.title, color = color, fontSize = fontSize)
                 Spacer(modifier = Modifier.width(5.dp))
                 Image(
-                    painter = painterResource(id = iconState.value.second),
+                    painter = painterResource(id = iconState.value.icon),
                     contentDescription = "icon",
                     modifier = Modifier.size(ICON_SIZE)
                 )
@@ -693,7 +694,7 @@ fun AdjustmentField(
                                 },
                                 leadingIcon = {
                                     Image(
-                                        painter = painterResource(dataset.labelIcon),
+                                        painter = painterResource(dataset.tagIcon.icon),
                                         contentDescription = dataset.label,
                                         modifier = Modifier.size(ICON_SIZE)
                                     )

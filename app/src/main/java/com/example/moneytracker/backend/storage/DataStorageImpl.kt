@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
 import com.example.moneytracker.helper.casting
 import com.example.moneytracker.helper.toDataset
+import com.example.moneytracker.helper.toMap
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -21,22 +22,6 @@ import kotlin.random.Random
 class DataStorageImpl(
     override val db: FirebaseFirestore
 ) : DataStorage {
-
-    fun Dataset.toMap(): Map<String, Any> {
-        return mapOf(
-            "id" to id,
-            "dataType" to dataType.name, // store enum as String
-            "amount" to amount,
-            "label" to label,
-            "description" to description,
-            "dateTime" to dateTime, // Firestore Timestamp as-is
-            "deadlineDateTime" to deadlineDateTime,
-            "labelIcon" to labelIcon, // change model to use a string key
-            "paymentMethod" to paymentMethod.name,
-            "adjustmentStatus" to adjustmentStatus.name,
-            "adjustment" to adjustment.map { it.adjustmentToMap } // already map form
-        )
-    }
 
 
     @RequiresApi(Build.VERSION_CODES.O)

@@ -4,12 +4,14 @@ package com.example.moneytracker.helper
 import android.icu.text.DecimalFormat
 import android.os.Build
 import androidx.annotation.RequiresApi
+import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.TagIcon
 import com.google.firebase.Timestamp
 import kotlinx.datetime.minus
 import network.chaintech.kmp_date_time_picker.utils.now
@@ -123,6 +125,21 @@ val Adjustment.isForYesterday: Boolean
 
         return yesterday == dataDate
     }
+fun Dataset.toMap(): Map<String, Any> {
+    return mapOf(
+        "id" to id,
+        "dataType" to dataType.name, // store enum as String
+        "amount" to amount,
+        "label" to label,
+        "description" to description,
+        "dateTime" to dateTime, // Firestore Timestamp as-is
+        "deadlineDateTime" to deadlineDateTime,
+        "tagIcon" to tagIcon.tagIconToMap, // change model to use a string key
+        "paymentMethod" to paymentMethod.name,
+        "adjustmentStatus" to adjustmentStatus.name,
+        "adjustment" to adjustment.map { it.adjustmentToMap } // already map form
+    )
+}
 
 val Adjustment.adjustmentToMap: Map<String, Any>
     get() = mapOf(
@@ -131,10 +148,24 @@ val Adjustment.adjustmentToMap: Map<String, Any>
         "label" to label,
         "description" to description,
         "dateTime" to dateTime,
-        "adjustmentIcon" to adjustmentIcon,
+        "tagIcon" to tagIcon.tagIconToMap,
         "paymentMethod" to paymentMethod,
         "adjustmentType" to adjustmentType
     )
+
+val TagIcon.tagIconToMap: Map<String, Any>
+    get() = mapOf(
+        "name" to name,
+        "icon" to icon
+    )
+
+fun Map<*, *>.asTagIcon(): TagIcon {
+    val iconValue = (this["icon"] as? Number)?.toInt()
+    return TagIcon(
+        name = this["name"] as? String ?: "",
+        icon = if (iconValue == null || iconValue == 0) R.drawable.circle_error else iconValue
+    )
+}
 
 fun Map<*, *>.asAdjustment(): Adjustment {
     val amount = (this["amount"] as? Number)?.toDouble()
@@ -198,7 +229,10 @@ fun Map<*, *>.asAdjustment(): Adjustment {
         else -> AdjustmentType.INITIAL
     }
 
-    val adjustmentIcon = (this["adjustmentIcon"] as Number).toInt()
+    val tagIcon = (this["tagIcon"] as? Map<*, *>)?.asTagIcon() ?: TagIcon(
+        name = "",
+        icon = R.drawable.circle_error
+    )
     val adjustmentId = this["adjustmentId"] as String
 
     return Adjustment(
@@ -206,7 +240,7 @@ fun Map<*, *>.asAdjustment(): Adjustment {
         label = label,
         description = description,
         dateTime = dateTime,
-        adjustmentIcon = adjustmentIcon,
+        tagIcon = tagIcon,
         paymentMethod = paymentMethod,
         adjustmentType = adjustmentType,
         adjustmentId = adjustmentId
@@ -247,7 +281,10 @@ fun Map<*, *>.toDataset(): Dataset {
         description = this["description"] as? String ?: "",
         dateTime = parseTimestamp(this["dateTime"]),
         deadlineDateTime = parseTimestamp(this["deadlineDateTime"]),
-        labelIcon = (this["labelIcon"] as? Number)?.toInt() ?: 0,
+        tagIcon = (this["tagIcon"] as? Map<*, *>)?.asTagIcon() ?: TagIcon(
+            name = "",
+            icon = R.drawable.circle_error
+        ),
         paymentMethod = parseEnum(
             this["paymentMethod"],
             PaymentMethod.entries.toTypedArray(),

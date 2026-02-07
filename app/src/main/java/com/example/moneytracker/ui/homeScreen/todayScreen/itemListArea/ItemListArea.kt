@@ -775,6 +775,7 @@ fun ItemListArea(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ItemCard(
     dataAdjust: DataAdjust,
@@ -786,8 +787,8 @@ fun ItemCard(
     }
 
     val labelIcon = when (dataAdjust) {
-        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentIcon
-        is DataAdjust.Data -> dataAdjust.dataset.labelIcon
+        is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon
+        is DataAdjust.Data -> dataAdjust.dataset.tagIcon
     }
     val label = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.label
@@ -859,7 +860,7 @@ fun ItemCard(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Image(
-                        painter = painterResource(labelIcon),
+                        painter = painterResource(labelIcon.icon),
                         contentDescription = "list icon",
                         modifier = Modifier.size(ICON_SIZE)
                     )
