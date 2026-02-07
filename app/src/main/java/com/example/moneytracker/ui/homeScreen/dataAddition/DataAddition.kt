@@ -3,42 +3,40 @@ package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.BottomSheetDefaults
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.PrimaryTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -52,13 +50,11 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
-import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
@@ -76,119 +72,33 @@ fun DataAdditionModelDrawer(
     viewModel: HomeScreenViewModel,
     isBottomSheetOpen: Boolean,
 ) {
-    val dataTypes = DataType.entries.toList()
-    val pagerState = rememberPagerState { dataTypes.size }
-    val scope = rememberCoroutineScope()
-
-
     if (isBottomSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = {
                 viewModel.updateOnModelBottomSheetShow(false)
                 viewModel.updateIsBottomSheetContentLoading(true)
             },
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true
+            ),
             containerColor = BottomSheetDefaults.ContainerColor.copy(0.97f),
 
-        ) {
+            ) {
             LaunchedEffect(viewModel.isBottomSheetContentLoading) {
                 delay(800)
                 viewModel.updateIsBottomSheetContentLoading(false)
             }
-            /*.... Tab buttons ....*/
-            DataAdditionModelDrawerTopTitle(
-                dataTypes = dataTypes,
-                pageState = pagerState,
-                scope = scope
+
+            /*... Text field and button ...*/
+            DataAdditionModelDrawerContent(
+                datasets = datasets,
+                viewModel = viewModel,
+                isBottomSheetOpen = isBottomSheetOpen
             )
-
-            /*.... Horizontal divider .... */
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                HorizontalDivider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 10.dp)
-                )
-            }
-
-
-            if (viewModel.isBottomSheetContentLoading) {
-
-                /*... Loading indicator ...*/
-                Column(
-                    modifier = Modifier
-                        .fillMaxHeight(0.5f)
-                        .fillMaxWidth(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    CircularProgressIndicator(
-                        strokeCap = StrokeCap.Square
-                    )
-                }
-
-            } else {
-                /*... Text field and button ...*/
-                DataAdditionModelDrawerContent(
-                    dataTypes = dataTypes,
-                    pagerState = pagerState,
-                    datasets = datasets,
-                    viewModel = viewModel,
-                    isBottomSheetOpen = isBottomSheetOpen
-                )
-            }
         }
     }
 }
 
-@Composable
-fun DataAdditionModelDrawerTopTitle(
-    dataTypes: List<DataType>,
-    pageState: PagerState,
-    scope: CoroutineScope
-) {
-    LazyRow(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(10.dp),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        dataTypes.forEachIndexed { idx, it ->
-            item(key = it) {
-                // Color
-                val color = colorResource(it.color)
-
-                // Text button for data type
-                TextButton(
-                    modifier = Modifier.animateItem(),
-                    onClick = {
-                        scope.launch {
-                            pageState.animateScrollToPage(idx)
-                        }
-                    }
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(
-                            text = it.text,
-                            color = color,
-                            fontWeight = FONT_WEIGHT
-                        )
-                        if (pageState.currentPage == idx)
-                            Current(color)
-                    }
-
-                }
-            }
-        }
-    }
-}
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -197,21 +107,71 @@ fun DataAdditionModelDrawerContent(
     datasets: List<Dataset>,
     viewModel: HomeScreenViewModel,
     isBottomSheetOpen: Boolean,
-    pagerState: PagerState,
-    dataTypes: List<DataType>
 ) {
-    Column {
-        HorizontalPager(
-            pagerState,
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(min = 200.dp, max = 500.dp),
-            key = { it },
-            beyondViewportPageCount = 2,
-        ) {
-            val dataTypeTab = dataTypes[it]
 
-            when (dataTypeTab) {
+    val showDataTypeBottomSheet = remember { mutableStateOf(false) }
+    val clickedDataType = remember { mutableStateOf<DataType?>(null) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        DataType.entries.forEach {
+            Row(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
+                            .clickable {
+                                showDataTypeBottomSheet.value = true
+                                clickedDataType.value = it
+                            },
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column {
+                            Text(it.text, fontWeight = FONT_WEIGHT, color = colorResource(it.color))
+                            Text(
+                                it.typeDescription,
+                                fontWeight = FontWeight.Light,
+                                color = colorResource(it.color).copy(0.5f)
+                            )
+                        }
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = it.text,
+                            tint = colorResource(it.color)
+                        )
+                    }
+
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 10.dp),
+                        color = Color.LightGray.copy(0.4f)
+                    )
+                }
+            }
+        }
+    }
+
+    if (showDataTypeBottomSheet.value) {
+        ModalBottomSheet(
+            onDismissRequest = {
+                showDataTypeBottomSheet.value = false
+                clickedDataType.value = null
+            },
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true
+            ),
+        ) {
+            when (clickedDataType.value) {
                 DataType.EARNINGS -> {
                     ModelDrawerContent(
                         placeholder = "Earned from",
@@ -313,6 +273,8 @@ fun DataAdditionModelDrawerContent(
                         viewModel.updateIsBottomSheetContentLoading(true)
                     }
                 }
+
+                else -> {}
             }
         }
     }
@@ -349,6 +311,8 @@ fun ModelDrawerContent(
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val adjustAmountState = rememberTextFieldState()
     val lazyState = rememberLazyListState()
+    val selectedTab = remember { mutableIntStateOf(0) }
+
 
 
 
@@ -373,6 +337,12 @@ fun ModelDrawerContent(
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
     val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
 
+    val adjustmentColor = when (dataType) {
+        DataType.DEBT -> R.color.RepayDebt
+        DataType.LENT -> R.color.RepayLoan
+        else -> R.color.Attain
+    }
+
 
     Column(
         modifier = Modifier
@@ -380,329 +350,441 @@ fun ModelDrawerContent(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 10.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             val color = colorResource(id = colorResId)
 
             Icon(
                 modifier = Modifier
                     .size(MODEL_DRAWER_ICON_SIZE)
-                    .padding(end = 5.dp),
+                    .padding(bottom = 5.dp),
                 painter = painterResource(id = icon),
                 contentDescription = dataType.text,
                 tint = color
             )
 
-            Text(description, color = color, fontWeight = FONT_WEIGHT)
+            Text(dataType.typeDescription, color = color, fontWeight = FontWeight.Medium)
         }
 
-        LazyColumn(
-            modifier = Modifier.fillMaxWidth(),
-            state = lazyState,
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            // Amount
-            item(key = 39) {
-                Row(
-                    modifier = Modifier.animateItem()
-                ) {
-                    ModelDrawerAmountField(
-                        state = amountState,
-                        placeholder = "0.0",
-                        colorResId = colorResId,
-                        wasSuccess = wasSuccess,
-                        displayState = amountToDisplay
-                    )
-                }
-            }
-
-            // Label
-            item(key = 71) {
-                Row(
-                    modifier = Modifier.animateItem()
-                ) {
-                    ModelDrawerTextField(
-                        state = labelState,
-                        title = "Label",
-                        description = "Add a label for the given amount",
-                        placeholder = placeholder,
-                        colorResId = colorResId,
-                        wasSuccess = wasSuccess,
-                        textLength = MAX_LABEL_LENGTH,
-                        displayText = rememberSaveable { mutableStateOf("") }
-                    )
-                }
-            }
-
-            // Tag
-            item(key = 58) {
-                Row(
-                    modifier = Modifier.animateItem()
-                ) {
-                    ModelDrawerTag(
-                        colorResId = colorResId,
-                        title = "Tag",
-                        iconState = labelIconState
-                    )
-                }
-            }
-
-
-            // Adjust amount
-            item(key = 100) {
-                when (dataType) {
-                    DataType.LENT -> {
-                        Row(
-                            modifier = Modifier.animateItem()
-                        ) {
-                            AdjustmentField(
-                                isBottomSheetOpen,
-                                datatype = DataType.LENT,
-                                amountState = adjustAmountState,
-                                datasets = datasets.filter {
-                                    it.dataType == DataType.LENT
-                                },
-                                wasRepaySuccess = wasRepaySuccess,
-                                selectedDataset = selectedDataset,
-                                colorResId = R.color.RepayLoan
-                            )
-                        }
-                    }
-
-                    DataType.DEBT -> {
-                        Row(
-                            modifier = Modifier.animateItem()
-                        ) {
-                            AdjustmentField(
-                                isBottomSheetOpen,
-                                datatype = DataType.DEBT,
-                                amountState = adjustAmountState,
-                                datasets = datasets.filter {
-                                    it.dataType == DataType.DEBT
-                                },
-                                wasRepaySuccess = wasRepaySuccess,
-                                selectedDataset = selectedDataset,
-                                colorResId = R.color.RepayDebt
-                            )
-                        }
-                    }
-
-                    DataType.GOAL -> {
-                        Row(
-                            modifier = Modifier.animateItem()
-                        ) {
-                            AdjustmentField(
-                                isBottomSheetOpen,
-                                datatype = DataType.GOAL,
-                                amountState = adjustAmountState,
-                                datasets = datasets.filter {
-                                    it.dataType == DataType.GOAL
-                                },
-                                wasRepaySuccess = wasRepaySuccess,
-                                selectedDataset = selectedDataset,
-                                colorResId = R.color.Attain
-                            )
-                        }
-                    }
-
-                    else -> {}
-                }
-            }
-
-            // Description
-            item(key = 45) {
-                Row(
-                    modifier = Modifier.animateItem()
-                ) {
-                    ModelDrawerTextField(
-                        state = descriptionState,
-                        placeholder = "Note (Optional)",
-                        title = "Note",
-                        description = "Take a note for the given amount",
-                        colorResId = colorResId,
-                        wasSuccess = null,
-                        displayText = rememberSaveable { mutableStateOf("") }
-                    )
-                }
-            }
-
-            // Date time picker
-            item(key = 12) {
-                // Show date time picker.
-                Row(
-                    modifier = Modifier.animateItem()
-                ) {
-                    if (dataType == DataType.GOAL) {
-                        DateTimeRange(
-                            startLocalDateTimeState = localDateTimeState,
-                            endLocalDateTimeState = endLocalDateTimeState,
-                            colorResId = colorResId
+        if (dataType in listOf(DataType.DEBT, DataType.LENT, DataType.GOAL)) {
+            PrimaryTabRow(
+                selectedTabIndex = selectedTab.intValue,
+                modifier = Modifier.padding(vertical = 15.dp),
+                containerColor = Color.Transparent,
+                contentColor = colorResource(id = adjustmentColor),
+                indicator = {
+                    TabRowDefaults.PrimaryIndicator(
+                        modifier = Modifier.tabIndicatorOffset(
+                            selectedTab.intValue,
+                            matchContentSize = true
+                        ),
+                        color = colorResource(
+                            id = if (selectedTab.intValue == 0) colorResId
+                            else adjustmentColor
                         )
-                    } else {
+                    )
+
+                }
+            ) {
+                Tab(
+                    selected = selectedTab.intValue == 0,
+                    onClick = { selectedTab.intValue = 0 },
+                ) {
+                    Text(dataType.text, color = colorResource(colorResId))
+                }
+
+                Tab(
+                    selected = selectedTab.intValue == 1,
+                    onClick = { selectedTab.intValue = 1 },
+                ) {
+                    Text(
+                        when (dataType) {
+                            DataType.DEBT -> AdjustmentType.DEBT_REPAY.text
+                            DataType.LENT -> AdjustmentType.LENT_REPAY.text
+                            else -> AdjustmentType.GOAL_ATTAIN.text
+                        }
+                    )
+                }
+            }
+        }
+
+        if (selectedTab.intValue == 0 ||
+            dataType in
+            listOf(
+                DataType.EXPENSE,
+                DataType.EARNINGS,
+                DataType.SAVINGS
+            )
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp)),
+                state = lazyState,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                // Amount
+                item(key = 39) {
+                    Row(
+                        modifier = Modifier.animateItem()
+                    ) {
+                        ModelDrawerAmountField(
+                            state = amountState,
+                            placeholder = "0.0",
+                            colorResId = colorResId,
+                            wasSuccess = wasSuccess,
+                            displayState = amountToDisplay
+                        )
+                    }
+                }
+
+                // Label
+                item(key = 71) {
+                    Row(
+                        modifier = Modifier.animateItem()
+                    ) {
+                        ModelDrawerTextField(
+                            state = labelState,
+                            title = "Label",
+                            description = "Add a label for the given amount",
+                            placeholder = placeholder,
+                            colorResId = colorResId,
+                            wasSuccess = wasSuccess,
+                            textLength = MAX_LABEL_LENGTH,
+                            displayText = rememberSaveable { mutableStateOf("") }
+                        )
+                    }
+                }
+
+                // Tag
+                item(key = 58) {
+                    Row(
+                        modifier = Modifier.animateItem()
+                    ) {
+                        ModelDrawerTag(
+                            colorResId = colorResId,
+                            title = "Tag",
+                            iconState = labelIconState
+                        )
+                    }
+                }
+
+                // Description
+                item(key = 45) {
+                    Row(
+                        modifier = Modifier.animateItem()
+                    ) {
+                        ModelDrawerTextField(
+                            state = descriptionState,
+                            placeholder = "Note (Optional)",
+                            title = "Note",
+                            description = "Take a note for the given amount",
+                            colorResId = colorResId,
+                            wasSuccess = null,
+                            displayText = rememberSaveable { mutableStateOf("") }
+                        )
+                    }
+                }
+
+                // Date time picker
+                item(key = 12) {
+                    // Show date time picker.
+                    Row(
+                        modifier = Modifier.animateItem()
+                    ) {
+                        if (dataType == DataType.GOAL) {
+                            DateTimeRange(
+                                startLocalDateTimeState = localDateTimeState,
+                                endLocalDateTimeState = endLocalDateTimeState,
+                                colorResId = colorResId
+                            )
+                        } else {
+                            DateTimeInput(
+                                showTime = showTime,
+                                showDate = showDate,
+                                localDateTimeState = localDateTimeState,
+                                colorResId = colorResId
+                            )
+                        }
+                    }
+                }
+
+                // Repeatable transaction
+                item(key = 120) {
+                    if (dataType == DataType.GOAL) {
+                        RepeatableTransaction(
+                            DataType.GOAL,
+                            wasRepaySuccess = wasRepaySuccess,
+                        )
+                    }
+                }
+
+                // Payment method
+                item(key = 5) {
+                    Row(
+                        modifier = Modifier.animateItem()
+                    ) {
+                        PaymentMethodDropdown(
+                            colorResId = colorResId,
+                            selectedPaymentMethod = selectedPaymentMethod,
+                        )
+                    }
+                }
+
+                // Submit buttons
+                item(key = 6) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
+                            .animateItem(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        ModelDrawerButton(
+                            text = buttonText,
+                            wasSuccess = wasSuccess,
+                            colorResId = colorResId,
+                            filledColor = colorResource(colorResId),
+                            textColor = Color.White
+                        ) {
+                            if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
+                                viewModel.addData(
+                                    Dataset(
+                                        id = UUID.randomUUID().toString(),
+                                        dataType = dataType,
+                                        amount = amountAsDouble,
+                                        label = labelState.text.toString(),
+                                        description = descriptionState.text.toString(),
+                                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                        tagIcon = labelIconState.value,
+                                        paymentMethod = selectedPaymentMethod.value,
+                                        deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
+                                        adjustmentStatus = AdjustmentStatus.PENDING
+                                    )
+                                )
+                                wasSuccess.value = State.SUCCESS
+
+                                // Reset all state
+                                amountState.clearText()
+                                labelState.clearText()
+                                descriptionState.clearText()
+                                labelIconState.value = TagIcon(
+                                    "description",
+                                    R.drawable.description
+                                )
+
+                                // Dismiss the model drawer.
+                                onDismiss()
+
+                            } else {
+                                wasSuccess.value = State.ERROR
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if (selectedTab.intValue == 1) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(20.dp)),
+                state = lazyState,
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                item(key = 921) {
+                    when (dataType) {
+                        DataType.LENT -> {
+                            Row(
+                                modifier = Modifier.animateItem()
+                            ) {
+                                AdjustmentField(
+                                    isBottomSheetOpen,
+                                    datatype = DataType.LENT,
+                                    amountState = adjustAmountState,
+                                    datasets = datasets.filter {
+                                        it.dataType == DataType.LENT
+                                    },
+                                    wasRepaySuccess = wasRepaySuccess,
+                                    selectedDataset = selectedDataset,
+                                    colorResId = R.color.RepayLoan
+                                )
+                            }
+                        }
+
+                        DataType.DEBT -> {
+                            Row(
+                                modifier = Modifier.animateItem()
+                            ) {
+                                AdjustmentField(
+                                    isBottomSheetOpen,
+                                    datatype = DataType.DEBT,
+                                    amountState = adjustAmountState,
+                                    datasets = datasets.filter {
+                                        it.dataType == DataType.DEBT
+                                    },
+                                    wasRepaySuccess = wasRepaySuccess,
+                                    selectedDataset = selectedDataset,
+                                    colorResId = R.color.RepayDebt
+                                )
+                            }
+                        }
+
+                        DataType.GOAL -> {
+                            Row(
+                                modifier = Modifier.animateItem()
+                            ) {
+                                AdjustmentField(
+                                    isBottomSheetOpen,
+                                    datatype = DataType.GOAL,
+                                    amountState = adjustAmountState,
+                                    datasets = datasets.filter {
+                                        it.dataType == DataType.GOAL
+                                    },
+                                    wasRepaySuccess = wasRepaySuccess,
+                                    selectedDataset = selectedDataset,
+                                    colorResId = R.color.Attain
+                                )
+                            }
+                        }
+
+                        else -> {}
+                    }
+                }
+
+                // Description
+                item(key = 45) {
+                    Row(
+                        modifier = Modifier.animateItem()
+                    ) {
+                        ModelDrawerTextField(
+                            state = descriptionState,
+                            placeholder = "Note (Optional)",
+                            title = "Note",
+                            description = "Take a note for the given amount",
+                            colorResId = adjustmentColor,
+                            wasSuccess = null,
+                            displayText = rememberSaveable { mutableStateOf("") }
+                        )
+                    }
+                }
+
+                // Date time picker
+                item(key = 12) {
+                    // Show date time picker.
+                    Row(
+                        modifier = Modifier.animateItem()
+                    ) {
+
                         DateTimeInput(
                             showTime = showTime,
                             showDate = showDate,
                             localDateTimeState = localDateTimeState,
-                            colorResId = colorResId
+                            colorResId = adjustmentColor
                         )
                     }
                 }
-            }
 
-            // Repeatable transaction
-            item(key = 120) {
-                if (dataType == DataType.GOAL) {
-                    RepeatableTransaction(
-                        DataType.GOAL,
-                        wasRepaySuccess = wasRepaySuccess,
-                    )
-                }
-            }
-
-            // Payment method
-            item(key = 5) {
-                Row(
-                    modifier = Modifier.animateItem()
-                ) {
-                    PaymentMethodDropdown(
-                        colorResId = colorResId,
-                        selectedPaymentMethod = selectedPaymentMethod,
-                    )
-                }
-            }
-
-            // Submit buttons
-            item(key = 6) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .animateItem(),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    ModelDrawerButton(
-                        text = buttonText,
-                        wasSuccess = wasSuccess,
-                        colorResId = colorResId,
-                        filledColor = colorResource(colorResId),
-                        textColor = Color.White
+                // Submit buttons
+                item(key = 6) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp)
+                            .animateItem(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
-                            viewModel.addData(
-                                Dataset(
-                                    id = UUID.randomUUID().toString(),
-                                    dataType = dataType,
-                                    amount = amountAsDouble,
-                                    label = labelState.text.toString(),
-                                    description = descriptionState.text.toString(),
-                                    dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                    tagIcon = labelIconState.value,
-                                    paymentMethod = selectedPaymentMethod.value,
-                                    deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
-                                    adjustmentStatus = AdjustmentStatus.PENDING
-                                )
-                            )
-                            wasSuccess.value = State.SUCCESS
 
-                            // Reset all state
-                            amountState.clearText()
-                            labelState.clearText()
-                            descriptionState.clearText()
-                            labelIconState.value = TagIcon(
-                                "description",
-                                R.drawable.description
-                            )
+                        if (dataType == DataType.DEBT || dataType == DataType.LENT) {
+                            ModelDrawerButton(
+                                text = "Repay",
+                                wasSuccess = wasRepaySuccess,
+                                colorResId = if (dataType == DataType.DEBT) R.color.RepayDebt
+                                else R.color.RepayLoan,
+                                filledColor = Color.Transparent
+                            ) {
+                                if (adjustAsDouble != null) {
+                                    selectedDataset.value?.let {
+                                        if (adjustAsDouble > it.remainingAmount) {
+                                            wasRepaySuccess.value = State.ERROR
+                                            return@ModelDrawerButton
+                                        }
+                                        val adjustment = Adjustment(
+                                            adjustmentId = UUID.randomUUID().toString(),
+                                            amount = adjustAsDouble,
+                                            dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                            label = "${it.dataType.text} Repaid ->",
+                                            description = descriptionState.text.toString(),
+                                            tagIcon = it.tagIcon,
+                                            paymentMethod = selectedPaymentMethod.value,
+                                            adjustmentType = if (dataType == DataType.DEBT)
+                                                AdjustmentType.DEBT_REPAY
+                                            else AdjustmentType.LENT_REPAY,
+                                        )
 
-                            // Dismiss the model drawer.
-                            onDismiss()
+                                        adjustment.dataset = it
 
-                        } else {
-                            wasSuccess.value = State.ERROR
-                        }
-                    }
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    if (dataType == DataType.DEBT || dataType == DataType.LENT) {
-                        ModelDrawerButton(
-                            text = "Repay",
-                            wasSuccess = wasRepaySuccess,
-                            colorResId = if (dataType == DataType.DEBT) R.color.RepayDebt
-                            else R.color.RepayLoan,
-                            filledColor = Color.Transparent
-                        ) {
-                            if (adjustAsDouble != null) {
-                                selectedDataset.value?.let {
-                                    if (adjustAsDouble > it.remainingAmount) {
+                                        viewModel.addAdjustmentData(
+                                            it,
+                                            adjustment
+                                        )
+                                    } ?: run {
                                         wasRepaySuccess.value = State.ERROR
-                                        return@ModelDrawerButton
                                     }
-                                    val adjustment = Adjustment(
-                                        adjustmentId = UUID.randomUUID().toString(),
-                                        amount = adjustAsDouble,
-                                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                        label = "${it.dataType.text} Repaid ->",
-                                        description = descriptionState.text.toString(),
-                                        tagIcon = it.tagIcon,
-                                        paymentMethod = selectedPaymentMethod.value,
-                                        adjustmentType = if (dataType == DataType.DEBT)
-                                            AdjustmentType.DEBT_REPAY
-                                        else AdjustmentType.LENT_REPAY,
-                                    )
 
-                                    adjustment.dataset = it
+                                    adjustAmountState.clearText()
+                                    selectedDataset.value = null
 
-                                    viewModel.addAdjustmentData(
-                                        it,
-                                        adjustment
-                                    )
-                                } ?: run {
-                                    wasRepaySuccess.value = State.ERROR
+                                    // Dismiss the model drawer.
+                                    onDismiss()
                                 }
-
-                                adjustAmountState.clearText()
-                                selectedDataset.value = null
-
-                                // Dismiss the model drawer.
-                                onDismiss()
                             }
                         }
-                    }
 
-                    if (dataType == DataType.GOAL) {
-                        ModelDrawerButton(
-                            text = "Add",
-                            wasSuccess = wasRepaySuccess,
-                            colorResId = R.color.Attain,
-                            filledColor = Color.Transparent
-                        ) {
-                            if (adjustAsDouble != null) {
+                        if (dataType == DataType.GOAL) {
+                            ModelDrawerButton(
+                                text = "Add",
+                                wasSuccess = wasRepaySuccess,
+                                colorResId = R.color.Attain,
+                                filledColor = Color.Transparent
+                            ) {
                                 selectedDataset.value?.let {
-                                    if (adjustAsDouble > it.remainingAmount) {
-                                        wasRepaySuccess.value = State.ERROR
-                                        return@ModelDrawerButton
-                                    }
-                                    val adjustment = Adjustment(
-                                        adjustmentId = UUID.randomUUID().toString(),
-                                        amount = adjustAsDouble,
-                                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                        label = "Attained: ${it.label}",
-                                        description = descriptionState.text.toString(),
-                                        tagIcon = it.tagIcon,
-                                        paymentMethod = selectedPaymentMethod.value,
-                                        adjustmentType = AdjustmentType.GOAL_ATTAIN,
-                                    )
-                                    adjustment.dataset = it
+                                    if (adjustAsDouble != null) {
 
-                                    viewModel.addAdjustmentData(
-                                        it,
-                                        adjustment
-                                    )
+                                        if (
+                                            adjustAsDouble > it.remainingAmount &&
+                                            !it.isStartDateTimeNotEqualToDeadlineDateTime
+                                        ) {
+                                            wasRepaySuccess.value = State.ERROR
+                                            return@ModelDrawerButton
+                                        }
+                                        val adjustment = Adjustment(
+                                            adjustmentId = UUID.randomUUID().toString(),
+                                            amount = adjustAsDouble,
+                                            dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                            label = "Attained: ${it.label}",
+                                            description = descriptionState.text.toString(),
+                                            tagIcon = it.tagIcon,
+                                            paymentMethod = selectedPaymentMethod.value,
+                                            adjustmentType = AdjustmentType.GOAL_ATTAIN,
+                                        )
+                                        adjustment.dataset = it
+
+                                        viewModel.addAdjustmentData(
+                                            it,
+                                            adjustment
+                                        )
+                                    }
                                 } ?: run {
                                     wasRepaySuccess.value = State.ERROR
                                 }
@@ -712,6 +794,7 @@ fun ModelDrawerContent(
 
                                 // Dismiss the model drawer.
                                 onDismiss()
+
                             }
                         }
                     }

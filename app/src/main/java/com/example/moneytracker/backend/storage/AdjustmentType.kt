@@ -10,8 +10,8 @@ enum class AdjustmentType(
     val color: Int,
     val icon: Int,
 ) {
-    DEBT_REPAY("Debt Repay", icon = R.drawable.outlined_repay, color = R.color.RepayDebt),
-    LENT_REPAY("Lent Repay", icon = R.drawable.outlined_repay, color = R.color.RepayLoan),
+    DEBT_REPAY("Payback", icon = R.drawable.outlined_repay, color = R.color.RepayDebt),
+    LENT_REPAY("Loan Refund", icon = R.drawable.outlined_repay, color = R.color.RepayLoan),
     GOAL_ATTAIN("Goal Attain", icon = R.drawable.oulined_attain, color = R.color.Attain),
     INITIAL("Initial", icon = R.drawable.outlined_repay, color = R.color.gray),
 }

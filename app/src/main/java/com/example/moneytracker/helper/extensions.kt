@@ -82,6 +82,10 @@ val List<Dataset>.variance: Double
 val List<Dataset>.std: Double
     get() = kotlin.math.sqrt(variance)
 
+val Dataset.isStartDateTimeNotEqualToDeadlineDateTime: Boolean
+    get() = dateTime != deadlineDateTime
+
+
 /**
  * Check if the dataset is for today.
  */
