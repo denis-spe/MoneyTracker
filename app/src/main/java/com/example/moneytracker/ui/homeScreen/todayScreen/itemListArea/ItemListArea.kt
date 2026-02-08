@@ -922,7 +922,7 @@ fun ItemCard(
 
                 amount = when (dataType) {
                     DataType.EXPENSE -> "-$amount"
-                    DataType.DEBT -> "-$amount"
+                    DataType.LENT -> "-$amount"
                     else -> amount
                 }
 

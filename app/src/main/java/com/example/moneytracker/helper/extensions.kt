@@ -6,11 +6,11 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.google.firebase.Timestamp
 import kotlinx.datetime.minus
@@ -129,6 +129,8 @@ val Adjustment.isForYesterday: Boolean
 
         return yesterday == dataDate
     }
+
+
 fun Dataset.toMap(): Map<String, Any> {
     return mapOf(
         "id" to id,
@@ -140,10 +142,12 @@ fun Dataset.toMap(): Map<String, Any> {
         "deadlineDateTime" to deadlineDateTime,
         "tagIcon" to tagIcon.tagIconToMap, // change model to use a string key
         "paymentMethod" to paymentMethod.name,
-        "adjustmentStatus" to adjustmentStatus.name,
-        "adjustment" to adjustment.map { it.adjustmentToMap } // already map form
+        "status" to status.name,
+        "adjustment" to adjustment.map { it.adjustmentToMap }, // already map form
+        "multipleStatus" to multipleStatus.map { it.name }
     )
 }
+
 
 val Adjustment.adjustmentToMap: Map<String, Any>
     get() = mapOf(
@@ -275,6 +279,8 @@ fun Map<*, *>.toDataset(): Dataset {
         else -> fallback
     }
 
+
+
     return Dataset(
         id = this["id"] as? String ?: "",
         dataType = parseEnum(this["dataType"], DataType.entries.toTypedArray(), DataType.EARNINGS),
@@ -294,15 +300,27 @@ fun Map<*, *>.toDataset(): Dataset {
             PaymentMethod.entries.toTypedArray(),
             PaymentMethod.CASH
         ),
-        adjustmentStatus = parseEnum(
-            this["adjustmentStatus"],
-            AdjustmentStatus.entries.toTypedArray(),
-            AdjustmentStatus.PENDING
+        status = parseEnum(
+            this["status"],
+            Status.entries.toTypedArray(),
+            Status.PENDING
         ),
         adjustment = (this["adjustment"] as? List<*>)
             ?.mapNotNull { (it as? Map<*, *>)?.asAdjustment() }
-            ?: emptyList()
+            ?: emptyList(),
+        multipleStatus = this.toMultipleStatus()
     )
+}
+
+fun Map<*, *>.toMultipleStatus(): List<Status> {
+    val statusList = this["multipleStatus"] as? List<*>
+    return statusList?.mapNotNull {
+        try {
+            Status.valueOf(it as String)
+        } catch (_: Exception) {
+            null
+        }
+    } ?: emptyList()
 }
 
 
@@ -310,6 +328,14 @@ fun casting(any: Any?): List<Map<String, Any>>? {
     if (any != null) {
         val map: List<Map<String, Any>> = (any as List<*>).filterIsInstance<Map<String, Any>>()
         return map
+    }
+    return null
+}
+
+fun castToStatusList(any: Any?): List<Status>? {
+    if (any != null) {
+        val lst: List<Status> = (any as List<*>).filterIsInstance<Status>()
+        return lst
     }
     return null
 }
@@ -333,11 +359,11 @@ val Dataset.isOverdue: Boolean
         return currentTime >= deadlineDateTime
     }
 
-val Dataset.status: AdjustmentStatus
+val Dataset.status: Status
     get() = when {
-        isOverdue -> AdjustmentStatus.FAILED
-        isAmountEqualToAdjustAmount() -> AdjustmentStatus.COMPLETED
-        else -> AdjustmentStatus.PENDING
+        isOverdue -> Status.FAILED
+        isAmountEqualToAdjustAmount() -> Status.COMPLETED
+        else -> Status.PENDING
     }
 
 fun Long.formatToAmount(): String {

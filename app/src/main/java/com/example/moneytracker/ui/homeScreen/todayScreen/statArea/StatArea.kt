@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.formatToAmount
@@ -167,9 +168,16 @@ fun DonutChartPager(
                 val savings = donutChartDataCollection.items.filter { donutChartData ->
                     donutChartData.title == DataType.SAVINGS.text
                 }.map { donutChartData -> donutChartData.amount }
+                val loanRefund = donutChartDataCollection.items.filter { donutChartData ->
+                    donutChartData.title == AdjustmentType.LENT_REPAY.text
+                }.map { donutChartData -> donutChartData.amount }
+                val payBack = donutChartDataCollection.items.filter { donutChartData ->
+                    donutChartData.title == AdjustmentType.DEBT_REPAY.text
+                }.map { donutChartData -> donutChartData.amount }
 
-                val flowIn = earnings.sum() + debt.sum()
-                val flowOut = expense.sum() + lent.sum() + savings.sum()
+
+                val flowIn = earnings.sum() + debt.sum() + loanRefund.sum()
+                val flowOut = expense.sum() + lent.sum() + savings.sum() + payBack.sum()
 
                 var enabled by remember { mutableStateOf(true) }
                 val totalAmount: Float by animateFloatAsState(

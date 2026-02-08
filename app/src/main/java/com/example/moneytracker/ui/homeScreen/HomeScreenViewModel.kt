@@ -15,7 +15,6 @@ import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataStorage
-import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.PaymentMethod
@@ -66,23 +65,75 @@ class HomeScreenViewModel @Inject constructor(
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun todayChartData(context: Context): Flow<List<DonutChartData>> = uiState.map { state ->
-        state.datasets.filter { it.isForToday }
-            .filter { it.dataType != DataType.GOAL }
-            .groupBy { it.dataType }
-            .values.toList()
-            .map { lst ->
-                val firstItemInList = lst[0]
-                val amount = lst.sumOf { it.amount }.toFloat()
-                val colorInt = ContextCompat.getColor(context, firstItemInList.dataType.color)
-                val color = Color(colorInt)
-                val title = firstItemInList.dataType.text
-
-                DonutChartData(
-                    amount,
-                    color = color,
-                    title = title
-                )
+        val adjust = state.datasets.map { dataset ->
+            dataset.adjustment.map { adjustment ->
+                adjustment.dataset = dataset
+                DataAdjust.Adjust(adjustment)
             }
+        }
+        val data = state.datasets.map { dataset ->
+            DataAdjust.Data(dataset)
+        }
+        val coupledData = (adjust.flatten() + data).filter {
+            when (it) {
+                is DataAdjust.Data -> it.dataset.isForToday
+                is DataAdjust.Adjust -> it.adjustment.isForToday
+            }
+        }
+
+        val dataAdjust = coupledData.groupBy {
+            when (it) {
+                is DataAdjust.Data -> it.dataset.dataType
+                is DataAdjust.Adjust -> it.adjustment.adjustmentType
+            }
+        }
+            .values.toList()
+
+        dataAdjust.map { lst ->
+            val firstItemInList = lst[0]
+            val colorResId = when (firstItemInList) {
+                is DataAdjust.Data -> firstItemInList.dataset.dataType.color
+                is DataAdjust.Adjust -> firstItemInList.adjustment.adjustmentType.color
+            }
+            val title = when (firstItemInList) {
+                is DataAdjust.Data -> firstItemInList.dataset.dataType.text
+                is DataAdjust.Adjust -> firstItemInList.adjustment.adjustmentType.text
+            }
+
+            val amount = lst.sumOf {
+                when (it) {
+                    is DataAdjust.Data -> it.dataset.amount
+                    is DataAdjust.Adjust -> it.adjustment.amount
+                }
+            }.toFloat()
+
+            val colorInt = ContextCompat.getColor(context, colorResId)
+            val color = Color(colorInt)
+
+            DonutChartData(
+                amount,
+                color = color,
+                title = title
+            )
+        }
+
+//        state.datasets.filter { it.isForToday }
+//            .filter { it.dataType != DataType.GOAL }
+//            .groupBy { it.dataType }
+//            .values.toList()
+//            .map { lst ->
+//                val firstItemInList = lst[0]
+//                val amount = lst.sumOf { it.amount }.toFloat()
+//                val colorInt = ContextCompat.getColor(context, firstItemInList.dataType.color)
+//                val color = Color(colorInt)
+//                val title = firstItemInList.dataType.text
+//
+//                DonutChartData(
+//                    amount,
+//                    color = color,
+//                    title = title
+//                )
+//            }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),

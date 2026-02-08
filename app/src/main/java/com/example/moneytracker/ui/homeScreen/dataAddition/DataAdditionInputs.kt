@@ -92,17 +92,16 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.remainingAmount
-import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.theme.autoColorChange
 import com.example.moneytracker.ui.theme.autoTextColorChange
@@ -633,7 +632,7 @@ fun AdjustmentField(
     var filteredDataset = datasets
         .filterNot { it.isAmountEqualToAdjustAmount() }
     if (datatype == DataType.GOAL) {
-        filteredDataset = filteredDataset.filter { it.status == AdjustmentStatus.PENDING }
+        filteredDataset = filteredDataset.filter { it.status == Status.PENDING }
     }
 
     val color = colorResource(colorResId)

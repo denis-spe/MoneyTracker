@@ -55,18 +55,17 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.remainingAmount
-import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
@@ -323,7 +322,7 @@ fun DatasetReceipt(
             ) {
                 if (
                     (dataset.dataType == DataType.GOAL &&
-                            dataset.status == AdjustmentStatus.COMPLETED &&
+                            dataset.status == Status.COMPLETED &&
                             dataset.remainingAmount == 0.0) || (
                             dataset.dataType != DataType.GOAL &&
                                     dataset.remainingAmount == 0.0)
@@ -334,7 +333,7 @@ fun DatasetReceipt(
                         modifier = Modifier.size(32.dp)
                     )
                 } else if (dataset.dataType == DataType.GOAL &&
-                    dataset.status == AdjustmentStatus.FAILED &&
+                    dataset.status == Status.FAILED &&
                     dataset.remainingAmount != 0.0
                 ) {
                     AsyncImage(
@@ -1024,7 +1023,7 @@ fun OnUpdate(
                                                     tagIcon = tagIconState.value,
                                                     paymentMethod = selectedPaymentMethod.value,
                                                     deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
-                                                    adjustmentStatus = AdjustmentStatus.PENDING,
+                                                    status = Status.PENDING,
                                                     adjustment = dataset.adjustment
                                                 )
                                             )
@@ -1061,12 +1060,12 @@ fun OnUpdate(
                                         ModelDrawerButton(
                                             text = "Apply changes",
                                             wasSuccess = wasAdjustmentSuccess,
-                                            colorResId = R.color.Attain,
+                                            colorResId = colorResId,
                                             filledColor = Color.Transparent
                                         ) {
                                             if (amountAsDouble != null
                                                 && amountAsDouble
-                                                <= dataAdjust.adjustment.dataset!!.remainingAmount
+                                                <= dataAdjust.adjustment.dataset!!.amount
                                             ) {
                                                 val adjustment = dataAdjust.adjustment
                                                 viewModel.updateAdjustmentData(

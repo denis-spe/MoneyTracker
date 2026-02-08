@@ -87,4 +87,17 @@ interface DataStorage {
         oldAdjustment: Adjustment,
         newAdjustment: Adjustment
     )
+
+    /**
+     * Add a status into a list in dataset (identified by its id) for the given user.
+     * Implementations should perform this atomically (transaction) to avoid lost updates.
+     * @param userId the user id
+     * @param datasetId the dataset id
+     * @param status the status to add
+     */
+    suspend fun addStatus(
+        userId: String,
+        datasetId: String,
+        status: Status
+    )
 }

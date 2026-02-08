@@ -43,11 +43,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.AdjustmentStatus
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
@@ -348,6 +348,9 @@ fun ModelDrawerContent(
         DataType.SAVINGS
     )
 
+    val color = if (selectedTab.intValue == 0) colorResId
+    else adjustmentColor
+
 
     Column(
         modifier = Modifier
@@ -362,11 +365,6 @@ fun ModelDrawerContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            val color = colorResource(
-                id = if (selectedTab.intValue == 0) colorResId
-                else adjustmentColor
-            )
-
             val iconImage = painterResource(
                 id = if (
                     selectedTab.intValue == 0 || dataType in noAdjustmentDataType
@@ -395,10 +393,14 @@ fun ModelDrawerContent(
                     .padding(bottom = 5.dp),
                 painter = iconImage,
                 contentDescription = dataType.text,
-                tint = color
+                tint = colorResource(color)
             )
 
-            Text(description, color = color, fontWeight = FontWeight.Medium)
+            Text(
+                description,
+                color = colorResource(color),
+                fontWeight = FontWeight.Medium
+            )
         }
 
         if (dataType in listOf(DataType.DEBT, DataType.LENT, DataType.GOAL)) {
@@ -597,7 +599,7 @@ fun ModelDrawerContent(
                                         tagIcon = labelIconState.value,
                                         paymentMethod = selectedPaymentMethod.value,
                                         deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
-                                        adjustmentStatus = AdjustmentStatus.PENDING
+                                        status = Status.PENDING
                                     )
                                 )
                                 wasSuccess.value = State.SUCCESS
@@ -786,7 +788,7 @@ fun ModelDrawerContent(
                             ModelDrawerButton(
                                 text = "Add",
                                 wasSuccess = wasRepaySuccess,
-                                colorResId = R.color.Attain,
+                                colorResId = color,
                                 filledColor = Color.Transparent
                             ) {
                                 selectedDataset.value?.let {
