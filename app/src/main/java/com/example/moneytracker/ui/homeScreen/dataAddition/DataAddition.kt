@@ -342,6 +342,11 @@ fun ModelDrawerContent(
         DataType.LENT -> R.color.RepayLoan
         else -> R.color.Attain
     }
+    val noAdjustmentDataType = listOf(
+        DataType.EXPENSE,
+        DataType.EARNINGS,
+        DataType.SAVINGS
+    )
 
 
     Column(
@@ -357,18 +362,43 @@ fun ModelDrawerContent(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            val color = colorResource(id = colorResId)
+            val color = colorResource(
+                id = if (selectedTab.intValue == 0) colorResId
+                else adjustmentColor
+            )
+
+            val iconImage = painterResource(
+                id = if (
+                    selectedTab.intValue == 0 || dataType in noAdjustmentDataType
+                ) icon
+                else when (dataType) {
+                    DataType.DEBT -> R.drawable.outline_debt
+                    DataType.LENT -> R.drawable.outline_lent
+                    else -> R.drawable.outlined_goal
+                }
+            )
+
+            val description = if (
+                selectedTab.intValue == 0 ||
+                dataType in noAdjustmentDataType
+            ) dataType.typeDescription
+            else when (dataType) {
+                DataType.GOAL -> AdjustmentType.GOAL_ATTAIN.typeDescription
+                DataType.DEBT -> AdjustmentType.DEBT_REPAY.typeDescription
+                else -> AdjustmentType.LENT_REPAY.typeDescription
+            }
+
 
             Icon(
                 modifier = Modifier
                     .size(MODEL_DRAWER_ICON_SIZE)
                     .padding(bottom = 5.dp),
-                painter = painterResource(id = icon),
+                painter = iconImage,
                 contentDescription = dataType.text,
                 tint = color
             )
 
-            Text(dataType.typeDescription, color = color, fontWeight = FontWeight.Medium)
+            Text(description, color = color, fontWeight = FontWeight.Medium)
         }
 
         if (dataType in listOf(DataType.DEBT, DataType.LENT, DataType.GOAL)) {
@@ -389,6 +419,14 @@ fun ModelDrawerContent(
                         )
                     )
 
+                },
+                divider = {
+                    HorizontalDivider(
+                        color = colorResource(
+                            id = if (selectedTab.intValue == 0) colorResId
+                            else adjustmentColor
+                        ).copy(0.5f)
+                    )
                 }
             ) {
                 Tab(
@@ -413,14 +451,7 @@ fun ModelDrawerContent(
             }
         }
 
-        if (selectedTab.intValue == 0 ||
-            dataType in
-            listOf(
-                DataType.EXPENSE,
-                DataType.EARNINGS,
-                DataType.SAVINGS
-            )
-        ) {
+        if (selectedTab.intValue == 0 || dataType in noAdjustmentDataType) {
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
