@@ -209,7 +209,8 @@ class DataStorageImpl(
         val modifyNewDataset = newDataset.copy(
             adjustment = newDataset.adjustment.map { adjustment ->
                 adjustment.copy(
-                    tagIcon = newDataset.tagIcon
+                    tagIcon = newDataset.tagIcon,
+                    label = adjustment.label,
                 )
 
             }
