@@ -206,7 +206,16 @@ class DataStorageImpl(
         }
 
         // Add the new dataset
-        val wasAdded = mutableDatasets.add(newDataset.toMap())
+        val modifyNewDataset = newDataset.copy(
+            adjustment = newDataset.adjustment.map { adjustment ->
+                adjustment.copy(
+                    tagIcon = newDataset.tagIcon
+                )
+
+            }
+        )
+
+        val wasAdded = mutableDatasets.add(modifyNewDataset.toMap())
 
         if (wasAdded) {
             Log.d("Dataset update", "Added new dataset for update")

@@ -3,6 +3,11 @@ package com.example.moneytracker.ui.homeScreen
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -125,18 +130,29 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 floatingActionButtonPosition = FabPosition.Center,
             ) { paddingValues ->
 
-                // Today's screen
-                when (uiStates.value.topTitle) {
-                    CurrentTopTitle.TODAY -> {
-                        TodayScreen(paddingValues)
-                    }
+                AnimatedContent(
+                    uiStates.value.topTitle,
+                    transitionSpec = {
+                        fadeIn(
+                            animationSpec = tween(1000)
+                        ) togetherWith fadeOut(animationSpec = tween(1000))
+                    },
+                    label = "Animated Content"
+                ) { targetState ->
 
-                    CurrentTopTitle.YESTERDAY -> {
-                        YesterdayScreen(paddingValues)
-                    }
+                    // Today's screen
+                    when (targetState) {
+                        CurrentTopTitle.TODAY -> {
+                            TodayScreen(paddingValues)
+                        }
 
-                    CurrentTopTitle.ALL -> {
-                        // AllScreen(paddingValues)
+                        CurrentTopTitle.YESTERDAY -> {
+                            YesterdayScreen(paddingValues)
+                        }
+
+                        CurrentTopTitle.ALL -> {
+                            // AllScreen(paddingValues)
+                        }
                     }
                 }
 

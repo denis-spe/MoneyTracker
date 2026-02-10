@@ -4,6 +4,8 @@ package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideOutVertically
@@ -764,12 +766,22 @@ fun ItemListArea(
         )
 
 
+
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
         ) {
             items(datasetItems.size, key = { it }) { index ->
-                ItemCard(dataAdjust = datasetItems[index])
+                Row(
+                    modifier = Modifier.animateItem(
+                        fadeInSpec = spring(
+                            dampingRatio = Spring.DampingRatioHighBouncy,
+                            stiffness = Spring.StiffnessMediumLow
+                        )
+                    ),
+                ) {
+                    ItemCard(dataAdjust = datasetItems[index])
+                }
             }
         }
     }
@@ -895,8 +907,12 @@ fun ItemCard(
 
                     when (dataAdjust) {
                         is DataAdjust.Adjust -> {
+                            val datasetLabel = dataAdjust.adjustment.dataset!!.label
+
+
+
                             Text(
-                                text = dataAdjust.adjustment.dataset!!.label,
+                                text = datasetLabel,
                                 color = color,
                                 fontSize = labelFontSize
                             )
