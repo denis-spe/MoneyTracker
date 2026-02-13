@@ -1,7 +1,7 @@
 // Hear oh Israel, The LORD our GOD, The LORD is one,
 // You shall love the LORD your GOD with all your heart
-// and all your soul and with all your mind and
-// you shall love your neighbour as yourself
+// and all your soul and with all your mind, and
+// you shall love your neighbor as yourself
 package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
 import android.os.Build
@@ -65,6 +65,7 @@ import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.isOverdue
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
@@ -110,8 +111,8 @@ fun DatasetReceipt(
     val fontSize = 13.sp
     val color = colorResource(dataset.dataType.color)
     val textDecoration = if (
-        dataset.dataType in listOf(DataType.DEBT, DataType.LENT, DataType.GOAL) &&
-        dataset.remainingAmount == 0.0
+        (dataset.dataType in listOf(DataType.DEBT, DataType.LENT) &&
+                dataset.remainingAmount == 0.0) || dataset.isOverdue == Status.FAILED
     )
         TextDecoration.LineThrough else
         TextDecoration.None
@@ -123,8 +124,6 @@ fun DatasetReceipt(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
-
         Text(
             text = dataset.dataType.text,
             fontSize = 25.sp,
@@ -249,7 +248,7 @@ fun DatasetReceipt(
             val adjustStatue = remember { mutableStateOf(dataset.status) }
 
             LaunchedEffect(LocalDateTime.now()) {
-                adjustStatue.value = dataset.status
+                adjustStatue.value = dataset.isOverdue
             }
 
 
@@ -321,21 +320,18 @@ fun DatasetReceipt(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (
-                    (dataset.dataType == DataType.GOAL &&
+                    (
+                            dataset.dataType == DataType.GOAL &&
                             dataset.status == Status.COMPLETED &&
-                            dataset.remainingAmount == 0.0) || (
-                            dataset.dataType != DataType.GOAL &&
-                                    dataset.remainingAmount == 0.0)
+                                    dataset.remainingAmount == 0.0) ||
+                    (dataset.dataType != DataType.GOAL && dataset.remainingAmount == 0.0)
                 ) {
                     AsyncImage(
                         model = R.drawable.done,
                         contentDescription = "done",
                         modifier = Modifier.size(32.dp)
                     )
-                } else if (dataset.dataType == DataType.GOAL &&
-                    dataset.status == Status.FAILED &&
-                    dataset.remainingAmount != 0.0
-                ) {
+                } else if (dataset.isOverdue == Status.FAILED) {
                     AsyncImage(
                         model = R.drawable.failed,
                         contentDescription = "failed",
@@ -504,8 +500,10 @@ fun AdjustmentReceipt(
             }
 
             Text(text = label, fontSize = fontSize, fontWeight = FONT_WEIGHT)
+            val labelState = remember { mutableStateOf("") }
+            labelState.value = data.label
             Text(
-                text = data.label,
+                text = labelState.value,
                 textDecoration = textDecoration,
                 fontSize = fontSize
             )

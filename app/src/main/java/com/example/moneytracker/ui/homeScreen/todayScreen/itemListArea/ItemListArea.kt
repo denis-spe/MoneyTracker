@@ -76,9 +76,11 @@ import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.helper.isOverdue
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
@@ -841,6 +843,9 @@ fun ItemCard(
         is DataAdjust.Adjust -> false
     }
 
+    val isOverDue = if (dataAdjust is DataAdjust.Data) dataAdjust.dataset.isOverdue == Status.FAILED
+    else false
+
     val color = colorResource(colorResId)
     val onShowDialog = remember { mutableStateOf(false) }
 
@@ -901,15 +906,13 @@ fun ItemCard(
                         text = label,
                         fontWeight = FontWeight.Bold,
                         fontSize = labelFontSize,
-                        textDecoration = if (isCompleted) TextDecoration.LineThrough
+                        textDecoration = if (isCompleted || isOverDue) TextDecoration.LineThrough
                         else TextDecoration.None
                     )
 
                     when (dataAdjust) {
                         is DataAdjust.Adjust -> {
                             val datasetLabel = dataAdjust.adjustment.dataset!!.label
-
-
 
                             Text(
                                 text = datasetLabel,

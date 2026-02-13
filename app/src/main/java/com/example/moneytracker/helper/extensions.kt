@@ -352,19 +352,19 @@ fun Dataset.isAmountEqualToAdjustAmount(): Boolean {
 val Dataset.remainingAmount: Double
     get() = amount - adjustment.sumOf { it.amount }
 
-val Dataset.isOverdue: Boolean
+val Dataset.isOverdue: Status
     get() {
         val currentTime = kotlinx.datetime.LocalDateTime.now()
         val deadlineDateTime = deadlineDateTime.toLocalDateTimeUtc()
-        return currentTime >= deadlineDateTime
+        return if (
+            dataType == DataType.GOAL &&
+            currentTime >= deadlineDateTime
+            && remainingAmount != 0.0
+        ) {
+            Status.FAILED
+        } else Status.PENDING
     }
 
-val Dataset.status: Status
-    get() = when {
-        isOverdue -> Status.FAILED
-        isAmountEqualToAdjustAmount() -> Status.COMPLETED
-        else -> Status.PENDING
-    }
 
 fun Long.formatToAmount(): String {
     val locale = Locale.getDefault()

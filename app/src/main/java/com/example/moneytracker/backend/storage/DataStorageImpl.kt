@@ -97,13 +97,13 @@ class DataStorageImpl(
             try {
                 val infoField = snapshot?.get("info")
                 Log.d("DataStorageImpl", "raw info field: $infoField")
-                val color = when (val infoMap = infoField) {
+                val color = when (infoField) {
                     is Map<*, *> -> {
                         // Firestore may store numbers as Long - use safe cast
-                        (infoMap["color"] as? Number)?.toInt() ?: 0
+                        (infoField["color"] as? Number)?.toInt() ?: 0
                     }
 
-                    is Number -> infoMap.toInt()
+                    is Number -> infoField.toInt()
                     else -> 0
                 }
 
@@ -192,7 +192,7 @@ class DataStorageImpl(
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
-        // read (may be served from cache if offline)
+        // read (maybe served from cache if offline)
         val snapshot = docRef.get().await()
         val datasets = casting(snapshot.get("datasets")) ?: emptyList()
 
@@ -239,7 +239,7 @@ class DataStorageImpl(
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
-        // read (may be served from cache if offline)
+        // read (maybe served from cache if offline)
         val snapshot = docRef.get().await()
         val datasets = casting(snapshot.get("datasets")) ?: emptyList()
 
@@ -308,7 +308,7 @@ class DataStorageImpl(
                 if (!snap.exists()) return@runTransaction null
 
                 val list: MutableList<Any?> = when (val rawDatasets = snap.get("datasets")) {
-                    is List<*> -> rawDatasets.map { it as Any? }.toMutableList()
+                    is List<*> -> rawDatasets.map { it }.toMutableList()
                     else -> mutableListOf()
                 }
 
@@ -411,7 +411,7 @@ class DataStorageImpl(
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
-        // read (may be served from cache if offline)
+        // read (maybe served from cache if offline)
         val snapshot = docRef.get().await()
         val datasets = casting(snapshot.get("datasets")) ?: emptyList()
 

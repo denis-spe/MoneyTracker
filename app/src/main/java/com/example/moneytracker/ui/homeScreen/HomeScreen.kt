@@ -35,12 +35,14 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DatasetUiState
+import com.example.moneytracker.ui.homeScreen.allScreen.AllScreen
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
+import com.example.moneytracker.ui.homeScreen.goalScreen.GoalScreen
 import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
 import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
-import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
+import com.example.moneytracker.ui.homeScreen.topPanel.TopBarNav
 import com.example.moneytracker.ui.homeScreen.topPanel.TopTitlePanel
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
@@ -80,125 +82,114 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         datasets = uiStates.value.datasets
     }
 
-
-    when (val datasetUiState = viewModel.datasetUiState) {
-
-        is DatasetUiState.Success -> {
-            Scaffold(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .testTag(stringResource(R.string.homeScreenId))
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onTap = {
-                                viewModel.updateIsUserDropdownVisible(false)
+    AnimatedContent(
+        viewModel.datasetUiState,
+        transitionSpec = {
+            fadeIn(
+                animationSpec = tween(1000)
+            ) togetherWith fadeOut(animationSpec = tween(1000))
+        },
+        label = "Animated Content"
+    ) { targetState ->
+        when (targetState) {
+            is DatasetUiState.Success -> {
+                Scaffold(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .testTag(stringResource(R.string.homeScreenId))
+                        .pointerInput(Unit) {
+                            detectTapGestures(
+                                onTap = {
+                                    viewModel.updateIsUserDropdownVisible(false)
+                                }
+                            )
+                        },
+                    topBar = {
+                        CenterAlignedTopAppBar(
+                            colors = TopAppBarDefaults.topAppBarColors().copy(
+                                titleContentColor = Color.White,
+                            ),
+                            title = {
+                                TopTitlePanel(
+                                    uiStates,
+                                    contentColor = contentColor,
+                                    currentPageColor = colors.currentPageColor,
+                                    backgroundColor = backgroundColor,
+                                    viewModel::updateTopTitle
+                                )
+                            },
+                            navigationIcon = {
+                                TopNavPanel(
+                                    userState,
+                                    contentColor = contentColor,
+                                    userColor = uiStates.value.info.color
+                                ) {
+                                    viewModel.updateIsUserDropdownVisible(
+                                        !uiStates.value.isUserDropdownVisible
+                                    )
+                                }
                             }
                         )
                     },
-                topBar = {
-                    CenterAlignedTopAppBar(
-                        colors = TopAppBarDefaults.topAppBarColors().copy(
-                            titleContentColor = Color.White,
-                        ),
-                        title = {
-                            TopTitlePanel(
-                                uiStates,
-                                contentColor = contentColor,
-                                currentPageColor = colors.currentPageColor,
-                                backgroundColor = backgroundColor,
-                                viewModel::updateTopTitle
-                            )
-                        },
-                        navigationIcon = {
-                            TopNavPanel(
-                                userState,
-                                contentColor = contentColor,
-                                userColor = uiStates.value.info.color
-                            ) {
-                                viewModel.updateIsUserDropdownVisible(
-                                    !uiStates.value.isUserDropdownVisible
-                                )
-                            }
-                        }
-                    )
-                },
-                floatingActionButton = {
-                    DataAdditionFloatingButton(
-                        updateOnModelBottomSheetShow = viewModel::updateOnModelBottomSheetShow
-                    )
-                },
-                floatingActionButtonPosition = FabPosition.Center,
-            ) { paddingValues ->
-
-                AnimatedContent(
-                    uiStates.value.topTitle,
-                    transitionSpec = {
-                        fadeIn(
-                            animationSpec = tween(1000)
-                        ) togetherWith fadeOut(animationSpec = tween(1000))
+                    floatingActionButton = {
+                        DataAdditionFloatingButton(
+                            updateOnModelBottomSheetShow = viewModel::updateOnModelBottomSheetShow
+                        )
                     },
-                    label = "Animated Content"
-                ) { targetState ->
+                    floatingActionButtonPosition = FabPosition.Center,
+                ) { paddingValues ->
 
-                    // Today's screen
-                    when (targetState) {
-                        CurrentTopTitle.TODAY -> {
-                            TodayScreen(paddingValues)
-                        }
-
-                        CurrentTopTitle.YESTERDAY -> {
-                            YesterdayScreen(paddingValues)
-                        }
-
-                        CurrentTopTitle.ALL -> {
-                            // AllScreen(paddingValues)
-                        }
+                    when (uiStates.value.topTitle) {
+                        TopBarNav.TODAY -> TodayScreen(paddingValues)
+                        TopBarNav.YESTERDAY -> YesterdayScreen(paddingValues)
+                        TopBarNav.ALL -> AllScreen(paddingValues)
+                        TopBarNav.GOAL -> GoalScreen(paddingValues)
                     }
+
+
+                    // Drop down user profile
+                    DropDownUserProfile(
+                        paddingValues,
+                        contentColor = contentColor,
+                        backgroundColor = backgroundColor.copy(alpha = 0.9f),
+                        visible = uiStates.value.isUserDropdownVisible,
+                        userState = userState,
+                        isLoading = uiStates.value.isLogOutLoading,
+                    ) {
+                        viewModel.updateIsLogOutLoading(!uiStates.value.isLogOutLoading)
+                    }
+
+                    // Modal bottom sheet
+                    DataAdditionModelDrawer(
+                        viewModel = viewModel,
+                        isBottomSheetOpen = uiStates.value.isBottomSheetOpen,
+                        datasets = datasets
+                    )
                 }
+            }
 
-
-                // Drop down user profile
-                DropDownUserProfile(
-                    paddingValues,
-                    contentColor = contentColor,
-                    backgroundColor = backgroundColor.copy(alpha = 0.9f),
-                    visible = uiStates.value.isUserDropdownVisible,
-                    userState = userState,
-                    isLoading = uiStates.value.isLogOutLoading,
+            is DatasetUiState.Loading -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .background(
+                            MaterialTheme.colorScheme.background
+                        ),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    viewModel.updateIsLogOutLoading(!uiStates.value.isLogOutLoading)
+                    CircularProgressIndicator()
                 }
-
-                // Modal bottom sheet
-                DataAdditionModelDrawer(
-                    viewModel = viewModel,
-                    isBottomSheetOpen = uiStates.value.isBottomSheetOpen,
-                    datasets = datasets
-                )
             }
-        }
 
-        is DatasetUiState.Loading -> {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        MaterialTheme.colorScheme.background
-                    ),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                CircularProgressIndicator()
-            }
-        }
-
-        is DatasetUiState.Error -> {
-            Column(
-                modifier = Modifier.fillMaxSize(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(text = datasetUiState.message ?: "Unknown error")
+            is DatasetUiState.Error -> {
+                Column(
+                    modifier = Modifier.fillMaxSize(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(text = targetState.message ?: "Unknown error")
+                }
             }
         }
     }

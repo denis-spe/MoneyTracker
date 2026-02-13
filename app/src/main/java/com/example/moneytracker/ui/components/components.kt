@@ -112,10 +112,11 @@ fun DottedDivider(
 
 @Composable
 fun Current(
-    contentColor: Color
+    contentColor: Color,
+    modifier: Modifier = Modifier,
 ) {
     Box(
-        modifier = Modifier
+        modifier = modifier
             .width(5.dp)
             .height(5.dp)
             .clip(RoundedCornerShape(100))

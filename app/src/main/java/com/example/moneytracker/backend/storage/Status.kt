@@ -6,5 +6,7 @@ import androidx.annotation.Keep
 enum class Status(val text: String) {
     PENDING("Pending"),
     COMPLETED("Completed"),
-    FAILED("Failed")
+    FAILED("Failed"),
+
+    SUCCESS("Success")
 }

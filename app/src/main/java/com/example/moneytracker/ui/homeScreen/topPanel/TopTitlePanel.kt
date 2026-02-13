@@ -4,26 +4,25 @@
 package com.example.moneytracker.ui.homeScreen.topPanel
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.ui.Alignment
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.ui.components.Current
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 
 @Composable
@@ -32,91 +31,102 @@ fun TopTitlePanel(
     contentColor: Color,
     currentPageColor: Color,
     backgroundColor: Color,
-    function: (CurrentTopTitle) -> Unit
+    function: (TopBarNav) -> Unit
 ) {
+
+    val topBarNav = TopBarNav.entries
 
     // Text weight
     val fontWeight = FontWeight.Bold
     val fontSize = 13.sp
 
-    Row(
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
+    var selectedTabIndex by remember {
+        mutableIntStateOf(
+            topBarNav
+            .find { it == state.value.topTitle }?.ordinal ?: 0
+        )
+    }
+
+
+    PrimaryScrollableTabRow(
+        selectedTabIndex,
         modifier = Modifier
-            .clip(RoundedCornerShape(20.dp))
-            .widthIn(min = 200.dp, max = 300.dp)
-            .height(46.dp)
-            .background(backgroundColor)
-
+            .width(200.dp)
+            .clip(RoundedCornerShape(50.dp)),
+        containerColor = backgroundColor,
+        indicator = {
+            TabRowDefaults.PrimaryIndicator(
+                modifier = Modifier
+                    .tabIndicatorOffset(selectedTabIndex, matchContentSize = true)
+                    .clip(RoundedCornerShape(100))
+                    .padding(bottom = 2.dp),
+                width = 5.dp,
+                height = 5.dp,
+            )
+        },
+        divider = {},
     ) {
-
-        TextButton(
-            modifier = Modifier.padding(2.dp),
-            onClick = {
-                function(CurrentTopTitle.TODAY)
-            },
-            colors = ButtonDefaults.textButtonColors().copy(
-                contentColor = contentColor,
-                containerColor = if (state.value.topTitle == CurrentTopTitle.TODAY)
-                    currentPageColor else
-                    Color.Unspecified,
-            ),
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+        topBarNav.forEachIndexed { index, nav ->
+            val isSelected = state.value.topTitle == nav && selectedTabIndex == index
+            Tab(
+                selected = isSelected,
+                onClick = {
+                    selectedTabIndex = index
+                    function(nav)
+                },
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(
+                        if (isSelected)
+                            currentPageColor else
+                            Color.Unspecified
+                    ),
             ) {
-                Text("Today", fontWeight = fontWeight, fontSize = fontSize)
-                if (state.value.topTitle == CurrentTopTitle.TODAY) {
-                    Current(contentColor)
-                }
-            }
-
-        }
-
-        TextButton(
-            onClick = {
-                function(CurrentTopTitle.YESTERDAY)
-            },
-            colors = ButtonDefaults.textButtonColors().copy(
-                contentColor = contentColor,
-                containerColor = if (state.value.topTitle == CurrentTopTitle.YESTERDAY)
-                    currentPageColor else
-                    Color.Unspecified,
-            )
-
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("Yesterday", fontWeight = fontWeight, fontSize = fontSize)
-                if (state.value.topTitle == CurrentTopTitle.YESTERDAY) {
-                    Current(contentColor)
-                }
-            }
-        }
-
-        TextButton(
-            onClick = {
-                function(CurrentTopTitle.ALL)
-            },
-            colors = ButtonDefaults.textButtonColors().copy(
-                contentColor = contentColor,
-                containerColor = if (state.value.topTitle == CurrentTopTitle.ALL)
-                    currentPageColor else
-                    Color.Unspecified,
-            )
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text("All", fontWeight = fontWeight, fontSize = fontSize)
-                if (state.value.topTitle == CurrentTopTitle.ALL) {
-                    Current(contentColor)
-                }
+                Text(
+                    nav.text,
+                    fontWeight = fontWeight,
+                    fontSize = fontSize,
+                    modifier = Modifier.padding(vertical = 2.dp)
+                )
             }
         }
     }
+
+//    LazyRow (
+//        horizontalArrangement = Arrangement.SpaceBetween,
+//        verticalAlignment = Alignment.CenterVertically,
+//        modifier = Modifier
+//            .clip(RoundedCornerShape(20.dp))
+//            .width(200.dp)
+//            .height(46.dp)
+//            .background(backgroundColor)
+//
+//    ) {
+//        items(topBarNav.size, key = { it }) {
+//            val nav = topBarNav[it]
+//
+//            TextButton(
+//                modifier = Modifier.padding(2.dp),
+//                onClick = {
+//                    function(nav)
+//                },
+//                colors = ButtonDefaults.textButtonColors().copy(
+//                    contentColor = contentColor,
+//                    containerColor = if (state.value.topTitle == nav)
+//                        currentPageColor else
+//                        Color.Unspecified,
+//                ),
+//            ) {
+//                Column(
+//                    horizontalAlignment = Alignment.CenterHorizontally,
+//                    verticalArrangement = Arrangement.Center
+//                ) {
+//                    Text(nav.text, fontWeight = fontWeight, fontSize = fontSize)
+//                    if (state.value.topTitle == nav) {
+//                        Current(contentColor)
+//                    }
+//                }
+//            }
+//        }
+//    }
 }

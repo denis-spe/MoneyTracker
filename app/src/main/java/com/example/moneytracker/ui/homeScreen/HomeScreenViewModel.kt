@@ -22,7 +22,7 @@ import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
 import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
-import com.example.moneytracker.ui.homeScreen.topPanel.CurrentTopTitle
+import com.example.moneytracker.ui.homeScreen.topPanel.TopBarNav
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -371,8 +371,8 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun updateTopTitle(currentTopTitle: CurrentTopTitle) {
-        _uiState.value = _uiState.value.copy(topTitle = currentTopTitle)
+    fun updateTopTitle(topBarNav: TopBarNav) {
+        _uiState.value = _uiState.value.copy(topTitle = topBarNav)
     }
 
     fun updateIsUserDropdownVisible(isVisible: Boolean) {
