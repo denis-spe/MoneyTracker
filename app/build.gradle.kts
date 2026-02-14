@@ -132,6 +132,10 @@ dependencies {
     // Material 3 (recommended)
     implementation("com.patrykandpatrick.vico:compose-m3:$vicoVersion")
 
-    // Date time wheel
+    // The view calendar library for Android
+    implementation("com.kizitonwose.calendar:compose:2.10.0") // Use latest version
+
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0") // Use latest version
+
     implementation("network.chaintech:kmp-date-time-picker:1.1.1")
 }

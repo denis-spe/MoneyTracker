@@ -20,6 +20,7 @@ import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
+import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topPanel.TopBarNav
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -116,29 +118,39 @@ class HomeScreenViewModel @Inject constructor(
                 title = title
             )
         }
-
-//        state.datasets.filter { it.isForToday }
-//            .filter { it.dataType != DataType.GOAL }
-//            .groupBy { it.dataType }
-//            .values.toList()
-//            .map { lst ->
-//                val firstItemInList = lst[0]
-//                val amount = lst.sumOf { it.amount }.toFloat()
-//                val colorInt = ContextCompat.getColor(context, firstItemInList.dataType.color)
-//                val color = Color(colorInt)
-//                val title = firstItemInList.dataType.text
-//
-//                DonutChartData(
-//                    amount,
-//                    color = color,
-//                    title = title
-//                )
-//            }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList()
     )
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun weeklyData(startDate: LocalDate, endDate: LocalDate): StateFlow<List<DataAdjust>> = uiState
+        .map { state ->
+            val adjust = state.datasets.map { dataset ->
+                dataset.adjustment.map { adjustment ->
+                    adjustment.dataset = dataset
+                    DataAdjust.Adjust(adjustment)
+                }
+            }
+            val data = state.datasets.map { dataset ->
+                DataAdjust.Data(dataset)
+            }
+            val coupledData = (adjust.flatten() + data).filter {
+                when (it) {
+                    is DataAdjust.Data ->
+                        it.dataset.dateTime.toLocalDateTimeUtc().date in startDate..endDate
+
+                    is DataAdjust.Adjust ->
+                        it.adjustment.dateTime.toLocalDateTimeUtc().date in startDate..endDate
+                }
+            }
+            coupledData
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun sortTodayDataAdjust(

@@ -91,42 +91,4 @@ fun TopTitlePanel(
             }
         }
     }
-
-//    LazyRow (
-//        horizontalArrangement = Arrangement.SpaceBetween,
-//        verticalAlignment = Alignment.CenterVertically,
-//        modifier = Modifier
-//            .clip(RoundedCornerShape(20.dp))
-//            .width(200.dp)
-//            .height(46.dp)
-//            .background(backgroundColor)
-//
-//    ) {
-//        items(topBarNav.size, key = { it }) {
-//            val nav = topBarNav[it]
-//
-//            TextButton(
-//                modifier = Modifier.padding(2.dp),
-//                onClick = {
-//                    function(nav)
-//                },
-//                colors = ButtonDefaults.textButtonColors().copy(
-//                    contentColor = contentColor,
-//                    containerColor = if (state.value.topTitle == nav)
-//                        currentPageColor else
-//                        Color.Unspecified,
-//                ),
-//            ) {
-//                Column(
-//                    horizontalAlignment = Alignment.CenterHorizontally,
-//                    verticalArrangement = Arrangement.Center
-//                ) {
-//                    Text(nav.text, fontWeight = fontWeight, fontSize = fontSize)
-//                    if (state.value.topTitle == nav) {
-//                        Current(contentColor)
-//                    }
-//                }
-//            }
-//        }
-//    }
 }
