@@ -16,10 +16,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
-import com.kizitonwose.calendar.compose.weekcalendar.rememberWeekCalendarState
-import com.kizitonwose.calendar.core.firstDayOfWeekFromLocale
-import kotlinx.datetime.toKotlinLocalDate
-import java.time.YearMonth
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -27,21 +23,9 @@ fun AllScreen(
     paddingValues: PaddingValues,
     viewModel: HomeScreenViewModel = hiltViewModel()
 ) {
-    val currentMonth = YearMonth.now()
-    val startDate = currentMonth.minusMonths(10).atDay(1) // 10 months ago
-    val endDate = currentMonth.plusMonths(10).atEndOfMonth() // 10 months ahead
-    val firstDayOfWeek = firstDayOfWeekFromLocale() // Helper or DayOfWeek.MONDAY
 
-    val state = rememberWeekCalendarState(
-        startDate = startDate,
-        endDate = endDate,
-        firstDayOfWeek = firstDayOfWeek
-    )
 
-    val weeklyData = viewModel.weeklyData(
-        state.startDate.toKotlinLocalDate(),
-        state.endDate.toKotlinLocalDate()
-    ).collectAsState(initial = emptyList())
+    val weeklyData = viewModel.weeklyData.collectAsState(initial = emptyList())
 
     Column(
         modifier = Modifier
@@ -50,7 +34,8 @@ fun AllScreen(
             .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CalendarViewSection(state = state)
+        CalendarViewSection(updateWeek = viewModel::updateWeekDays)
+
         ListOfData(data = weeklyData.value)
     }
 }

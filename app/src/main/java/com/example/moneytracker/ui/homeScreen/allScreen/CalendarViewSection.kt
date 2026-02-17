@@ -3,100 +3,169 @@ package com.example.moneytracker.ui.homeScreen.allScreen
 
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.helper.title
-import com.kizitonwose.calendar.compose.WeekCalendar
-import com.kizitonwose.calendar.compose.weekcalendar.WeekCalendarState
-import com.kizitonwose.calendar.core.WeekDay
-import java.time.YearMonth
+import kotlinx.datetime.toKotlinLocalDate
+import network.chaintech.kmp_date_time_picker.utils.now
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.temporal.TemporalAdjusters
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarViewSection(
     color: Color = Color(0xFF2FA6B6),
-    state: WeekCalendarState,
+    updateWeek: (dates: List<kotlinx.datetime.LocalDate>) -> Unit
 ) {
-    val currentMonth = YearMonth.now()
-    val weekDays = remember { mutableStateOf<List<WeekDay>>(emptyList()) }
 
-    Column(
+    val currentWeek = remember { mutableStateOf(emptyList<kotlinx.datetime.LocalDate>()) }
+    val fontSizeMonthDay = 13.sp
+    var filterByDay by remember { mutableStateOf(false) }
+
+    Row(
         modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically
+
+        val date = if (currentWeek.value.isEmpty())
+            kotlinx.datetime.LocalDate.now()
+        else currentWeek.value.first()
+        val month = date.month.name.title
+        val year = date.year.toString()
+
+        Column(
+            horizontalAlignment = Alignment.Start,
+            verticalArrangement = Arrangement.Center
         ) {
-            val month = if (weekDays.value.isNotEmpty())
-                weekDays.value.first().date.month.name else
-                currentMonth.month.name
-
-
             Text(
-                month.title,
-                fontSize = 15.sp,
+                month,
+                fontSize = fontSizeMonthDay,
                 fontWeight = FontWeight.Bold
             )
-
+            Text(
+                year,
+                fontSize = fontSizeMonthDay,
+                fontWeight = FontWeight.Bold
+            )
         }
+        Spacer(modifier = Modifier.width(2.dp))
 
-        WeekCalendar(
-            state = state,
-            dayContent = { day ->
-                val dayOfWeek = day.date.dayOfWeek.name.take(3)
-                val dayOfMonth = day.date.dayOfMonth.toString()
-
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 2.dp)
-                        .clip(RoundedCornerShape(20))
-                        .border(
-                            1.dp,
-                            color, RoundedCornerShape(20)
-                        ),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
+        GroupedWeeks(
+            currentWeek = currentWeek
+        ) { week ->
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                week.forEach { date ->
                     Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .background(color),
+                            .padding(horizontal = 4.dp)
+                            .clickable {
+                                updateWeek(listOf(date))
+                            },
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            dayOfWeek,
-                            fontSize = 13.sp
+                            date.dayOfWeek.name.title.take(3),
+                            fontSize = fontSizeMonthDay,
+                            fontWeight = FontWeight.Medium
                         )
+                        Text(date.day.toString())
                     }
-                    Text(
-                        dayOfMonth,
-                        fontSize = 13.sp
-                    )
                 }
-            },
-            weekHeader = { week ->
-                weekDays.value = week.days
             }
-        )
+        }
+    }
+
+    // Update the week when the currentWeek changes
+    if (!filterByDay) {
+        updateWeek(currentWeek.value)
     }
 }
+
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun GroupedWeeks(
+    modifier: Modifier = Modifier,
+    currentWeek: MutableState<List<kotlinx.datetime.LocalDate>>,
+    weeksAfter: Int = 100,
+    weeksBefore: Int = 100,
+    weekView: @Composable (week: List<kotlinx.datetime.LocalDate>) -> Unit
+) {
+
+    val currentDate = LocalDate.now()
+    val localDateList = getWeeks(
+        anchorDate = currentDate,
+        weeksAfter = weeksAfter,
+        weeksBefore = weeksBefore
+    )
+
+    val getIndexOfCurrentWeek = localDateList.indexOfFirst {
+        it.contains(currentDate)
+    }
+
+    val pageState = rememberPagerState(initialPage = getIndexOfCurrentWeek) { localDateList.size }
+    currentWeek.value = localDateList[pageState.currentPage].map { it.toKotlinLocalDate() }
+
+    HorizontalPager(
+        state = pageState,
+        modifier = modifier,
+        key = { localDateList[it] }
+    ) {
+        val week = localDateList[it].map { weekValue -> weekValue.toKotlinLocalDate() }
+        weekView(week)
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun getWeeks(
+    anchorDate: LocalDate,
+    weeksBefore: Int,
+    weeksAfter: Int
+): List<List<LocalDate>> {
+    val weeks = mutableListOf<List<LocalDate>>()
+
+    // 1. Find the start of the week for the anchor date
+    val anchorWeekStart = anchorDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
+
+    // 2. Move the pointer back by the number of 'weeksBefore'
+    var currentStart = anchorWeekStart.minusWeeks(weeksBefore.toLong())
+
+    // 3. Loop through total count (Before + Current + After)
+    val totalWeeks = weeksBefore + 1 + weeksAfter
+
+    repeat(totalWeeks) {
+        val week = (0..6).map { currentStart.plusDays(it.toLong()) }
+        weeks.add(week)
+        currentStart = currentStart.plusWeeks(1)
+    }
+
+    return weeks
+}
+

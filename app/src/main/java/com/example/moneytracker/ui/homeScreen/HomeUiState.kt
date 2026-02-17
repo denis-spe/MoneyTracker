@@ -5,6 +5,7 @@ import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.Info
 import com.example.moneytracker.ui.homeScreen.topPanel.TopBarNav
+import kotlinx.datetime.LocalDate
 
 
 data class HomeUiState(
@@ -18,4 +19,5 @@ data class HomeUiState(
     val isLogOutLoading: Boolean = false,
     val isBottomSheetOpen: Boolean = false,
     val combinedDataWithAdjust: List<DataAdjust> = emptyList(),
+    val dates: List<LocalDate> = emptyList(),
 )

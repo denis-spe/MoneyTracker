@@ -125,7 +125,7 @@ class HomeScreenViewModel @Inject constructor(
     )
 
     @RequiresApi(Build.VERSION_CODES.O)
-    fun weeklyData(startDate: LocalDate, endDate: LocalDate): StateFlow<List<DataAdjust>> = uiState
+    val weeklyData: StateFlow<List<DataAdjust>> = uiState
         .map { state ->
             val adjust = state.datasets.map { dataset ->
                 dataset.adjustment.map { adjustment ->
@@ -139,10 +139,10 @@ class HomeScreenViewModel @Inject constructor(
             val coupledData = (adjust.flatten() + data).filter {
                 when (it) {
                     is DataAdjust.Data ->
-                        it.dataset.dateTime.toLocalDateTimeUtc().date in startDate..endDate
+                        it.dataset.dateTime.toLocalDateTimeUtc().date in state.dates
 
                     is DataAdjust.Adjust ->
-                        it.adjustment.dateTime.toLocalDateTimeUtc().date in startDate..endDate
+                        it.adjustment.dateTime.toLocalDateTimeUtc().date in state.dates
                 }
             }
             coupledData
@@ -381,6 +381,10 @@ class HomeScreenViewModel @Inject constructor(
                 Log.e("HomeScreenViewModel", "addAdjustmentData failed", e)
             }
         }
+    }
+
+    fun updateWeekDays(dates: List<LocalDate>) {
+        _uiState.value = _uiState.value.copy(dates = dates)
     }
 
     fun updateTopTitle(topBarNav: TopBarNav) {
