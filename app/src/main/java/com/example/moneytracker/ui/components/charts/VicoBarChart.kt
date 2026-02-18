@@ -21,17 +21,21 @@ import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
+import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
 import com.patrykandpatrick.vico.compose.common.fill
 import com.patrykandpatrick.vico.compose.common.rememberHorizontalLegend
 import com.patrykandpatrick.vico.core.cartesian.CartesianDrawingContext
 import com.patrykandpatrick.vico.core.cartesian.CartesianMeasuringContext
+import com.patrykandpatrick.vico.core.cartesian.Zoom
 import com.patrykandpatrick.vico.core.cartesian.axis.HorizontalAxis
 import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.ColumnCartesianLayer
+import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
+import com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.common.Fill
 import com.patrykandpatrick.vico.core.common.Insets
 import com.patrykandpatrick.vico.core.common.LegendItem
@@ -47,11 +51,28 @@ fun VicoBarChart(
     showLegend: Boolean = false,
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
-    markerFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
+    markerFormatter: (x: Double, y: Double) -> CharSequence =
+        { x, y -> "$x, $y" },
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val chartData = chartDataCollection.chartData
     val textComponent = rememberTextComponent(color = Color.autoTextColorChange)
+    val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
+
+    val markerFormatter = DefaultCartesianMarker.ValueFormatter { context, targets ->
+        // Get the first highlighted point's data
+        val primaryTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
+        val entry = primaryTarget?.points?.firstOrNull()?.entry
+
+        if (entry != null) {
+            // Format as "X: Value, Y: Value" or any layout you prefer
+            markerFormatter(entry.x, entry.y)
+        } else {
+            ""
+        }
+    }
+
+    val marker = rememberMarker(valueFormatter = markerFormatter)
 
     val legend = rememberHorizontalLegend<CartesianMeasuringContext, CartesianDrawingContext>(
         items = { extraStore -> // 'this' is the AdditionScope<LegendItem>
@@ -96,9 +117,7 @@ fun VicoBarChart(
 
     val chart = rememberCartesianChart(
         columnLayer,
-        marker = rememberMarker(valueFormatter = { _, value ->
-            markerFormatter(value[0].x)
-        }),
+        marker = marker,
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
             valueFormatter = { _, value, _ -> xValueFormatter(value) }
@@ -134,5 +153,6 @@ fun VicoBarChart(
         modelProducer = modelProducer,
         modifier = modifier
             .height(280.dp),
+        zoomState = zoomState
     )
 }

@@ -28,7 +28,7 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.toLocalDateTimeUtc
-import com.example.moneytracker.ui.components.charts.VicoLineChart
+import com.example.moneytracker.ui.components.charts.VicoBarChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.theme.autoTextColorChange
@@ -45,9 +45,7 @@ fun YesterdayStat(
     val lent = datasets.filter { it.dataType == DataType.LENT }.sumOf { it.amount }
     val savings = datasets.filter { it.dataType === DataType.SAVINGS }.sumOf { it.amount }
     datasets.filter { it.dataType == DataType.GOAL }.sumOf { it.amount }
-    val attained = datasets.filter { it.dataType == DataType.GOAL }
-        .map { it.adjustment }
-        .flatten()
+    val attained = datasets.filter { it.dataType == DataType.GOAL }.flatMap { it.adjustment }
         .sumOf { it.amount }
 
     Column(
@@ -160,11 +158,12 @@ fun YesterdayChart(datasets: List<Dataset>) {
             Text("No data to display")
         }
     } else {
-        VicoLineChart(
+        VicoBarChart(
             modifier = Modifier
                 .height(230.dp),
+            thickness = 1.dp,
+            strokeThickness = 0.dp,
             chartDataCollection = ChartDataCollection(state.value),
-            fillArea = true,
             xValueFormatter = { value -> value.formatToAmount() },
             yValueFormatter = { value ->
                 val hour = (value / 3600).toInt()

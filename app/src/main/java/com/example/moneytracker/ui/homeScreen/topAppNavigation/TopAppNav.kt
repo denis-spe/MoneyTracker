@@ -1,7 +1,7 @@
 // ======
 // Bless be the name of LORD of hosts
 // ======
-package com.example.moneytracker.ui.homeScreen.topNavigation
+package com.example.moneytracker.ui.homeScreen.topAppNavigation
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,7 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
-fun TopNavPanel(
+fun TopAppNav(
     userState: State<FirebaseUser?>,
     userColor: Int,
     contentColor: Color,

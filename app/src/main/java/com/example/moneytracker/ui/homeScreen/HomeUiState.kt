@@ -4,7 +4,7 @@ import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.Info
-import com.example.moneytracker.ui.homeScreen.topPanel.TopBarNav
+import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import kotlinx.datetime.LocalDate
 
 

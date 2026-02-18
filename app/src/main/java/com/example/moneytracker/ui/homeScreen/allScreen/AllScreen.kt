@@ -34,7 +34,10 @@ fun AllScreen(
             .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CalendarViewSection(updateWeek = viewModel::updateWeekDays)
+        CalendarViewSection(
+            updateWeek = viewModel::updateWeekDays,
+            viewModel = viewModel
+        )
 
         ListOfData(data = weeklyData.value)
     }

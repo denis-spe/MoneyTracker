@@ -40,10 +40,11 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingB
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
 import com.example.moneytracker.ui.homeScreen.goalScreen.GoalScreen
 import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
-import com.example.moneytracker.ui.homeScreen.topNavigation.DropDownUserProfile
-import com.example.moneytracker.ui.homeScreen.topNavigation.TopNavPanel
-import com.example.moneytracker.ui.homeScreen.topPanel.TopBarNav
-import com.example.moneytracker.ui.homeScreen.topPanel.TopTitlePanel
+import com.example.moneytracker.ui.homeScreen.topAppAction.TopAppAction
+import com.example.moneytracker.ui.homeScreen.topAppNavigation.DropDownUserProfile
+import com.example.moneytracker.ui.homeScreen.topAppNavigation.TopAppNav
+import com.example.moneytracker.ui.homeScreen.topAppTitle.TopAppTitle
+import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import kotlinx.coroutines.delay
@@ -110,7 +111,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                                 titleContentColor = Color.White,
                             ),
                             title = {
-                                TopTitlePanel(
+                                TopAppTitle(
                                     uiStates,
                                     contentColor = contentColor,
                                     currentPageColor = colors.currentPageColor,
@@ -119,7 +120,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                                 )
                             },
                             navigationIcon = {
-                                TopNavPanel(
+                                TopAppNav(
                                     userState,
                                     contentColor = contentColor,
                                     userColor = uiStates.value.info.color
@@ -128,6 +129,9 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                                         !uiStates.value.isUserDropdownVisible
                                     )
                                 }
+                            },
+                            actions = {
+                                TopAppAction()
                             }
                         )
                     },

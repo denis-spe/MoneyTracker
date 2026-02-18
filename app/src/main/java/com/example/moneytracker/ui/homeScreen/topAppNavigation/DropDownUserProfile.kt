@@ -1,6 +1,6 @@
 // Love the LORD your GOD with all your soul and with all your mind
 // And with all your strength and love your neighbor as your self.
-package com.example.moneytracker.ui.homeScreen.topNavigation
+package com.example.moneytracker.ui.homeScreen.topAppNavigation
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility

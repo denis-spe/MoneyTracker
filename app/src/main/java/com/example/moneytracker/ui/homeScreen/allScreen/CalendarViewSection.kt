@@ -11,8 +11,11 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Badge
+import androidx.compose.material3.BadgedBox
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
@@ -31,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.helper.title
+import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
@@ -43,19 +47,20 @@ import java.time.temporal.TemporalAdjusters
 @Composable
 fun CalendarViewSection(
     color: Color = Color(0xFF2FA6B6),
-    updateWeek: (dates: List<kotlinx.datetime.LocalDate>) -> Unit
+    updateWeek: (dates: List<kotlinx.datetime.LocalDate>) -> Unit,
+    viewModel: HomeScreenViewModel
 ) {
-
+    val now = kotlinx.datetime.LocalDate.now()
     val currentWeek = remember { mutableStateOf(emptyList<kotlinx.datetime.LocalDate>()) }
     val fontSizeMonthDay = 13.sp
-    val date = if (currentWeek.value.isEmpty())
-        kotlinx.datetime.LocalDate.now()
+    val date = if (currentWeek.value.isEmpty()) now
     else currentWeek.value.first()
     val month = date.month.name.title
     val year = date.year.toString()
     val weekNumber = date.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
     var selectedTabIndex by remember { mutableIntStateOf(1) }
     var selectedDate by remember { mutableStateOf(date) }
+
 
     // Change the tab index to week on page swipe
     LaunchedEffect(weekNumber) {
@@ -99,32 +104,6 @@ fun CalendarViewSection(
                     fontSize = fontSizeMonthDay,
                 )
             }
-
-            Tab(
-                selected = selectedTabIndex == 2,
-                onClick = {
-                    selectedTabIndex = 2
-                }
-            ) {
-                Text(
-                    month,
-                    fontSize = fontSizeMonthDay,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-
-            Tab(
-                selected = selectedTabIndex == 3,
-                onClick = {
-                    selectedTabIndex = 3
-                }
-            ) {
-                Text(
-                    year,
-                    fontSize = fontSizeMonthDay,
-                    fontWeight = FontWeight.Bold
-                )
-            }
         }
 
 
@@ -133,6 +112,22 @@ fun CalendarViewSection(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    month,
+                    fontSize = fontSizeMonthDay,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Text(
+                    year,
+                    fontSize = fontSizeMonthDay,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             GroupedWeeks(
                 currentWeek = currentWeek,
             ) { week ->
@@ -154,20 +149,37 @@ fun CalendarViewSection(
                             Text(
                                 date.dayOfWeek.name.title.take(3),
                                 fontSize = fontSizeMonthDay,
-                                fontWeight = FontWeight.Medium
+                                fontWeight = FontWeight.Medium,
+                                color = if (date == now) color else Color.Unspecified
                             )
-                            Text(
-                                date.day.toString(),
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier
-                                    .border(
-                                        width = 1.dp,
-                                        color = if (date == selectedDate) color else Color.Transparent,
-                                        shape = RoundedCornerShape(10)
-                                    )
-                                    .padding(horizontal = 5.dp, vertical = 5.dp)
-                            )
+
+                            BadgedBox(
+                                badge = {
+                                    val lenOfAct = viewModel.getLenOfActivates(date)
+                                    if (lenOfAct > 0) {
+                                        Badge(
+                                            containerColor = color,
+                                            contentColor = Color.White
+                                        ) {
+                                            Text(lenOfAct.toString())
+                                        }
+                                    }
+                                }
+                            ) {
+                                Text(
+                                    date.day.toString(),
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    modifier = Modifier
+                                        .border(
+                                            width = 1.dp,
+                                            color = if (date == selectedDate && selectedTabIndex == 0) color else Color.Transparent,
+                                            shape = RoundedCornerShape(10)
+                                        )
+                                        .padding(horizontal = 5.dp, vertical = 5.dp),
+                                    color = if (date == now) color else Color.Unspecified
+                                )
+                            }
                         }
                     }
                 }
@@ -190,6 +202,7 @@ fun GroupedWeeks(
     currentWeek: MutableState<List<kotlinx.datetime.LocalDate>>,
     weeksAfter: Int = 100,
     weeksBefore: Int = 100,
+    moveTo: (initialPage: Int, pageState: PagerState) -> Unit = { _, _ -> },
     weekView: @Composable (week: List<kotlinx.datetime.LocalDate>) -> Unit
 ) {
 
@@ -216,6 +229,8 @@ fun GroupedWeeks(
         val week = localDateList[it].map { weekValue -> weekValue.toKotlinLocalDate() }
         weekView(week)
     }
+
+    moveTo(getIndexOfCurrentWeek, pageState)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

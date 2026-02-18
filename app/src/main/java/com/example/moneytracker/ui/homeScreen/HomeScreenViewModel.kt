@@ -23,7 +23,7 @@ import com.example.moneytracker.helper.isForYesterday
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.collections.DonutChartData
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
-import com.example.moneytracker.ui.homeScreen.topPanel.TopBarNav
+import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -123,6 +123,20 @@ class HomeScreenViewModel @Inject constructor(
         started = SharingStarted.WhileSubscribed(5_000),
         initialValue = emptyList()
     )
+
+    fun getLenOfActivates(date: LocalDate): Int {
+        val datasetLen = uiState.value.datasets.filter {
+            it.dateTime.toLocalDateTimeUtc().date == date
+        }.size
+
+        val adjustLen = uiState.value.datasets.flatMap {
+            it.adjustment
+        }.filter {
+            it.dateTime.toLocalDateTimeUtc().date == date
+        }.size
+
+        return datasetLen + adjustLen
+    }
 
     @RequiresApi(Build.VERSION_CODES.O)
     val weeklyData: StateFlow<List<DataAdjust>> = uiState

@@ -1,11 +1,11 @@
 // =====
 // Glory be to the name of LORD of hosts
 // =====
-package com.example.moneytracker.ui.homeScreen.topPanel
+package com.example.moneytracker.ui.homeScreen.topAppTitle
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 
 @Composable
-fun TopTitlePanel(
+fun TopAppTitle(
     state: State<HomeUiState>,
     contentColor: Color,
     currentPageColor: Color,
@@ -51,7 +51,7 @@ fun TopTitlePanel(
     PrimaryScrollableTabRow(
         selectedTabIndex,
         modifier = Modifier
-            .width(200.dp)
+            .widthIn(min = 160.dp, max = 300.dp)
             .clip(RoundedCornerShape(50.dp)),
         containerColor = backgroundColor,
         indicator = {
