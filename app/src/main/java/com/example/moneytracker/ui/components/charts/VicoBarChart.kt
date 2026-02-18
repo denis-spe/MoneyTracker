@@ -4,6 +4,7 @@
 package com.example.moneytracker.ui.components.charts
 
 
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -24,7 +25,6 @@ import com.patrykandpatrick.vico.compose.cartesian.rememberCartesianChart
 import com.patrykandpatrick.vico.compose.cartesian.rememberVicoZoomState
 import com.patrykandpatrick.vico.compose.common.component.rememberLineComponent
 import com.patrykandpatrick.vico.compose.common.component.rememberTextComponent
-import com.patrykandpatrick.vico.compose.common.fill
 import com.patrykandpatrick.vico.compose.common.rememberHorizontalLegend
 import com.patrykandpatrick.vico.core.cartesian.CartesianDrawingContext
 import com.patrykandpatrick.vico.core.cartesian.CartesianMeasuringContext
@@ -34,19 +34,140 @@ import com.patrykandpatrick.vico.core.cartesian.axis.VerticalAxis
 import com.patrykandpatrick.vico.core.cartesian.data.CartesianChartModelProducer
 import com.patrykandpatrick.vico.core.cartesian.data.columnSeries
 import com.patrykandpatrick.vico.core.cartesian.layer.ColumnCartesianLayer
+import com.patrykandpatrick.vico.core.cartesian.marker.ColumnCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.cartesian.marker.DefaultCartesianMarker
-import com.patrykandpatrick.vico.core.cartesian.marker.LineCartesianLayerMarkerTarget
 import com.patrykandpatrick.vico.core.common.Fill
 import com.patrykandpatrick.vico.core.common.Insets
 import com.patrykandpatrick.vico.core.common.LegendItem
 import com.patrykandpatrick.vico.core.common.component.ShapeComponent
 import com.patrykandpatrick.vico.core.common.shape.Shape
 
+//@Composable
+//fun VicoBarChart(
+//    modifier: Modifier = Modifier,
+//    chartDataCollection: ChartDataCollection,
+//    thickness: Dp = 5.dp,
+//    strokeThickness: Dp = 0.dp,
+//    showLegend: Boolean = false,
+//    xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
+//    yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
+//    markerFormatter: (x: Double, y: Double) -> CharSequence =
+//        { x, y -> "$x, $y" },
+//) {
+//    val modelProducer = remember { CartesianChartModelProducer() }
+//    val chartData = chartDataCollection.chartData
+//    val textComponent = rememberTextComponent(color = Color.autoTextColorChange)
+//    val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
+//
+//    val markerFormatter = DefaultCartesianMarker.ValueFormatter { context, targets ->
+//        // Get the first highlighted point's data
+//        val primaryTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
+//        val entry = primaryTarget?.points?.firstOrNull()?.entry
+//
+//        if (entry != null) {
+//            // Format as "X: Value, Y: Value" or any layout you prefer
+//            markerFormatter(entry.x, entry.y)
+//        } else {
+//            ""
+//        }
+//    }
+//
+//    val marker = rememberMarker(valueFormatter = markerFormatter)
+//
+//    val legend = rememberHorizontalLegend<CartesianMeasuringContext, CartesianDrawingContext>(
+//        items = { extraStore -> // 'this' is the AdditionScope<LegendItem>
+//            chartData.forEach { lineData ->
+//                add(
+//                    LegendItem(
+//                        icon = ShapeComponent(
+//                            fill = Fill(lineData.color.toArgb()),
+//                            shape = Shape.Rectangle,
+//                        ),
+//                        labelComponent = textComponent,
+//                        label = lineData.label ?: "",
+//                    )
+//                )
+//            }
+//        },
+//        iconSize = 8.dp,
+//        iconLabelSpacing = 4.dp,
+//        columnSpacing = 16.dp,
+//        padding = Insets(topDp = 16f) // Note: Insets usually take Floats in the core class
+//    )
+//
+//    var columnLayer = rememberColumnCartesianLayer(columnCollectionSpacing = 5.dp)
+//
+//    // Create and configure the line layer only when we have data.
+//    if (chartDataCollection.allAreNotEmpty()) {
+//        columnLayer = rememberColumnCartesianLayer(
+//            ColumnCartesianLayer.ColumnProvider.series(
+//                chartData.map { lineData ->
+//                    val color = lineData.color
+//
+//                    rememberLineComponent(
+//                        fill = Fill(color.toArgb()),
+//                        thickness = 104.dp,                 // <-- increase this
+//                        strokeThickness = 0.dp
+//                    )
+//                },
+//            ),
+//            columnCollectionSpacing = 0.dp,
+//            mergeMode = { ColumnCartesianLayer.MergeMode.Stacked }
+//        )
+//    }
+//
+//
+//    val chart = rememberCartesianChart(
+//        columnLayer,
+//        marker = marker,
+//        bottomAxis = HorizontalAxis.rememberBottom(
+//            guideline = null,
+//            valueFormatter = { _, value, _ -> xValueFormatter(value) }
+//            // Removed itemPlacer for compatibility
+//        ),
+//        startAxis = VerticalAxis.rememberStart(
+//            line = rememberLineComponent(
+//                Fill.Transparent,
+//                thickness = thickness,
+//                strokeThickness = strokeThickness,
+//            ),
+//            title = "X",
+//            valueFormatter = { _, value, _ -> yValueFormatter(value) },
+//        ),
+//        legend = if (showLegend) legend else null // Show legend
+//    )
+//
+//    LaunchedEffect(Unit) {
+//        modelProducer.runTransaction {
+//            if (!(chartDataCollection.allAreNotEmpty())) {
+//                return@runTransaction
+//            }
+//            columnSeries {
+//                chartDataCollection.chartData.forEach { lineData ->
+//                    series(
+//                        x = lineData.x,
+//                        y = lineData.y
+//                    )
+//                }
+//            }
+//        }
+//    }
+//
+//
+//    CartesianChartHost(
+//        chart = chart,
+//        modelProducer = modelProducer,
+//        modifier = modifier
+//            .height(280.dp),
+//        zoomState = zoomState
+//    )
+//}
+
 @Composable
 fun VicoBarChart(
     modifier: Modifier = Modifier,
     chartDataCollection: ChartDataCollection,
-    thickness: Dp = 5.dp,
+    thickness: Dp = 24.dp,
     strokeThickness: Dp = 0.dp,
     showLegend: Boolean = false,
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
@@ -56,26 +177,31 @@ fun VicoBarChart(
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val chartData = chartDataCollection.chartData
+
     val textComponent = rememberTextComponent(color = Color.autoTextColorChange)
     val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
 
-    val markerFormatter = DefaultCartesianMarker.ValueFormatter { context, targets ->
-        // Get the first highlighted point's data
-        val primaryTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
-        val entry = primaryTarget?.points?.firstOrNull()?.entry
+    // ---------- Marker ----------
+    val markerValueFormatter = DefaultCartesianMarker.ValueFormatter { _, targets ->
+        val primaryTarget = targets.firstOrNull() as? ColumnCartesianLayerMarkerTarget
+        val entry = primaryTarget?.columns?.firstOrNull()?.entry
 
         if (entry != null) {
-            // Format as "X: Value, Y: Value" or any layout you prefer
-            markerFormatter(entry.x, entry.y)
-        } else {
-            ""
-        }
+            val index = entry.x.toInt()
+
+            val originalX = chartData.firstOrNull()
+                ?.x
+                ?.getOrNull(index)
+
+            if (originalX != null) markerFormatter(originalX, entry.y) else ""
+        } else ""
     }
 
-    val marker = rememberMarker(valueFormatter = markerFormatter)
+    val marker = rememberMarker(valueFormatter = markerValueFormatter)
 
+    // ---------- Legend ----------
     val legend = rememberHorizontalLegend<CartesianMeasuringContext, CartesianDrawingContext>(
-        items = { extraStore -> // 'this' is the AdditionScope<LegendItem>
+        items = {
             chartData.forEach { lineData ->
                 add(
                     LegendItem(
@@ -92,54 +218,76 @@ fun VicoBarChart(
         iconSize = 8.dp,
         iconLabelSpacing = 4.dp,
         columnSpacing = 16.dp,
-        padding = Insets(topDp = 16f) // Note: Insets usually take Floats in the core class
+        padding = Insets(topDp = 16f),
     )
 
-    var columnLayer = rememberColumnCartesianLayer()
-
-    // Create and configure the line layer only when we have data.
-    if (chartDataCollection.allAreNotEmpty()) {
-        columnLayer = rememberColumnCartesianLayer(
-            ColumnCartesianLayer.ColumnProvider.series(
-                chartData.map { lineData ->
-                    val color = lineData.color
-
-                    rememberLineComponent(
-                        fill(color),
-                        thickness = thickness,
-                        strokeThickness = strokeThickness,
-                    )
-                }
+    // ---------- Column Layer ----------
+    val columnLayer =
+        if (chartDataCollection.allAreNotEmpty()) {
+            rememberColumnCartesianLayer(
+                columnProvider = ColumnCartesianLayer.ColumnProvider.series(
+                    chartData.map { lineData ->
+                        rememberLineComponent(
+                            fill = Fill(lineData.color.toArgb()),
+                            thickness = thickness,     // column width
+                            strokeThickness = strokeThickness
+                        )
+                    }
+                ),
+                columnCollectionSpacing = 4.dp,
+//                mergeMode = { ColumnCartesianLayer.MergeMode.Stacked }
             )
-        )
-    }
+        } else {
+            rememberColumnCartesianLayer()
+        }
 
-
+    // ---------- Chart ----------
     val chart = rememberCartesianChart(
         columnLayer,
         marker = marker,
+
+        // map index -> original x label
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
-            valueFormatter = { _, value, _ -> xValueFormatter(value) }
-            // Removed itemPlacer for compatibility
+            valueFormatter = { _, value, _ ->
+                val index = value.toInt()
+
+                // get original x value (seconds of day)
+                val originalX = chartData.firstOrNull()
+                    ?.x
+                    ?.getOrNull(index)
+
+                if (originalX != null) {
+                    xValueFormatter(originalX) // format real time
+                } else {
+                    ""
+                }
+            }
         ),
+
         startAxis = VerticalAxis.rememberStart(
-            line = rememberLineComponent(Fill.Transparent),
-            title = "X",
+            line = rememberLineComponent(
+                Fill.Transparent,
+                thickness = 0.dp,
+                strokeThickness = 0.dp
+            ),
+            title = "Y",
             valueFormatter = { _, value, _ -> yValueFormatter(value) },
         ),
-        legend = if (showLegend) legend else null // Show legend
+
+        legend = if (showLegend) legend else null
     )
 
-    LaunchedEffect(Unit) {
+    // ---------- Load Data ----------
+    LaunchedEffect(chartDataCollection) {
         modelProducer.runTransaction {
-            if (!(chartDataCollection.allAreNotEmpty())) {
-                return@runTransaction
-            }
+            if (!chartDataCollection.allAreNotEmpty()) return@runTransaction
+
             columnSeries {
                 chartDataCollection.chartData.forEach { lineData ->
                     series(
-                        x = lineData.x,
+                        // ⭐ KEY FIX → normalize X values to indices
+                        x = lineData.y.indices.map { it.toDouble() },
                         y = lineData.y
                     )
                 }
@@ -147,11 +295,12 @@ fun VicoBarChart(
         }
     }
 
-
+    // ---------- Host ----------
     CartesianChartHost(
         chart = chart,
         modelProducer = modelProducer,
         modifier = modifier
+            .fillMaxWidth()    // important for column size
             .height(280.dp),
         zoomState = zoomState
     )

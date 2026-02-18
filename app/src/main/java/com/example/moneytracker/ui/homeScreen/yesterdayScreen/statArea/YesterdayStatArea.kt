@@ -1,6 +1,8 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -33,7 +35,6 @@ import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.theme.autoTextColorChange
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun YesterdayStat(
@@ -124,15 +125,18 @@ fun YesterdayStat(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun YesterdayChart(datasets: List<Dataset>) {
+//    val sorted = datasets.sortedBy { it.dateTime }
     val groupedDataset = datasets
         .groupBy { it.dataType }
         .map { (dataType, datasets) ->
             ChartData(
-                x = datasets.map { it.amount.toInt() },
-                y = datasets.map {
-                    val time = it.dateTime.toLocalDateTimeUtc().time
+                y = datasets.map { it.amount.toInt() },
+                x = datasets.map {
+                    val time = it.dateTime.toLocalDateTimeUtc()
+
                     ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
                 }, // x: hour , // y: amount
                 label = dataType.text,
@@ -158,32 +162,39 @@ fun YesterdayChart(datasets: List<Dataset>) {
             Text("No data to display")
         }
     } else {
+        datasets.associate {
+            val time = it.dateTime.toLocalDateTimeUtc()
+            val xValue = ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
+            xValue.toFloat() to "%02d:%02d".format(time.hour, time.minute)
+        }
+
         VicoBarChart(
             modifier = Modifier
                 .height(230.dp),
-            thickness = 1.dp,
+            thickness = 24.dp,
             strokeThickness = 0.dp,
             chartDataCollection = ChartDataCollection(state.value),
-            xValueFormatter = { value -> value.formatToAmount() },
-            yValueFormatter = { value ->
+            yValueFormatter = { value -> value.formatToAmount() },
+            xValueFormatter = { value ->
                 val hour = (value / 3600).toInt()
                 val minute = ((value % 3600) / 60).toInt()
 
                 "%02d:%02d".format(hour, minute)
             },
             markerFormatter = { x, y ->
-                val hour = (y / 3600).toInt()
-                val minute = ((y % 3600) / 60).toInt()
+                val hour = (x / 3600).toInt()
+                val minute = ((x % 3600) / 60).toInt()
 
                 val time = "%02d:%02d".format(hour, minute)
 
-                "${x.formatToAmount()} at $time"
+                "${y.formatToAmount()} at $time"
             },
             showLegend = true
         )
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun YesterdayStatArea(
     modifier: Modifier = Modifier,
