@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.mean
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.VicoBarChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
@@ -130,13 +131,16 @@ fun YesterdayChart(datasets: List<Dataset>) {
     val groupedDataset = datasets
         .groupBy { it.dataType }
         .map { (dataType, datasets) ->
-            ChartData(
-                y = datasets.map { it.amount.toInt() },
-                x = datasets.map {
-                    val time = it.dateTime.toLocalDateTimeUtc()
+            val x = listOf(datasets.mean {
+                val time = it.dateTime.toLocalDateTimeUtc()
 
-                    ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
-                }, // x: hour , // y: amount
+                ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
+            })
+            val y = listOf(datasets.sumOf { it.amount.toInt() })
+
+            ChartData(
+                x = x,
+                y = y,
                 label = dataType.text,
                 color = colorResource(id = dataType.color)
             )
@@ -160,11 +164,11 @@ fun YesterdayChart(datasets: List<Dataset>) {
             Text("No data to display")
         }
     } else {
-        datasets.associate {
-            val time = it.dateTime.toLocalDateTimeUtc()
-            val xValue = ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
-            xValue.toFloat() to "%02d:%02d".format(time.hour, time.minute)
-        }
+//        datasets.associate {
+//            val time = it.dateTime.toLocalDateTimeUtc()
+//            val xValue = ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
+//            xValue.toFloat() to "%02d:%02d".format(time.hour, time.minute)
+//        }
 
         VicoBarChart(
             modifier = Modifier

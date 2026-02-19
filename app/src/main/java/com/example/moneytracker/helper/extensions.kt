@@ -39,11 +39,10 @@ val String.title: String
 /**
  * Calculates the Mean: The average of all values in a list.
  */
-val List<Dataset>.mean: Double
-    get() {
-        if (isEmpty()) return 0.0
-        return sumOf { it.amount } / size
-    }
+fun <T> List<T>.mean(selector: (T) -> Double): Double {
+    if (isEmpty()) return 0.0
+    return sumOf { selector(it) } / size
+}
 
 /**
  * Calculates the Median: The middle value in a sorted list of numbers.
@@ -71,7 +70,7 @@ val List<Dataset>.median: Double
 val List<Dataset>.variance: Double
     get() {
         if (isEmpty()) return 0.0
-        val avg = mean
+        val avg = mean { it.amount }
         // sum of (value - mean)^2 / count
         return sumOf { (it.amount - avg).let { diff -> diff * diff } } / size
     }

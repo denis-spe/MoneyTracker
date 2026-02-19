@@ -756,7 +756,9 @@ fun ModelDrawerContent(
                                             adjustmentId = UUID.randomUUID().toString(),
                                             amount = adjustAsDouble,
                                             dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                            label = "${it.dataType.text} Repaid ->",
+                                            label = if (dataType == DataType.DEBT)
+                                                AdjustmentType.DEBT_REPAY.text
+                                            else AdjustmentType.LENT_REPAY.text,
                                             description = descriptionState.text.toString(),
                                             tagIcon = it.tagIcon,
                                             paymentMethod = selectedPaymentMethod.value,
@@ -805,7 +807,7 @@ fun ModelDrawerContent(
                                             adjustmentId = UUID.randomUUID().toString(),
                                             amount = adjustAsDouble,
                                             dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                            label = "Attained: ${it.label}",
+                                            label = AdjustmentType.GOAL_ATTAIN.text,
                                             description = descriptionState.text.toString(),
                                             tagIcon = it.tagIcon,
                                             paymentMethod = selectedPaymentMethod.value,

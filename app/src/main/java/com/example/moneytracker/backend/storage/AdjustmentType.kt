@@ -12,7 +12,7 @@ enum class AdjustmentType(
     val typeDescription: String,
 ) {
     DEBT_REPAY(
-        "Payback",
+        "Debt Payback",
         icon = R.drawable.outlined_repay, color = R.color.RepayDebt,
         typeDescription = "Payback your debt"
     ),

@@ -49,7 +49,7 @@ fun Stat(
     if (datasets.isEmpty()) return
 
     val mean = datasets.groupBy { data -> data.dataType }.map { dataset ->
-        dataset.key.text to dataset.value.mean
+        dataset.key.text to dataset.value.mean { it.amount }
     }
 
     val median = datasets.groupBy { data -> data.dataType }.map { dataset ->

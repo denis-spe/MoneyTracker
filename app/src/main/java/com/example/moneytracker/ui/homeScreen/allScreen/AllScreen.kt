@@ -39,6 +39,6 @@ fun AllScreen(
             viewModel = viewModel
         )
 
-        ListOfData(data = weeklyData.value)
+        ListForAll(dataAdjusts = weeklyData.value)
     }
 }
