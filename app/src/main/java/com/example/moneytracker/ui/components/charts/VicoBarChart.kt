@@ -18,6 +18,7 @@ import com.example.moneytracker.ui.components.charts.collections.ChartDataCollec
 import com.example.moneytracker.ui.components.charts.marker.rememberMarker
 import com.example.moneytracker.ui.theme.autoTextColorChange
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
+import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisTickComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
@@ -40,6 +41,7 @@ import com.patrykandpatrick.vico.core.common.Fill
 import com.patrykandpatrick.vico.core.common.Insets
 import com.patrykandpatrick.vico.core.common.LegendItem
 import com.patrykandpatrick.vico.core.common.component.ShapeComponent
+import com.patrykandpatrick.vico.core.common.shape.CorneredShape
 import com.patrykandpatrick.vico.core.common.shape.Shape
 
 //@Composable
@@ -172,8 +174,8 @@ fun VicoBarChart(
     showLegend: Boolean = false,
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
     yValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
-    markerFormatter: (x: Double, y: Double) -> CharSequence =
-        { x, y -> "$x, $y" },
+    markerFormatter: (value: Double) -> CharSequence =
+        { value -> "$value" },
 ) {
     val modelProducer = remember { CartesianChartModelProducer() }
     val chartData = chartDataCollection.chartData
@@ -186,6 +188,7 @@ fun VicoBarChart(
         val primaryTarget = targets.firstOrNull() as? ColumnCartesianLayerMarkerTarget
         val entry = primaryTarget?.columns?.firstOrNull()?.entry
 
+
         if (entry != null) {
             val index = entry.x.toInt()
 
@@ -193,7 +196,7 @@ fun VicoBarChart(
                 ?.x
                 ?.getOrNull(index)
 
-            if (originalX != null) markerFormatter(originalX, entry.y) else ""
+            if (originalX != null) markerFormatter(entry.y) else ""
         } else ""
     }
 
@@ -230,11 +233,12 @@ fun VicoBarChart(
                         rememberLineComponent(
                             fill = Fill(lineData.color.toArgb()),
                             thickness = thickness,     // column width
-                            strokeThickness = strokeThickness
+                            strokeThickness = strokeThickness,
+                            shape = CorneredShape.rounded(50)
                         )
                     }
                 ),
-                columnCollectionSpacing = 4.dp,
+//                columnCollectionSpacing = 12.dp,  // Increased spacing for better label visibility
 //                mergeMode = { ColumnCartesianLayer.MergeMode.Stacked }
             )
         } else {
@@ -249,6 +253,7 @@ fun VicoBarChart(
         // map index -> original x label
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
+            tick = rememberAxisTickComponent(),
             valueFormatter = { _, value, _ ->
                 val index = value.toInt()
 
@@ -268,8 +273,8 @@ fun VicoBarChart(
         startAxis = VerticalAxis.rememberStart(
             line = rememberLineComponent(
                 Fill.Transparent,
-                thickness = 0.dp,
-                strokeThickness = 0.dp
+                thickness = thickness,
+                strokeThickness = strokeThickness
             ),
             title = "Y",
             valueFormatter = { _, value, _ -> yValueFormatter(value) },

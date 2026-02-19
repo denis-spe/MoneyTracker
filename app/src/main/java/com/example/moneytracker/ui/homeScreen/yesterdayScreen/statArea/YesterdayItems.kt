@@ -7,6 +7,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -58,8 +59,7 @@ fun <T> YesterdayItem(dataAdjust: T) {
             ) {
                 Row(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 30.dp),
+                        .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -151,7 +151,7 @@ fun YesterdayItems(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(start = 30.dp, bottom = 10.dp)
+                .padding(bottom = 10.dp)
         ) {
             Text(
                 "Late Transactions",
@@ -161,9 +161,13 @@ fun YesterdayItems(
         }
         LazyColumn(
             modifier = Modifier
-                .heightIn(200.dp, 300.dp)
+                .fillMaxWidth()
+                .heightIn(220.dp, 300.dp)
                 .clip(RoundedCornerShape(20.dp))
         ) {
+            item {
+                Spacer(modifier = Modifier.heightIn(10.dp))
+            }
             items(dataAdjust.size) {
                 when (val data = dataAdjust[it]) {
                     is DataAdjust.Data -> YesterdayItem(data.dataset)

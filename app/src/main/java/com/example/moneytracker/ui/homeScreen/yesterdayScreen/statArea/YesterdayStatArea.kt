@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.ButtonDefaults
@@ -52,8 +51,7 @@ fun YesterdayStat(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .heightIn(min = 230.dp, max = 400.dp)
-            .padding(20.dp),
+            .heightIn(min = 230.dp, max = 400.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
 
@@ -171,7 +169,7 @@ fun YesterdayChart(datasets: List<Dataset>) {
         VicoBarChart(
             modifier = Modifier
                 .height(230.dp),
-            thickness = 24.dp,
+            thickness = 20.dp,
             strokeThickness = 0.dp,
             chartDataCollection = ChartDataCollection(state.value),
             yValueFormatter = { value -> value.formatToAmount() },
@@ -181,13 +179,8 @@ fun YesterdayChart(datasets: List<Dataset>) {
 
                 "%02d:%02d".format(hour, minute)
             },
-            markerFormatter = { x, y ->
-                val hour = (x / 3600).toInt()
-                val minute = ((x % 3600) / 60).toInt()
-
-                val time = "%02d:%02d".format(hour, minute)
-
-                "${y.formatToAmount()} at $time"
+            markerFormatter = { value ->
+                value.formatToAmount()
             },
             showLegend = true
         )
