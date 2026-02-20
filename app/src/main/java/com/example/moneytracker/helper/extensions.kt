@@ -355,13 +355,28 @@ val Dataset.isOverdue: Status
     get() {
         val currentTime = kotlinx.datetime.LocalDateTime.now()
         val deadlineDateTime = deadlineDateTime.toLocalDateTimeUtc()
-        return if (
-            dataType == DataType.GOAL &&
-            currentTime >= deadlineDateTime
-            && remainingAmount != 0.0
-        ) {
-            Status.FAILED
-        } else Status.PENDING
+        return when (dataType) {
+            DataType.GOAL if currentTime >= deadlineDateTime
+                    && remainingAmount != 0.0
+                -> {
+                Status.OVERDUE
+            }
+
+            DataType.GOAL if currentTime >= deadlineDateTime
+                    && remainingAmount == 0.0
+                -> {
+                Status.SUCCESS
+            }
+
+            DataType.GOAL if currentTime < deadlineDateTime
+                -> {
+                Status.PENDING
+            }
+
+            else -> {
+                Status.INITIAL
+            }
+        }
     }
 
 

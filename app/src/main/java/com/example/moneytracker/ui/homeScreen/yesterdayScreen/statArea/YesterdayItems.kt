@@ -14,22 +14,25 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.DataAdjust
-import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 
 private val ICON_SIZE = 20.dp
@@ -40,102 +43,177 @@ private val AMOUNT_FONT_SIZE = 18.sp
 
 
 @Composable
-fun <T> YesterdayItem(dataAdjust: T) {
-    when (dataAdjust) {
-        is Dataset -> {
+fun YesterdayItem(dataAdjust: DataAdjust) {
+    val amount = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.amount.formatToAmount()
+        is DataAdjust.Adjust -> dataAdjust.adjustment.amount.formatToAmount()
+    }
+    val label = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.label
+        is DataAdjust.Adjust -> dataAdjust.adjustment.label
+    }
 
-            val amount = dataAdjust.amount.formatToAmount()
-            val label = dataAdjust.label
-            val description = if (dataAdjust.description.length > 16)
-                dataAdjust.description.take(16) + "..."
-            else
-                dataAdjust.description
+    val description = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.description
+        is DataAdjust.Adjust -> dataAdjust.adjustment.description
+    }.let {
+        if (it.length > 16) it.take(20) + "..." else it
+    }
+
+    val dateTime = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.dateTime.toLocalDateTimeUtc()
+        is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime.toLocalDateTimeUtc()
+    }
+
+    val color = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.dataType.color
+        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
+    }.let {
+        colorResource(id = it)
+    }
+
+    val dataTypeIcon = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.dataType.outlinedIcon
+        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.icon
+    }.let {
+        painterResource(id = it)
+    }
+
+    val tagIcon = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.tagIcon.icon
+        is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon.icon
+    }.let {
+        painterResource(id = it)
+    }
+
+    val paymentMethod = when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.paymentMethod.icon
+        is DataAdjust.Adjust -> dataAdjust.adjustment.paymentMethod.icon
+    }.let {
+        painterResource(id = it)
+    }
+
+    val adjustment = if (dataAdjust is DataAdjust.Adjust)
+        dataAdjust.adjustment.dataset?.label
+    else null
+
+    val textDecoration = when (dataAdjust) {
+        is DataAdjust.Data -> {
+            dataAdjust.dataset.isAmountEqualToAdjustAmount()
+        }
+
+        is DataAdjust.Adjust -> {
+            dataAdjust.adjustment.dataset?.isAmountEqualToAdjustAmount()
+        }
+    }.let {
+        if (it == true) {
+            TextDecoration.LineThrough
+        } else {
+            TextDecoration.None
+        }
+    }
+
+    when (dataAdjust) {
+        is DataAdjust.Data -> dataAdjust.dataset.status
+        is DataAdjust.Adjust -> dataAdjust.adjustment.dataset?.status
+    }
+
+    val hour = dateTime.hour.addZeroIfLessThenTen
+    val minute = dateTime.minute.addZeroIfLessThenTen
+
+    ListItem(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 5.dp)
+            .shadow(2.dp, spotColor = color),
+        headlineContent = {
+            adjustment?.let {
+                Text(
+                    it,
+                    fontSize = LABEL_FONT_SIZE,
+                    fontWeight = FONT_WEIGHT,
+                    color = Color.Gray,
+                    textDecoration = textDecoration
+                )
+            }
+        },
+        overlineContent = {
+            // Amount
+            Text(
+                amount,
+                fontSize = AMOUNT_FONT_SIZE,
+                fontWeight = FONT_WEIGHT,
+                color = color,
+                textDecoration = textDecoration
+            )
+
+        },
+
+        supportingContent = {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 2.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Label
+                Text(
+                    label,
+                    fontSize = LABEL_FONT_SIZE,
+                    fontWeight = FONT_WEIGHT,
+                    textDecoration = textDecoration
+                )
+
+                // Description
+                if (description.isNotEmpty()) {
+                    Text(description, fontSize = DESCRIPTION_FONT_SIZE)
+                }
+            }
+        },
+
+        trailingContent = {
+            Column(
+                horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
             ) {
                 Row(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.padding(bottom = 5.dp),
+                    horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.Start
-                    ) {
-                        // Amount
-                        Text(
-                            amount,
-                            fontSize = AMOUNT_FONT_SIZE,
-                            fontWeight = FONT_WEIGHT,
-                            color = colorResource(dataAdjust.dataType.color)
-                        )
-                        // Label
-                        Text(
-                            label,
-                            fontSize = LABEL_FONT_SIZE,
-                            fontWeight = FONT_WEIGHT
-                        )
+                    // DataType Image
+                    Image(
+                        painter = dataTypeIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(ICON_SIZE)
+                    )
 
-                        // Description
-                        if (description.isNotEmpty()) {
-                            Text(description, fontSize = DESCRIPTION_FONT_SIZE)
-                        }
-                    }
+                    // Tag Image
+                    Image(
+                        painter = tagIcon,
+                        contentDescription = null,
+                        modifier = Modifier.size(ICON_SIZE)
+                    )
 
-                    Column(
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.End
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.End,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            // DataType Image
-                            Image(
-                                painter = painterResource(id = dataAdjust.dataType.outlinedIcon),
-                                contentDescription = null,
-                                modifier = Modifier.size(ICON_SIZE)
-                            )
-
-                            // Payment Method Image
-                            Image(
-                                painter = painterResource(id = dataAdjust.tagIcon.icon),
-                                contentDescription = null,
-                                modifier = Modifier.size(ICON_SIZE)
-                            )
-
-                            // Payment Method Image
-                            Image(
-                                painter = painterResource(id = dataAdjust.paymentMethod.icon),
-                                contentDescription = null,
-                                modifier = Modifier.size(ICON_SIZE)
-                            )
-                        }
-
-                        // Time and day
-                        Row {
-                            val dateTime = dataAdjust.dateTime.toLocalDateTimeUtc()
-                            val hour = dateTime.hour.addZeroIfLessThenTen
-                            val minute = dateTime.minute.addZeroIfLessThenTen
-
-                            Text("At $hour:$minute", fontSize = TIME_FONT_SIZE)
-                        }
-
-                    }
+                    // Payment Method Image
+                    Image(
+                        painter = paymentMethod,
+                        contentDescription = null,
+                        modifier = Modifier.size(ICON_SIZE)
+                    )
                 }
-                HorizontalDivider(
-                    modifier = Modifier
-                        .padding(horizontal = 25.dp, vertical = 5.dp),
-                    color = Color.LightGray
+
+                StatusView(dataAdjust)
+
+
+                // Time
+                Text(
+                    "By $hour:$minute",
+                    fontSize = TIME_FONT_SIZE,
                 )
             }
-        }
-    }
+        },
+        shadowElevation = 2.dp
+    )
+
 }
 
 @Composable
@@ -169,10 +247,8 @@ fun YesterdayItems(
                 Spacer(modifier = Modifier.heightIn(10.dp))
             }
             items(dataAdjust.size) {
-                when (val data = dataAdjust[it]) {
-                    is DataAdjust.Data -> YesterdayItem(data.dataset)
-                    is DataAdjust.Adjust -> YesterdayItem(data.adjustment)
-                }
+                val dataItem = dataAdjust[it]
+                YesterdayItem(dataItem)
             }
         }
     }
