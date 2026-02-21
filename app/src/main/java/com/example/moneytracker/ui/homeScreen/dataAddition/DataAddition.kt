@@ -53,6 +53,7 @@ import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
+import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
@@ -681,7 +682,10 @@ fun ModelDrawerContent(
                                     datatype = DataType.GOAL,
                                     amountState = adjustAmountState,
                                     datasets = datasets.filter {
-                                        it.dataType == DataType.GOAL
+                                        val now = LocalDateTime.now()
+                                        val deadlineDateTime = it.deadlineDateTime
+                                            .toLocalDateTimeUtc()
+                                        it.dataType == DataType.GOAL && now <= deadlineDateTime
                                     },
                                     wasRepaySuccess = wasRepaySuccess,
                                     selectedDataset = selectedDataset,

@@ -351,6 +351,17 @@ fun Dataset.isAmountEqualToAdjustAmount(): Boolean {
 val Dataset.remainingAmount: Double
     get() = amount - adjustment.sumOf { it.amount }
 
+val Timestamp.formatToDateTime: String
+    get() {
+        val dateTime = toLocalDateTimeUtc()
+        val day = dateTime.day.addZeroIfLessThenTen
+        val hour = dateTime.hour.addZeroIfLessThenTen
+        val minute = dateTime.minute.addZeroIfLessThenTen
+        val month = dateTime.month.name.take(3).title
+        val year = dateTime.year
+        return "$day $month $year, $hour:$minute"
+    }
+
 val Dataset.isOverdue: Status
     get() {
         val currentTime = kotlinx.datetime.LocalDateTime.now()

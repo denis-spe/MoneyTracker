@@ -10,25 +10,20 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.selection.selectableGroup
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTimeFilled
 import androidx.compose.material.icons.filled.Category
@@ -45,6 +40,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -57,8 +53,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -76,19 +70,16 @@ import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.PaymentMethod
-import com.example.moneytracker.backend.storage.Status
-import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
-import com.example.moneytracker.helper.isOverdue
-import com.example.moneytracker.helper.title
-import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.theme.autoTextColorChange
 
 private val spacerWith = 14.dp
 private val labelFontSize = 13.sp
+private val AMOUNT_SIZE = 20.sp
 private val FilterIconSize = 25.dp
 
 @Composable
@@ -782,7 +773,10 @@ fun ItemListArea(
                         )
                     ),
                 ) {
-                    ItemCard(dataAdjust = datasetItems[index])
+                    ItemCard(
+                        modifier = Modifier.animateItem(),
+                        dataAdjust = datasetItems[index]
+                    )
                 }
             }
         }
@@ -792,6 +786,7 @@ fun ItemListArea(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ItemCard(
+    modifier: Modifier = Modifier,
     dataAdjust: DataAdjust,
 ) {
 
@@ -801,190 +796,159 @@ fun ItemCard(
     }
 
     val labelIcon = when (dataAdjust) {
-        is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon
-        is DataAdjust.Data -> dataAdjust.dataset.tagIcon
+        is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon.icon
+        is DataAdjust.Data -> dataAdjust.dataset.tagIcon.icon
+    }.let {
+        painterResource(id = it)
     }
+
     val label = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.label
         is DataAdjust.Data -> dataAdjust.dataset.label
     }
+
     val description = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.description
         is DataAdjust.Data -> dataAdjust.dataset.description
+    }.let {
+        if (it.length > 20) it.take(20) + "..." else it
     }
+
     val dateTime = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime
         is DataAdjust.Data -> dataAdjust.dataset.dateTime
-    }
+    }.formatToDateTime
+
     val paymentMethod = when (dataAdjust) {
-        is DataAdjust.Adjust -> dataAdjust.adjustment.paymentMethod
-        is DataAdjust.Data -> dataAdjust.dataset.paymentMethod
+        is DataAdjust.Adjust -> dataAdjust.adjustment.paymentMethod.icon
+        is DataAdjust.Data -> dataAdjust.dataset.paymentMethod.icon
+    }.let {
+        painterResource(id = it)
     }
 
     val amount = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.amount
         is DataAdjust.Data -> dataAdjust.dataset.amount
-    }
+    }.formatToAmount()
 
-    val dataType = when (dataAdjust) {
+    when (dataAdjust) {
         is DataAdjust.Data -> dataAdjust.dataset.dataType
         else -> null
     }
 
-    val isCompleted = when (dataAdjust) {
+    val adjustment = if (dataAdjust is DataAdjust.Adjust)
+        dataAdjust.adjustment.dataset?.label
+    else null
+
+    val isAmountEqualWithAdjustAmount = when (dataAdjust) {
         is DataAdjust.Data -> {
-            if (dataAdjust.dataset.dataType == DataType.DEBT ||
-                dataAdjust.dataset.dataType == DataType.LENT ||
-                dataAdjust.dataset.dataType == DataType.GOAL
-            )
-                dataAdjust.dataset.isAmountEqualToAdjustAmount() else false
+            dataAdjust.dataset.isAmountEqualToAdjustAmount()
         }
 
-        is DataAdjust.Adjust -> false
+        is DataAdjust.Adjust -> {
+            dataAdjust.adjustment.dataset?.isAmountEqualToAdjustAmount()
+        }
     }
 
-    val isOverDue = if (dataAdjust is DataAdjust.Data) dataAdjust.dataset.isOverdue == Status.FAILED
-    else false
+    val adjustTextDecoration = if (
+        isAmountEqualWithAdjustAmount == true
+    ) {
+        TextDecoration.LineThrough
+    } else {
+        TextDecoration.None
+    }
+
+    val labelTextDecoration = if (
+        isAmountEqualWithAdjustAmount == true && dataAdjust !is DataAdjust.Adjust
+    ) {
+        TextDecoration.LineThrough
+    } else {
+        TextDecoration.None
+    }
 
     val color = colorResource(colorResId)
     val onShowDialog = remember { mutableStateOf(false) }
 
-
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(bottom = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        ListItem(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(5.dp))
                 .clickable {
                     onShowDialog.value = true
-                }
-        ) {
-            Row(
-                modifier = Modifier.padding(start = 5.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                // Icon column
+                },
+            headlineContent = {
                 Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.Start
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Image(
-                        painter = painterResource(labelIcon.icon),
-                        contentDescription = "list icon",
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
-                }
-
-                Spacer(modifier = Modifier.width(spacerWith))
-
-                // Label, description, and date time column
-                Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    var description = description
-                    if (description.length > 10)
-                        description = description.substring(0..10) + "..."
-
-                    val dateTime = dateTime.toLocalDateTimeUtc()
-                    val day = dateTime.day.addZeroIfLessThenTen
-                    val hour = dateTime.hour.addZeroIfLessThenTen
-                    val minute = dateTime.minute.addZeroIfLessThenTen
-                    val month = dateTime.month.name.take(3).title
-                    val year = dateTime.year
-                    val dateTimeAsString = "$day $month $year, $hour:$minute"
-
                     Text(
                         text = label,
-                        fontWeight = FontWeight.Bold,
                         fontSize = labelFontSize,
-                        textDecoration = if (isCompleted || isOverDue) TextDecoration.LineThrough
-                        else TextDecoration.None
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = labelTextDecoration
                     )
 
-                    when (dataAdjust) {
-                        is DataAdjust.Adjust -> {
-                            val datasetLabel = dataAdjust.adjustment.dataset!!.label
-
-                            Text(
-                                text = datasetLabel,
-                                color = color,
-                                fontSize = labelFontSize
-                            )
-                        }
-
-                        else -> {}
+                    adjustment?.let {
+                        Text(
+                            it,
+                            fontSize = labelFontSize,
+                            fontWeight = FontWeight.Bold,
+                            textDecoration = adjustTextDecoration
+                        )
                     }
 
                     if (description.isNotEmpty()) {
-                        Text(text = description)
+                        Text(
+                            text = description,
+                            fontSize = labelFontSize,
+                        )
                     }
-                    Text(text = dateTimeAsString, color = Color.Gray, fontSize = 14.sp)
                 }
-            }
+            },
 
-            // Amount column
-            Column(
-                modifier = Modifier.padding(end = 5.dp),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.End
-            ) {
-                var amount = amount.formatToAmount()
+            supportingContent = {
+                Text(
+                    text = dateTime,
+                    fontSize = labelFontSize,
+                )
 
-                amount = when (dataType) {
-                    DataType.EXPENSE -> "-$amount"
-                    DataType.LENT -> "-$amount"
-                    else -> amount
-                }
+            },
 
+            leadingContent = {
+                Image(
+                    painter = labelIcon,
+                    contentDescription = "TagIcon",
+                    modifier = Modifier.size(ICON_SIZE)
+                )
+            },
+
+            trailingContent = {
                 Column(
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.End
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Center
                 ) {
+
                     Text(
                         text = amount,
+                        fontSize = AMOUNT_SIZE,
                         color = color
                     )
 
-                    Column(
-                        modifier = Modifier.border(
-                            1.dp,
-                            Brush.linearGradient(
-                                colors = listOf(
-                                    color,
-                                    color.copy(alpha = 0.5f),
-                                    color.copy(alpha = 0.2f)
-                                )
-                            ),
-                            CircleShape
-                        )
-                    ) {
-                        Image(
-                            painter = painterResource(paymentMethod.icon),
-                            contentDescription = "payment method icon",
-                            modifier = Modifier
-                                .size(ICON_SIZE)
-                                .padding(3.dp)
-                        )
-                    }
+                    Image(
+                        painter = paymentMethod,
+                        contentDescription = "PaymentMethod",
+                        modifier = Modifier.size(ICON_SIZE)
+                    )
                 }
             }
-
-        }
+        )
         HorizontalDivider(
-            modifier = Modifier
-                .fillMaxWidth(0.7f)
-                .padding(top = 5.dp),
-            color = color,
-            thickness = 1.dp
+            thickness = 1.dp,
+            modifier = Modifier.fillMaxSize(0.8f),
+            color = color
         )
     }
 
