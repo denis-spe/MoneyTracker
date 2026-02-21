@@ -9,7 +9,7 @@
     <color name="white">#FFFFFFFF</color>
     <color name="error_color">#FFFF0000</color>
     <color name="authBtnContainerColor">#2467DB</color>
-    <color name="fillAuthBtnContainerColor">#4CAF50</color>
+    <color name="fillAuthBtnContainerColor">#18DB20</color>
     <color name="Earnings">#51AF4C</color>
     <color name="Expense">#FF3D00</color>
     <color name="Debt">#FF2467DB</color>
@@ -20,4 +20,5 @@
     <color name="Goal">#FF8AA29E</color>
     <color name="Attain">#FF5C4742</color>
     <color name="gray">#FF808080</color>
+    <color name="success_complete">#FF00C853</color>
 </resources>

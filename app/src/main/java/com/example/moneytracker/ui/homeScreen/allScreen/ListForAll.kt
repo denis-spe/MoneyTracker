@@ -36,6 +36,7 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.components.StatusView
 
 @Composable
 fun ListForAll(dataAdjusts: List<DataAdjust>) {
@@ -180,12 +181,18 @@ fun DataCard(
             modifier = Modifier
                 .fillMaxWidth(),
             headlineContent = {
-                Text(
-                    label,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Bold,
-                    textDecoration = labelTextDecoration
-                )
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        label,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Bold,
+                        textDecoration = labelTextDecoration
+                    )
+                    StatusView(dataAdjust, fontSize = 12.sp)
+                }
             },
             supportingContent = {
                 if (description.isNotEmpty()) {
@@ -193,7 +200,8 @@ fun DataCard(
                 }
             },
             trailingContent = {
-                Column(
+
+            Column(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Center
                 ) {

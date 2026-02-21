@@ -83,7 +83,7 @@ fun ModelDrawerButton(
             containerColor = filledColor ?: color.copy(alpha = 0.2f),
         ),
         shape = shape,
-        border = BorderStroke(1.dp, color)
+        border = BorderStroke(3.dp, color)
     ) {
         if (icon != null) {
             Row(

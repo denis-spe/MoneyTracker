@@ -16,7 +16,7 @@ data class Dataset(
     val deadlineDateTime: Timestamp = Timestamp.now(),
     val tagIcon: TagIcon = TagIcon(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-    val status: Status = Status.PENDING,
     val adjustment: List<Adjustment> = emptyList(),
-    val multipleStatus: List<Status> = emptyList()
+    val statusHistory: List<Status> = emptyList(),
+    val routine: RoutineData = RoutineData()
 )

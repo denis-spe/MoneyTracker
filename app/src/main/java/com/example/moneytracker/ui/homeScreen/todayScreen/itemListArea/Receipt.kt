@@ -52,7 +52,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentType
@@ -65,12 +64,13 @@ import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
-import com.example.moneytracker.helper.isOverdue
 import com.example.moneytracker.helper.remainingAmount
+import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.DottedDivider
+import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeRange
@@ -112,10 +112,11 @@ fun DatasetReceipt(
     val color = colorResource(dataset.dataType.color)
     val textDecoration = if (
         (dataset.dataType in listOf(DataType.DEBT, DataType.LENT) &&
-                dataset.remainingAmount == 0.0) || dataset.isOverdue == Status.FAILED
+                dataset.remainingAmount == 0.0) || dataset.status == Status.OVERDUE
     )
         TextDecoration.LineThrough else
         TextDecoration.None
+    val dataAdjust = DataAdjust.Data(dataset)
 
     Column(
         modifier = Modifier
@@ -248,7 +249,7 @@ fun DatasetReceipt(
             val adjustStatue = remember { mutableStateOf(dataset.status) }
 
             LaunchedEffect(LocalDateTime.now()) {
-                adjustStatue.value = dataset.isOverdue
+                adjustStatue.value = dataset.status
             }
 
 
@@ -260,7 +261,11 @@ fun DatasetReceipt(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Status:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
-                Text(text = adjustStatue.value.text, fontSize = fontSize)
+                StatusView(
+                    dataAdjust = dataAdjust,
+                    showImageStatus = false,
+                    fontSize = fontSize,
+                )
             }
 
             Row(
@@ -319,25 +324,11 @@ fun DatasetReceipt(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (
-                    (
-                            dataset.dataType == DataType.GOAL &&
-                            dataset.status == Status.COMPLETED &&
-                                    dataset.remainingAmount == 0.0) ||
-                    (dataset.dataType != DataType.GOAL && dataset.remainingAmount == 0.0)
-                ) {
-                    AsyncImage(
-                        model = R.drawable.done,
-                        contentDescription = "done",
-                        modifier = Modifier.size(32.dp)
-                    )
-                } else if (dataset.isOverdue == Status.FAILED) {
-                    AsyncImage(
-                        model = R.drawable.failed,
-                        contentDescription = "failed",
-                        modifier = Modifier.size(32.dp)
-                    )
-                }
+                StatusView(
+                    dataAdjust,
+                    showImageStatus = true,
+                    imageSize = ICON_SIZE
+                )
             }
         }
 
@@ -467,6 +458,7 @@ fun AdjustmentReceipt(
         DataType.GOAL -> "Attained Goal"
         else -> throw Exception("Unknown data type")
     }
+    val dataAdjust = DataAdjust.Adjust(adjustment)
 
 
     Column(
@@ -616,7 +608,7 @@ fun AdjustmentReceipt(
             && data.adjustment.isNotEmpty()
         ) {
             val adjustment = data.adjustment
-            val lastPayment = adjustment[adjustment.size - 1]
+            adjustment[adjustment.size - 1]
 
             if (data.remainingAmount == 0.0) {
                 Row(
@@ -626,10 +618,10 @@ fun AdjustmentReceipt(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    AsyncImage(
-                        model = R.drawable.done,
-                        contentDescription = lastPayment.paymentMethod.text,
-                        modifier = Modifier.size(32.dp)
+                    StatusView(
+                        dataAdjust,
+                        showImageStatus = true,
+                        imageSize = ICON_SIZE
                     )
                 }
             }
@@ -1021,7 +1013,6 @@ fun OnUpdate(
                                                     tagIcon = tagIconState.value,
                                                     paymentMethod = selectedPaymentMethod.value,
                                                     deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
-                                                    status = Status.PENDING,
                                                     adjustment = dataset.adjustment
                                                 )
                                             )
@@ -1063,7 +1054,7 @@ fun OnUpdate(
                                         ) {
                                             if (amountAsDouble != null
                                                 && amountAsDouble
-                                                <= dataAdjust.adjustment.dataset!!.amount
+                                                <= dataAdjust.adjustment.dataset!!.remainingAmount
                                             ) {
                                                 val adjustment = dataAdjust.adjustment
                                                 viewModel.updateAdjustmentData(

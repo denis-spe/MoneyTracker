@@ -47,7 +47,6 @@ import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
-import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
@@ -536,7 +535,8 @@ fun ModelDrawerContent(
                             DateTimeRange(
                                 startLocalDateTimeState = localDateTimeState,
                                 endLocalDateTimeState = endLocalDateTimeState,
-                                colorResId = colorResId
+                                colorResId = colorResId,
+                                wasSuccess = wasSuccess
                             )
                         } else {
                             DateTimeInput(
@@ -589,6 +589,12 @@ fun ModelDrawerContent(
                             textColor = Color.White
                         ) {
                             if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
+                                if (dataType == DataType.GOAL &&
+                                    localDateTimeState.value >= endLocalDateTimeState.value
+                                ) {
+                                    wasSuccess.value = State.ERROR
+                                    return@ModelDrawerButton
+                                }
                                 viewModel.addData(
                                     Dataset(
                                         id = UUID.randomUUID().toString(),
@@ -600,7 +606,6 @@ fun ModelDrawerContent(
                                         tagIcon = labelIconState.value,
                                         paymentMethod = selectedPaymentMethod.value,
                                         deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
-                                        status = Status.PENDING
                                     )
                                 )
                                 wasSuccess.value = State.SUCCESS

@@ -29,7 +29,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.ui.components.charts.collections.DonutChartData
+import com.example.moneytracker.backend.storage.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import kotlin.math.pow
 import kotlin.math.sqrt

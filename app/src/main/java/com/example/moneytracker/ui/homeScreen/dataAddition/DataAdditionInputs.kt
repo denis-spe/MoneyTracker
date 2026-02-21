@@ -95,7 +95,7 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
-import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
@@ -629,11 +629,8 @@ fun AdjustmentField(
     val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
 
-    var filteredDataset = datasets
+    val filteredDataset = datasets
         .filterNot { it.isAmountEqualToAdjustAmount() }
-    if (datatype == DataType.GOAL) {
-        filteredDataset = filteredDataset.filter { it.status == Status.PENDING }
-    }
 
     val color = colorResource(colorResId)
 
@@ -905,7 +902,7 @@ fun RepeatableTransaction(
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val onDialogShow = remember { mutableStateOf(false) }
     val onDropDownOpen = remember { mutableStateOf(false) }
-    val repeatBy = remember { mutableStateOf(RepeatBy.Nothing) }
+    val repeatBy = remember { mutableStateOf(Routine.Nothing) }
     val dailyState = rememberTextFieldState(initialText = "1")
     val hourState = rememberTextFieldState(initialText = "01")
     val minutesState = rememberTextFieldState(initialText = "00")
@@ -968,7 +965,7 @@ fun RepeatableTransaction(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val text = if (repeatBy.value == RepeatBy.Nothing)
+                                val text = if (repeatBy.value == Routine.Nothing)
                                     "Nothing" else repeatBy.value.text
                                 Text(text)
                                 Icon(
@@ -988,7 +985,7 @@ fun RepeatableTransaction(
                                 containerColor = Color.autoColorChange.copy(0.9f)
                             ) {
 
-                                RepeatBy.entries.forEach {
+                                Routine.entries.forEach {
                                     DropdownMenuItem(
                                         text = {
                                             Text(it.text)
@@ -1012,7 +1009,7 @@ fun RepeatableTransaction(
                         verticalArrangement = Arrangement.Center
                     ) {
                         when (repeatBy.value) {
-                            RepeatBy.Nothing -> {
+                            Routine.Nothing -> {
                                 Text(
                                     "Select the drop down to set the reset options",
                                     textAlign = TextAlign.Center,
@@ -1021,7 +1018,7 @@ fun RepeatableTransaction(
                                 )
                             }
 
-                            RepeatBy.EveryDay -> {
+                            Routine.EveryDay -> {
                                 Row(
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
@@ -1042,7 +1039,7 @@ fun RepeatableTransaction(
                                 }
                             }
 
-                            RepeatBy.EveryHour -> {
+                            Routine.EveryHour -> {
                                 Row(
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
@@ -1075,7 +1072,7 @@ fun RepeatableTransaction(
                                 }
                             }
 
-                            RepeatBy.Weekly -> {
+                            Routine.Weekly -> {
                                 Row(
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
@@ -1096,7 +1093,7 @@ fun RepeatableTransaction(
                                 }
                             }
 
-                            RepeatBy.Yearly -> {
+                            Routine.Yearly -> {
                                 Row(
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
@@ -1117,7 +1114,7 @@ fun RepeatableTransaction(
                                 }
                             }
 
-                            RepeatBy.Monthly -> {
+                            Routine.Monthly -> {
                                 Row(
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
@@ -1138,7 +1135,7 @@ fun RepeatableTransaction(
                                 }
                             }
 
-                            RepeatBy.SpecifyDayOfTheWeek -> {
+                            Routine.SpecifyDayOfTheWeek -> {
                                 Row(
                                     horizontalArrangement = Arrangement.Center,
                                     verticalAlignment = Alignment.CenterVertically
@@ -1712,8 +1709,13 @@ fun DateTimeInput(
 fun DateTimeRange(
     startLocalDateTimeState: MutableState<LocalDateTime>,
     endLocalDateTimeState: MutableState<LocalDateTime>,
-    colorResId: Int
+    colorResId: Int,
+    wasSuccess: MutableState<State>? = null
 ) {
+    val color = colorResource(id = colorResId)
+    val colorWithError = (if (wasSuccess != null && wasSuccess.value == State.ERROR)
+        colorResource(R.color.error_color) else color)
+
     val isPresentStartDateDialogOpen = remember { mutableStateOf(false) }
     val isPresentEndDateDialogOpen = remember { mutableStateOf(false) }
     val isTimeDialogOpen = remember { mutableStateOf(false) }
@@ -1721,7 +1723,6 @@ fun DateTimeRange(
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
     integerResource(R.integer.modelDrawerPadding).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
-    val color = colorResource(colorResId)
 
     val startDate = startLocalDateTimeState.value.date
     val day = startDate.day.addZeroIfLessThenTen
@@ -1746,7 +1747,7 @@ fun DateTimeRange(
         Row(
             modifier = MODIFIER_DRAWER
                 .height(height)
-                .background(color.copy(alpha = 0.1f))
+                .background(colorWithError.copy(alpha = 0.1f))
                 .clickable {
                     isTimeDialogOpen.value = true
                 },
@@ -1772,7 +1773,7 @@ fun DateTimeRange(
 
                     Text(
                         "Select time",
-                        color = color,
+                        color = colorWithError,
                         fontSize = fontSize,
                         fontWeight = FONT_WEIGHT
                     )
@@ -1782,7 +1783,11 @@ fun DateTimeRange(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Text("Start $hour:$minute", color = color, fontSize = fontSize)
-                    Text("End $endingHour:$endingMinute", color = color, fontSize = fontSize)
+                    Text(
+                        "End $endingHour:$endingMinute",
+                        color = colorWithError,
+                        fontSize = fontSize
+                    )
                 }
             }
         }
@@ -1834,7 +1839,7 @@ fun DateTimeRange(
         Row(
             modifier = MODIFIER_DRAWER
                 .height(height)
-                .background(color.copy(alpha = 0.1f))
+                .background(colorWithError.copy(alpha = 0.1f))
                 .clickable {
                     isPresentEndDateDialogOpen.value = true
                 },
@@ -1860,12 +1865,12 @@ fun DateTimeRange(
 
                     Text(
                         "Select ending date",
-                        color = color,
+                        color = colorWithError,
                         fontSize = fontSize,
                         fontWeight = FONT_WEIGHT
                     )
                 }
-                Text("$endingYear.$endingMonth.$endingDay", color = color)
+                Text("$endingYear.$endingMonth.$endingDay", color = colorWithError)
             }
         }
 

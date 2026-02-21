@@ -10,6 +10,8 @@ import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Routine
+import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.google.firebase.Timestamp
@@ -141,12 +143,17 @@ fun Dataset.toMap(): Map<String, Any> {
         "deadlineDateTime" to deadlineDateTime,
         "tagIcon" to tagIcon.tagIconToMap, // change model to use a string key
         "paymentMethod" to paymentMethod.name,
-        "status" to status.name,
         "adjustment" to adjustment.map { it.adjustmentToMap }, // already map form
-        "multipleStatus" to multipleStatus.map { it.name }
+        "statusHistory" to statusHistory.map { it.statusToMap },
+        "routineData" to routine.routineToMap
     )
 }
 
+val RoutineData.routineToMap: Map<String, Any>
+    get() = mapOf(
+        "text" to routine.text,
+        "routineCount" to routineCount
+    )
 
 val Adjustment.adjustmentToMap: Map<String, Any>
     get() = mapOf(
@@ -160,6 +167,14 @@ val Adjustment.adjustmentToMap: Map<String, Any>
         "adjustmentType" to adjustmentType
     )
 
+val Status.statusToMap: Map<String, Any>
+    get() = mapOf(
+        "text" to text,
+        "color" to color,
+        "icon" to icon
+    )
+
+
 val TagIcon.tagIconToMap: Map<String, Any>
     get() = mapOf(
         "name" to name,
@@ -171,6 +186,35 @@ fun Map<*, *>.asTagIcon(): TagIcon {
     return TagIcon(
         name = this["name"] as? String ?: "",
         icon = if (iconValue == null || iconValue == 0) R.drawable.circle_error else iconValue
+    )
+}
+
+fun Map<*, *>.asRoutineData(): RoutineData {
+    val routineData = when (val dt = this["routine"]) {
+        is String -> try {
+            Routine.valueOf(dt)
+        } catch (_: Exception) {
+            Routine.Nothing
+        }
+
+        is Number -> Routine.entries.getOrNull(dt.toInt()) ?: Routine.Nothing
+        is Map<*, *> -> {
+            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
+            if (name != null) try {
+                Routine.valueOf(name)
+            } catch (_: Exception) {
+                Routine.Nothing
+            } else Routine.Nothing
+        }
+
+        else -> Routine.Nothing
+    }
+
+    val routineCount = (this["routineCount"] as? Number)?.toInt() ?: 0
+
+    return RoutineData(
+        routine = routineData,
+        routineCount = routineCount
     )
 }
 
@@ -254,6 +298,41 @@ fun Map<*, *>.asAdjustment(): Adjustment {
     )
 }
 
+val Dataset.status: Status
+    get() {
+        val currentTime = kotlinx.datetime.LocalDateTime.now()
+        val deadlineDateTime = deadlineDateTime.toLocalDateTimeUtc()
+        return when (dataType) {
+            DataType.GOAL if currentTime >= deadlineDateTime
+                    && remainingAmount != 0.0
+                -> {
+                Status.OVERDUE
+            }
+
+            DataType.GOAL if remainingAmount == 0.0
+                -> {
+                Status.COMPLETED
+            }
+
+            DataType.GOAL if currentTime < deadlineDateTime && remainingAmount != 0.0
+                -> {
+                Status.PENDING
+            }
+
+            DataType.DEBT if remainingAmount == 0.0 -> {
+                Status.PAYBACK
+            }
+
+            DataType.LENT if remainingAmount == 0.0 -> {
+                Status.REFUNDED
+            }
+
+            else -> {
+                Status.INITIAL
+            }
+        }
+    }
+
 fun Map<*, *>.toDataset(): Dataset {
 
     fun parseTimestamp(value: Any?): Timestamp = when (value) {
@@ -292,26 +371,26 @@ fun Map<*, *>.toDataset(): Dataset {
         deadlineDateTime = parseTimestamp(this["deadlineDateTime"]),
         tagIcon = (this["tagIcon"] as? Map<*, *>)?.asTagIcon() ?: TagIcon(
             name = "",
-            icon = R.drawable.circle_error
+            icon = R.drawable.initial
         ),
         paymentMethod = parseEnum(
             this["paymentMethod"],
             PaymentMethod.entries.toTypedArray(),
             PaymentMethod.CASH
         ),
-        status = parseEnum(
-            this["status"],
-            Status.entries.toTypedArray(),
-            Status.PENDING
-        ),
-        adjustment = (this["adjustment"] as? List<*>)
-            ?.mapNotNull { (it as? Map<*, *>)?.asAdjustment() }
-            ?: emptyList(),
-        multipleStatus = this.toMultipleStatus()
+        routine = (this["routineData"] as? Map<*, *>)?.asRoutineData() ?: RoutineData(),
+        adjustment = this.toAdjustment(),
+        statusHistory = this.toStatusHistory()
     )
 }
 
-fun Map<*, *>.toMultipleStatus(): List<Status> {
+fun Map<*, *>.toAdjustment(): List<Adjustment> {
+    return (this["adjustment"] as? List<*>)
+        ?.mapNotNull { (it as? Map<*, *>)?.asAdjustment() }
+        ?: emptyList()
+}
+
+fun Map<*, *>.toStatusHistory(): List<Status> {
     val statusList = this["multipleStatus"] as? List<*>
     return statusList?.mapNotNull {
         try {
@@ -360,34 +439,6 @@ val Timestamp.formatToDateTime: String
         val month = dateTime.month.name.take(3).title
         val year = dateTime.year
         return "$day $month $year, $hour:$minute"
-    }
-
-val Dataset.isOverdue: Status
-    get() {
-        val currentTime = kotlinx.datetime.LocalDateTime.now()
-        val deadlineDateTime = deadlineDateTime.toLocalDateTimeUtc()
-        return when (dataType) {
-            DataType.GOAL if currentTime >= deadlineDateTime
-                    && remainingAmount != 0.0
-                -> {
-                Status.OVERDUE
-            }
-
-            DataType.GOAL if currentTime >= deadlineDateTime
-                    && remainingAmount == 0.0
-                -> {
-                Status.SUCCESS
-            }
-
-            DataType.GOAL if currentTime < deadlineDateTime
-                -> {
-                Status.PENDING
-            }
-
-            else -> {
-                Status.INITIAL
-            }
-        }
     }
 
 

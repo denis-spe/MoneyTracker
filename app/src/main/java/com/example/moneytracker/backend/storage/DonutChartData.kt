@@ -1,5 +1,4 @@
-// Glory be to the LORD our GOD
-package com.example.moneytracker.ui.components.charts.collections
+package com.example.moneytracker.backend.storage
 
 import androidx.compose.ui.graphics.Color
 

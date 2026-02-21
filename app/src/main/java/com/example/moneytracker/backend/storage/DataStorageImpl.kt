@@ -7,8 +7,8 @@ import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
-import com.example.moneytracker.helper.castToStatusList
 import com.example.moneytracker.helper.casting
+import com.example.moneytracker.helper.statusToMap
 import com.example.moneytracker.helper.toDataset
 import com.example.moneytracker.helper.toMap
 import com.google.firebase.firestore.FieldValue
@@ -273,11 +273,11 @@ class DataStorageImpl(
     ) {
         Log.d(
             "DataStorageImpl",
-            "Add Status called: $status for datasetId=$datasetId userId=$userId"
+            "addStatus called: $status for datasetId=$datasetId userId=$userId"
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
-        // read (may be served from cache if offline)
+        // read (maybe served from cache if offline)
         val snapshot = docRef.get().await()
         val datasets = casting(snapshot.get("datasets")) ?: emptyList()
 
@@ -291,9 +291,38 @@ class DataStorageImpl(
         // mutate target dataset's items
         val datasetMap = mutableDatasets[idx].toMutableMap()
         val items =
-            (castToStatusList(datasetMap["multipleStatus"]) ?: emptyList()).toMutableList()
-        items.add(status)                         // your map representation
-        datasetMap["multipleStatus"] = items
+            (casting(datasetMap["statusHistory"]) ?: emptyList()).toMutableList()
+        items.add(
+            status.statusToMap
+        )                         // your map representation
+        datasetMap["statusHistory"] = items
+        mutableDatasets[idx] = datasetMap
+
+        // write whole datasets array back (queued when offline)
+        docRef.update("datasets", mutableDatasets).await()
+    }
+
+    override suspend fun clearAdjustmentList(userId: String, datasetId: String) {
+        Log.d(
+            "DataStorageImpl",
+            "addAdjustmentDataset called: clear adjustment for datasetId=$datasetId userId=$userId"
+        )
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+
+        // read (maybe served from cache if offline)
+        val snapshot = docRef.get().await()
+        val datasets = casting(snapshot.get("datasets")) ?: emptyList()
+
+        val mutableDatasets = datasets.toMutableList()
+        val idx = mutableDatasets.indexOfFirst { (it["id"] as? String) == datasetId }
+
+        if (idx == -1) {
+            throw IllegalArgumentException("Dataset $datasetId not found for user $userId")
+        }
+
+        // mutate target dataset's items
+        val datasetMap = mutableDatasets[idx].toMutableMap()
+        datasetMap["adjustment"] = emptyList<Map<String, Any?>>()
         mutableDatasets[idx] = datasetMap
 
         // write whole datasets array back (queued when offline)

@@ -100,4 +100,12 @@ interface DataStorage {
         datasetId: String,
         status: Status
     )
+
+    /**
+     * Clear a list in dataset (identified by its id) for the given user.
+     * Implementations should perform this atomically (transaction) to avoid lost updates.
+     * @param userId the user id
+     * @param datasetId the dataset id
+     */
+    suspend fun clearAdjustmentList(userId: String, datasetId: String)
 }

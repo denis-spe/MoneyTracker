@@ -73,6 +73,7 @@ import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.theme.autoTextColorChange
@@ -738,7 +739,7 @@ fun ItemListArea(
         paymentSorting.value,
         alphabeticalOrder.value,
         amountSorting.value,
-        if (onActivateShow.value) 4 else null
+        null
     )
 
 
@@ -942,6 +943,8 @@ fun ItemCard(
                         contentDescription = "PaymentMethod",
                         modifier = Modifier.size(ICON_SIZE)
                     )
+
+                    StatusView(dataAdjust = dataAdjust)
                 }
             }
         )

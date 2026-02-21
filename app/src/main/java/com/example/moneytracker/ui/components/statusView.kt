@@ -4,44 +4,94 @@
 // you shall love your neighbor as yourself
 package com.example.moneytracker.ui.components
 
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.dp
+import coil.compose.AsyncImage
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
-import com.example.moneytracker.helper.isOverdue
+import com.example.moneytracker.helper.status
+import kotlinx.coroutines.delay
+import kotlinx.datetime.LocalDateTime
+import network.chaintech.kmp_date_time_picker.utils.now
 
 @Composable
-fun StatusView(dataAdjust: DataAdjust) {
+fun StatusView(
+    dataAdjust: DataAdjust,
+    showImageStatus: Boolean = false,
+    imageSize: Dp = 16.dp,
+    fontSize: TextUnit = TextUnit.Unspecified
+) {
 
-    val isOverdue = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.dataset.isOverdue
-        is DataAdjust.Adjust -> dataAdjust.adjustment.dataset?.isOverdue
+    val status = remember {
+        mutableStateOf(Status.INITIAL)
     }
+
+    val now = remember {
+        mutableStateOf(LocalDateTime.now())
+    }
+
+    // Update 'now' every second to track time changes
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(1000) // Update every second
+            now.value = LocalDateTime.now()
+        }
+    }
+
+    when (dataAdjust) {
+        is DataAdjust.Adjust ->
+            LaunchedEffect(
+                dataAdjust.adjustment,
+                dataAdjust.adjustment.dataset,
+                now.value
+            ) {
+                status.value = when (dataAdjust) {
+                    is DataAdjust.Adjust -> dataAdjust.adjustment.dataset?.status!!
+                }
+            }
+
+        is DataAdjust.Data -> {
+            LaunchedEffect(dataAdjust.dataset, now.value) {
+                status.value = when (dataAdjust) {
+                    is DataAdjust.Data -> dataAdjust.dataset.status
+                }
+            }
+        }
+    }
+
+
 
     when (dataAdjust) {
         is DataAdjust.Data -> dataAdjust.dataset.isAmountEqualToAdjustAmount()
         is DataAdjust.Adjust -> dataAdjust.adjustment.dataset?.isAmountEqualToAdjustAmount()
     }
 
-    when (isOverdue) {
-        Status.PENDING -> Text(
-            Status.PENDING.text,
-            color = colorResource(id = Status.PENDING.color)
-        )
+    if (status.value == Status.INITIAL) {
+        return
+    }
 
-        Status.FAILED -> Text(
-            Status.FAILED.text,
-            color = colorResource(id = Status.FAILED.color)
+    if (showImageStatus) {
+        AsyncImage(
+            model = status.value.icon,
+            contentDescription = status.value.text,
+            modifier = Modifier.size(imageSize)
         )
-
-        Status.SUCCESS -> Text(
-            Status.SUCCESS.text,
-            color = colorResource(id = Status.SUCCESS.color)
+    } else {
+        Text(
+            status.value.text,
+            color = colorResource(id = status.value.color),
+            fontSize = fontSize
         )
-
-        else -> {}
     }
 }
 
