@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,7 +55,6 @@ import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
-import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
@@ -84,10 +84,10 @@ fun DataAdditionModelDrawer(
             containerColor = BottomSheetDefaults.ContainerColor.copy(0.97f),
 
             ) {
-            LaunchedEffect(viewModel.isBottomSheetContentLoading) {
-                delay(800)
-                viewModel.updateIsBottomSheetContentLoading(false)
-            }
+//            LaunchedEffect(viewModel.isBottomSheetContentLoading) {
+//                delay(800)
+//                viewModel.updateIsBottomSheetContentLoading(false)
+//            }
 
             /*... Text field and button ...*/
             DataAdditionModelDrawerContent(
@@ -316,21 +316,28 @@ fun ModelDrawerContent(
 
 
 
-    LaunchedEffect(amountState.text.toString()) {
-        if (wasSuccess.value == State.ERROR) {
-            wasSuccess.value = State.INITIAL
+    LaunchedEffect(amountState.text) {
+        snapshotFlow { amountState.text }.collect {
+            if (wasSuccess.value == State.ERROR) {
+                wasSuccess.value = State.INITIAL
+            }
         }
     }
 
-    LaunchedEffect(labelState.text.toString()) {
-        if (wasSuccess.value == State.ERROR) {
-            wasSuccess.value = State.INITIAL
+    LaunchedEffect(labelState.text) {
+
+        snapshotFlow { labelState.text }.collect {
+            if (wasSuccess.value == State.ERROR) {
+                wasSuccess.value = State.INITIAL
+            }
         }
     }
 
-    LaunchedEffect(adjustAmountState.text.toString()) {
-        if (wasRepaySuccess.value == State.ERROR) {
-            wasRepaySuccess.value = State.INITIAL
+    LaunchedEffect(adjustAmountState.text) {
+        snapshotFlow { adjustAmountState.text }.collect {
+            if (wasRepaySuccess.value == State.ERROR) {
+                wasRepaySuccess.value = State.INITIAL
+            }
         }
     }
 
@@ -836,8 +843,10 @@ fun ModelDrawerContent(
                                 adjustAmountState.clearText()
                                 selectedDataset.value = null
 
-                                // Dismiss the model drawer.
-                                onDismiss()
+                                if (selectedDataset.value != null) {
+                                    // Dismiss the model drawer.
+                                    onDismiss()
+                                }
 
                             }
                         }

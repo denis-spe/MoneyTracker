@@ -1,5 +1,6 @@
 package com.example.moneytracker.backend.storage
 
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.Flow
 
@@ -98,7 +99,8 @@ interface DataStorage {
     suspend fun addStatus(
         userId: String,
         datasetId: String,
-        status: Status
+        status: Status,
+        newDateTime: Timestamp
     )
 
     /**

@@ -12,7 +12,7 @@ data class HomeUiState(
     val datasets: List<Dataset> = emptyList(),
     val adjustment: List<Adjustment> = emptyList(),
     val info: Info = Info(),
-    val isLoading: Boolean = false,
+    var isLoading: Boolean = false,
     val error: String? = null,
     val topTitle: TopBarNav = TopBarNav.TODAY,
     val isUserDropdownVisible: Boolean = false,

@@ -47,7 +47,6 @@ import com.example.moneytracker.ui.homeScreen.topAppTitle.TopAppTitle
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
-import kotlinx.coroutines.delay
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Suppress("UNUSED_PARAMETER")
@@ -59,7 +58,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Collect user information from ViewModel
     val uiStates = viewModel.uiState.collectAsState()
     val userState = viewModel.userState.collectAsState()
-    var datasets = uiStates.value.datasets
+    val datasets = viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
 
     val colors = Colors()
 
@@ -71,16 +70,10 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         colors.lightModeBackgroundColor
 
 
-    LaunchedEffect(key1 = uiStates.value.isLogOutLoading) {
-        delay(1000)
-        if (uiStates.value.isLogOutLoading) {
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvents.collect {
             onNavigate?.navigate(StartUpScreenRouter)
-            viewModel.signOut()
         }
-    }
-
-    LaunchedEffect(uiStates) {
-        datasets = uiStates.value.datasets
     }
 
     AnimatedContent(
@@ -160,14 +153,14 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         userState = userState,
                         isLoading = uiStates.value.isLogOutLoading,
                     ) {
-                        viewModel.updateIsLogOutLoading(!uiStates.value.isLogOutLoading)
+                        viewModel.handleLogout()
                     }
 
                     // Modal bottom sheet
                     DataAdditionModelDrawer(
                         viewModel = viewModel,
                         isBottomSheetOpen = uiStates.value.isBottomSheetOpen,
-                        datasets = datasets
+                        datasets = datasets.value
                     )
                 }
             }

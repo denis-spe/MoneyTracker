@@ -819,7 +819,7 @@ fun AdjustmentField(
         modifier = MODIFIER_DRAWER
             .height(height)
             .background(
-                if (wasRepaySuccess.value == State.ERROR) Color.Red
+                if (wasRepaySuccess.value == State.ERROR) Color.Red.copy(0.2f)
                 else color.copy(alpha = 0.1f)
             )
             .clickable {
@@ -1178,7 +1178,6 @@ fun RepeatableTransaction(
                                 }
                             }
 
-                            else -> {}
                         }
                     }
 

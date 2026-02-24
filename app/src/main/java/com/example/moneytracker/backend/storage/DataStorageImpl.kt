@@ -11,6 +11,7 @@ import com.example.moneytracker.helper.casting
 import com.example.moneytracker.helper.statusToMap
 import com.example.moneytracker.helper.toDataset
 import com.example.moneytracker.helper.toMap
+import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -269,7 +270,8 @@ class DataStorageImpl(
     override suspend fun addStatus(
         userId: String,
         datasetId: String,
-        status: Status
+        status: Status,
+        newDateTime: Timestamp
     ) {
         Log.d(
             "DataStorageImpl",
@@ -296,6 +298,7 @@ class DataStorageImpl(
             status.statusToMap
         )                         // your map representation
         datasetMap["statusHistory"] = items
+        datasetMap["dateTime"] = newDateTime
         mutableDatasets[idx] = datasetMap
 
         // write whole datasets array back (queued when offline)

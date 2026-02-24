@@ -19,20 +19,26 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.DonutChartData
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
+import com.example.moneytracker.helper.remainingAmount
+import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -57,6 +63,12 @@ class HomeScreenViewModel @Inject constructor(
     var datasetUiState by mutableStateOf<DatasetUiState>(DatasetUiState.Loading)
         private set
 
+    // Backing property for private emission
+    private val _navigationEvents = MutableSharedFlow<Unit>()
+
+    // Public read-only SharedFlow for the UI
+    val navigationEvents = _navigationEvents.asSharedFlow()
+
     init {
         observeUserAndDatasets()
     }
@@ -64,6 +76,58 @@ class HomeScreenViewModel @Inject constructor(
     /*******************
      * Public actions
      *******************/
+
+    fun handleLogout() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isLoading = true) // Start loading
+            try {
+                signOut() // Your actual logout logic (suspend function)
+                _navigationEvents.emit(Unit) // Trigger navigation
+            } finally {
+                _uiState.value =
+                    _uiState.value.copy(isLoading = false) // Stop loading even if it fails
+            }
+        }
+    }
+
+    fun handleGoalProgress(dataset: Dataset) {
+        val adjustment = dataset.adjustment
+
+        // Check if adjustment is not empty
+        if (adjustment.isNotEmpty() && dataset.remainingAmount == 0.0) {
+            val lastResetDate = adjustment.last().dateTime.toLocalDateTimeUtc()
+
+            // After saving status
+            viewModelScope.launch {
+                dataStorage.addStatus(
+                    userState.value!!.uid,
+                    dataset.id,
+                    Status.SUCCESS,
+                    newDateTime = lastResetDate.toFirestoreTimestampUtc()
+                )
+            }
+
+            // Reset the adjustment list to empty list
+            viewModelScope.launch {
+                dataStorage.clearAdjustmentList(
+                    userState.value!!.uid,
+                    dataset.id
+                )
+            }
+        } else {
+
+        }
+
+
+    }
+
+    val fetchLiveChangeDataset: Flow<List<Dataset>> = uiState.map { state ->
+        state.datasets
+    }.distinctUntilChanged().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = emptyList()
+    )
 
     @RequiresApi(Build.VERSION_CODES.O)
     fun todayChartData(context: Context): Flow<List<DonutChartData>> = uiState.map { state ->
