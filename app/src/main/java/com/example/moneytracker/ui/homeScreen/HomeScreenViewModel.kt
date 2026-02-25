@@ -43,6 +43,8 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.toKotlinLocalDate
+import network.chaintech.kmp_date_time_picker.utils.now
 import javax.inject.Inject
 
 @HiltViewModel
@@ -120,6 +122,27 @@ class HomeScreenViewModel @Inject constructor(
 
 
     }
+
+    val getCurrentWeek: Flow<List<LocalDate>> = uiState.map { state ->
+        state.currentWeek.map { it.toKotlinLocalDate() }
+    }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = emptyList()
+        )
+
+
+    val getAllCurrentDate: Flow<LocalDate> = uiState.map { state ->
+        val currentWeek = state.currentWeek.map { it.toKotlinLocalDate() }
+        if (_uiState.value.currentWeek.isEmpty()) state.date
+        else currentWeek.first()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5_000),
+        initialValue = LocalDate.now()
+    )
 
     val fetchLiveChangeDataset: Flow<List<Dataset>> = uiState.map { state ->
         state.datasets
@@ -461,8 +484,16 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    fun updateCurrentWeek(dates: List<java.time.LocalDate>) {
+        _uiState.value = _uiState.value.copy(currentWeek = dates)
+    }
+
     fun updateWeekDays(dates: List<LocalDate>) {
         _uiState.value = _uiState.value.copy(dates = dates)
+    }
+
+    fun updateSelectedTabIndex(index: Int) {
+        _uiState.value = _uiState.value.copy(selectedTabIndex = index)
     }
 
     fun updateTopTitle(topBarNav: TopBarNav) {

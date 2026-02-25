@@ -6,6 +6,7 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.Info
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import kotlinx.datetime.LocalDate
+import network.chaintech.kmp_date_time_picker.utils.now
 
 
 data class HomeUiState(
@@ -20,4 +21,8 @@ data class HomeUiState(
     val isBottomSheetOpen: Boolean = false,
     val combinedDataWithAdjust: List<DataAdjust> = emptyList(),
     val dates: List<LocalDate> = emptyList(),
+    val currentWeek: List<java.time.LocalDate> = emptyList(),
+    val selectedTabIndex: Int = 1,
+    val date: LocalDate = LocalDate.now(),
+    val localDateList: List<List<LocalDate>> = emptyList()
 )

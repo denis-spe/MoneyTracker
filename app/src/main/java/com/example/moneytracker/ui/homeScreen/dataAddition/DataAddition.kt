@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -358,6 +359,29 @@ fun ModelDrawerContent(
     val color = if (selectedTab.intValue == 0) colorResId
     else adjustmentColor
 
+    val lent = remember {
+        derivedStateOf {
+            datasets.filter { it.dataType == DataType.LENT }
+        }
+    }
+
+    val debt = remember {
+        derivedStateOf {
+            datasets.filter { it.dataType == DataType.DEBT }
+        }
+    }
+
+    val goals = remember {
+        derivedStateOf {
+            datasets.filter {
+                val now = LocalDateTime.now()
+                val deadlineDateTime = it.deadlineDateTime
+                    .toLocalDateTimeUtc()
+                it.dataType == DataType.GOAL && now <= deadlineDateTime
+            }
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -649,6 +673,7 @@ fun ModelDrawerContent(
             ) {
                 item(key = 921) {
                     when (dataType) {
+
                         DataType.LENT -> {
                             Row(
                                 modifier = Modifier.animateItem()
@@ -657,9 +682,7 @@ fun ModelDrawerContent(
                                     isBottomSheetOpen,
                                     datatype = DataType.LENT,
                                     amountState = adjustAmountState,
-                                    datasets = datasets.filter {
-                                        it.dataType == DataType.LENT
-                                    },
+                                    datasets = lent.value,
                                     wasRepaySuccess = wasRepaySuccess,
                                     selectedDataset = selectedDataset,
                                     colorResId = R.color.RepayLoan
@@ -671,13 +694,12 @@ fun ModelDrawerContent(
                             Row(
                                 modifier = Modifier.animateItem()
                             ) {
+
                                 AdjustmentField(
                                     isBottomSheetOpen,
                                     datatype = DataType.DEBT,
                                     amountState = adjustAmountState,
-                                    datasets = datasets.filter {
-                                        it.dataType == DataType.DEBT
-                                    },
+                                    datasets = debt.value,
                                     wasRepaySuccess = wasRepaySuccess,
                                     selectedDataset = selectedDataset,
                                     colorResId = R.color.RepayDebt
@@ -693,12 +715,7 @@ fun ModelDrawerContent(
                                     isBottomSheetOpen,
                                     datatype = DataType.GOAL,
                                     amountState = adjustAmountState,
-                                    datasets = datasets.filter {
-                                        val now = LocalDateTime.now()
-                                        val deadlineDateTime = it.deadlineDateTime
-                                            .toLocalDateTimeUtc()
-                                        it.dataType == DataType.GOAL && now <= deadlineDateTime
-                                    },
+                                    datasets = goals.value,
                                     wasRepaySuccess = wasRepaySuccess,
                                     selectedDataset = selectedDataset,
                                     colorResId = R.color.Attain
@@ -835,17 +852,14 @@ fun ModelDrawerContent(
                                             it,
                                             adjustment
                                         )
+
+                                        adjustAmountState.clearText()
+
+                                        // Dismiss the model drawer.
+                                        onDismiss()
                                     }
                                 } ?: run {
                                     wasRepaySuccess.value = State.ERROR
-                                }
-
-                                adjustAmountState.clearText()
-                                selectedDataset.value = null
-
-                                if (selectedDataset.value != null) {
-                                    // Dismiss the model drawer.
-                                    onDismiss()
                                 }
 
                             }

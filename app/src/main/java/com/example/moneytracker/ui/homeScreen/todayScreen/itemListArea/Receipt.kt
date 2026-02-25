@@ -84,12 +84,16 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTag
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTextField
 import com.example.moneytracker.ui.theme.autoTextColorChange
 import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.number
+import kotlinx.datetime.toJavaLocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
+import java.time.temporal.ChronoUnit
 
 private val ICON_SIZE = 25.dp
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DatasetReceipt(
     dataset: Dataset,
@@ -248,8 +252,19 @@ fun DatasetReceipt(
 
             val adjustStatue = remember { mutableStateOf(dataset.status) }
 
-            LaunchedEffect(LocalDateTime.now()) {
-                adjustStatue.value = dataset.status
+            LaunchedEffect(deadlineDateTime) {
+                val now = LocalDateTime.now()
+                val delayMillis = ChronoUnit.MILLIS.between(
+                    now.toJavaLocalDateTime(),
+                    deadlineDateTime.toJavaLocalDateTime()
+                )
+
+                if (delayMillis > 0) {
+                    delay(delayMillis)
+                    adjustStatue.value = dataset.status
+                } else {
+                    adjustStatue.value = dataset.status
+                }
             }
 
 

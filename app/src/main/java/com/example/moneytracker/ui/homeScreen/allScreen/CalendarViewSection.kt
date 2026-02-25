@@ -21,9 +21,8 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -33,15 +32,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.moneytracker.helper.getWeeks
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
-import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.temporal.IsoFields
-import java.time.temporal.TemporalAdjusters
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -50,21 +49,23 @@ fun CalendarViewSection(
     updateWeek: (dates: List<kotlinx.datetime.LocalDate>) -> Unit,
     viewModel: HomeScreenViewModel
 ) {
+    val uiState = viewModel.uiState.collectAsState()
     val now = kotlinx.datetime.LocalDate.now()
-    val currentWeek = remember { mutableStateOf(emptyList<kotlinx.datetime.LocalDate>()) }
+    val currentWeek = viewModel.getCurrentWeek.collectAsState(initial = emptyList())
     val fontSizeMonthDay = 13.sp
-    val date = if (currentWeek.value.isEmpty()) now
-    else currentWeek.value.first()
-    val month = date.month.name.title
-    val year = date.year.toString()
-    val weekNumber = date.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
-    var selectedTabIndex by remember { mutableIntStateOf(1) }
-    var selectedDate by remember { mutableStateOf(date) }
+    val date = viewModel.getAllCurrentDate.collectAsState(
+        initial = now
+    )
+    val month = date.value.month.name.title
+    val year = date.value.year.toString()
+    val weekNumber = date.value.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
+    val selectedTabIndex = uiState.value.selectedTabIndex
+    var selectedDate by remember { mutableStateOf(date.value) }
 
 
     // Change the tab index to week on page swipe
     LaunchedEffect(weekNumber) {
-        selectedTabIndex = 1
+        viewModel.updateSelectedTabIndex(1)
     }
 
 
@@ -80,7 +81,7 @@ fun CalendarViewSection(
             Tab(
                 selected = selectedTabIndex == 0,
                 onClick = {
-                    selectedTabIndex = 0
+                    viewModel.updateSelectedTabIndex(0)
                 }
             ) {
                 val day = selectedDate.let { "Day ${it.day}" }
@@ -95,7 +96,7 @@ fun CalendarViewSection(
             Tab(
                 selected = selectedTabIndex == 1,
                 onClick = {
-                    selectedTabIndex = 1
+                    viewModel.updateSelectedTabIndex(1)
                 }
             ) {
                 Text(
@@ -128,9 +129,7 @@ fun CalendarViewSection(
                     fontWeight = FontWeight.Bold
                 )
             }
-            GroupedWeeks(
-                currentWeek = currentWeek,
-            ) { week ->
+            GroupedWeeks { week ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
@@ -141,7 +140,7 @@ fun CalendarViewSection(
                             modifier = Modifier
                                 .padding(horizontal = 4.dp)
                                 .clickable {
-                                    selectedTabIndex = 0
+                                    viewModel.updateSelectedTabIndex(0)
                                     selectedDate = date
                                 },
                             horizontalAlignment = Alignment.CenterHorizontally
@@ -187,10 +186,11 @@ fun CalendarViewSection(
         }
     }
 
-    // Update the week when the currentWeek changes
-    when (selectedTabIndex) {
-        0 -> updateWeek(listOf(selectedDate))
-        1 -> updateWeek(currentWeek.value)
+    LaunchedEffect(selectedTabIndex, selectedDate, currentWeek.value) {
+        when (selectedTabIndex) {
+            0 -> updateWeek(listOf(selectedDate))
+            1 -> updateWeek(currentWeek.value)
+        }
     }
 }
 
@@ -199,7 +199,7 @@ fun CalendarViewSection(
 @Composable
 fun GroupedWeeks(
     modifier: Modifier = Modifier,
-    currentWeek: MutableState<List<kotlinx.datetime.LocalDate>>,
+    viewModel: HomeScreenViewModel = hiltViewModel(),
     weeksAfter: Int = 100,
     weeksBefore: Int = 100,
     moveTo: (initialPage: Int, pageState: PagerState) -> Unit = { _, _ -> },
@@ -207,18 +207,20 @@ fun GroupedWeeks(
 ) {
 
     val currentDate = LocalDate.now()
-    val localDateList = getWeeks(
-        anchorDate = currentDate,
-        weeksAfter = weeksAfter,
-        weeksBefore = weeksBefore
-    )
-
-    val getIndexOfCurrentWeek = localDateList.indexOfFirst {
-        it.contains(currentDate)
+    val localDateList = remember {
+        getWeeks(anchorDate = currentDate, weeksBefore, weeksAfter)
     }
 
+    val getIndexOfCurrentWeek = remember(localDateList) {
+        localDateList.indexOfFirst { it.contains(currentDate) }
+    }
+
+
     val pageState = rememberPagerState(initialPage = getIndexOfCurrentWeek) { localDateList.size }
-    currentWeek.value = localDateList[pageState.currentPage].map { it.toKotlinLocalDate() }
+
+    LaunchedEffect(pageState.currentPage) {
+        viewModel.updateCurrentWeek(localDateList[pageState.currentPage])
+    }
 
 
     HorizontalPager(
@@ -233,29 +235,4 @@ fun GroupedWeeks(
     moveTo(getIndexOfCurrentWeek, pageState)
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
-fun getWeeks(
-    anchorDate: LocalDate,
-    weeksBefore: Int,
-    weeksAfter: Int
-): List<List<LocalDate>> {
-    val weeks = mutableListOf<List<LocalDate>>()
-
-    // 1. Find the start of the week for the anchor date
-    val anchorWeekStart = anchorDate.with(TemporalAdjusters.previousOrSame(DayOfWeek.SUNDAY))
-
-    // 2. Move the pointer back by the number of 'weeksBefore'
-    var currentStart = anchorWeekStart.minusWeeks(weeksBefore.toLong())
-
-    // 3. Loop through total count (Before + Current + After)
-    val totalWeeks = weeksBefore + 1 + weeksAfter
-
-    repeat(totalWeeks) {
-        val week = (0..6).map { currentStart.plusDays(it.toLong()) }
-        weeks.add(week)
-        currentStart = currentStart.plusWeeks(1)
-    }
-
-    return weeks
-}
 
