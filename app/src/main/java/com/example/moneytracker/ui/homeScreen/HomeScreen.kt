@@ -69,6 +69,10 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val backgroundColor = if (isSystemInDarkTheme()) colors.darkModeBackgroundColor else
         colors.lightModeBackgroundColor
 
+    LaunchedEffect(datasets) {
+
+    }
+
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collect {

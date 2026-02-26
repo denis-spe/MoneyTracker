@@ -15,7 +15,10 @@ import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.google.firebase.Timestamp
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
+import kotlinx.datetime.toJavaLocalDateTime
+import kotlinx.datetime.toKotlinLocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -94,7 +97,7 @@ val Dataset.isForToday: Boolean
     @RequiresApi(Build.VERSION_CODES.O)
     get() {
 
-        val today = kotlinx.datetime.LocalDateTime.now().date
+        val today = LocalDateTime.now().date
         val dataDate = dateTime.toLocalDateTimeUtc().date
 
         return today == dataDate
@@ -103,7 +106,7 @@ val Dataset.isForToday: Boolean
 val Adjustment.isForToday: Boolean
     @RequiresApi(Build.VERSION_CODES.O)
     get() {
-        val today = kotlinx.datetime.LocalDateTime.now().date
+        val today = LocalDateTime.now().date
         val dataDate = dateTime.toLocalDateTimeUtc().date
         return today == dataDate
     }
@@ -114,7 +117,7 @@ val Adjustment.isForToday: Boolean
 val Dataset.isForYesterday: Boolean
     @RequiresApi(Build.VERSION_CODES.O)
     get() {
-        val yesterday = kotlinx.datetime.LocalDateTime.now()
+        val yesterday = LocalDateTime.now()
             .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
         val dataDate = dateTime.toLocalDateTimeUtc().date
 
@@ -124,7 +127,7 @@ val Dataset.isForYesterday: Boolean
 val Adjustment.isForYesterday: Boolean
     @RequiresApi(Build.VERSION_CODES.O)
     get() {
-        val yesterday = kotlinx.datetime.LocalDateTime.now()
+        val yesterday = LocalDateTime.now()
             .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
         val dataDate = dateTime.toLocalDateTimeUtc().date
 
@@ -151,7 +154,7 @@ fun Dataset.toMap(): Map<String, Any> {
 
 val RoutineData.routineToMap: Map<String, Any>
     get() = mapOf(
-        "text" to routine.text,
+        "routine" to routine.name,
         "routineCount" to routineCount
     )
 
@@ -190,30 +193,30 @@ fun Map<*, *>.asTagIcon(): TagIcon {
 }
 
 fun Map<*, *>.asRoutineData(): RoutineData {
-    val routineData = when (val dt = this["routine"]) {
-        is String -> try {
-            Routine.valueOf(dt)
-        } catch (_: Exception) {
-            Routine.Nothing
-        }
 
-        is Number -> Routine.entries.getOrNull(dt.toInt()) ?: Routine.Nothing
-        is Map<*, *> -> {
-            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
-            if (name != null) try {
-                Routine.valueOf(name)
-            } catch (_: Exception) {
-                Routine.Nothing
-            } else Routine.Nothing
-        }
+    fun parseRoutine(value: Any?): Routine {
+        return when (value) {
+            is String -> Routine.entries.firstOrNull {
+                it.name.equals(value, ignoreCase = true)
+            } ?: Routine.Nothing
 
-        else -> Routine.Nothing
+            is Number -> Routine.entries.getOrNull(value.toInt())
+                ?: Routine.Nothing
+
+            is Map<*, *> -> {
+                val name = value["name"] ?: value["value"] ?: value["text"]
+                parseRoutine(name)
+            }
+
+            else -> Routine.Nothing
+        }
     }
 
+    val routine = parseRoutine(this["routine"])
     val routineCount = (this["routineCount"] as? Number)?.toInt() ?: 0
 
     return RoutineData(
-        routine = routineData,
+        routine = routine,
         routineCount = routineCount
     )
 }
@@ -298,9 +301,37 @@ fun Map<*, *>.asAdjustment(): Adjustment {
     )
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
+fun LocalDateTime.plusHour(hour: Int): LocalDateTime {
+
+    return (
+            this.toJavaLocalDateTime()
+                .plusHours(hour.toLong())
+                .toKotlinLocalDateTime()
+            )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun LocalDateTime.plusMinutes(minutes: Int): LocalDateTime {
+    return (
+            this.toJavaLocalDateTime()
+                .plusMinutes(minutes.toLong())
+                .toKotlinLocalDateTime()
+            )
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+fun LocalDateTime.plusDays(days: Int): LocalDateTime {
+    return (
+            this.toJavaLocalDateTime()
+                .plusDays(days.toLong())
+                .toKotlinLocalDateTime()
+            )
+}
+
 val Dataset.status: Status
     get() {
-        val currentTime = kotlinx.datetime.LocalDateTime.now()
+        val currentTime = LocalDateTime.now()
         val deadlineDateTime = deadlineDateTime.toLocalDateTimeUtc()
         return when (dataType) {
             DataType.GOAL if currentTime >= deadlineDateTime

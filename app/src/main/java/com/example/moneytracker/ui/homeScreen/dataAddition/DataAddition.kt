@@ -49,6 +49,8 @@ import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Routine
+import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
@@ -619,6 +621,12 @@ fun ModelDrawerContent(
                             filledColor = colorResource(colorResId),
                             textColor = Color.White
                         ) {
+
+                            if (dataType == DataType.GOAL) RoutineData(
+                                routine = Routine.EveryHour,
+                                routineCount = 5
+                            ) else RoutineData()
+
                             if (amountAsDouble != null && labelState.text.toString().isNotEmpty()) {
                                 if (dataType == DataType.GOAL &&
                                     localDateTimeState.value >= endLocalDateTimeState.value
@@ -633,10 +641,16 @@ fun ModelDrawerContent(
                                         amount = amountAsDouble,
                                         label = labelState.text.toString(),
                                         description = descriptionState.text.toString(),
-                                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                        dateTime = localDateTimeState.value
+                                            .toFirestoreTimestampUtc(),
                                         tagIcon = labelIconState.value,
                                         paymentMethod = selectedPaymentMethod.value,
-                                        deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
+                                        deadlineDateTime = endLocalDateTimeState.value
+                                            .toFirestoreTimestampUtc(),
+                                        routine = RoutineData(
+                                            routine = Routine.EveryHour,
+                                            routineCount = 2
+                                        )
                                     )
                                 )
                                 wasSuccess.value = State.SUCCESS

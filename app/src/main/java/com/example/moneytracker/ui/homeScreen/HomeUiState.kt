@@ -24,5 +24,6 @@ data class HomeUiState(
     val currentWeek: List<java.time.LocalDate> = emptyList(),
     val selectedTabIndex: Int = 1,
     val date: LocalDate = LocalDate.now(),
-    val localDateList: List<List<LocalDate>> = emptyList()
+    val localDateList: List<List<LocalDate>> = emptyList(),
+    val consecutiveGoal: List<Dataset> = emptyList()
 )

@@ -19,9 +19,11 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.DonutChartData
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
+import com.example.moneytracker.helper.plusMinutes
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
@@ -29,6 +31,7 @@ import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -43,8 +46,11 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
+import java.time.temporal.ChronoUnit
 import javax.inject.Inject
 
 @HiltViewModel
@@ -73,6 +79,15 @@ class HomeScreenViewModel @Inject constructor(
 
     init {
         observeUserAndDatasets()
+        viewModelScope.launch {
+            uiState.map { it.datasets }
+                .distinctUntilChanged()
+                .collect { datasets ->
+                    if (datasets.isNotEmpty()) {
+                        monitorGoalProgress()
+                    }
+                }
+        }
     }
 
     /*******************
@@ -92,35 +107,90 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun handleGoalProgress(dataset: Dataset) {
-        val adjustment = dataset.adjustment
+    fun monitorGoalProgress() {
+        viewModelScope.launch {
+            Log.d(
+                "MonitoringGoal",
+                "monitorGoalProgress started; uiState.datasets.size=${_uiState.value.datasets.size}"
+            )
 
-        // Check if adjustment is not empty
-        if (adjustment.isNotEmpty() && dataset.remainingAmount == 0.0) {
-            val lastResetDate = adjustment.last().dateTime.toLocalDateTimeUtc()
+            _uiState.value.datasets.forEach { dataset ->
+                try {
+                    Log.d(
+                        "MonitoringGoal",
+                        "dataset id=${dataset.id} type=${dataset.dataType} routine=${dataset.routine} " +
+                                "dateTime=${dataset.dateTime} deadline=${dataset.deadlineDateTime}"
+                    )
 
-            // After saving status
-            viewModelScope.launch {
-                dataStorage.addStatus(
-                    userState.value!!.uid,
-                    dataset.id,
-                    Status.SUCCESS,
-                    newDateTime = lastResetDate.toFirestoreTimestampUtc()
-                )
+                    val delayMillis = try {
+                        ChronoUnit.MILLIS.between(
+                            dataset.dateTime.toLocalDateTimeUtc().toJavaLocalDateTime(),
+                            dataset.deadlineDateTime.toLocalDateTimeUtc().toJavaLocalDateTime()
+                        )
+                    } catch (e: Exception) {
+                        Log.e(
+                            "MonitoringGoal",
+                            "time conversion failed for dataset ${dataset.id}",
+                            e
+                        )
+                        Long.MIN_VALUE
+                    }
+
+                    Log.d(
+                        "MonitoringGoal",
+                        "computed delayMillis=$delayMillis for dataset ${dataset.id}"
+                    )
+
+                    if (delayMillis > 0) {
+                        delay(delayMillis)
+                        Log.d(
+                            "MonitoringGoal",
+                            "monitorGoalProgress: $delayMillis for dataset ${dataset.id}"
+                        )
+                        if (dataset.routine.routine == Routine.EveryHour) {
+                            val newLocalDateTime = dataset.dateTime
+                                .toLocalDateTimeUtc()
+                                .plusMinutes(dataset.routine.routineCount)
+                            handleGoalProgress(dataset, newLocalDateTime)
+                        } else {
+                            Log.d("MonitoringGoal", "Skipping: routine is ${dataset.routine}")
+                        }
+                    } else {
+                        Log.d(
+                            "MonitoringGoal",
+                            "Skipping: delayMillis <= 0 for dataset ${dataset.id}"
+                        )
+                    }
+                } catch (t: Throwable) {
+                    Log.e("MonitoringGoal", "error processing dataset ${dataset.id}", t)
+                }
+                dataset // return unchanged for now
             }
+        }
+    }
 
-            // Reset the adjustment list to empty list
+    fun handleGoalProgress(dataset: Dataset, newDateTime: LocalDateTime) {
+        if (
+            LocalDateTime.now() >=
+            dataset.deadlineDateTime.toLocalDateTimeUtc()
+        ) {
             viewModelScope.launch {
+                val userId = userState.value!!.uid
+
+                dataStorage.addStatus(
+                    userId,
+                    dataset.id,
+                    if (dataset.remainingAmount == 0.0)
+                        Status.SUCCESS else Status.OVERDUE,
+                    newDateTime = newDateTime.toFirestoreTimestampUtc()
+                )
+
                 dataStorage.clearAdjustmentList(
-                    userState.value!!.uid,
+                    userId,
                     dataset.id
                 )
             }
-        } else {
-
         }
-
-
     }
 
     val getCurrentWeek: Flow<List<LocalDate>> = uiState.map { state ->
