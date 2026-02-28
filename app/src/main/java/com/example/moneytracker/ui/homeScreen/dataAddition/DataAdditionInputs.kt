@@ -96,7 +96,9 @@ import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
+import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.TagIcon
+import com.example.moneytracker.helper.GoalWarning
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
@@ -889,28 +891,30 @@ fun AdjustmentField(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RepeatableTransaction(
+    repeatByState: MutableState<RoutineData>,
     dataType: DataType,
-    wasRepaySuccess: MutableState<State>,
+    goalDateTimeWarningState: MutableState<GoalWarning>,
     ) {
 
-    val dayOfWeek = DayOfWeek.entries
+    if (repeatByState.value.routine != Routine.Nothing) {
+        goalDateTimeWarningState.value = GoalWarning.CONSECUTIVE
+    }
 
-    val currentDate = LocalDate.now()
-    val currentDayOfWeek = currentDate.dayOfWeek.name
+    val dayOfWeek = DayOfWeek.entries
+    LocalDate.now()
 
     val color = colorResource(dataType.color)
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val onDialogShow = remember { mutableStateOf(false) }
     val onDropDownOpen = remember { mutableStateOf(false) }
-    val repeatBy = remember { mutableStateOf(Routine.Nothing) }
     val dailyState = rememberTextFieldState(initialText = "1")
     val hourState = rememberTextFieldState(initialText = "01")
-    val minutesState = rememberTextFieldState(initialText = "00")
+    val monthlyState = rememberTextFieldState(initialText = "00")
     val weekState = rememberTextFieldState("1")
     val yearState = rememberTextFieldState("1")
-    val dayOfWeekState = remember { mutableStateOf(currentDayOfWeek) }
+    val dayOfWeekState = remember { mutableStateOf<DayOfWeek?>(null) }
     val showDayOfWeekDropDown = remember { mutableStateOf(false) }
-
+    val repeatBy = remember { mutableStateOf(RoutineData()) }
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
 
     if (onDialogShow.value) {
@@ -965,8 +969,8 @@ fun RepeatableTransaction(
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                val text = if (repeatBy.value == Routine.Nothing)
-                                    "Nothing" else repeatBy.value.text
+                                val text = if (repeatByState.value.routine == Routine.Nothing)
+                                    "Nothing" else repeatByState.value.routine.text
                                 Text(text)
                                 Icon(
                                     imageVector = if (onDropDownOpen.value)
@@ -991,7 +995,8 @@ fun RepeatableTransaction(
                                             Text(it.text)
                                         },
                                         onClick = {
-                                            repeatBy.value = it
+                                            repeatByState.value =
+                                                repeatByState.value.copy(it)
                                             onDropDownOpen.value = false
                                         },
                                     )
@@ -1008,7 +1013,7 @@ fun RepeatableTransaction(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        when (repeatBy.value) {
+                        repeatBy.value = when (repeatByState.value.routine) {
                             Routine.Nothing -> {
                                 Text(
                                     "Select the drop down to set the reset options",
@@ -1016,6 +1021,7 @@ fun RepeatableTransaction(
                                     fontWeight = FONT_WEIGHT,
                                     color = color
                                 )
+                                RoutineData()
                             }
 
                             Routine.EveryDay -> {
@@ -1034,8 +1040,16 @@ fun RepeatableTransaction(
                                         ),
                                         lineLimits = TextFieldLineLimits.SingleLine,
                                     )
-
                                     Text("number of day")
+                                }
+                                if (dailyState.text.isNotEmpty()) {
+                                    RoutineData(
+                                        routine = Routine.EveryDay,
+                                        routineCount = dailyState.text.toString().toInt(),
+                                        stopRoutine = false
+                                    )
+                                } else {
+                                    RoutineData()
                                 }
                             }
 
@@ -1055,20 +1069,16 @@ fun RepeatableTransaction(
                                         ),
                                         lineLimits = TextFieldLineLimits.SingleLine,
                                     )
+                                }
 
-                                    Text(":")
-
-                                    TextField(
-                                        state = minutesState,
-                                        modifier = Modifier.width(60.dp),
-                                        inputTransformation = InputTransformation
-                                            .maxLength(2),
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number,
-                                            imeAction = ImeAction.Done
-                                        ),
-                                        lineLimits = TextFieldLineLimits.SingleLine,
+                                if (hourState.text.isNotEmpty()) {
+                                    RoutineData(
+                                        routine = Routine.EveryHour,
+                                        routineCount = hourState.text.toString().toInt(),
+                                        stopRoutine = false
                                     )
+                                } else {
+                                    RoutineData()
                                 }
                             }
 
@@ -1088,8 +1098,17 @@ fun RepeatableTransaction(
                                         ),
                                         lineLimits = TextFieldLineLimits.SingleLine,
                                     )
-
                                     Text("number of weeks")
+                                }
+
+                                if (weekState.text.isNotEmpty()) {
+                                    RoutineData(
+                                        routine = Routine.Weekly,
+                                        routineCount = weekState.text.toString().toInt(),
+                                        stopRoutine = false
+                                    )
+                                } else {
+                                    RoutineData()
                                 }
                             }
 
@@ -1112,6 +1131,16 @@ fun RepeatableTransaction(
 
                                     Text("number of years")
                                 }
+
+                                if (yearState.text.isNotEmpty()) {
+                                    RoutineData(
+                                        routine = Routine.Yearly,
+                                        routineCount = yearState.text.toString().toInt(),
+                                        stopRoutine = false
+                                    )
+                                } else {
+                                    RoutineData()
+                                }
                             }
 
                             Routine.Monthly -> {
@@ -1120,7 +1149,7 @@ fun RepeatableTransaction(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     TextField(
-                                        state = yearState,
+                                        state = monthlyState,
                                         modifier = Modifier.width(60.dp),
                                         inputTransformation = InputTransformation
                                             .maxLength(2),
@@ -1133,6 +1162,17 @@ fun RepeatableTransaction(
 
                                     Text("number of months")
                                 }
+
+                                if (monthlyState.text.isNotEmpty()) {
+                                    RoutineData(
+                                        routine = Routine.Monthly,
+                                        routineCount = monthlyState.text.toString().toInt(),
+                                        stopRoutine = false
+                                    )
+                                } else {
+                                    RoutineData()
+                                }
+
                             }
 
                             Routine.SpecifyDayOfTheWeek -> {
@@ -1148,7 +1188,10 @@ fun RepeatableTransaction(
                                                 contentColor = Color.autoTextColorChange
                                             )
                                         ) {
-                                            Text(dayOfWeekState.value.title)
+                                            Text(
+                                                dayOfWeekState.value?.name ?: "Select day"
+                                            )
+
                                         }
 
                                         if (showDayOfWeekDropDown.value) {
@@ -1164,7 +1207,7 @@ fun RepeatableTransaction(
                                                             Text(it.name.title)
                                                         },
                                                         onClick = {
-                                                            dayOfWeekState.value = it.name
+                                                            dayOfWeekState.value = it
                                                             showDayOfWeekDropDown.value = false
                                                         }
                                                     )
@@ -1175,6 +1218,16 @@ fun RepeatableTransaction(
                                     }
 
                                     Text("will reset the goal")
+                                }
+
+                                if (dayOfWeekState.value != null) {
+                                    RoutineData(
+                                        routine = Routine.SpecifyDayOfTheWeek,
+                                        routineCount = (dayOfWeekState.value as DayOfWeek).ordinal,
+                                        stopRoutine = false
+                                    )
+                                } else {
+                                    RoutineData()
                                 }
                             }
 
@@ -1196,7 +1249,10 @@ fun RepeatableTransaction(
                         }
 
                         TextButton(
-                            onClick = {},
+                            onClick = {
+                                repeatByState.value = repeatBy.value
+                                onDialogShow.value = false
+                            },
                             colors = ButtonDefaults.textButtonColors().copy(
                                 contentColor = color
                             )
@@ -1213,7 +1269,8 @@ fun RepeatableTransaction(
         modifier = MODIFIER_DRAWER
             .height(height)
             .background(
-                if (wasRepaySuccess.value == State.ERROR) Color.Red
+                if (goalDateTimeWarningState.value == GoalWarning.ERROR)
+                    colorResource(R.color.error_color).copy(alpha = 0.1f)
                 else colorResource(dataType.color).copy(alpha = 0.1f)
             )
             .clickable {
@@ -1240,14 +1297,19 @@ fun RepeatableTransaction(
 
                 Spacer(modifier = Modifier.width(5.dp))
 
-                Text("Reset in", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+                Text(
+                    "Consecutive goal",
+                    fontSize = fontSize,
+                    fontWeight = FONT_WEIGHT,
+                    color = color
+                )
             }
 
             Row(
                 horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(repeatBy.value.text, color = color, fontSize = fontSize)
+                Text(repeatByState.value.routine.text, color = color, fontSize = fontSize)
             }
         }
     }
@@ -1269,18 +1331,6 @@ fun PaymentMethodDropdown(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-//        ModelDrawerButton(
-//            text = selectedPaymentMethod.value.text,
-//            wasSuccess = null,
-//            colorResId = colorResId,
-//            filledColor = Color.Transparent,
-//            icon = selectedPaymentMethod.value.icon,
-//            modifier = Modifier.fillMaxWidth(MaxWidth),
-//            fontSize = 10.sp
-//        ) {
-//            expanded.value = true
-//        }
-
         DropdownMenu(
             expanded = expanded.value,
             onDismissRequest = { expanded.value = false }
@@ -1709,10 +1759,15 @@ fun DateTimeRange(
     startLocalDateTimeState: MutableState<LocalDateTime>,
     endLocalDateTimeState: MutableState<LocalDateTime>,
     colorResId: Int,
-    wasSuccess: MutableState<State>? = null
+    goalDateTimeWarningState: MutableState<GoalWarning>? = null
 ) {
+
+    if (endLocalDateTimeState.value > startLocalDateTimeState.value) {
+        goalDateTimeWarningState?.value = GoalWarning.ONCE
+    }
+
     val color = colorResource(id = colorResId)
-    val colorWithError = (if (wasSuccess != null && wasSuccess.value == State.ERROR)
+    val colorWithError = (if (goalDateTimeWarningState?.value == GoalWarning.ERROR)
         colorResource(R.color.error_color) else color)
 
     val isPresentStartDateDialogOpen = remember { mutableStateOf(false) }

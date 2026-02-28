@@ -20,11 +20,9 @@ import com.example.moneytracker.backend.storage.DatasetUiState
 import com.example.moneytracker.backend.storage.DonutChartData
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
-import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
 import com.example.moneytracker.helper.plusMinutes
-import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
@@ -107,6 +105,7 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.O)
     fun monitorGoalProgress() {
         viewModelScope.launch {
             Log.d(
@@ -115,6 +114,10 @@ class HomeScreenViewModel @Inject constructor(
             )
 
             _uiState.value.datasets.forEach { dataset ->
+                if (dataset.routine.stopRoutine) {
+                    return@forEach
+                }
+
                 try {
                     Log.d(
                         "MonitoringGoal",
@@ -122,10 +125,17 @@ class HomeScreenViewModel @Inject constructor(
                                 "dateTime=${dataset.dateTime} deadline=${dataset.deadlineDateTime}"
                     )
 
+                    val newLocalDateTime = when (dataset.routine.routine) {
+                        Routine.EveryHour -> LocalDateTime.now()
+                            .plusMinutes(dataset.routine.routineCount)
+
+                        else -> dataset.deadlineDateTime.toLocalDateTimeUtc()
+                    }
+
                     val delayMillis = try {
                         ChronoUnit.MILLIS.between(
                             dataset.dateTime.toLocalDateTimeUtc().toJavaLocalDateTime(),
-                            dataset.deadlineDateTime.toLocalDateTimeUtc().toJavaLocalDateTime()
+                            newLocalDateTime.toJavaLocalDateTime()
                         )
                     } catch (e: Exception) {
                         Log.e(
@@ -147,14 +157,7 @@ class HomeScreenViewModel @Inject constructor(
                             "MonitoringGoal",
                             "monitorGoalProgress: $delayMillis for dataset ${dataset.id}"
                         )
-                        if (dataset.routine.routine == Routine.EveryHour) {
-                            val newLocalDateTime = dataset.dateTime
-                                .toLocalDateTimeUtc()
-                                .plusMinutes(dataset.routine.routineCount)
-                            handleGoalProgress(dataset, newLocalDateTime)
-                        } else {
-                            Log.d("MonitoringGoal", "Skipping: routine is ${dataset.routine}")
-                        }
+                        handleGoalProgress(dataset, newLocalDateTime)
                     } else {
                         Log.d(
                             "MonitoringGoal",
@@ -169,20 +172,23 @@ class HomeScreenViewModel @Inject constructor(
         }
     }
 
-    fun handleGoalProgress(dataset: Dataset, newDateTime: LocalDateTime) {
+    fun handleGoalProgress(dataset: Dataset, newDeadlineDateTime: LocalDateTime) {
+        val now = LocalDateTime.now()
         if (
-            LocalDateTime.now() >=
-            dataset.deadlineDateTime.toLocalDateTimeUtc()
+            now >=
+            newDeadlineDateTime
         ) {
+
+            Log.d("handleGoalProgress", "handleGoalProgress called")
+
             viewModelScope.launch {
                 val userId = userState.value!!.uid
 
                 dataStorage.addStatus(
                     userId,
                     dataset.id,
-                    if (dataset.remainingAmount == 0.0)
-                        Status.SUCCESS else Status.OVERDUE,
-                    newDateTime = newDateTime.toFirestoreTimestampUtc()
+                    newDateTime = now.toFirestoreTimestampUtc(),
+                    newDeadlineDateTime = newDeadlineDateTime.toFirestoreTimestampUtc()
                 )
 
                 dataStorage.clearAdjustmentList(

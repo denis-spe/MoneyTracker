@@ -155,7 +155,8 @@ fun Dataset.toMap(): Map<String, Any> {
 val RoutineData.routineToMap: Map<String, Any>
     get() = mapOf(
         "routine" to routine.name,
-        "routineCount" to routineCount
+        "routineCount" to routineCount,
+        "stopRoutine" to stopRoutine
     )
 
 val Adjustment.adjustmentToMap: Map<String, Any>
@@ -214,10 +215,12 @@ fun Map<*, *>.asRoutineData(): RoutineData {
 
     val routine = parseRoutine(this["routine"])
     val routineCount = (this["routineCount"] as? Number)?.toInt() ?: 0
+    val stopRoutine = this["stopRoutine"] as? Boolean ?: true
 
     return RoutineData(
         routine = routine,
-        routineCount = routineCount
+        routineCount = routineCount,
+        stopRoutine = stopRoutine
     )
 }
 
@@ -364,6 +367,12 @@ val Dataset.status: Status
         }
     }
 
+fun Map<*, *>.toAmount(): Double {
+    return (this["amount"] as? Number)?.toDouble()
+        ?: (this["amount"] as? String)?.toDoubleOrNull()
+        ?: 0.0
+}
+
 fun Map<*, *>.toDataset(): Dataset {
 
     fun parseTimestamp(value: Any?): Timestamp = when (value) {
@@ -393,9 +402,7 @@ fun Map<*, *>.toDataset(): Dataset {
     return Dataset(
         id = this["id"] as? String ?: "",
         dataType = parseEnum(this["dataType"], DataType.entries.toTypedArray(), DataType.EARNINGS),
-        amount = (this["amount"] as? Number)?.toDouble()
-            ?: (this["amount"] as? String)?.toDoubleOrNull()
-            ?: 0.0,
+        amount = this.toAmount(),
         label = this["label"] as? String ?: "",
         description = this["description"] as? String ?: "",
         dateTime = parseTimestamp(this["dateTime"]),
@@ -432,6 +439,13 @@ fun Map<*, *>.toStatusHistory(): List<Status> {
     } ?: emptyList()
 }
 
+fun castToMutableMap(any: Any?): MutableMap<String, Any> {
+    if (any == null) return mutableMapOf()
+    return (any as Map<*, *>)
+        .mapKeys { it.key.toString() }
+        .mapValues { it as Any }
+        .toMutableMap()
+}
 
 fun casting(any: Any?): List<Map<String, Any>>? {
     if (any != null) {
@@ -485,7 +499,7 @@ fun Long.formatToAmount(): String {
             .replace(Regex("\\.0$"), "")
         return "$symbol$formattedAmount"
     }
-    val suffixes = charArrayOf('M', 'B', 'T', 'Q') // M for Million, etc.
+    val suffixes = charArrayOf('M', 'B', 'T', 'Q') // M for A Million, etc.
     val formatter = DecimalFormat("#.#")
     val base = (log10(this.toDouble()) / 3).toInt()
     val scaledNumber = this / 1000.0.pow(base.toDouble())

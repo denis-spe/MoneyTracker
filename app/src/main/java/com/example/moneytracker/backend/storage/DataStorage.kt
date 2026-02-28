@@ -94,13 +94,12 @@ interface DataStorage {
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      * @param userId the user id
      * @param datasetId the dataset id
-     * @param status the status to add
      */
     suspend fun addStatus(
         userId: String,
         datasetId: String,
-        status: Status,
-        newDateTime: Timestamp
+        newDateTime: Timestamp,
+        newDeadlineDateTime: Timestamp
     )
 
     /**
@@ -110,4 +109,9 @@ interface DataStorage {
      * @param datasetId the dataset id
      */
     suspend fun clearAdjustmentList(userId: String, datasetId: String)
+
+    suspend fun stopRoutine(
+        userId: String,
+        datasetId: String,
+    )
 }

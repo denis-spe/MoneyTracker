@@ -7,8 +7,11 @@ import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
+import com.example.moneytracker.helper.castToMutableMap
 import com.example.moneytracker.helper.casting
 import com.example.moneytracker.helper.statusToMap
+import com.example.moneytracker.helper.toAdjustment
+import com.example.moneytracker.helper.toAmount
 import com.example.moneytracker.helper.toDataset
 import com.example.moneytracker.helper.toMap
 import com.google.firebase.Timestamp
@@ -267,15 +270,14 @@ class DataStorageImpl(
         docRef.update("datasets", mutableDatasets).await()
     }
 
-    override suspend fun addStatus(
+
+    override suspend fun stopRoutine(
         userId: String,
         datasetId: String,
-        status: Status,
-        newDateTime: Timestamp
     ) {
         Log.d(
             "DataStorageImpl",
-            "addStatus called: $status for datasetId=$datasetId userId=$userId"
+            "addAdjustmentDataset called for datasetId=$datasetId userId=$userId"
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
@@ -292,14 +294,64 @@ class DataStorageImpl(
 
         // mutate target dataset's items
         val datasetMap = mutableDatasets[idx].toMutableMap()
+        val items = castToMutableMap(datasetMap["routine"])
+
+        items["stopRoutine"] = true
+        // your map representation
+        datasetMap["routine"] = items
+        mutableDatasets[idx] = datasetMap
+
+        // write whole datasets array back (queued when offline)
+        docRef.update("datasets", mutableDatasets).await()
+    }
+
+
+
+    override suspend fun addStatus(
+        userId: String,
+        datasetId: String,
+        newDateTime: Timestamp,
+        newDeadlineDateTime: Timestamp
+    ) {
+        Log.d(
+            "DataStorageImpl",
+            "addStatus called for datasetId=$datasetId userId=$userId"
+        )
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+
+        // read (maybe served from cache if offline)
+        val snapshot = docRef.get().await()
+        val datasets = casting(snapshot.get("datasets")) ?: emptyList()
+
+        val mutableDatasets = datasets.toMutableList()
+        val idx = mutableDatasets.indexOfFirst { (it["id"] as? String) == datasetId }
+
+        if (idx == -1) {
+            throw IllegalArgumentException("Dataset $datasetId not found for user $userId")
+        }
+
+        // mutate target dataset's items
+        val datasetMap = mutableDatasets[idx].toMutableMap()
+
+        val amount = datasetMap.toAmount()
+        val adjustmentAmount = datasetMap.toAdjustment().sumOf { it.amount }
+        val remainingAmount = amount - adjustmentAmount
+
+        val status = if (remainingAmount == 0.0) Status.SUCCESS else Status.OVERDUE
+
         val items =
             (casting(datasetMap["statusHistory"]) ?: emptyList()).toMutableList()
+
         items.add(
             status.statusToMap
-        )                         // your map representation
+        )
+
         datasetMap["statusHistory"] = items
-        datasetMap["deadlineDateTime"] = newDateTime
+        datasetMap["dateTime"] = newDateTime
+        datasetMap["deadlineDateTime"] = newDeadlineDateTime
         mutableDatasets[idx] = datasetMap
+
+        Log.d("addStatus", "New updated dataset $datasetMap")
 
         // write whole datasets array back (queued when offline)
         docRef.update("datasets", mutableDatasets).await()
@@ -378,23 +430,32 @@ class DataStorageImpl(
         }
     }
 
-    override suspend fun removeDataset(
-        userId: String,
-        dataset: Dataset
-    ) {
-        Log.d(
-            "DataStorageImpl",
-            "removeDataset user=$userId dataset.id=${dataset.id} label=${dataset.label}"
-        )
-        db.collection(COLLECTION_NAME)
-            .document(userId)
-            .update("datasets", FieldValue.arrayRemove(dataset.toMap()))
-            .addOnSuccessListener {
-                Log.d("Firestore", "Successfully wrote data for user $userId")
-            }
-            .addOnFailureListener {
-                Log.e("Firestore", "Failed to write user data for $userId", it)
-            }
+    override suspend fun removeDataset(userId: String, dataset: Dataset) {
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+
+        try {
+            db.runTransaction { tx ->
+                val snap = tx.get(docRef)
+                val rawDatasets = snap.get("datasets")
+                val datasetsList: MutableList<Any?> = when (rawDatasets) {
+                    is List<*> -> rawDatasets.map { it }.toMutableList()
+                    else -> mutableListOf()
+                }
+
+                // Keep only items whose id is not dataset.id
+                val filtered = datasetsList.filter { item ->
+                    val id = (item as? Map<*, *>)?.get("id")?.toString()
+                    id != dataset.id
+                }
+
+                tx.update(docRef, "datasets", filtered)
+                null
+            }.await()
+            Log.d("DataStorageImpl", "removeDataset transaction success for ${dataset.id}")
+        } catch (e: Exception) {
+            Log.e("DataStorageImpl", "removeDataset failed", e)
+            throw e
+        }
     }
 
     override suspend fun removeAdjustmentDataset(
