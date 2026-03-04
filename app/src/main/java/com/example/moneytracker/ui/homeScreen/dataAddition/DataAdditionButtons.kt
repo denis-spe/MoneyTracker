@@ -3,6 +3,7 @@ package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
@@ -11,11 +12,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Adjust
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -39,19 +43,45 @@ import com.example.moneytracker.ui.theme.autoTextColorChange
 @Composable
 fun DataAdditionFloatingButton(
     updateOnModelBottomSheetShow: (Boolean) -> Unit,
+    isBottomSheetOpen: Boolean,
 ) {
-    IconButton(
-        onClick = {
-            updateOnModelBottomSheetShow(true)
-        },
-        shape = CircleShape,
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.KeyboardArrowUp,
-            contentDescription = "Add data",
-            tint = Color.autoTextColorChange,
-            modifier = Modifier.size(35.dp)
-        )
+        FloatingActionButton(
+            onClick = {
+                updateOnModelBottomSheetShow(true)
+            },
+            shape = CircleShape,
+            modifier = Modifier.size(40.dp),
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp)
+        ) {
+            Icon(
+                imageVector = if (isBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
+                contentDescription = "Add data",
+                tint = Color.autoTextColorChange,
+                modifier = Modifier.size(20.dp)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        FloatingActionButton(
+            onClick = {
+                updateOnModelBottomSheetShow(true)
+            },
+            shape = CircleShape,
+            modifier = Modifier.size(40.dp),
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Adjust,
+                contentDescription = "Add data",
+                tint = Color.autoTextColorChange,
+                modifier = Modifier.size(20.dp)
+            )
+        }
     }
 }
 
