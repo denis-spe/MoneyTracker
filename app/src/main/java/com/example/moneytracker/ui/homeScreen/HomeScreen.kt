@@ -133,8 +133,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     },
                     floatingActionButton = {
                         DataAdditionFloatingButton(
-                            isBottomSheetOpen = uiStates.value.isBottomSheetOpen,
-                            updateOnModelBottomSheetShow = viewModel::updateOnModelBottomSheetShow
+                            uiState = uiStates.value,
                         )
                     },
                 ) { paddingValues ->
@@ -162,7 +161,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     // Modal bottom sheet
                     DataAdditionModelDrawer(
                         viewModel = viewModel,
-                        isBottomSheetOpen = uiStates.value.isBottomSheetOpen,
+                        uiState = uiStates.value
                     )
                 }
             }

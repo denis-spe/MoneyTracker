@@ -33,28 +33,33 @@ import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.theme.autoTextColorChange
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionFloatingButton(
-    updateOnModelBottomSheetShow: (Boolean) -> Unit,
-    isBottomSheetOpen: Boolean,
+    viewModel: HomeScreenViewModel = hiltViewModel(),
+    uiState: HomeUiState,
 ) {
+    val isBottomSheetOpen = uiState.isDatasetBottomSheetOpen
+
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         FloatingActionButton(
             onClick = {
-                updateOnModelBottomSheetShow(true)
+                viewModel.updateOnDatasetModelBottomSheetShow(true)
             },
             shape = CircleShape,
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(43.dp),
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp)
         ) {
             Icon(
@@ -69,15 +74,15 @@ fun DataAdditionFloatingButton(
 
         FloatingActionButton(
             onClick = {
-                updateOnModelBottomSheetShow(true)
+                viewModel.updateOnAdjustModelBottomSheetShow(true)
             },
             shape = CircleShape,
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(43.dp),
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp)
         ) {
             Icon(
                 imageVector = Icons.Default.Adjust,
-                contentDescription = "Add data",
+                contentDescription = "Add adjustment",
                 tint = Color.autoTextColorChange,
                 modifier = Modifier.size(20.dp)
             )

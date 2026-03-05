@@ -584,8 +584,12 @@ class HomeScreenViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(isLogOutLoading = isLoading)
     }
 
-    fun updateOnModelBottomSheetShow(isVisible: Boolean) {
-        _uiState.value = _uiState.value.copy(isBottomSheetOpen = isVisible)
+    fun updateOnDatasetModelBottomSheetShow(isVisible: Boolean) {
+        _uiState.value = _uiState.value.copy(isDatasetBottomSheetOpen = isVisible)
+    }
+
+    fun updateOnAdjustModelBottomSheetShow(isVisible: Boolean) {
+        _uiState.value = _uiState.value.copy(isAdjustmentBottomSheetOpen = isVisible)
     }
 
     fun updateIsDescriptionIconVisible(isVisible: Boolean) {

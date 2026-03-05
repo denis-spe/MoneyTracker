@@ -431,31 +431,27 @@ class DataStorageImpl(
     }
 
     override suspend fun removeDataset(userId: String, dataset: Dataset) {
+        val id = dataset.id
+
+        Log.d(
+            "DataStorageImpl",
+            "addAdjustmentDataset called: clear adjustment for datasetId=$id userId=$userId"
+        )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
 
-        try {
-            db.runTransaction { tx ->
-                val snap = tx.get(docRef)
-                val rawDatasets = snap.get("datasets")
-                val datasetsList: MutableList<Any?> = when (rawDatasets) {
-                    is List<*> -> rawDatasets.map { it }.toMutableList()
-                    else -> mutableListOf()
-                }
+        // read (maybe served from cache if offline)
+        val snapshot = docRef.get().await()
+        val datasets = casting(snapshot.get("datasets")) ?: emptyList()
 
-                // Keep only items whose id is not dataset.id
-                val filtered = datasetsList.filter { item ->
-                    val id = (item as? Map<*, *>)?.get("id")?.toString()
-                    id != dataset.id
-                }
+        val mutableDatasets = datasets.toMutableList()
+        val isRemoved = mutableDatasets.removeAll { (it["id"] as? String) == id }
 
-                tx.update(docRef, "datasets", filtered)
-                null
-            }.await()
-            Log.d("DataStorageImpl", "removeDataset transaction success for ${dataset.id}")
-        } catch (e: Exception) {
-            Log.e("DataStorageImpl", "removeDataset failed", e)
-            throw e
+        if (!isRemoved) {
+            throw IllegalArgumentException("Dataset $id not found for user $userId")
         }
+
+        // write whole datasets array back (queued when offline)
+        docRef.update("datasets", mutableDatasets).await()
     }
 
     override suspend fun removeAdjustmentDataset(
