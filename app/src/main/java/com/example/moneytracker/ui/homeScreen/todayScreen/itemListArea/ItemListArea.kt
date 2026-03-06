@@ -27,11 +27,12 @@ import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTimeFilled
 import androidx.compose.material.icons.filled.Category
-import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Payments
 import androidx.compose.material.icons.outlined.AccessTime
+import androidx.compose.material.icons.outlined.AlignVerticalBottom
+import androidx.compose.material.icons.outlined.AlignVerticalTop
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material3.Button
@@ -46,6 +47,7 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
@@ -81,7 +83,8 @@ import com.example.moneytracker.ui.theme.autoTextColorChange
 private val spacerWith = 14.dp
 private val labelFontSize = 13.sp
 private val AMOUNT_SIZE = 20.sp
-private val FilterIconSize = 25.dp
+private val FilterIconSize = 18.dp
+private val OrganiseIconSize = 23.dp
 
 @Composable
 fun ItemFilter(
@@ -190,9 +193,11 @@ fun ItemListAreaSort(
                     }
                 ) {
                     Icon(
-                        imageVector = Icons.Default.FilterList,
+                        imageVector = if (onFilterClick.value)
+                            Icons.Outlined.AlignVerticalTop else
+                            Icons.Outlined.AlignVerticalBottom,
                         contentDescription = "filter",
-                        modifier = Modifier.size(20.dp)
+                        modifier = Modifier.size(17.dp)
                     )
                 }
             }
@@ -217,7 +222,8 @@ fun ItemListAreaSort(
                         else Icons.Outlined.Category,
                         contentDescription = "Category",
                         modifier = Modifier.size(FilterIconSize),
-                        tint = if (categorySorting.value != "Initial") Color.Gray else Color.autoTextColorChange
+                        tint = if (categorySorting.value != "Initial") Color.autoTextColorChange
+                        else Color.Gray
                     )
                 }
 
@@ -226,8 +232,8 @@ fun ItemListAreaSort(
                         isTimeModelBottomOpen.value = true
                     }
                 ) {
-                    val color = if (timeSorting.value != SortType.Initial) Color.Gray
-                    else Color.autoTextColorChange
+                    val color = if (timeSorting.value != SortType.Initial) Color.autoTextColorChange
+                    else Color.Gray
                     val imageVec = if (
                         timeSorting.value == SortType.Ascending ||
                         timeSorting.value == SortType.Descending
@@ -252,8 +258,7 @@ fun ItemListAreaSort(
                     else Icons.Outlined.Payments
                     val color = if (paymentSorting.value != null
                         || amountSorting.value != SortType.Initial
-                    ) Color.Gray
-                    else Color.autoTextColorChange
+                    ) Color.autoTextColorChange else Color.Gray
 
 
                     Icon(
@@ -279,7 +284,8 @@ fun ItemListAreaSort(
                         painter = painterResource(id = iconResId),
                         contentDescription = "Sort",
                         modifier = Modifier.size(FilterIconSize),
-                        tint = if (alphabeticalOrder.value != SortType.Initial) Color.Gray else Color.autoTextColorChange
+                        tint = if (alphabeticalOrder.value != SortType.Initial)
+                            Color.autoTextColorChange else Color.Gray
                     )
                 }
             }
@@ -289,7 +295,8 @@ fun ItemListAreaSort(
             ModalBottomSheet(
                 onDismissRequest = {
                     isTimeModelBottomOpen.value = false
-                }
+                },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -303,7 +310,7 @@ fun ItemListAreaSort(
                             imageVector = Icons.Default.AccessTimeFilled,
                             contentDescription = "Time",
                             modifier = Modifier
-                                .size(FilterIconSize)
+                                .size(OrganiseIconSize)
                                 .padding(end = 8.dp)
                         )
 
@@ -370,7 +377,8 @@ fun ItemListAreaSort(
             ModalBottomSheet(
                 onDismissRequest = {
                     isCategoryModelBottomOpen.value = false
-                }
+                },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -384,7 +392,7 @@ fun ItemListAreaSort(
                             imageVector = Icons.Default.Category,
                             contentDescription = "Category",
                             modifier = Modifier
-                                .size(FilterIconSize)
+                                .size(OrganiseIconSize)
                                 .padding(end = 8.dp)
                         )
                         Text(
@@ -471,7 +479,8 @@ fun ItemListAreaSort(
             ModalBottomSheet(
                 onDismissRequest = {
                     isAlphabeticalOrderModelBottomOpen.value = false
-                }
+                },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -485,7 +494,7 @@ fun ItemListAreaSort(
                             painter = painterResource(id = R.drawable.sort),
                             contentDescription = "Sort",
                             modifier = Modifier
-                                .size(FilterIconSize)
+                                .size(OrganiseIconSize)
                                 .padding(end = 8.dp)
                         )
 
@@ -543,7 +552,8 @@ fun ItemListAreaSort(
             ModalBottomSheet(
                 onDismissRequest = {
                     isPaymentModelBottomOpen.value = false
-                }
+                },
+                sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
             ) {
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -557,7 +567,7 @@ fun ItemListAreaSort(
                             imageVector = Icons.Default.Payments,
                             contentDescription = "Payment",
                             modifier = Modifier
-                                .size(FilterIconSize)
+                                .size(OrganiseIconSize)
                                 .padding(end = 8.dp)
                         )
 

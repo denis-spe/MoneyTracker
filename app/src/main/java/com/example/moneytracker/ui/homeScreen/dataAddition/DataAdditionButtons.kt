@@ -15,6 +15,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.outlined.DoDisturbOn
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
@@ -48,7 +49,9 @@ fun DataAdditionFloatingButton(
     viewModel: HomeScreenViewModel = hiltViewModel(),
     uiState: HomeUiState,
 ) {
-    val isBottomSheetOpen = uiState.isDatasetBottomSheetOpen
+    val isDatasetBottomSheetOpen = uiState.isDatasetBottomSheetOpen
+    val isAdjustmentBottomSheetOpen = uiState.isAdjustmentBottomSheetOpen
+
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -63,7 +66,7 @@ fun DataAdditionFloatingButton(
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp)
         ) {
             Icon(
-                imageVector = if (isBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
+                imageVector = if (isDatasetBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
                 contentDescription = "Add data",
                 tint = Color.autoTextColorChange,
                 modifier = Modifier.size(20.dp)
@@ -81,7 +84,8 @@ fun DataAdditionFloatingButton(
             elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp)
         ) {
             Icon(
-                imageVector = Icons.Default.Adjust,
+                imageVector = if (isAdjustmentBottomSheetOpen) Icons.Outlined.DoDisturbOn
+                else Icons.Default.Adjust,
                 contentDescription = "Add adjustment",
                 tint = Color.autoTextColorChange,
                 modifier = Modifier.size(20.dp)

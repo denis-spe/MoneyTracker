@@ -84,7 +84,7 @@ fun StatusView(
         AsyncImage(
             model = status.value.icon,
             contentDescription = status.value.text,
-            modifier = Modifier.size(imageSize)
+            modifier = Modifier.size(imageSize),
         )
     } else {
         Text(

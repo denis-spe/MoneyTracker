@@ -447,7 +447,7 @@ class DataStorageImpl(
         val isRemoved = mutableDatasets.removeAll { (it["id"] as? String) == id }
 
         if (!isRemoved) {
-            throw IllegalArgumentException("Dataset $id not found for user $userId")
+            Log.d("DataStorageImpl", "Dataset $id not found for user $userId")
         }
 
         // write whole datasets array back (queued when offline)

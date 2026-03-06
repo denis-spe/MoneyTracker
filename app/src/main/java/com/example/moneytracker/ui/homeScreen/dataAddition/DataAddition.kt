@@ -962,7 +962,7 @@ fun AdjustmentDataInputs(
                                     adjustmentId = UUID.randomUUID().toString(),
                                     amount = adjustAsDouble,
                                     dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                    label = AdjustmentType.GOAL_ATTAIN.text,
+                                    label = adjustmentType.text,
                                     description = descriptionState.text.toString(),
                                     tagIcon = it.tagIcon,
                                     paymentMethod = selectedPaymentMethod.value,
