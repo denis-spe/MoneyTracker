@@ -24,6 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.ui.homeScreen.HomeUiState
+import com.example.moneytracker.ui.theme.autoTextColorChange
 
 @Composable
 fun TopAppTitle(
@@ -81,6 +82,8 @@ fun TopAppTitle(
                             currentPageColor else
                             Color.Unspecified
                     ),
+                unselectedContentColor = Color.autoTextColorChange,
+                selectedContentColor = contentColor
             ) {
                 Text(
                     nav.text,

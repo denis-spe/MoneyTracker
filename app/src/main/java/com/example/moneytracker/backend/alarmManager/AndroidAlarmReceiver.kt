@@ -5,7 +5,9 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.storage.RoutineData
+import com.example.moneytracker.helper.status
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
@@ -29,6 +31,7 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
         val dataStorage = entryPoint.dataStorage()
         val alarmManager = entryPoint.alarmManager()
         val useWorker = entryPoint.useWorker()
+        val notifier = entryPoint.notifier()
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -75,10 +78,29 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
 
                     if (dataset.routine.stopRoutine) return@withTimeoutOrNull true
 
-                    // 1. Run the worker logic
+                    // 2. Run the worker logic
                     useWorker.work(userId, dataset)
 
-                    // 2. Schedule the NEXT alarm (since AlarmManager is one-shot)
+                    val status = dataset.status.text
+                    val datatypeName = dataset.dataType.text
+                    val label = dataset.label
+
+
+                    val notificationItem = when (dataset.dataType) {
+                        else -> NotificationItem(
+                            title = "${datatypeName}: $label",
+                            message = "Your ${datatypeName.lowercase()} for ${label.lowercase()} " +
+                                    "was ${status.lowercase()}",
+                            bigMessage = "Did you forget to adjust ${label.lowercase()}!",
+                            icon = dataset.tagIcon.icon
+                        )
+                    }
+
+                    // 1. Show notification
+                    notifier.showNotification(notificationItem)
+
+
+                    // 3. Schedule the NEXT alarm (since AlarmManager is one-shot)
                     val alarm = AlarmItem(datasetId, userId, dataset.routine)
                     alarmManager.schedule(alarm)
                     true

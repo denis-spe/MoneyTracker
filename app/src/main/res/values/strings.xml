@@ -134,4 +134,8 @@
     <!-- HOME SCREEN -->
     <string name="homeScreenId">homeScreen</string>
 
+    <!-- NOTIFICATION -->
+    <string name="channel_name">Money Tracker Alarms</string>
+    <string name="channel_description">Notifications for money tracking routines and status updates</string>
+
 </resources>

@@ -7,6 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.util.Log
+import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -89,6 +90,8 @@ class AndroidAlarm @Inject constructor(
         // Build the same intent and pendingIntent used in schedule(...)
         val alarmIntent = Intent(context, AndroidAlarmReceiver::class.java).apply {
             action = "com.example.moneytracker.ALARM_ACTION"
+            data = "timer:${alarmItem.datasetId}".toUri()
+
             putExtra("datasetId", alarmItem.datasetId)
             putExtra("userId", alarmItem.userId)
             putExtra("routine", alarmItem.routineData.routine.name)

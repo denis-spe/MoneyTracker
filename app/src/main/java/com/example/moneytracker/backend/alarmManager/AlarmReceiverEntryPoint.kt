@@ -1,6 +1,7 @@
 // Bless be the name of LORD of hosts
 package com.example.moneytracker.backend.alarmManager
 
+import com.example.moneytracker.backend.notification.Notifier
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.workManager.Work
 import dagger.hilt.components.SingletonComponent
@@ -14,4 +15,6 @@ interface AlarmReceiverEntryPoint {
     fun alarmManager(): AndroidAlarmManager
 
     fun useWorker(): Work
+
+    fun notifier(): Notifier
 }

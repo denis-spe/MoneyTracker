@@ -44,7 +44,7 @@ fun TopAppNav(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        if (userName != null && userName.isNotEmpty())
+        if (!userName.isNullOrEmpty())
             Text(userName[0].toString(), color = contentColor)
         else {
             Text("G", color = contentColor)

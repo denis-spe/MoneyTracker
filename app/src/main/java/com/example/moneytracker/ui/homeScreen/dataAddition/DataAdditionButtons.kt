@@ -29,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.unit.TextUnit
@@ -41,8 +40,10 @@ import com.example.moneytracker.R
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.HomeUiState
+import com.example.moneytracker.ui.theme.autoColorChange
 import com.example.moneytracker.ui.theme.autoTextColorChange
 
+private val FLOAT_BUTTON_SIZE = 45.dp
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -52,7 +53,6 @@ fun DataAdditionFloatingButton(
 ) {
     val isDatasetBottomSheetOpen = uiState.isDatasetBottomSheetOpen
     val isAdjustmentBottomSheetOpen = uiState.isAdjustmentBottomSheetOpen
-    LocalContext.current
 
 
     Column(
@@ -64,8 +64,9 @@ fun DataAdditionFloatingButton(
                 viewModel.updateOnDatasetModelBottomSheetShow(true)
             },
             shape = CircleShape,
-            modifier = Modifier.size(43.dp),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp)
+            modifier = Modifier.size(FLOAT_BUTTON_SIZE),
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
+            containerColor = Color.autoColorChange
         ) {
             Icon(
                 imageVector = if (isDatasetBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
@@ -83,7 +84,8 @@ fun DataAdditionFloatingButton(
             },
             shape = CircleShape,
             modifier = Modifier.size(43.dp),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp)
+            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
+            containerColor = Color.autoColorChange
         ) {
             Icon(
                 imageVector = if (isAdjustmentBottomSheetOpen) Icons.Outlined.DoDisturbOn
