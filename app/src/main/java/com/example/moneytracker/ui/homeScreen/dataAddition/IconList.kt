@@ -91,7 +91,7 @@ fun IconList(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(0.5f)
+                .fillMaxHeight(0.7f)
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {

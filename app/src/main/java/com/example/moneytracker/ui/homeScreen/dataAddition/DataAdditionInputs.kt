@@ -1,8 +1,6 @@
 // Praise be the LORD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -103,7 +101,6 @@ import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
-import com.example.moneytracker.helper.plusMinutes
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.theme.autoColorChange
@@ -114,9 +111,13 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
 import kotlinx.datetime.number
 import kotlinx.datetime.toKotlinLocalDate
-import network.chaintech.kmp_date_time_picker.utils.now
+import kotlinx.datetime.toKotlinLocalDateTime
 import java.text.NumberFormat
+import java.time.Instant
 import java.time.LocalDate
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.temporal.TemporalAdjusters
 import java.util.Calendar
 import java.util.Locale
 
@@ -890,7 +891,6 @@ fun AdjustmentField(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun RepeatableTransaction(
     repeatByState: MutableState<RoutineData>,
@@ -900,15 +900,38 @@ fun RepeatableTransaction(
     endLocalDateTimeState: MutableState<LocalDateTime>,
     ) {
 
+    val nowMillis = System.currentTimeMillis()
+    val now = ZonedDateTime.ofInstant(Instant.ofEpochMilli(nowMillis), ZoneId.systemDefault())
+
     LaunchedEffect(repeatByState.value) {
         if (repeatByState.value.routine != Routine.Nothing) {
-            startLocalDateTimeState.value = LocalDateTime.now()
+            startLocalDateTimeState.value = now.toLocalDateTime()
+                .toKotlinLocalDateTime()
             endLocalDateTimeState.value = when (repeatByState.value.routine) {
-                Routine.EveryHour -> LocalDateTime.now()
-                    .plusMinutes(repeatByState.value.routineCount)
+                Routine.EveryHour -> now
+                    .plusMinutes(repeatByState.value.routineCount.toLong())
 
-                else -> LocalDateTime.now()
-            }
+                Routine.EveryDay -> now
+                    .plusDays(repeatByState.value.routineCount.toLong())
+
+                Routine.Weekly -> now.plusWeeks(repeatByState.value.routineCount.toLong())
+                Routine.Yearly -> now.plusYears(repeatByState.value.routineCount.toLong())
+                Routine.Monthly -> now.plusMonths(repeatByState.value.routineCount.toLong())
+                Routine.SpecifyDayOfTheWeek -> {
+                    val targetDay = java.time.DayOfWeek.of(
+                        (
+                                repeatByState.value.routineCount % 7) + 1
+                    )
+                    val next = if (now.dayOfWeek == targetDay) {
+                        now.plusWeeks(1)
+                    } else {
+                        now.with(TemporalAdjusters.next(targetDay))
+                    }
+                    next
+                }
+
+                else -> now
+            }.toLocalDateTime().toKotlinLocalDateTime()
         }
     }
 
@@ -1411,7 +1434,6 @@ fun PaymentMethodDropdown(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerComponent(
@@ -1612,7 +1634,6 @@ fun DoubleTimePickerComponent(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateTimeInput(
@@ -1770,7 +1791,6 @@ fun DateTimeInput(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DateTimeRange(
     startLocalDateTimeState: MutableState<LocalDateTime>,

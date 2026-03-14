@@ -561,7 +561,6 @@ fun GoalDataInput(
     placeholder: String,
     dataType: DataType,
     buttonText: String,
-    defaultTagIcon: Int = R.drawable.tag_goal,
     onDismiss: () -> Unit,
 ) {
     val colorResId = dataType.color
@@ -572,9 +571,10 @@ fun GoalDataInput(
     val labelState = rememberTextFieldState()
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
+    val tagIcon = TagIcon("goal", R.drawable.tag_goal)
     val labelIconState = remember {
         mutableStateOf(
-            TagIcon("goal", defaultTagIcon)
+            tagIcon
         )
     }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
@@ -757,7 +757,8 @@ fun GoalDataInput(
 
                         if (
                             goalDateTimeWarningState.value != GoalWarning.ERROR &&
-                            wasSuccess.value != State.ERROR && amountAsDouble != null
+                            wasSuccess.value != State.ERROR && amountAsDouble != null &&
+                            endLocalDateTimeState.value > localDateTimeState.value
                         ) {
                             val id = UUID.randomUUID().toString()
 
@@ -789,10 +790,7 @@ fun GoalDataInput(
                             amountState.clearText()
                             labelState.clearText()
                             descriptionState.clearText()
-                            labelIconState.value = TagIcon(
-                                "description",
-                                R.drawable.description
-                            )
+                            labelIconState.value = tagIcon
                             goalDateTimeWarningState.value = GoalWarning.INITIAL
 
                             // Dismiss the model drawer.
