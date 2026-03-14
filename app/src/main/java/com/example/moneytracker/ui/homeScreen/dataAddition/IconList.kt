@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
@@ -41,12 +40,19 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.TagIcon
+import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.theme.autoTextColorChange
 
 
 private val ICONS_TEXT_SIZE = 11.sp
 val ICON_SIZE = 20.dp
 private val ICONS = listOf(
+    Pair("goal", R.drawable.tag_goal),
+    Pair("debt", R.drawable.debt),
+    Pair("lent", R.drawable.lent),
+    Pair("savings", R.drawable.savings),
+    Pair("expense", R.drawable.expense),
+    Pair("earnings", R.drawable.earnings),
     Pair("description", R.drawable.description),
     Pair("milk carton", R.drawable.milk_carton),
     Pair("mcdonald french fries", R.drawable.mcdonald_french_fries),
@@ -69,12 +75,13 @@ private val ICONS = listOf(
 @Composable
 fun IconList(
     onConfirm: MutableState<TagIcon>,
-    onDialogOpen: MutableState<Boolean>
+    onDialogOpen: MutableState<Boolean>,
+    defaultIcon: Int = R.drawable.description
 ) {
 
     var selectionIcon by remember {
         mutableStateOf(
-            TagIcon("description", R.drawable.description)
+            onConfirm.value
         )
     }
 
@@ -84,7 +91,7 @@ fun IconList(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(375.dp)
+                .fillMaxHeight(0.5f)
                 .padding(16.dp),
             shape = RoundedCornerShape(16.dp),
         ) {
@@ -115,7 +122,7 @@ fun IconList(
                     modifier = Modifier
                         .fillMaxHeight(0.7f)
                         .padding(8.dp),
-                    columns = GridCells.Fixed(4),
+                    columns = GridCells.Fixed(3),
                 ) {
                     items(ICONS.size, key = { it }) { idx ->
                         val icon = ICONS[idx]
@@ -156,7 +163,7 @@ fun IconList(
                             }
 
                             Text(
-                                text = icon.first,
+                                text = icon.first.title,
                                 fontSize = ICONS_TEXT_SIZE,
                                 textAlign = TextAlign.Center
                             )
@@ -164,6 +171,7 @@ fun IconList(
                     }
                 }
 
+                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                 Row(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically,

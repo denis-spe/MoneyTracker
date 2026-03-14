@@ -194,7 +194,7 @@ fun ModelDrawerTag(
     // Show all icons for label and description.
     IconList(
         onConfirm = iconState,
-        onDialogOpen = onDialogShow
+        onDialogOpen = onDialogShow,
     )
 }
 

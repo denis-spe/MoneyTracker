@@ -315,13 +315,11 @@ fun <T> DataAdditionModelDrawerContent(
 /*
  * Add data Input
  */
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun FinancialDataInput(
     placeholder: String,
     dataType: DataType,
     buttonText: String,
-    defaultTagIcon: Int = R.drawable.description,
     onDismiss: () -> Unit,
 ) {
     val colorResId = dataType.color
@@ -336,7 +334,17 @@ fun FinancialDataInput(
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
     val labelIconState = remember {
         mutableStateOf(
-            TagIcon("description", defaultTagIcon)
+            TagIcon(
+                dataType.text.lowercase(),
+                icon = when (dataType) {
+                    DataType.DEBT -> R.drawable.debt
+                    DataType.LENT -> R.drawable.lent
+                    DataType.SAVINGS -> R.drawable.savings
+                    DataType.EXPENSE -> R.drawable.expense
+                    DataType.EARNINGS -> R.drawable.earnings
+                    else -> R.drawable.description
+                }
+            )
         )
     }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
@@ -553,7 +561,7 @@ fun GoalDataInput(
     placeholder: String,
     dataType: DataType,
     buttonText: String,
-    defaultTagIcon: Int = R.drawable.description,
+    defaultTagIcon: Int = R.drawable.tag_goal,
     onDismiss: () -> Unit,
 ) {
     val colorResId = dataType.color
@@ -566,7 +574,7 @@ fun GoalDataInput(
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
     val labelIconState = remember {
         mutableStateOf(
-            TagIcon("description", defaultTagIcon)
+            TagIcon("goal", defaultTagIcon)
         )
     }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
@@ -806,7 +814,6 @@ fun GoalDataInput(
  * Adjustment Inputs
  */
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AdjustmentDataInputs(
     dataType: DataType,
