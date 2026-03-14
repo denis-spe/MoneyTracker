@@ -103,6 +103,7 @@ import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.helper.plusMinutes
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.theme.autoColorChange
@@ -113,6 +114,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
 import kotlinx.datetime.number
 import kotlinx.datetime.toKotlinLocalDate
+import network.chaintech.kmp_date_time_picker.utils.now
 import java.text.NumberFormat
 import java.time.LocalDate
 import java.util.Calendar
@@ -894,11 +896,26 @@ fun RepeatableTransaction(
     repeatByState: MutableState<RoutineData>,
     dataType: DataType,
     goalDateTimeWarningState: MutableState<GoalWarning>,
+    startLocalDateTimeState: MutableState<LocalDateTime>,
+    endLocalDateTimeState: MutableState<LocalDateTime>,
     ) {
+
+    LaunchedEffect(repeatByState.value) {
+        if (repeatByState.value.routine != Routine.Nothing) {
+            startLocalDateTimeState.value = LocalDateTime.now()
+            endLocalDateTimeState.value = when (repeatByState.value.routine) {
+                Routine.EveryHour -> LocalDateTime.now()
+                    .plusMinutes(repeatByState.value.routineCount)
+
+                else -> LocalDateTime.now()
+            }
+        }
+    }
 
     if (repeatByState.value.routine != Routine.Nothing) {
         goalDateTimeWarningState.value = GoalWarning.CONSECUTIVE
     }
+
 
     val dayOfWeek = DayOfWeek.entries
     LocalDate.now()

@@ -1,9 +1,7 @@
 // Glory be the name of LORD our GOD
 package com.example.moneytracker.backend.storage
 
-import android.os.Build
 import android.util.Log
-import androidx.annotation.RequiresApi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
@@ -20,16 +18,16 @@ import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
+import kotlin.coroutines.resumeWithException
 import kotlin.random.Random
 
 class DataStorageImpl(
     override val db: FirebaseFirestore
 ) : DataStorage {
 
-
-    @RequiresApi(Build.VERSION_CODES.O)
     override suspend fun getWholeDatasets(
         userId: String,
         onSuccess: (isSuccess: Boolean) -> Unit,
@@ -169,7 +167,7 @@ class DataStorageImpl(
     /**
      * Add a dataset to the storage
      */
-    override fun addData(userId: String, dataset: Dataset) {
+    override fun addData(userId: String, dataset: Dataset): String {
         Log.d(
             "DataStorageImpl",
             "addData user=$userId dataset.id=${dataset.id} label=${dataset.label}"
@@ -183,6 +181,8 @@ class DataStorageImpl(
             .addOnFailureListener {
                 Log.e("Firestore", "Failed to write user data for $userId", it)
             }
+
+        return dataset.id
     }
 
     override suspend fun updateDataset(
@@ -305,6 +305,43 @@ class DataStorageImpl(
         docRef.update("datasets", mutableDatasets).await()
     }
 
+    /**
+     * Get a dataset from the storage
+     * @param userId the user id
+     * @param datasetId the dataset id
+     */
+    // Add dependency if needed: implementation "org.jetbrains.kotlinx:kotlinx-coroutines-play-services:<version>"
+
+    // requires: import kotlinx.coroutines.suspendCancellableCoroutine
+    override suspend fun getDataset(userId: String, datasetId: String): Dataset? =
+        suspendCancellableCoroutine { cont ->
+            val docRef = db.collection(COLLECTION_NAME).document(userId)
+            val task = docRef.get()
+            task.addOnSuccessListener { snapshot ->
+                try {
+                    val raw = snapshot.get("datasets") ?: run {
+                        if (!cont.isCompleted) cont.resume(null) { cause, _, _ -> }
+                        return@addOnSuccessListener
+                    }
+
+                    val list = when (raw) {
+                        is List<*> -> raw
+                        else -> listOf(raw)
+                    }
+
+                    val dataset = list.mapNotNull {
+                        (it as? Map<*, *>)?.toDataset()
+                    }.firstOrNull { it.id == datasetId }
+
+                    if (!cont.isCompleted) cont.resume(dataset) { cause, _, _ -> }
+                } catch (e: Exception) {
+                    if (!cont.isCompleted) cont.resumeWithException(e)
+                }
+            }
+            task.addOnFailureListener { exc ->
+                if (!cont.isCompleted) cont.resumeWithException(exc)
+            }
+        }
 
 
     override suspend fun addStatus(

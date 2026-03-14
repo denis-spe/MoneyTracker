@@ -20,8 +20,9 @@ interface DataStorage {
      * Add a dataset to the storage
      * @param userId the user id
      * @param dataset the dataset to add
+     * @return the id of the added dataset
      */
-    fun addData(userId: String, dataset: Dataset)
+    fun addData(userId: String, dataset: Dataset): String
 
     /**
      * Get all datasets
@@ -110,8 +111,20 @@ interface DataStorage {
      */
     suspend fun clearAdjustmentList(userId: String, datasetId: String)
 
+    /**
+     * Get a dataset from the storage
+     * @param userId the user id
+     * @param datasetId the dataset id
+     */
     suspend fun stopRoutine(
         userId: String,
         datasetId: String,
     )
+
+    /**
+     * Get a dataset from the storage
+     * @param userId the user id
+     * @param datasetId the dataset id
+     */
+    suspend fun getDataset(userId: String, datasetId: String): Dataset?
 }

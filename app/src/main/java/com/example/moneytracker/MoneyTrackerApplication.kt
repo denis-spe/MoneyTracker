@@ -2,14 +2,27 @@ package com.example.moneytracker
 
 import android.app.Application
 import android.util.Log
+import androidx.hilt.work.HiltWorkerFactory
+import androidx.work.Configuration
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.initialize
 import dagger.hilt.android.HiltAndroidApp
+import javax.inject.Inject
 
 @HiltAndroidApp
-class MoneyTrackerApplication : Application() {
+class MoneyTrackerApplication : Application(), Configuration.Provider {
+
+    @Inject
+    lateinit var workerFactory: HiltWorkerFactory
+
+    override val workManagerConfiguration: Configuration by lazy {
+        Configuration.Builder()
+            .setWorkerFactory(workerFactory)
+            .build()
+    }
+
     override fun onCreate() {
         super.onCreate()
 

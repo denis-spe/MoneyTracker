@@ -548,7 +548,6 @@ fun FinancialDataInput(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun GoalDataInput(
     placeholder: String,
@@ -695,6 +694,8 @@ fun GoalDataInput(
                 if (dataType == DataType.GOAL) {
                     RepeatableTransaction(
                         routineData,
+                        startLocalDateTimeState = localDateTimeState,
+                        endLocalDateTimeState = endLocalDateTimeState,
                         dataType = DataType.GOAL,
                         goalDateTimeWarningState = goalDateTimeWarningState,
                     )
@@ -750,9 +751,11 @@ fun GoalDataInput(
                             goalDateTimeWarningState.value != GoalWarning.ERROR &&
                             wasSuccess.value != State.ERROR && amountAsDouble != null
                         ) {
+                            val id = UUID.randomUUID().toString()
+
                             viewModel.addData(
                                 Dataset(
-                                    id = UUID.randomUUID().toString(),
+                                    id = id,
                                     dataType = dataType,
                                     amount = amountAsDouble,
                                     label = labelState.text.toString(),
@@ -765,6 +768,11 @@ fun GoalDataInput(
                                         .toFirestoreTimestampUtc(),
                                     routine = routineData.value
                                 )
+                            )
+
+                            viewModel.setAlarm(
+                                datasetId = id,
+                                routineData = routineData.value
                             )
 
                             wasSuccess.value = State.SUCCESS

@@ -15,10 +15,9 @@ plugins {
 android {
     namespace = "com.example.moneytracker"
     compileSdk = 36
-
     defaultConfig {
         applicationId = "com.example.moneytracker"
-        minSdk = 24
+        minSdk = 26
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
@@ -84,7 +83,6 @@ dependencies {
 
     // Hilt (Dagger)
     implementation(libs.hilt.android.v257)
-    implementation(libs.mockito.android)
     implementation(libs.mockito.bom)
     implementation(libs.googleid)
     implementation(libs.firebase.crashlytics.buildtools)
@@ -97,6 +95,10 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
 
     testImplementation(libs.junit)
+    testImplementation(libs.mockito.bom)
+    testImplementation("org.mockito:mockito-core:5.7.0")
+    testImplementation("org.mockito:mockito-inline:5.7.0")
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(platform(libs.androidx.compose.bom))
@@ -138,4 +140,9 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.6.0") // Use latest version
 
     implementation("network.chaintech:kmp-date-time-picker:1.1.1")
+
+    implementation(libs.androidx.work.runtime.ktx)
+    implementation(libs.androidx.hilt.work)
+    ksp(libs.androidx.hilt.compiler.v120)
+
 }
