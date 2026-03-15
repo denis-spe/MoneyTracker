@@ -1,6 +1,7 @@
 package com.example.moneytracker.backend.workManager
 
 import android.content.Context
+import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
@@ -9,9 +10,6 @@ import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
@@ -31,27 +29,28 @@ class Worker @AssistedInject constructor(
         val userId = params.inputData.getString("userId")
             ?: return Result.failure()
 
-        val scop = CoroutineScope(Dispatchers.IO)
 
-        val dataset = dataStorage.getDataset(userId, datasetId) ?: return Result.failure()
+        return try {
+            val dataset = dataStorage.getDataset(userId, datasetId) ?: return Result.failure()
 
-        val now = LocalDateTime.now()
-        val alarm = AlarmItem(datasetId, userId, dataset.routine)
-        val nextTrigger = alarm.triggerMillis()
-        val nextDeadline =
-            ZonedDateTime.ofInstant(Instant.ofEpochMilli(nextTrigger), ZoneId.systemDefault())
+            val now = LocalDateTime.now()
+            val alarm = AlarmItem(datasetId, userId, dataset.routine)
+            val nextTrigger = alarm.triggerMillis()
+            val nextDeadline =
+                ZonedDateTime.ofInstant(Instant.ofEpochMilli(nextTrigger), ZoneId.systemDefault())
 
-
-        scop.launch {
-            dataStorage.addStatus(
+            dataStorage.completeRoutine(
                 userId = userId,
                 datasetId = datasetId,
                 newDateTime = now.toFirestoreTimestampUtc(),
-                newDeadlineDateTime = nextDeadline.toLocalDateTime().toKotlinLocalDateTime()
+                nextDeadline = nextDeadline.toLocalDateTime().toKotlinLocalDateTime()
                     .toFirestoreTimestampUtc()
             )
-            dataStorage.clearAdjustmentList(userId, datasetId)
+
+            Result.success()
+        } catch (e: Exception) {
+            Log.e("Worker", "Error in doWork for dataset $datasetId", e)
+            Result.retry()
         }
-        return Result.success()
     }
 }

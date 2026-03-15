@@ -127,4 +127,17 @@ interface DataStorage {
      * @param datasetId the dataset id
      */
     suspend fun getDataset(userId: String, datasetId: String): Dataset?
+
+    /**
+     * At the end of a routine, add a status into a list in
+     * dataset and clear the adjustment list (identified by its id) for the given user.
+     * @param userId the user id
+     * @param datasetId the dataset id
+     */
+    suspend fun completeRoutine(
+        userId: String,
+        datasetId: String,
+        newDateTime: Timestamp,
+        nextDeadline: Timestamp
+    )
 }

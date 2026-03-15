@@ -19,15 +19,24 @@ import kotlinx.coroutines.withTimeoutOrNull
 class AndroidAlarmReceiver : BroadcastReceiver() {
 
     override fun onReceive(context: Context, intent: Intent) {
-        val pendingResult = goAsync()
         val action = intent.action
         val userId = intent.getStringExtra("userId")
         val datasetId = intent.getStringExtra("datasetId")
 
-        val entryPoint = EntryPointAccessors.fromApplication(
-            context.applicationContext,
-            AlarmReceiverEntryPoint::class.java
-        )
+        // Use Log.e because Huawei devices often suppress Log.d by default
+        val pendingResult = goAsync()
+
+        val entryPoint = try {
+            EntryPointAccessors.fromApplication(
+                context.applicationContext,
+                AlarmReceiverEntryPoint::class.java
+            )
+        } catch (e: Exception) {
+            Log.e("AndroidAlarmReceiver", "Hilt EntryPoint failed", e)
+            pendingResult.finish()
+            return
+        }
+
         val dataStorage = entryPoint.dataStorage()
         val alarmManager = entryPoint.alarmManager()
         val useWorker = entryPoint.useWorker()
@@ -35,9 +44,13 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Case 1: System Event (Boot or Update)
-                if (action == Intent.ACTION_BOOT_COMPLETED || action == Intent.ACTION_MY_PACKAGE_REPLACED) {
-                    Log.d("AndroidAlarmReceiver", "Rescheduling alarms due to: $action")
+                // Case 1: System Event (Boot or Update) or Test Action
+                if (action == Intent.ACTION_BOOT_COMPLETED ||
+                    action == Intent.ACTION_LOCKED_BOOT_COMPLETED ||
+                    action == Intent.ACTION_MY_PACKAGE_REPLACED ||
+                    action == "com.example.moneytracker.TEST_RESCHEDULE"
+                ) {
+                    
                     val currentUser = FirebaseAuth.getInstance().currentUser
                     if (currentUser != null) {
                         val uid = currentUser.uid
@@ -46,7 +59,7 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
                             val datasets = dataStorage.getWholeDatasets(uid, {}, {}).first()
                             datasets.forEach { dataset ->
                                 if (!dataset.routine.stopRoutine) {
-                                    Log.d(
+                                    Log.e(
                                         "AndroidAlarmReceiver",
                                         "Rescheduling for ${dataset.label}"
                                     )
@@ -62,12 +75,20 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
                         } catch (e: Exception) {
                             Log.e("AndroidAlarmReceiver", "Failed to reschedule", e)
                         }
+                    } else {
+                        Log.e("AndroidAlarmReceiver", "No current user, cannot reschedule")
                     }
                     return@launch
                 }
 
                 // Case 2: Your Custom Alarm Triggered
-                if (userId.isNullOrBlank() || datasetId.isNullOrBlank()) return@launch
+                if (userId.isNullOrBlank() || datasetId.isNullOrBlank()) {
+                    Log.e(
+                        "AndroidAlarmReceiver",
+                        "Custom alarm triggered but missing extras: userId=$userId, datasetId=$datasetId"
+                    )
+                    return@launch
+                }
 
                 val ok = withTimeoutOrNull(15_000L) {
                     val dataset = dataStorage.getDataset(userId, datasetId)
@@ -76,7 +97,10 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
                         return@withTimeoutOrNull true
                     }
 
-                    if (dataset.routine.stopRoutine) return@withTimeoutOrNull true
+                    if (dataset.routine.stopRoutine) {
+                        Log.e("AndroidAlarmReceiver", "Routine stopped for dataset: $datasetId")
+                        return@withTimeoutOrNull true
+                    }
 
                     // 2. Run the worker logic
                     useWorker.work(userId, dataset)
@@ -86,15 +110,12 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
                     val label = dataset.label
 
 
-                    val notificationItem = when (dataset.dataType) {
-                        else -> NotificationItem(
-                            title = "${datatypeName}: $label",
-                            message = "Your ${datatypeName.lowercase()} for ${label.lowercase()} " +
-                                    "was ${status.lowercase()}",
-                            bigMessage = "Did you forget to adjust ${label.lowercase()}!",
-                            icon = dataset.tagIcon.icon
-                        )
-                    }
+                    val notificationItem = NotificationItem(
+                        title = "${datatypeName}: $label",
+                        message = "Your ${datatypeName.lowercase()} for ${label.lowercase()} was ${status.lowercase()}",
+                        bigMessage = "Did you forget to adjust ${label.lowercase()}!",
+                        icon = dataset.tagIcon.icon
+                    )
 
                     // 1. Show notification
                     notifier.showNotification(notificationItem)
@@ -106,10 +127,10 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
                     true
                 }
 
-                if (ok == null) Log.w("AndroidAlarmReceiver", "Timeout for $datasetId")
+                if (ok == null) Log.e("AndroidAlarmReceiver", "Timeout for $datasetId")
 
             } catch (e: Exception) {
-                Log.e("AndroidAlarmReceiver", "Error", e)
+                Log.e("AndroidAlarmReceiver", "Error in onReceive coroutine", e)
             } finally {
                 pendingResult.finish()
             }

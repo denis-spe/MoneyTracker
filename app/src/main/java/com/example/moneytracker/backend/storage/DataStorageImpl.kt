@@ -343,6 +343,60 @@ class DataStorageImpl(
             }
         }
 
+    /**
+     * At the end of a routine, add a status into a list in
+     * dataset and clear the adjustment list (identified by its id) for the given user.
+     * @param userId the user id
+     * @param datasetId the dataset id
+     */
+    override suspend fun completeRoutine(
+        userId: String,
+        datasetId: String,
+        newDateTime: Timestamp,
+        nextDeadline: Timestamp
+    ) {
+        Log.d("DataStorageImpl", "completeRoutine (Offline-Safe) for $datasetId")
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+
+        try {
+            // 1. Single Read (will use cache if offline)
+            val snapshot = docRef.get().await()
+            val datasets = casting(snapshot.get("datasets")) ?: emptyList()
+            val mutableDatasets = datasets.toMutableList()
+
+            val idx = mutableDatasets.indexOfFirst { (it["id"] as? String) == datasetId }
+            if (idx == -1) return
+
+            val datasetMap = mutableDatasets[idx].toMutableMap()
+
+            // 2. Logic to update Status
+            val amount = datasetMap.toAmount()
+            val adjustments = datasetMap.toAdjustment()
+            val adjustmentAmount = adjustments.sumOf { it.amount }
+            val remainingAmount = amount - adjustmentAmount
+            val status = if (remainingAmount == 0.0) Status.SUCCESS else Status.OVERDUE
+
+            val history = (casting(datasetMap["statusHistory"]) ?: emptyList()).toMutableList()
+            history.add(status.statusToMap)
+
+            datasetMap["statusHistory"] = history
+            datasetMap["dateTime"] = newDateTime
+            datasetMap["deadlineDateTime"] = nextDeadline
+
+            // 3. Logic to Clear Adjustments
+            datasetMap["adjustment"] = emptyList<Map<String, Any?>>()
+
+            // 4. Single Write (will queue locally if offline)
+            mutableDatasets[idx] = datasetMap
+            docRef.update("datasets", mutableDatasets).await()
+
+            Log.d("DataStorageImpl", "completeRoutine: Local update successful")
+        } catch (e: Exception) {
+            Log.e("DataStorageImpl", "Error in completeRoutine", e)
+            throw e
+        }
+    }
+
 
     override suspend fun addStatus(
         userId: String,
@@ -396,7 +450,7 @@ class DataStorageImpl(
 
     override suspend fun clearAdjustmentList(userId: String, datasetId: String) {
         Log.d(
-            "DataStorageImpl",
+            "clearAdjustmentList",
             "addAdjustmentDataset called: clear adjustment for datasetId=$datasetId userId=$userId"
         )
         val docRef = db.collection(COLLECTION_NAME).document(userId)
