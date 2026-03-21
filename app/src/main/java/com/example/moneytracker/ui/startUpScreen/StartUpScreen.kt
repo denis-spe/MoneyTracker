@@ -1,3 +1,4 @@
+// Glory be the LORD our GOD and to the Lamb of GOD JESUS CHRIST
 package com.example.moneytracker.ui.startUpScreen
 
 import android.annotation.SuppressLint
@@ -5,14 +6,12 @@ import android.os.Build
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,6 +46,9 @@ import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.LoadingScreenRouter
 import com.example.moneytracker.ui.screenManager.MailScreenRouter
+import com.example.moneytracker.ui.theme.autoTextColorChange
+
+private const val BUTTON_WIDTH = 0.5f
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @SuppressLint(
@@ -63,8 +65,6 @@ fun StartUpScreen(
     val context = LocalContext.current
     val uiState = viewModel.uiState.collectAsState()
     val userState = viewModel.userState.collectAsState()
-
-
 
 
     AuthLayout(
@@ -124,17 +124,15 @@ fun StartUpScreen(
                 id = R.string.startupGoogleBtnId,
                 text = R.string.startup_google_text,
                 icon = R.drawable.google_icon,
-                modifier = Modifier.width(170.dp),
+                modifier = Modifier.fillMaxWidth(BUTTON_WIDTH),
                 color = null
             ) {
                 viewModel.signInWithGoogle(context = context) { userId ->
 
                     loadingViewModel!!.setScreenContent {
-                        val color = if (isSystemInDarkTheme()) Color.White else Color.Black
-
                         Text(
                             "Welcome ${userState.value?.displayName}",
-                            color = color,
+                            color = Color.autoTextColorChange,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )
@@ -152,7 +150,7 @@ fun StartUpScreen(
                 id = R.string.startupMailBtnId,
                 text = R.string.startup_mail_text,
                 icon = R.drawable.email_icon,
-                modifier = Modifier.width(170.dp),
+                modifier = Modifier.fillMaxWidth(BUTTON_WIDTH),
                 color = null
             ) {
                 onNavigate?.navigate(route = MailScreenRouter)

@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.clearText
@@ -21,6 +22,7 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -131,15 +133,12 @@ fun <T> DataAdditionModelDrawerContent(
     val showDataTypeBottomSheet = remember { mutableStateOf(false) }
     val clickedDataType = remember { mutableStateOf<T?>(null) }
 
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .clip(RoundedCornerShape(20.dp)),
     ) {
-        entries.forEach {
-
+        items(items = entries) {
             val text = when (it) {
                 is DataType -> it.text
                 is AdjustmentType -> it.text
@@ -157,44 +156,44 @@ fun <T> DataAdditionModelDrawerContent(
                 is AdjustmentType -> it.color
                 else -> R.color.error_color
             }
-
-            Row(
-                modifier = Modifier.fillMaxWidth()
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {
+                        showDataTypeBottomSheet.value = true
+                        clickedDataType.value = it
+                    }
             ) {
-                Column(
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp))
-                            .clickable {
-                                showDataTypeBottomSheet.value = true
-                                clickedDataType.value = it
-                            },
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Column {
-                            Text(text, fontWeight = FONT_WEIGHT, color = colorResource(color))
-                            Text(
-                                typeDescription,
-                                fontWeight = FontWeight.Light,
-                                color = colorResource(color).copy(0.5f)
-                            )
-                        }
+                ListItem(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 1.dp),
+                    headlineContent = {
+                        Text(
+                            text,
+                            fontWeight = FONT_WEIGHT,
+                            color = colorResource(color)
+                        )
+                    },
+                    supportingContent = {
+                        Text(
+                            typeDescription,
+                            fontWeight = FontWeight.Light,
+                            color = colorResource(color).copy(0.5f)
+                        )
+                    },
+                    trailingContent = {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = text,
                             tint = colorResource(color)
                         )
                     }
+                )
 
-                    HorizontalDivider(
-                        modifier = Modifier.padding(vertical = 10.dp),
-                        color = Color.LightGray.copy(0.4f)
-                    )
-                }
+                HorizontalDivider(
+                    color = Color.LightGray.copy(0.4f)
+                )
             }
         }
     }
@@ -901,7 +900,7 @@ fun AdjustmentDataInputs(
             item(key = 921) {
                 AdjustmentField(
                     isBottomSheetOpen,
-                    datatype = DataType.GOAL,
+                    datatype = dataType,
                     amountState = adjustAmountState,
                     datasets = datasets.value,
                     wasRepaySuccess = wasRepaySuccess,

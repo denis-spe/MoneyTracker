@@ -217,7 +217,7 @@ fun AuthFillButton(
         shape = cornerShape,
         border = BorderStroke(1.dp, colorResource(id = R.color.authBtnContainerColor)),
         colors = ButtonDefaults.buttonColors(
-            containerColor = colorResource(id = R.color.fillAuthBtnContainerColor).copy(alpha = 0.5f),
+            containerColor = colorResource(id = R.color.fillAuthBtnContainerColor).copy(alpha = 0.1f),
             contentColor = colorResource(id = R.color.authBtnContainerColor),
         ),
         onClick = onClick,

@@ -47,6 +47,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -57,7 +59,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerState
-import androidx.compose.material3.VerticalDivider
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.rememberTimePickerState
@@ -145,42 +146,28 @@ fun ModelDrawerTag(
     val color = colorResource(colorResId)
     val onDialogShow = remember { mutableStateOf(false) }
 
-    Row(
+    ListItem(
         modifier = MODIFIER_DRAWER
             .height(height)
-            .background(color.copy(alpha = 0.1f))
             .clickable {
                 onDialogShow.value = true
             },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = INNER_MODIFIER_DRAWER,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    painter = painterResource(
-                        id = R.drawable.tag
-                    ),
-                    contentDescription = "tag",
-                    modifier = Modifier.size(ICON_SIZE)
-                )
+        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        headlineContent = {
+            Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(
+                    id = R.drawable.tag
+                ),
+                contentDescription = "tag",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
 
-                Spacer(modifier = Modifier.width(5.dp))
-
-                Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+        trailingContent = {
+            Row {
                 Text(iconState.value.name.title, color = color, fontSize = fontSize)
                 Spacer(modifier = Modifier.width(5.dp))
                 Image(
@@ -190,7 +177,7 @@ fun ModelDrawerTag(
                 )
             }
         }
-    }
+    )
 
     // Show all icons for label and description.
     IconList(
@@ -352,46 +339,36 @@ fun ModelDrawerTextField(
         }
     }
 
-    Row(
+    ListItem(
         modifier = MODIFIER_DRAWER
             .height(height)
-            .background(color.copy(alpha = 0.1f))
             .clickable {
                 onDialogShow.value = true
             },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = INNER_MODIFIER_DRAWER,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    painter = painterResource(
-                        id = if (title == "Label") R.drawable.label
-                        else R.drawable.note
-                    ),
-                    contentDescription = "labelOrNote",
-                    modifier = Modifier.size(ICON_SIZE)
-                )
+        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        leadingContent = {
+            Image(
+                painter = painterResource(
+                    id = if (title == "Label") R.drawable.label
+                    else R.drawable.note
+                ),
+                contentDescription = "labelOrNote",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
 
-                Spacer(modifier = Modifier.width(5.dp))
+        headlineContent = {
+            Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+        },
 
-                Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
-            }
-
+        trailingContent = {
             val textValue = if (displayText.value.length > MAX_LABEL_LENGTH)
                 displayText.value.take(MAX_LABEL_LENGTH) + "..." else
                 (displayText.value.ifEmpty { optionsTitle })
 
             Text(textValue, color = color, fontSize = fontSize)
         }
-    }
+    )
 }
 
 
@@ -551,41 +528,31 @@ fun ModelDrawerAmountField(
         }
     }
 
-    Row(
+
+    ListItem(
         modifier = MODIFIER_DRAWER
             .height(height)
-            .background(color.copy(alpha = 0.1f))
             .clickable {
                 onDialogShow.value = true
             },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = INNER_MODIFIER_DRAWER,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    painter = painterResource(id = R.drawable.amount),
-                    contentDescription = "Amount",
-                    modifier = Modifier.size(ICON_SIZE)
-                )
-
-                Spacer(modifier = Modifier.width(5.dp))
-                Text("Amount", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
-            }
-            val amount = if (displayState.value.isEmpty()) "${symbol}0.0" else
+        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        headlineContent = {
+            Text("Amount", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(id = R.drawable.amount),
+                contentDescription = "Amount",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
+            val amount = if (displayState.value.isEmpty()) "$symbol 0.0" else
                 displayState.value.toDouble().formatToAmount()
             Text(amount, color = color, fontSize = fontSize)
         }
-    }
 
-
+    )
 }
 
 @Composable
@@ -657,9 +624,16 @@ fun AdjustmentField(
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val title = if (datatype == DataType.GOAL) "Attain" else "Repayment"
-                    val desc = if (datatype == DataType.GOAL) "Attain Your Goal"
-                    else "Repayment of ${datatype.text}"
+                    val title = when (datatype) {
+                        DataType.GOAL -> "Attain"
+                        DataType.LENT -> "Refund"
+                        else -> "Repayment"
+                    }
+                    val desc = when (datatype) {
+                        DataType.GOAL -> "Attain your goal"
+                        DataType.LENT -> "Refund of loan payment"
+                        else -> "Payback the debt which is owed"
+                    }
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
@@ -705,12 +679,15 @@ fun AdjustmentField(
                     }
 
                     /* ---------- Dataset button ---------- */
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
                         TextButton(
-                            onClick = { expanded = true }
+                            onClick = { expanded = true },
+                            colors = ButtonDefaults.textButtonColors().copy(
+                                contentColor = color
+                            )
                         ) {
                             Text(
                                 selectedDataset.value?.label ?: "Select ${datatype.text}",
@@ -718,7 +695,6 @@ fun AdjustmentField(
                             )
                         }
 
-                        VerticalDivider(modifier = Modifier.height(15.dp))
 
                         /* ---------- Amount field ---------- */
                         OutlinedTextField(
@@ -801,6 +777,8 @@ fun AdjustmentField(
                             Text("Cancel", fontSize = fontSize, color = color)
                         }
 
+                        Text("|")
+
                         TextButton(
                             onClick = {
                                 if (amountState.text.isNotEmpty()) {
@@ -812,7 +790,7 @@ fun AdjustmentField(
                                 }
                             }
                         ) {
-                            Text("OK", fontSize = fontSize)
+                            Text("OK", fontSize = fontSize, color = color)
                         }
                     }
                 }
@@ -820,59 +798,46 @@ fun AdjustmentField(
         }
     }
 
-    Row(
+    ListItem(
         modifier = MODIFIER_DRAWER
             .height(height)
-            .background(
-                if (wasRepaySuccess.value == State.ERROR) Color.Red.copy(0.2f)
-                else color.copy(alpha = 0.1f)
-            )
             .clickable {
-                if (filteredDataset.isNotEmpty()) {
-                    onDialogShow.value = true
-                }
+                onDialogShow.value = true
             },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = INNER_MODIFIER_DRAWER,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    painter = painterResource(
-                        id = if (datatype == DataType.GOAL) R.drawable.achievement
-                        else R.drawable.repay
-                    ),
-                    contentDescription = "Calendar",
-                    modifier = Modifier.size(ICON_SIZE)
+        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        headlineContent = {
+            val dataTypeText = when (datatype) {
+                DataType.GOAL -> "Attain the goal"
+                DataType.LENT -> "Loan repayment"
+                else -> "Payback the debt"
+            }
+
+            Text(dataTypeText, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+        },
+        supportingContent = {
+            if (datasetToDisplay != null) {
+                Text(
+                    datasetToDisplay?.label ?: "Select your ${datatype.text}",
+                    color = color, fontSize = fontSize
                 )
-
-                Spacer(modifier = Modifier.width(5.dp))
-                val dataTypeText = if (datatype == DataType.GOAL) "Attain A Goal"
-                else "Repay of ${datatype.text}"
-
-                Text(dataTypeText, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
             }
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
-            ) {
-                if (datasetToDisplay != null) {
-                    Text(
-                        datasetToDisplay?.label ?: "",
-                        color = color, fontSize = fontSize
-                    )
-                }
-                Text(amountToDisplay, color = color, fontSize = fontSize)
-            }
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(
+                    id = when (datatype) {
+                        DataType.GOAL -> R.drawable.achievement
+                        else -> R.drawable.repay
+                    }
+                ),
+                contentDescription = "Calendar",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
+            Text(amountToDisplay, color = color, fontSize = fontSize)
         }
-    }
+    )
 
     /* ----------------------------------------------------------
      * 3) Update amount AFTER selection (deferred, safe)
@@ -956,6 +921,9 @@ fun RepeatableTransaction(
     val showDayOfWeekDropDown = remember { mutableStateOf(false) }
     val repeatBy = remember { mutableStateOf(RoutineData()) }
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
+    val bgColor = if (goalDateTimeWarningState.value == GoalWarning.ERROR)
+        colorResource(R.color.error_color).copy(alpha = 0.1f)
+    else colorResource(dataType.color).copy(alpha = 0.1f)
 
     if (onDialogShow.value) {
         Dialog(
@@ -1305,54 +1273,37 @@ fun RepeatableTransaction(
         }
     }
 
-    Row(
+
+    ListItem(
         modifier = MODIFIER_DRAWER
             .height(height)
-            .background(
-                if (goalDateTimeWarningState.value == GoalWarning.ERROR)
-                    colorResource(R.color.error_color).copy(alpha = 0.1f)
-                else colorResource(dataType.color).copy(alpha = 0.1f)
-            )
             .clickable {
                 onDialogShow.value = true
             },
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = INNER_MODIFIER_DRAWER,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    painter = painterResource(
-                        id = R.drawable.repeat,
-                    ),
-                    modifier = Modifier.size(ICON_SIZE),
-                    contentDescription = "Repeat"
-                )
-
-                Spacer(modifier = Modifier.width(5.dp))
-
-                Text(
-                    "Consecutive goal",
-                    fontSize = fontSize,
-                    fontWeight = FONT_WEIGHT,
-                    color = color
-                )
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Text(repeatByState.value.routine.text, color = color, fontSize = fontSize)
-            }
+        colors = ListItemDefaults.colors().copy(
+            containerColor = bgColor
+        ),
+        headlineContent = {
+            Text(
+                "Consecutive goal",
+                fontSize = fontSize,
+                fontWeight = FONT_WEIGHT,
+                color = color
+            )
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(
+                    id = R.drawable.repeat,
+                ),
+                modifier = Modifier.size(ICON_SIZE),
+                contentDescription = "Repeat"
+            )
+        },
+        trailingContent = {
+            Text(repeatByState.value.routine.text, color = color, fontSize = fontSize)
         }
-    }
+    )
 }
 
 @Composable
@@ -1399,38 +1350,28 @@ fun PaymentMethodDropdown(
         }
     }
 
-    Row(
+    ListItem(
         modifier = MODIFIER_DRAWER
             .height(height)
-            .background(color.copy(alpha = 0.1f))
             .clickable {
                 expanded.value = true
             },
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Row(
-            modifier = INNER_MODIFIER_DRAWER,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Image(
-                    painter = painterResource(id = selectedPaymentMethod.value.icon),
-                    contentDescription = "Calendar",
-                    modifier = Modifier.size(ICON_SIZE)
-                )
-
-                Spacer(modifier = Modifier.width(5.dp))
-                Text("Payment method", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
-            }
+        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        headlineContent = {
+            Text("Payment method", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(id = selectedPaymentMethod.value.icon),
+                contentDescription = "Calendar",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
             Text(selectedPaymentMethod.value.text, color = color, fontSize = fontSize)
         }
-    }
 
+    )
 }
 
 
@@ -1656,95 +1597,68 @@ fun DateTimeInput(
     integerResource(R.integer.modelDrawerPadding).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        /*
+    /*
     Display the date
-     */
-        Row(
-            modifier = MODIFIER_DRAWER
-                .height(height)
-                .background(color.copy(alpha = 0.1f))
-                .clickable {
-                    showDate.value = true
-                },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier = INNER_MODIFIER_DRAWER,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.calendar),
-                        contentDescription = "Calendar",
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
+    */
+    ListItem(
+        modifier = MODIFIER_DRAWER
+            .height(height)
+            .clickable {
+                showDate.value = true
+            },
+        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        headlineContent = {
+            Text(
+                "Select date", color = color, fontSize = fontSize,
+                fontWeight = FONT_WEIGHT
+            )
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(id = R.drawable.calendar),
+                contentDescription = "Calendar",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
 
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Text(
-                        "Select date", color = color, fontSize = fontSize,
-                        fontWeight = FONT_WEIGHT
-                    )
-                }
-
-                Text(
-                    "${dayOfWeek.take(3).title} $day.$month.$year",
-                    color = color,
-                )
-            }
+        trailingContent = {
+            Text(
+                "${dayOfWeek.take(3).title} $day.$month.$year",
+                color = color,
+                fontSize = fontSize
+            )
         }
+    )
 
-        /*
+    /*
     Display the time
      */
-        Row(
-            modifier = MODIFIER_DRAWER
-                .height(height)
-                .background(color.copy(alpha = 0.1f))
-                .clickable {
-                    showTime.value = true
-                },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier = INNER_MODIFIER_DRAWER,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.clock),
-                        contentDescription = "Clock",
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
-
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Text(
-                        "Select time",
-                        color = color,
-                        fontSize = fontSize,
-                        fontWeight = FONT_WEIGHT
-                    )
-                }
-                Text("$hour:$minute", color = color, fontSize = fontSize)
-            }
+    ListItem(
+        modifier = MODIFIER_DRAWER
+            .height(height)
+            .clickable {
+                showTime.value = true
+            },
+        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        headlineContent = {
+            Text(
+                "Select time",
+                color = color,
+                fontSize = fontSize,
+                fontWeight = FONT_WEIGHT
+            )
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(id = R.drawable.clock),
+                contentDescription = "Clock",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
+            Text("$hour:$minute", color = color, fontSize = fontSize)
         }
-    }
-
+    )
 
     // Show the date picker.
     if (showDate.value) {
@@ -1829,145 +1743,105 @@ fun DateTimeRange(
     val endingHour = endLocalDateTimeState.value.time.hour.addZeroIfLessThenTen
     val endingMinute = endLocalDateTimeState.value.time.minute.addZeroIfLessThenTen
 
-
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-    ) {
-        /* Display the time */
-        Row(
-            modifier = MODIFIER_DRAWER
-                .height(height)
-                .background(colorWithError.copy(alpha = 0.1f))
-                .clickable {
-                    isTimeDialogOpen.value = true
-                },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier = INNER_MODIFIER_DRAWER,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
+    /*
+     Display the time
+     */
+    ListItem(
+        modifier = MODIFIER_DRAWER
+            .height(height)
+            .clickable {
+                isTimeDialogOpen.value = true
+            },
+        colors = ListItemDefaults.colors().copy(containerColor = colorWithError.copy(alpha = 0.1f)),
+        headlineContent = {
+            Text(
+                "Select time",
+                color = colorWithError,
+                fontSize = fontSize,
+                fontWeight = FONT_WEIGHT
+            )
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(id = R.drawable.clock),
+                contentDescription = "Clock",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
             ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.clock),
-                        contentDescription = "Clock",
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
-
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Text(
-                        "Select time",
-                        color = colorWithError,
-                        fontSize = fontSize,
-                        fontWeight = FONT_WEIGHT
-                    )
-                }
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text("Start $hour:$minute", color = color, fontSize = fontSize)
-                    Text(
-                        "End $endingHour:$endingMinute",
-                        color = colorWithError,
-                        fontSize = fontSize
-                    )
-                }
+                Text("Start $hour:$minute", color = color, fontSize = fontSize)
+                Text(
+                    "deadline $endingHour:$endingMinute",
+                    color = colorWithError,
+                    fontSize = fontSize
+                )
             }
         }
+    )
 
-        /*
-         Display the starting date
-         */
-        Row(
-            modifier = MODIFIER_DRAWER
-                .height(height)
-                .background(color.copy(alpha = 0.1f))
-                .clickable {
-                    isPresentStartDateDialogOpen.value = true
-                },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier = INNER_MODIFIER_DRAWER,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.calendar),
-                        contentDescription = "Clock",
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
-
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Text(
-                        "Select starting date",
-                        color = color,
-                        fontSize = fontSize,
-                        fontWeight = FONT_WEIGHT
-                    )
-                }
-                Text("$year.$month.$day", color = color)
-            }
+    /*
+     Display the starting date
+     */
+    ListItem(
+        modifier = MODIFIER_DRAWER
+            .height(height)
+            .clickable {
+                isPresentStartDateDialogOpen.value = true
+            },
+        colors = ListItemDefaults.colors().copy(containerColor = colorWithError.copy(alpha = 0.1f)),
+        headlineContent = {
+            Text(
+                "Select starting date",
+                color = color,
+                fontSize = fontSize,
+                fontWeight = FONT_WEIGHT
+            )
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(id = R.drawable.calendar),
+                contentDescription = "Clock",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
+            Text("$year.$month.$day", color = color, fontSize = fontSize)
         }
+    )
 
-        /*
-         Display the ending date
-         */
-        Row(
-            modifier = MODIFIER_DRAWER
-                .height(height)
-                .background(colorWithError.copy(alpha = 0.1f))
-                .clickable {
-                    isPresentEndDateDialogOpen.value = true
-                },
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Row(
-                modifier = INNER_MODIFIER_DRAWER,
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.calendar),
-                        contentDescription = "Calendar",
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
-
-                    Spacer(modifier = Modifier.width(5.dp))
-
-                    Text(
-                        "Select ending date",
-                        color = colorWithError,
-                        fontSize = fontSize,
-                        fontWeight = FONT_WEIGHT
-                    )
-                }
-                Text("$endingYear.$endingMonth.$endingDay", color = colorWithError)
-            }
-        }
-
-    }
-
-
+    /*
+     Display the deadline date
+     */
+    ListItem(
+        modifier = MODIFIER_DRAWER
+            .height(height)
+            .clickable {
+                isPresentEndDateDialogOpen.value = true
+            },
+        colors = ListItemDefaults.colors().copy(containerColor = colorWithError.copy(alpha = 0.1f)),
+        headlineContent = {
+            Text(
+                "Select deadline date",
+                color = colorWithError,
+                fontSize = fontSize,
+                fontWeight = FONT_WEIGHT
+            )
+        },
+        leadingContent = {
+            Image(
+                painter = painterResource(id = R.drawable.calendar),
+                contentDescription = "Calendar",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+        trailingContent = {
+            Text("$endingYear.$endingMonth.$endingDay", color = colorWithError, fontSize = fontSize)
+        },
+    )
 
     if (isPresentStartDateDialogOpen.value) {
         DatePickerComponent({ localDate ->
