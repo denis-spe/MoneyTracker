@@ -13,6 +13,7 @@ import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.backend.storage.StatusHistory
 import com.example.moneytracker.backend.storage.TagIcon
 import com.google.firebase.Timestamp
 import kotlinx.datetime.LocalDateTime
@@ -125,7 +126,6 @@ val Dataset.isForYesterday: Boolean
     }
 
 val Adjustment.isForYesterday: Boolean
-    @RequiresApi(Build.VERSION_CODES.O)
     get() {
         val yesterday = LocalDateTime.now()
             .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
@@ -147,7 +147,7 @@ fun Dataset.toMap(): Map<String, Any> {
         "tagIcon" to tagIcon.tagIconToMap, // change model to use a string key
         "paymentMethod" to paymentMethod.name,
         "adjustment" to adjustment.map { it.adjustmentToMap }, // already map form
-        "statusHistory" to statusHistory.map { it.statusToMap },
+        "statusHistory" to statusHistory.map { it.statusHistoryToMap },
         "routineData" to routine.routineToMap
     )
 }
@@ -157,6 +157,14 @@ val RoutineData.routineToMap: Map<String, Any>
         "routine" to routine.name,
         "routineCount" to routineCount,
         "stopRoutine" to stopRoutine
+    )
+
+val StatusHistory.statusHistoryToMap: Map<String, Any>
+    get() = mapOf(
+        "status" to status,
+        "adjustmentAmount" to adjustmentAmount,
+        "dateTime" to dateTime,
+        "deadlineTime" to deadlineTime
     )
 
 val Adjustment.adjustmentToMap: Map<String, Any>
@@ -184,6 +192,54 @@ val TagIcon.tagIconToMap: Map<String, Any>
         "name" to name,
         "icon" to icon
     )
+
+fun Map<*, *>.asStatusHistory(): StatusHistory {
+    val status = try {
+        Status.valueOf(this["status"] as String)
+    } catch (_: Exception) {
+        Status.INITIAL
+    }
+    val adjustmentAmount = (this["adjustmentAmount"] as? Number)?.toDouble() ?: 0.0
+    val dateTime = when (val dt = this["dateTime"]) {
+        is Timestamp -> dt
+        is Map<*, *> -> {
+            val seconds = (dt["seconds"] as? Number)?.toLong()
+                ?: (dt["seconds"] as? String)?.toLongOrNull()
+                ?: 0L
+            val nanoseconds = (dt["nanoseconds"] as? Number)?.toInt()
+                ?: (dt["nanoseconds"] as? String)?.toIntOrNull()
+                ?: 0
+            Timestamp(seconds, nanoseconds)
+        }
+
+        is Number -> Timestamp(dt.toLong(), 0)
+        is String -> (dt.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
+        else -> Timestamp(0, 0)
+    }
+    val deadlineTime = when (val dt = this["deadlineTime"]) {
+        is Timestamp -> dt
+        is Map<*, *> -> {
+            val seconds = (dt["seconds"] as? Number)?.toLong()
+                ?: (dt["seconds"] as? String)?.toLongOrNull()
+                ?: 0L
+            val nanoseconds = (dt["nanoseconds"] as? Number)?.toInt()
+                ?: (dt["nanoseconds"] as? String)?.toIntOrNull()
+                ?: 0
+            Timestamp(seconds, nanoseconds)
+        }
+
+        is Number -> Timestamp(dt.toLong(), 0)
+        is String -> (dt.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
+        else -> Timestamp(0, 0)
+    }
+
+    return StatusHistory(
+        status = status.name,
+        adjustmentAmount = adjustmentAmount,
+        dateTime = dateTime,
+        deadlineTime = deadlineTime
+    )
+}
 
 fun Map<*, *>.asTagIcon(): TagIcon {
     val iconValue = (this["icon"] as? Number)?.toInt()
@@ -304,7 +360,6 @@ fun Map<*, *>.asAdjustment(): Adjustment {
     )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun LocalDateTime.plusHour(hour: Int): LocalDateTime {
 
     return (
@@ -314,7 +369,6 @@ fun LocalDateTime.plusHour(hour: Int): LocalDateTime {
             )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun LocalDateTime.plusMinutes(minutes: Int): LocalDateTime {
     return (
             this.toJavaLocalDateTime()
@@ -323,7 +377,6 @@ fun LocalDateTime.plusMinutes(minutes: Int): LocalDateTime {
             )
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 fun LocalDateTime.plusDays(days: Int): LocalDateTime {
     return (
             this.toJavaLocalDateTime()
@@ -428,14 +481,10 @@ fun Map<*, *>.toAdjustment(): List<Adjustment> {
         ?: emptyList()
 }
 
-fun Map<*, *>.toStatusHistory(): List<Status> {
-    val statusList = this["multipleStatus"] as? List<*>
+fun Map<*, *>.toStatusHistory(): List<StatusHistory> {
+    val statusList = this["statusHistory"] as? List<*>
     return statusList?.mapNotNull {
-        try {
-            Status.valueOf(it as String)
-        } catch (_: Exception) {
-            null
-        }
+        (it as? Map<*, *>)?.asStatusHistory()
     } ?: emptyList()
 }
 

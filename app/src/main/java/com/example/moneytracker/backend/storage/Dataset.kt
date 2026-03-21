@@ -17,6 +17,6 @@ data class Dataset(
     val tagIcon: TagIcon = TagIcon(),
     val paymentMethod: PaymentMethod = PaymentMethod.CASH,
     val adjustment: List<Adjustment> = emptyList(),
-    val statusHistory: List<Status> = emptyList(),
+    val statusHistory: List<StatusHistory> = emptyList(),
     val routine: RoutineData = RoutineData()
 )

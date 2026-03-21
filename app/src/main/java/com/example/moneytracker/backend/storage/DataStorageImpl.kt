@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
 import com.example.moneytracker.helper.castToMutableMap
 import com.example.moneytracker.helper.casting
+import com.example.moneytracker.helper.statusHistoryToMap
 import com.example.moneytracker.helper.statusToMap
 import com.example.moneytracker.helper.toAdjustment
 import com.example.moneytracker.helper.toAmount
@@ -377,7 +378,15 @@ class DataStorageImpl(
             val status = if (remainingAmount == 0.0) Status.SUCCESS else Status.OVERDUE
 
             val history = (casting(datasetMap["statusHistory"]) ?: emptyList()).toMutableList()
-            history.add(status.statusToMap)
+
+            val statusHistory = StatusHistory(
+                status = status.name,
+                adjustmentAmount = adjustmentAmount,
+                dateTime = newDateTime,
+                deadlineTime = nextDeadline
+            )
+
+            history.add(statusHistory.statusHistoryToMap)
 
             datasetMap["statusHistory"] = history
             datasetMap["dateTime"] = newDateTime

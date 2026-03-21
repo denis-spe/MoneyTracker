@@ -119,9 +119,8 @@ class Worker @AssistedInject constructor(
             else -> "Processing ${label.title}..."
         }
 
-        val progressPercent = dataset.let {
-            it.adjustment.sumOf { adjust -> adjust.amount } / it.amount
-        }
+        val progressPercent =
+            (dataset.adjustment.sumOf { it.amount } / dataset.amount * 100).toInt()
 
         val iconRes = when (status) {
             Status.COMPLETED -> R.drawable.done
@@ -130,7 +129,6 @@ class Worker @AssistedInject constructor(
         }
 
         val goalIcon = dataset.tagIcon.icon
-
 
         val item = NotificationItem(
             title = "${datatypeName}: $label ($progressPercent%)",
@@ -143,13 +141,18 @@ class Worker @AssistedInject constructor(
     }
 
     override suspend fun getForegroundInfo(): ForegroundInfo {
+        val datasetId = inputData.getString("datasetId")
+        val userId = inputData.getString("userId")
+
+        val dataset = cachedDataset ?: dataStorage.getDataset(userId!!, datasetId!!)
+        val smallIcon = dataset?.tagIcon?.icon ?: R.drawable.initial
 
         val notification = NotificationCompat.Builder(appContext, notifier.channelId)
-            .setSmallIcon(R.drawable.initial)
-            .setContentTitle("") // Keep it empty as per your requirement
-            .setContentText("")
-            .setPriority(NotificationCompat.PRIORITY_MIN) // MIN priority hides the icon from status bar on many devices
-            .setSilent(true) // No sound or vibration
+            .setSmallIcon(smallIcon)
+            .setContentTitle("Updating Routine")
+            .setContentText("Please wait...")
+            .setPriority(NotificationCompat.PRIORITY_MIN)
+            .setSilent(true)
             .setVisibility(NotificationCompat.VISIBILITY_SECRET)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()

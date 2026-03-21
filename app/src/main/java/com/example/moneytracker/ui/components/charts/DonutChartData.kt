@@ -1,4 +1,4 @@
-package com.example.moneytracker.backend.storage
+package com.example.moneytracker.ui.components.charts
 
 import androidx.compose.ui.graphics.Color
 
