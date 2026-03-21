@@ -5,11 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.storage.RoutineData
-import com.example.moneytracker.backend.storage.Status
-import com.example.moneytracker.helper.status
-import com.example.moneytracker.helper.title
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
@@ -42,7 +38,6 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
         val dataStorage = entryPoint.dataStorage()
         val alarmManager = entryPoint.alarmManager()
         val useWorker = entryPoint.useWorker()
-        val notifier = entryPoint.notifier()
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -104,39 +99,8 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
                         return@withTimeoutOrNull true
                     }
 
-                    // 2. Run the worker logic
+                    // 2. Run the worker logic (Worker now handles the notification in getForegroundInfo)
                     useWorker.work(userId, dataset)
-
-                    val status = dataset.status
-                    val datatypeName = dataset.dataType.text
-                    val label = dataset.label
-
-                    val bigMessage = when (status) {
-                        Status.SUCCESS -> "${label.title} were successfully completed"
-                        Status.OVERDUE -> "${label.title} was overdue, please try to adjust your " +
-                                "${datatypeName.lowercase()} for ${label.lowercase()} in time"
-
-                        else -> throw Exception("Unknown status: $status")
-                    }
-
-                    val message = when (status) {
-                        Status.SUCCESS -> "Completed: ${label.title}"
-                        Status.OVERDUE -> "Overdue: ${label.title}"
-                        else -> throw Exception("Unknown status: $status")
-                    }
-
-
-
-                    val notificationItem = NotificationItem(
-                        title = "${datatypeName}: $label",
-                        message = message,
-                        bigMessage = bigMessage,
-                        icon = dataset.tagIcon.icon
-                    )
-
-                    // 1. Show notification
-                    notifier.showNotification(notificationItem)
-
 
                     // 3. Schedule the NEXT alarm (since AlarmManager is one-shot)
                     val alarm = AlarmItem(datasetId, userId, dataset.routine)

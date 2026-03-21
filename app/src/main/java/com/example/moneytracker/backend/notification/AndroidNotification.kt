@@ -14,10 +14,12 @@ import javax.inject.Singleton
 
 @Singleton
 class AndroidNotification @Inject constructor(
-    @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context,
 ) : Notifier {
 
-    private val channelId = "money_tracker_alarms"
+    override val channelId: String = "money_tracker_alarms"
+    override var builder: NotificationCompat.Builder =
+        NotificationCompat.Builder(context, channelId)
 
     init {
         createNotificationChannel()
@@ -31,7 +33,7 @@ class AndroidNotification @Inject constructor(
 
         Log.d("AndroidNotification", "showNotification called: $title - $message")
 
-        val builder = NotificationCompat.Builder(context, channelId)
+        builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(icon)
             .setContentTitle(title)
             .setContentText(message)
