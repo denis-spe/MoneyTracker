@@ -2,7 +2,6 @@ package com.example.moneytracker.backend.workManager
 
 import android.content.Context
 import android.content.pm.ServiceInfo
-import android.graphics.BitmapFactory
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -12,6 +11,7 @@ import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.alarmManager.AlarmItem
+import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.notification.Notifier
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
@@ -86,6 +86,10 @@ class Worker @AssistedInject constructor(
             )
 
             Log.e(TAG, "Routine update successful for $datasetId")
+
+            // Post a persistent notification so it doesn't disappear when the worker finishes
+            showResultNotification(dataset)
+            
             Result.success()
         } catch (e: Exception) {
             if (e is CancellationException) throw e
@@ -94,17 +98,10 @@ class Worker @AssistedInject constructor(
         }
     }
 
-    override suspend fun getForegroundInfo(): ForegroundInfo {
-        val datasetId = inputData.getString("datasetId")
-        val userId = inputData.getString("userId")
-
-        val dataset = if (datasetId != null && userId != null) {
-            cachedDataset ?: dataStorage.getDataset(userId, datasetId).also { cachedDataset = it }
-        } else null
-
-        val status = dataset?.status ?: Status.INITIAL
-        val datatypeName = dataset?.dataType?.text ?: "MoneyTracker"
-        val label = dataset?.label ?: "Routine"
+    private fun showResultNotification(dataset: Dataset) {
+        val status = dataset.status
+        val datatypeName = dataset.dataType.text
+        val label = dataset.label
 
         val bigMessage = when (status) {
             Status.COMPLETED -> "${label.title} were successfully completed"
@@ -122,9 +119,9 @@ class Worker @AssistedInject constructor(
             else -> "Processing ${label.title}..."
         }
 
-        val progressPercent = dataset?.let {
+        val progressPercent = dataset.let {
             it.adjustment.sumOf { adjust -> adjust.amount } / it.amount
-        } ?: 0.0
+        }
 
         val iconRes = when (status) {
             Status.COMPLETED -> R.drawable.done
@@ -132,23 +129,29 @@ class Worker @AssistedInject constructor(
             else -> R.drawable.pending
         }
 
-        val goalIcon = dataset?.tagIcon?.icon ?: R.drawable.initial
+        val goalIcon = dataset.tagIcon.icon
 
-        val largeIcon = try {
-            BitmapFactory.decodeResource(appContext.resources, iconRes)
-        } catch (e: Exception) {
-            null
-        }
+
+        val item = NotificationItem(
+            title = "${datatypeName}: $label ($progressPercent%)",
+            message = message,
+            bigMessage = bigMessage,
+            icon = goalIcon,
+            largeIcon = iconRes
+        )
+        notifier.showNotification(item)
+    }
+
+    override suspend fun getForegroundInfo(): ForegroundInfo {
 
         val notification = NotificationCompat.Builder(appContext, notifier.channelId)
-            .setSmallIcon(goalIcon)
-            .setLargeIcon(largeIcon)
-            .setContentTitle("${datatypeName}: $label (${progressPercent}%)")
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(bigMessage))
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setDefaults(NotificationCompat.DEFAULT_ALL)
-            .setAutoCancel(true)
+            .setSmallIcon(R.drawable.initial)
+            .setContentTitle("") // Keep it empty as per your requirement
+            .setContentText("")
+            .setPriority(NotificationCompat.PRIORITY_MIN) // MIN priority hides the icon from status bar on many devices
+            .setSilent(true) // No sound or vibration
+            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .build()
 
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

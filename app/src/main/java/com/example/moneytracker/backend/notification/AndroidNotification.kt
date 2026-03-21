@@ -3,6 +3,7 @@ package com.example.moneytracker.backend.notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.graphics.BitmapFactory
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -30,11 +31,17 @@ class AndroidNotification @Inject constructor(
         val message = notificationItem.message
         val bigMassage = notificationItem.bigMessage
         val icon = notificationItem.icon
+        val largeIcon = try {
+            BitmapFactory.decodeResource(context.resources, notificationItem.largeIcon)
+        } catch (e: Exception) {
+            null
+        }
 
         Log.d("AndroidNotification", "showNotification called: $title - $message")
 
         builder = NotificationCompat.Builder(context, channelId)
             .setSmallIcon(icon)
+            .setLargeIcon(largeIcon)
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(bigMassage ?: ""))
