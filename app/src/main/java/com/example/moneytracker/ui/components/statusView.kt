@@ -4,6 +4,7 @@
 // you shall love your neighbor as yourself
 package com.example.moneytracker.ui.components
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -12,10 +13,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import coil.compose.AsyncImage
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
@@ -81,8 +82,8 @@ fun StatusView(
     }
 
     if (showImageStatus) {
-        AsyncImage(
-            model = status.value.icon,
+        Image(
+            painter = painterResource(id = status.value.icon),
             contentDescription = status.value.text,
             modifier = Modifier.size(imageSize),
         )

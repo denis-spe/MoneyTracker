@@ -35,8 +35,8 @@ class MoneyTrackerApplication : Application(), Configuration.Provider {
 
         // Check if the app is running in a debuggable environment.
         if (BuildConfig.DEBUG) {
-            val ip = "192.168.10.141" // ← your dev machine's IP
-            FirebaseAuth.getInstance().useEmulator(ip, 9099)
+            val ip = "192.168.10.142" // ← your dev machine's IP
+            FirebaseAuth.getInstance().useEmulator(ip, 9090)
             FirebaseFirestore.getInstance().useEmulator(ip, 8080)
             Log.d("Firebase", "Using Firebase emulators for debug build")
         } else {

@@ -7,7 +7,9 @@ import android.content.Intent
 import android.util.Log
 import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.storage.RoutineData
+import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.status
+import com.example.moneytracker.helper.title
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
@@ -105,15 +107,30 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
                     // 2. Run the worker logic
                     useWorker.work(userId, dataset)
 
-                    val status = dataset.status.text
+                    val status = dataset.status
                     val datatypeName = dataset.dataType.text
                     val label = dataset.label
+
+                    val bigMessage = when (status) {
+                        Status.SUCCESS -> "${label.title} were successfully completed"
+                        Status.OVERDUE -> "${label.title} was overdue, please try to adjust your " +
+                                "${datatypeName.lowercase()} for ${label.lowercase()} in time"
+
+                        else -> throw Exception("Unknown status: $status")
+                    }
+
+                    val message = when (status) {
+                        Status.SUCCESS -> "Completed: ${label.title}"
+                        Status.OVERDUE -> "Overdue: ${label.title}"
+                        else -> throw Exception("Unknown status: $status")
+                    }
+
 
 
                     val notificationItem = NotificationItem(
                         title = "${datatypeName}: $label",
-                        message = "Your ${datatypeName.lowercase()} for ${label.lowercase()} was ${status.lowercase()}",
-                        bigMessage = "Did you forget to adjust ${label.lowercase()}!",
+                        message = message,
+                        bigMessage = bigMessage,
                         icon = dataset.tagIcon.icon
                     )
 

@@ -63,6 +63,7 @@ fun TopAppTitle(
                     .padding(bottom = 2.dp),
                 width = 5.dp,
                 height = 5.dp,
+                color = Color.autoTextColorChange
             )
         },
         divider = {},
