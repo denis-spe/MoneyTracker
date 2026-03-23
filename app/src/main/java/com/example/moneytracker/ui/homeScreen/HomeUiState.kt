@@ -1,5 +1,6 @@
 package com.example.moneytracker.ui.homeScreen
 
+import androidx.compose.ui.graphics.Color
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Dataset
@@ -26,5 +27,8 @@ data class HomeUiState(
     val selectedTabIndex: Int = 1,
     val date: LocalDate = LocalDate.now(),
     val localDateList: List<List<LocalDate>> = emptyList(),
-    val consecutiveGoal: List<Dataset> = emptyList()
+    val consecutiveGoal: List<Dataset> = emptyList(),
+    val isActionNotificationVisible: Boolean = false,
+    val actionNotificationMessage: String = "",
+    val actionNotificationColor: Color = Color.Gray
 )

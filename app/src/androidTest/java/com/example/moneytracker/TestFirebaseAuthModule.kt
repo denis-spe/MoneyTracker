@@ -7,7 +7,6 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
 import dagger.hilt.testing.TestInstallIn
-import org.mockito.Mockito
 import javax.inject.Singleton
 
 
@@ -18,13 +17,6 @@ import javax.inject.Singleton
     replaces = [FirebaseAuthModule::class]
 )
 object TestFirebaseAuthModule {
-    @Provides
-    @Singleton
-    fun provideTestFirebaseAuth(): FirebaseAuth {
-        // Return a mock FirebaseAuth instance using Mockito or similar framework
-        return Mockito.mock(FirebaseAuth::class.java)
-    }
-
     @Provides
     @Singleton
     fun provideAccountService(auth: FirebaseAuth): AccountServices {

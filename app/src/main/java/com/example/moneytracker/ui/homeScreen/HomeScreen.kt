@@ -1,8 +1,6 @@
 // Bless be the Name of the Lord
 package com.example.moneytracker.ui.homeScreen
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -19,6 +17,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -47,7 +46,6 @@ import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Suppress("UNUSED_PARAMETER")
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +55,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Collect user information from ViewModel
     val uiStates = viewModel.uiState.collectAsState()
     val userState = viewModel.userState.collectAsState()
+    val snackBarHostState = viewModel.snackBarHostState.collectAsState()
     val datasets = viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
 
     val colors = Colors()
@@ -136,6 +135,9 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                             uiState = uiStates.value,
                         )
                     },
+                    snackbarHost = {
+                        SnackbarHost(hostState = snackBarHostState.value)
+                    }
                 ) { paddingValues ->
 
                     when (uiStates.value.topTitle) {

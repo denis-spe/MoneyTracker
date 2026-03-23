@@ -2,6 +2,7 @@ package com.example.moneytracker.ui.homeScreen
 
 import android.content.Context
 import android.util.Log
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -59,6 +60,10 @@ class HomeScreenViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
+    private val _snackBarHostState = MutableStateFlow(SnackbarHostState())
+    val snackBarHostState: StateFlow<SnackbarHostState> = _snackBarHostState.asStateFlow()
+
+
     var isDescriptionIconVisible by mutableStateOf(false)
         private set
     var isBottomSheetContentLoading by mutableStateOf(true)
@@ -79,6 +84,24 @@ class HomeScreenViewModel @Inject constructor(
     /*******************
      * Public actions
      *******************/
+
+    fun launchSnackBarHostState(message: String) {
+        viewModelScope.launch {
+            _snackBarHostState.value.showSnackbar(message)
+        }
+    }
+
+    fun showActionNotification(message: String, color: Color) {
+        _uiState.value = _uiState.value.copy(
+            isActionNotificationVisible = true,
+            actionNotificationMessage = message,
+            actionNotificationColor = color
+        )
+    }
+
+    fun dismissActionNotification() {
+        _uiState.value = _uiState.value.copy(isActionNotificationVisible = false)
+    }
 
     fun handleLogout() {
         viewModelScope.launch {

@@ -634,12 +634,18 @@ fun AdjustmentField(
                         DataType.LENT -> "Refund of loan payment"
                         else -> "Payback the debt which is owed"
                     }
+
+                    val icon = when (datatype) {
+                        DataType.GOAL -> R.drawable.achievement
+                        else -> R.drawable.repay
+                    }
+
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Image(
-                            painter = painterResource(id = R.drawable.repay),
+                            painter = painterResource(id = icon),
                             contentDescription = "Repay"
                         )
 

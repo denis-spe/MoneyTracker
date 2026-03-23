@@ -43,6 +43,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
@@ -58,6 +59,7 @@ import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.components.ActionNotification
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import kotlinx.datetime.LocalDateTime
@@ -122,7 +124,6 @@ fun DataAdditionModelDrawer(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> DataAdditionModelDrawerContent(
@@ -132,6 +133,7 @@ fun <T> DataAdditionModelDrawerContent(
 
     val showDataTypeBottomSheet = remember { mutableStateOf(false) }
     val clickedDataType = remember { mutableStateOf<T?>(null) }
+    val uiStates = viewModel.uiState.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -208,6 +210,7 @@ fun <T> DataAdditionModelDrawerContent(
                 skipPartiallyExpanded = true
             ),
         ) {
+
             when (clickedDataType.value) {
                 DataType.EARNINGS -> {
                     FinancialDataInput(
@@ -307,6 +310,20 @@ fun <T> DataAdditionModelDrawerContent(
 
                 else -> {}
             }
+
+            // Action Notification
+            ActionNotification(
+                backgroundColor = uiStates.value.actionNotificationColor,
+                visible = uiStates.value.isActionNotificationVisible,
+                onDismiss = { viewModel.dismissActionNotification() }
+            ) {
+                Text(
+                    text = uiStates.value.actionNotificationMessage,
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp
+                )
+            }
         }
     }
 }
@@ -331,20 +348,19 @@ fun FinancialDataInput(
     val labelState = rememberTextFieldState()
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
+    val tag = TagIcon(
+        dataType.text.lowercase(),
+        icon = when (dataType) {
+            DataType.DEBT -> R.drawable.debt
+            DataType.LENT -> R.drawable.lent
+            DataType.SAVINGS -> R.drawable.savings
+            DataType.EXPENSE -> R.drawable.expense
+            DataType.EARNINGS -> R.drawable.earnings
+            else -> R.drawable.description
+        }
+    )
     val labelIconState = remember {
-        mutableStateOf(
-            TagIcon(
-                dataType.text.lowercase(),
-                icon = when (dataType) {
-                    DataType.DEBT -> R.drawable.debt
-                    DataType.LENT -> R.drawable.lent
-                    DataType.SAVINGS -> R.drawable.savings
-                    DataType.EXPENSE -> R.drawable.expense
-                    DataType.EARNINGS -> R.drawable.earnings
-                    else -> R.drawable.description
-                }
-            )
-        )
+        mutableStateOf(tag)
     }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val lazyState = rememberLazyListState()
@@ -512,17 +528,18 @@ fun FinancialDataInput(
                         filledColor = colorResource(colorResId),
                         textColor = Color.White
                     ) {
+                        val label = labelState.text.toString()
 
                         if (
                             amountAsDouble != null
-                            && labelState.text.toString().isNotEmpty()
+                            && label.isNotEmpty()
                         ) {
                             viewModel.addData(
                                 Dataset(
                                     id = UUID.randomUUID().toString(),
                                     dataType = dataType,
                                     amount = amountAsDouble,
-                                    label = labelState.text.toString(),
+                                    label = label,
                                     description = descriptionState.text.toString(),
                                     dateTime = localDateTimeState.value
                                         .toFirestoreTimestampUtc(),
@@ -539,13 +556,36 @@ fun FinancialDataInput(
                             amountState.clearText()
                             labelState.clearText()
                             descriptionState.clearText()
-                            labelIconState.value = TagIcon(
-                                "description",
-                                R.drawable.description
-                            )
+                            labelIconState.value = tag
                             // Dismiss the model drawer.
                             onDismiss()
+
+                            // Show snackbar
+                            viewModel.showActionNotification(
+                                "$label was added successfully",
+                                color = color
+                            )
                         } else {
+                            var errorMessage: String? = null
+                            if (amountAsDouble == null) {
+                                errorMessage = "Amount cannot be empty"
+                            }
+                            if (labelState.text.toString().isEmpty()) {
+                                errorMessage = "Label cannot be empty"
+                            }
+                            if (amountAsDouble == null && labelState.text.toString().isEmpty()) {
+                                errorMessage = "Amount and label cannot be empty"
+                            }
+                            if (errorMessage != null) {
+                                wasSuccess.value = State.ERROR
+
+                                // Show snackbar
+                                viewModel.showActionNotification(
+                                    errorMessage,
+                                    color = Color.Red.copy(0.5f)
+                                )
+                                return@ModelDrawerButton
+                            }
                             wasSuccess.value = State.ERROR
                         }
                     }
@@ -796,6 +836,27 @@ fun GoalDataInput(
                             onDismiss()
 
                         } else {
+                            var errorMessage: String? = null
+                            if (amountAsDouble == null) {
+                                errorMessage = "Amount cannot be empty"
+                            }
+                            if (labelState.text.toString().isEmpty()) {
+                                errorMessage = "Label cannot be empty"
+                            }
+                            if (amountAsDouble == null && labelState.text.toString().isEmpty()) {
+                                errorMessage = "Amount and label cannot be empty"
+                            }
+                            if (errorMessage != null) {
+                                wasSuccess.value = State.ERROR
+
+                                // Show snackbar
+                                viewModel.showActionNotification(
+                                    errorMessage,
+                                    color = color
+                                )
+                                return@ModelDrawerButton
+                            }
+
                             wasSuccess.value = State.ERROR
                             goalDateTimeWarningState.value = GoalWarning.ERROR
                         }
