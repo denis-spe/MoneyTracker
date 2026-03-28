@@ -1,6 +1,7 @@
 // Praise be the LORD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldLineLimits
 import androidx.compose.foundation.text.input.TextFieldState
+import androidx.compose.foundation.text.input.delete
 import androidx.compose.foundation.text.input.maxLength
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
@@ -70,13 +72,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.InterceptPlatformTextInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
 import androidx.compose.ui.res.painterResource
@@ -100,13 +106,17 @@ import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.GoalWarning
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
+import com.example.moneytracker.helper.eval
+import com.example.moneytracker.helper.formatResult
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
+import com.example.moneytracker.ui.components.CustomAmountKeyBoard
 import com.example.moneytracker.ui.theme.autoColorChange
 import com.example.moneytracker.ui.theme.autoTextColorChange
 import kotlinx.coroutines.android.awaitFrame
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
@@ -132,7 +142,7 @@ private val INNER_MODIFIER_DRAWER = Modifier
     .fillMaxWidth()
     .padding(start = 10.dp, end = 10.dp)
 private val SHAPE = RoundedCornerShape(30.dp)
-private val DIALOG_CARD_MODIFIER = Modifier.fillMaxWidth(0.8f)
+private val DIALOG_CARD_MODIFIER = Modifier.fillMaxWidth(0.95f)
 private val AMOUNT_FONT_SIZE = 20.sp
 
 @Composable
@@ -222,7 +232,7 @@ fun ModelDrawerTextField(
             },
         ) {
             Card(
-                modifier = DIALOG_CARD_MODIFIER
+                modifier = Modifier.fillMaxWidth(0.8f)
             ) {
                 Column(
                     modifier = Modifier.padding(top = 10.dp),
@@ -372,6 +382,7 @@ fun ModelDrawerTextField(
 }
 
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ModelDrawerAmountField(
     modifier: Modifier = Modifier,
@@ -395,7 +406,8 @@ fun ModelDrawerAmountField(
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val onDialogShow = remember { mutableStateOf(false) }
-
+    val showCustomKeyboard = remember { mutableStateOf(false) }
+    val keyboardController = LocalSoftwareKeyboardController.current
 
 
     if (onDialogShow.value) {
@@ -404,6 +416,7 @@ fun ModelDrawerAmountField(
                 onDialogShow.value = false
                 state.setTextAndPlaceCursorAtEnd(displayState.value)
             },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Card(
                 modifier = DIALOG_CARD_MODIFIER
@@ -428,101 +441,93 @@ fun ModelDrawerAmountField(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
-                    OutlinedTextField(
-                        state = state,
-                        shape = shape,
-                        lineLimits = TextFieldLineLimits.SingleLine,
-                        placeholder = {
-                            Text(
-                                text = placeholder,
-                                color = color,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = fontSize
-                            )
-                        },
-                        colors = OutlinedTextFieldDefaults.colors().copy(
-                            focusedTextColor = color,
-                            unfocusedTextColor = color.copy(alpha = 0.5f),
-                            cursorColor = color,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent,
-                            focusedContainerColor = Color.Transparent,
-                            unfocusedContainerColor = Color.Transparent
-                        ),
-                        textStyle = TextStyle(
-                            color = color,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = AMOUNT_FONT_SIZE
-                        ),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number, // only digits expected
-                            imeAction = ImeAction.Done
-                        ),
-                        onKeyboardAction = KeyAction {
-                            if (state.text.isNotEmpty()) {
-                                onDialogShow.value = false
-                                displayState.value = if (state.text.isNotEmpty())
-                                    state.text.toString() else
-                                    "0.0"
-                            }
-                        },
-                        leadingIcon = {
-                            Text(
-                                text = symbol,
+                    InterceptPlatformTextInput(
+                        interceptor = { _, _ ->
+                            awaitCancellation()
+                        }
+                    ) {
+                        OutlinedTextField(
+                            modifier = modifier.onFocusChanged {
+                                if (it.isFocused) {
+                                    keyboardController?.hide()
+                                    showCustomKeyboard.value = true
+                                }
+                            },
+                            state = state,
+                            shape = shape,
+                            lineLimits = TextFieldLineLimits.SingleLine,
+                            placeholder = {
+                                Text(
+                                    text = placeholder,
+                                    color = color,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = AMOUNT_FONT_SIZE
+                                )
+                            },
+                            colors = OutlinedTextFieldDefaults.colors().copy(
+                                focusedTextColor = color,
+                                unfocusedTextColor = color.copy(alpha = 0.5f),
+                                cursorColor = color,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            ),
+                            textStyle = TextStyle(
                                 color = color,
                                 fontWeight = FontWeight.Bold,
                                 fontSize = AMOUNT_FONT_SIZE
-                            )
-                        },
-
-                        trailingIcon = {
-                            if (state.text.isNotEmpty()) {
-                                IconButton(
-                                    onClick = {
-                                        state.setTextAndPlaceCursorAtEnd("")
-                                    }
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Clear,
-
-                                        contentDescription = "clear amount"
-                                    )
+                            ),
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number, // only digits expected
+                                imeAction = ImeAction.Done
+                            ),
+                            onKeyboardAction = KeyAction {
+                                if (state.text.isNotEmpty()) {
+                                    onDialogShow.value = false
+                                    displayState.value = if (state.text.isNotEmpty())
+                                        state.text.toString() else
+                                        "0.0"
                                 }
-                            }
-                        },
+                            },
+                            leadingIcon = {
+                                Text(
+                                    text = symbol,
+                                    color = color,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = AMOUNT_FONT_SIZE
+                                )
+                            },
 
-                        inputTransformation = InputTransformation.maxLength(16).then(
-                            CustomInputTransformation()
-                        ),
-                        outputTransformation = CustomOutputTransformation(),
-                    )
+                            inputTransformation = InputTransformation.maxLength(16).then(
+                                CustomInputTransformation()
+                            ),
+                            outputTransformation = CustomOutputTransformation(),
+                        )
+                    }
 
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp, bottom = 10.dp)
-                    ) {
-                        TextButton(
-                            onClick = {
-                                onDialogShow.value = false
-                                state.setTextAndPlaceCursorAtEnd(displayState.value)
-                            }
-                        ) {
-                            Text("Cancel", fontSize = fontSize)
-                        }
+                    CustomAmountKeyBoard(
+                        state = state,
+                        visible = showCustomKeyboard.value,
+                        onDone = {
+                            showCustomKeyboard.value = false
+                            if (state.text.isNotEmpty()) {
+                                state.edit {
+                                    delete(selection.start, selection.end)
+                                    val result = originalText.eval.formatResult
+                                    Log.d("CustomAmountKeyBoard", "result: $result")
+                                    replace(0, length, result)
+                                }
 
-                        TextButton(
-                            onClick = {
                                 onDialogShow.value = false
                                 displayState.value = state.text.toString()
                             }
-                        ) {
-                            Text("OK", fontSize = fontSize)
+                        },
+                        onCancel = {
+                            onDialogShow.value = false
+                            state.setTextAndPlaceCursorAtEnd(displayState.value)
                         }
-                    }
-
+                    )
                 }
             }
         }
@@ -533,6 +538,7 @@ fun ModelDrawerAmountField(
         modifier = MODIFIER_DRAWER
             .height(height)
             .clickable {
+                showCustomKeyboard.value = true
                 onDialogShow.value = true
             },
         colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
@@ -555,6 +561,7 @@ fun ModelDrawerAmountField(
     )
 }
 
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun AdjustmentField(
     sheetVisible: Boolean,
@@ -570,7 +577,6 @@ fun AdjustmentField(
 
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
-    30.dp
 
     /* ----------------------------------------------------------
      * 1) React to Firestore datasets ONLY when sheet is visible
@@ -600,6 +606,8 @@ fun AdjustmentField(
     var datasetToDisplay by remember { mutableStateOf<Dataset?>(null) }
     val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+    val showCustomKeyboard = remember { mutableStateOf(false) }
 
     val filteredDataset = datasets
         .filterNot { it.isAmountEqualToAdjustAmount() }
@@ -615,6 +623,7 @@ fun AdjustmentField(
                 amountToDisplay = "${symbol}0.0"
                 onDialogShow.value = false
             },
+            properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Card(
                 modifier = DIALOG_CARD_MODIFIER
@@ -703,101 +712,97 @@ fun AdjustmentField(
 
 
                         /* ---------- Amount field ---------- */
-                        OutlinedTextField(
-                            modifier = Modifier
-                                .focusRequester(focusRequester)
-                                .focusable(
-                                    interactionSource = interactionSource
+                        InterceptPlatformTextInput(
+                            interceptor = { _, _ ->
+                                awaitCancellation()
+                            }
+                        ) {
+                            OutlinedTextField(
+                                modifier = Modifier
+                                    .focusRequester(focusRequester)
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            keyboardController?.hide()
+                                            showCustomKeyboard.value = true
+                                        }
+                                    }
+                                    .focusable(
+                                        interactionSource = interactionSource
+                                    ),
+                                state = amountState,
+                                lineLimits = TextFieldLineLimits.SingleLine,
+                                placeholder = {
+                                    Text(
+                                        text = "0",
+                                        color = color,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = AMOUNT_FONT_SIZE
+                                    )
+                                },
+                                colors = OutlinedTextFieldDefaults.colors().copy(
+                                    focusedTextColor = color,
+                                    unfocusedTextColor = color.copy(alpha = 0.5f),
+                                    cursorColor = color,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent,
                                 ),
+                                textStyle = TextStyle(
+                                    color = color,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = AMOUNT_FONT_SIZE
+                                ),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number, // only digits expected
+                                    imeAction = ImeAction.Done
+                                ),
+                                onKeyboardAction = KeyAction {
+                                    if (amountState.text.isNotEmpty()) {
+                                        onDialogShow.value = false
+                                        amountToDisplay = if (amountState.text.isNotEmpty())
+                                            amountState.text.toString().toDouble()
+                                                .formatToAmount() else
+                                            "${symbol}0.0"
+                                    }
+                                },
+                                leadingIcon = {
+                                    Text(
+                                        text = symbol,
+                                        color = color,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = AMOUNT_FONT_SIZE
+                                    )
+                                },
+
+                                inputTransformation = InputTransformation.maxLength(16).then(
+                                    CustomInputTransformation()
+                                ),
+                                outputTransformation = CustomOutputTransformation(),
+                            )
+                        }
+                        CustomAmountKeyBoard(
                             state = amountState,
-                            lineLimits = TextFieldLineLimits.SingleLine,
-                            placeholder = {
-                                Text(
-                                    text = "0.0",
-                                    color = color,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = AMOUNT_FONT_SIZE
-                                )
-                            },
-                            colors = OutlinedTextFieldDefaults.colors().copy(
-                                focusedTextColor = color,
-                                unfocusedTextColor = color.copy(alpha = 0.5f),
-                                cursorColor = color,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent,
-                            ),
-                            textStyle = TextStyle(
-                                color = color,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = AMOUNT_FONT_SIZE
-                            ),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number, // only digits expected
-                                imeAction = ImeAction.Done
-                            ),
-                            onKeyboardAction = KeyAction {
+                            visible = showCustomKeyboard.value,
+                            onDone = {
+                                showCustomKeyboard.value = false
                                 if (amountState.text.isNotEmpty()) {
+                                    amountState.edit {
+                                        delete(selection.start, selection.end)
+                                        val result = originalText.eval.formatResult
+                                        Log.d("CustomAmountKeyBoard", "result: $result")
+                                        replace(0, length, result)
+                                    }
+
                                     onDialogShow.value = false
-                                    amountToDisplay = if (amountState.text.isNotEmpty())
-                                        amountState.text.toString().toDouble().formatToAmount() else
-                                        "${symbol}0.0"
+                                    amountToDisplay = amountState.text.toString()
                                 }
                             },
-                            leadingIcon = {
-                                Text(
-                                    text = symbol,
-                                    color = color,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = AMOUNT_FONT_SIZE
-                                )
-                            },
-
-                            inputTransformation = InputTransformation.maxLength(16).then(
-                                CustomInputTransformation()
-                            ),
-                            outputTransformation = CustomOutputTransformation(),
-                        )
-                    }
-
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp, bottom = 10.dp)
-                    ) {
-                        TextButton(
-                            colors = ButtonDefaults.textButtonColors(
-                                contentColor = color
-                            ),
-                            onClick = {
-                                amountState.setTextAndPlaceCursorAtEnd("")
-                                selectedDataset.value = null
-                                datasetToDisplay = null
-                                amountToDisplay = "${symbol}0.0"
+                            onCancel = {
                                 onDialogShow.value = false
+                                amountState.setTextAndPlaceCursorAtEnd(amountToDisplay)
                             }
-                        ) {
-                            Text("Cancel", fontSize = fontSize, color = color)
-                        }
-
-                        Text("|")
-
-                        TextButton(
-                            onClick = {
-                                if (amountState.text.isNotEmpty()) {
-                                    onDialogShow.value = false
-                                    datasetToDisplay = selectedDataset.value
-                                    amountToDisplay = if (amountState.text.isNotEmpty())
-                                        amountState.text.toString().toDouble().formatToAmount() else
-                                        "${symbol}0.0"
-                                }
-                            }
-                        ) {
-                            Text("OK", fontSize = fontSize, color = color)
-                        }
+                        )
                     }
                 }
             }
@@ -808,6 +813,7 @@ fun AdjustmentField(
         modifier = MODIFIER_DRAWER
             .height(height)
             .clickable {
+                showCustomKeyboard.value = true
                 onDialogShow.value = true
             },
         colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
@@ -1600,7 +1606,6 @@ fun DateTimeInput(
 
     val color = colorResource(colorResId)
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
-    integerResource(R.integer.modelDrawerPadding).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
 
     /*
@@ -1732,7 +1737,6 @@ fun DateTimeRange(
     val isTimeDialogOpen = remember { mutableStateOf(false) }
 
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
-    integerResource(R.integer.modelDrawerPadding).dp
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
 
     val startDate = startLocalDateTimeState.value.date
@@ -1921,4 +1925,3 @@ fun DateTimeRange(
     }
 
 }
-

@@ -433,7 +433,7 @@ fun FinancialDataInput(
                 ) {
                     ModelDrawerAmountField(
                         state = amountState,
-                        placeholder = "0.0",
+                        placeholder = "0",
                         colorResId = colorResId,
                         wasSuccess = wasSuccess,
                         displayState = amountToDisplay
@@ -561,9 +561,8 @@ fun FinancialDataInput(
                             onDismiss()
 
                             // Show snackbar
-                            viewModel.showActionNotification(
+                            viewModel.launchSnackBarHostState(
                                 "$label was added successfully",
-                                color = color
                             )
                         } else {
                             var errorMessage: String? = null

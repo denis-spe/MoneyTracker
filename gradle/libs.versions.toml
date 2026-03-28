@@ -4,6 +4,7 @@ androidxHiltCompiler = "1.2.0"
 coilCompose = "2.7.0"
 daggerAndroid = "2.57.2"
 daggerAndroidSupport = "2.x"
+exp4j = "0.4.8"
 firebaseBom = "34.3.0"
 googleHiltAndroid = "2.57"
 googleHiltCompiler = "2.57.2"
@@ -45,9 +46,11 @@ workRuntimeKtx = "2.11.1"
 # For Jetpack Compose.
 
 # For Jetpack Compose.
+androidx-compose-material-icons-extended = { module = "androidx.compose.material:material-icons-extended" }
 androidx-hilt-compiler-v120 = { module = "androidx.hilt:hilt-compiler", version.ref = "androidxHiltCompiler" }
 androidx-hilt-work = { module = "androidx.hilt:hilt-work", version.ref = "hiltNavigationCompose" }
 androidx-work-runtime-ktx = { module = "androidx.work:work-runtime-ktx", version.ref = "workRuntimeKtx" }
+exp4j = { module = "net.objecthunter:exp4j", version.ref = "exp4j" }
 vico-compose = { group = "com.patrykandpatrick.vico", name = "compose", version.ref = "vico" }
 
 # For Material 2 theming in Jetpack Compose.

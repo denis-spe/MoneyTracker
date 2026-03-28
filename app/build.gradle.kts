@@ -68,7 +68,8 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 dependencies {
-    implementation("androidx.compose.material:material-icons-extended")
+    implementation(libs.exp4j)
+    implementation(libs.androidx.compose.material.icons.extended)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

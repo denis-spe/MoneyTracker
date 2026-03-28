@@ -2,8 +2,7 @@
 package com.example.moneytracker.helper
 
 import android.icu.text.DecimalFormat
-import android.os.Build
-import androidx.annotation.RequiresApi
+import android.util.Log
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentType
@@ -20,6 +19,7 @@ import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
+import net.objecthunter.exp4j.ExpressionBuilder
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.math.BigDecimal
 import java.math.RoundingMode
@@ -95,7 +95,6 @@ val Dataset.isStartDateTimeNotEqualToDeadlineDateTime: Boolean
  * Check if the dataset is for today.
  */
 val Dataset.isForToday: Boolean
-    @RequiresApi(Build.VERSION_CODES.O)
     get() {
 
         val today = LocalDateTime.now().date
@@ -105,7 +104,6 @@ val Dataset.isForToday: Boolean
     }
 
 val Adjustment.isForToday: Boolean
-    @RequiresApi(Build.VERSION_CODES.O)
     get() {
         val today = LocalDateTime.now().date
         val dataDate = dateTime.toLocalDateTimeUtc().date
@@ -116,7 +114,6 @@ val Adjustment.isForToday: Boolean
  * Check if the dataset is for yesterday.
  */
 val Dataset.isForYesterday: Boolean
-    @RequiresApi(Build.VERSION_CODES.O)
     get() {
         val yesterday = LocalDateTime.now()
             .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
@@ -474,6 +471,31 @@ fun Map<*, *>.toDataset(): Dataset {
         statusHistory = this.toStatusHistory()
     )
 }
+
+val Double.formatResult: String
+    get() {
+        return if (this % 1.0 == 0.0) {
+            toInt().toString()
+        } else {
+            String.format(Locale.US, "%.4f", this)
+                .trimEnd('0')
+                .trimEnd('.')
+        }
+    }
+
+val CharSequence.eval: Double
+    get() {
+        val expression = replace(Regex("(\\s)"), "")
+            .replace('÷', '/')
+            .replace('×', '*')
+            .replace(",", "")
+        Log.d("StringEval", expression)
+        return try {
+            ExpressionBuilder(expression).build().evaluate()
+        } catch (_: Exception) {
+            0.0
+        }
+    }
 
 fun Map<*, *>.toAdjustment(): List<Adjustment> {
     return (this["adjustment"] as? List<*>)
