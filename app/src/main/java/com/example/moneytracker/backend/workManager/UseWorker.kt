@@ -33,7 +33,7 @@ class UseWorker @Inject constructor(
         // Use Unique Work to avoid queuing delays
         WorkManager.getInstance(appContext).enqueueUniqueWork(
             "RoutineUpdate_${dataset.id}", // Unique name per dataset
-            ExistingWorkPolicy.REPLACE,    // Replace existing if still running
+            ExistingWorkPolicy.KEEP,
             workRequest
         )
     }

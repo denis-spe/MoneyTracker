@@ -1,16 +1,11 @@
 package com.example.moneytracker.backend.workManager
 
 import android.content.Context
-import android.content.pm.ServiceInfo
-import android.os.Build
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
-import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.alarmManager.AlarmItem
 import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.notification.Notifier
 import com.example.moneytracker.backend.storage.DataStorage
@@ -18,14 +13,9 @@ import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
-import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
-import kotlinx.datetime.toKotlinLocalDateTime
-import java.time.Instant
-import java.time.ZoneId
-import java.time.ZonedDateTime
 
 @HiltWorker
 class Worker @AssistedInject constructor(
@@ -41,64 +31,34 @@ class Worker @AssistedInject constructor(
     }
 
     private var cachedDataset: Dataset? = null
+    private val item: NotificationItem? = null
 
     override suspend fun doWork(): Result {
         Log.e(TAG, "Worker started for ${params.id}")
 
-        val datasetId = inputData.getString("datasetId")
-        val userId = inputData.getString("userId")
-
-        if (datasetId == null || userId == null) {
-            Log.e(TAG, "Missing input data: datasetId=$datasetId, userId=$userId")
-            return Result.failure()
-        }
-
-        try {
-            setForeground(getForegroundInfo())
-        } catch (e: Exception) {
-            if (e is CancellationException) throw e
-            Log.e(TAG, "Failed to set foreground", e)
-        }
+        val datasetId = inputData.getString("datasetId") ?: return Result.failure()
+        val userId = inputData.getString("userId") ?: return Result.failure()
 
         return try {
-            val dataset = cachedDataset ?: dataStorage.getDataset(userId, datasetId)
-
-            if (dataset == null) {
-                Log.e(TAG, "Dataset not found: $datasetId")
-                return Result.failure()
-            }
-
-            val now = java.time.LocalDateTime.now().toKotlinLocalDateTime()
-            
-            val alarm = AlarmItem(datasetId, userId, dataset.routine)
-            val nextTrigger = alarm.triggerMillis()
-            val nextDeadline =
-                ZonedDateTime.ofInstant(Instant.ofEpochMilli(nextTrigger), ZoneId.systemDefault())
-
-            Log.e(TAG, "Completing routine for $datasetId. Next deadline: $nextDeadline")
-
-            dataStorage.completeRoutine(
-                userId = userId,
-                datasetId = datasetId,
-                newDateTime = now.toFirestoreTimestampUtc(),
-                nextDeadline = nextDeadline.toLocalDateTime().toKotlinLocalDateTime()
-                    .toFirestoreTimestampUtc()
-            )
+            val dataset = dataStorage.getDataset(userId, datasetId)
+                ?: return Result.failure()
 
             Log.e(TAG, "Routine update successful for $datasetId")
 
-            // Post a persistent notification so it doesn't disappear when the worker finishes
-            showResultNotification(dataset)
-            
+            // ✅ Show notification (THIS is what you actually want)
+            val item = showResultNotification(dataset)
+            notifier.showNotification(item)
+
             Result.success()
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            if (e is CancellationException) throw e
             Log.e(TAG, "Error in doWork for $datasetId", e)
             Result.retry()
         }
     }
 
-    private fun showResultNotification(dataset: Dataset) {
+    private fun showResultNotification(dataset: Dataset): NotificationItem {
         val status = dataset.status
         val datatypeName = dataset.dataType.text
         val label = dataset.label
@@ -137,34 +97,6 @@ class Worker @AssistedInject constructor(
             icon = goalIcon,
             largeIcon = iconRes
         )
-        notifier.showNotification(item)
-    }
-
-    override suspend fun getForegroundInfo(): ForegroundInfo {
-        val datasetId = inputData.getString("datasetId")
-        val userId = inputData.getString("userId")
-
-        val dataset = cachedDataset ?: dataStorage.getDataset(userId!!, datasetId!!)
-        val smallIcon = dataset?.tagIcon?.icon ?: R.drawable.initial
-
-        val notification = NotificationCompat.Builder(appContext, notifier.channelId)
-            .setSmallIcon(smallIcon)
-            .setContentTitle("Updating Routine")
-            .setContentText("Please wait...")
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setSilent(true)
-            .setVisibility(NotificationCompat.VISIBILITY_SECRET)
-            .setCategory(NotificationCompat.CATEGORY_SERVICE)
-            .build()
-
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            ForegroundInfo(
-                NOTIFICATION_ID,
-                notification,
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
-            )
-        } else {
-            ForegroundInfo(NOTIFICATION_ID, notification)
-        }
+        return item
     }
 }

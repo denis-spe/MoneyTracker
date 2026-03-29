@@ -5,7 +5,14 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.example.moneytracker.R
+import com.example.moneytracker.backend.notification.NotificationItem
+import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.RoutineData
+import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.helper.status
+import com.example.moneytracker.helper.title
+import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.EntryPointAccessors
 import kotlinx.coroutines.CoroutineScope
@@ -13,8 +20,55 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.datetime.toKotlinLocalDateTime
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
 
 class AndroidAlarmReceiver : BroadcastReceiver() {
+
+    private fun showResultNotification(dataset: Dataset): NotificationItem {
+        val status = dataset.status
+        val datatypeName = dataset.dataType.text
+        val label = dataset.label
+
+        val bigMessage = when (status) {
+            Status.COMPLETED -> "${label.title} were successfully completed"
+            Status.OVERDUE -> "${label.title} was overdue, please try to adjust your " +
+                    "${datatypeName.lowercase()} for ${label.lowercase()} in time"
+
+            Status.PENDING -> "Please adjust your ${datatypeName.lowercase()} for ${label.lowercase()}"
+            else -> "Processing ${label.title}..."
+        }
+
+        val message = when (status) {
+            Status.COMPLETED -> "Completed ${label.title}"
+            Status.OVERDUE -> "Overdue ${label.title}"
+            Status.PENDING -> "Adjust ${label.title}"
+            else -> "Processing ${label.title}..."
+        }
+
+        val progressPercent =
+            (dataset.adjustment.sumOf { it.amount } / dataset.amount * 100).toInt()
+
+        val iconRes = when (status) {
+            Status.COMPLETED -> R.drawable.done
+            Status.OVERDUE -> R.drawable.circle_error
+            else -> R.drawable.pending
+        }
+
+        val goalIcon = dataset.tagIcon.icon
+
+        val item = NotificationItem(
+            title = "${datatypeName}: $label ($progressPercent%)",
+            message = message,
+            bigMessage = bigMessage,
+            icon = goalIcon,
+            largeIcon = iconRes
+        )
+        return item
+    }
+
 
     override fun onReceive(context: Context, intent: Intent) {
         val action = intent.action
@@ -25,10 +79,49 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
         val pendingResult = goAsync()
 
         val entryPoint = try {
-            EntryPointAccessors.fromApplication(
+            val entry = EntryPointAccessors.fromApplication(
                 context.applicationContext,
                 AlarmReceiverEntryPoint::class.java
             )
+
+            val dataStorage = entry.dataStorage()
+            val notifier = entry.notifier()
+            val scope = CoroutineScope(Dispatchers.IO)
+            if (userId == null || datasetId == null) return
+
+            scope.launch {
+                val now = java.time.LocalDateTime.now().toKotlinLocalDateTime()
+                val dataset = dataStorage.getDataset(userId, datasetId) ?: return@launch
+
+                val alarm = AlarmItem(datasetId, userId, dataset.routine)
+                val nextTrigger = alarm.triggerMillis()
+                val nextDeadline = ZonedDateTime.ofInstant(
+                    Instant.ofEpochMilli(nextTrigger),
+                    ZoneId.systemDefault()
+                )
+
+                dataStorage.completeRoutine(
+                    userId = userId,
+                    datasetId = datasetId,
+                    newDateTime = now.toFirestoreTimestampUtc(),
+                    nextDeadline = nextDeadline.toLocalDateTime()
+                        .toKotlinLocalDateTime()
+                        .toFirestoreTimestampUtc()
+                )
+
+            }
+
+            scope.launch {
+                val dataset = dataStorage.getDataset(userId, datasetId) ?: return@launch
+
+                // ✅ Show notification (THIS is what you actually want)
+                val item = showResultNotification(dataset)
+                notifier.showNotification(item)
+            }
+
+            Log.d("AndroidAlarmReceiver", "Hilt EntryPoint success")
+
+            entry
         } catch (e: Exception) {
             Log.e("AndroidAlarmReceiver", "Hilt EntryPoint failed", e)
             pendingResult.finish()

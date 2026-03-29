@@ -397,6 +397,7 @@ class DataStorageImpl(
 
             // 4. Single Write (will queue locally if offline)
             mutableDatasets[idx] = datasetMap
+
             docRef.update("datasets", mutableDatasets).await()
 
             Log.d("DataStorageImpl", "completeRoutine: Local update successful")

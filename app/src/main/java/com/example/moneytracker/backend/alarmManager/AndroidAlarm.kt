@@ -44,10 +44,6 @@ class AndroidAlarm @Inject constructor(
 
         val triggerTime = alarmItem.triggerMillis()
 
-
-        // 3. Schedule the alarm
-
-
         try {
             // Check if we can schedule exact alarms (Android 12+)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
