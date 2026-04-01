@@ -6,7 +6,6 @@ import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
-import com.example.moneytracker.backend.storage.Dataset
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -19,21 +18,40 @@ class UseWorker @Inject constructor(
         const val TAG = "UseWorker"
     }
 
-    override fun work(userId: String, dataset: Dataset) {
+    override fun scheduleWork(userId: String, datasetId: String) {
         val data = Data.Builder()
-            .putString("datasetId", dataset.id)
+            .putString("datasetId", datasetId)
             .putString("userId", userId)
             .build()
 
-        val workRequest = OneTimeWorkRequestBuilder<Worker>()
+        val workRequest = OneTimeWorkRequestBuilder<ScheduleWorker>()
             .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
             .setInputData(data)
             .build()
 
-        // Use Unique Work to avoid queuing delays
+        // Use REPLACE policy to immediately execute new work when alarm triggers
+        // This ensures immediate updates instead of queuing
         WorkManager.getInstance(appContext).enqueueUniqueWork(
-            "RoutineUpdate_${dataset.id}", // Unique name per dataset
-            ExistingWorkPolicy.KEEP,
+            "RoutineUpdate_${datasetId}", // Unique name per dataset
+            ExistingWorkPolicy.REPLACE,  // Changed from KEEP to REPLACE for immediate execution
+            workRequest
+        )
+    }
+
+    override fun rescheduleWork(userId: String) {
+        val data = Data.Builder()
+            .putString("userId", userId)
+            .build()
+
+        val workRequest = OneTimeWorkRequestBuilder<RescheduleWorker>()
+            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+            .setInputData(data)
+            .build()
+
+        // Use REPLACE policy to immediately reschedule when system events occur
+        WorkManager.getInstance(appContext).enqueueUniqueWork(
+            "RoutineUpdate_${userId}", // Unique name per user
+            ExistingWorkPolicy.REPLACE,  // Changed from KEEP to REPLACE for immediate execution
             workRequest
         )
     }

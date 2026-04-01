@@ -31,7 +31,7 @@ class AndroidAlarm @Inject constructor(
             action = "com.example.moneytracker.ALARM_ACTION"
             putExtra("datasetId", alarmItem.datasetId)
             putExtra("userId", alarmItem.userId)
-            putExtra("routine", alarmItem.routineData.routine.name)
+            putExtra("triggerMillis", alarmItem.triggerMillis)
         }
 
         // 2. Pass the updated intent to getBroadcast
@@ -42,7 +42,7 @@ class AndroidAlarm @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val triggerTime = alarmItem.triggerMillis()
+        val triggerTime = alarmItem.triggerMillis
 
         try {
             // Check if we can schedule exact alarms (Android 12+)
@@ -90,7 +90,7 @@ class AndroidAlarm @Inject constructor(
 
             putExtra("datasetId", alarmItem.datasetId)
             putExtra("userId", alarmItem.userId)
-            putExtra("routine", alarmItem.routineData.routine.name)
+            putExtra("triggerMillis", alarmItem.triggerMillis)
         }
 
         val pendingIntent = PendingIntent.getBroadcast(

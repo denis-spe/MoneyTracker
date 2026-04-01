@@ -2,6 +2,7 @@ package com.example.moneytracker.backend.alarmManager
 
 import android.util.Log
 import com.example.moneytracker.backend.storage.DataStorage
+import com.example.moneytracker.helper.triggerMillis
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -30,7 +31,7 @@ class AlarmRescheduler @Inject constructor(
                             AlarmItem(
                                 dataset.id,
                                 uid,
-                                dataset.routine
+                                dataset.routine.triggerMillis
                             )
                         )
                     }

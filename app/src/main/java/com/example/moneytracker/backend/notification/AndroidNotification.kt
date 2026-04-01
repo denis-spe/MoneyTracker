@@ -1,5 +1,6 @@
 package com.example.moneytracker.backend.notification
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -8,6 +9,7 @@ import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
 import com.example.moneytracker.R
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -52,12 +54,36 @@ class AndroidNotification @Inject constructor(
         val notificationManager = NotificationManagerCompat.from(context)
 
         try {
+            // Check if notifications are enabled
             if (notificationManager.areNotificationsEnabled()) {
-                val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
-                notificationManager.notify(notificationId, builder.build())
+                // Check runtime permission for Android 13+
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                    if (ContextCompat.checkSelfPermission(
+                            context,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    ) {
+                        val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+                        notificationManager.notify(notificationId, builder.build())
+                        Log.d("AndroidNotification", "Notification shown successfully")
+                    } else {
+                        Log.w("AndroidNotification", "POST_NOTIFICATIONS permission not granted")
+                    }
+                } else {
+                    // For Android < 13, just show the notification
+                    val notificationId = (System.currentTimeMillis() % Int.MAX_VALUE).toInt()
+                    notificationManager.notify(notificationId, builder.build())
+                    Log.d("AndroidNotification", "Notification shown successfully")
+                }
             } else {
                 Log.w("AndroidNotification", "Notifications are disabled")
             }
+        } catch (e: SecurityException) {
+            Log.e(
+                "AndroidNotification",
+                "SecurityException: POST_NOTIFICATIONS permission denied",
+                e
+            )
         } catch (e: Exception) {
             Log.e("AndroidNotification", "Error showing notification", e)
         }

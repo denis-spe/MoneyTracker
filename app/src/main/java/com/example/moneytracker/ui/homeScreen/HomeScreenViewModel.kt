@@ -23,6 +23,7 @@ import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.isForYesterday
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.helper.triggerMillis
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
@@ -461,7 +462,7 @@ class HomeScreenViewModel @Inject constructor(
         val alarmItem = AlarmItem(
             datasetId = datasetId,
             userId = userState.value!!.uid,
-            routineData = routineData,
+            triggerMillis = routineData.triggerMillis,
         )
 
         androidAlarm.schedule(alarmItem)

@@ -5,7 +5,7 @@ import com.google.firebase.Timestamp
 
 data class StatusHistory(
     val status: String,
-    val adjustmentAmount: Double,
-    val dateTime: Timestamp,
-    val deadlineTime: Timestamp
+    val totalAdjustmentAmount: Double,     // Total amount of adjustments for the dataset
+    val startDateTime: Timestamp,          // When the dataset/routine started
+    val deadlineDateTime: Timestamp        // When the deadline is
 )

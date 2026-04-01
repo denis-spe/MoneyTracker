@@ -24,9 +24,50 @@ import network.chaintech.kmp_date_time_picker.utils.now
 import java.math.BigDecimal
 import java.math.RoundingMode
 import java.text.NumberFormat
+import java.time.DayOfWeek
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+import java.time.temporal.TemporalAdjusters
 import java.util.Locale
 import kotlin.math.log10
 import kotlin.math.pow
+
+val RoutineData.triggerMillis: Long
+    get() {
+        val nowMillis = System.currentTimeMillis()
+        val now = ZonedDateTime.ofInstant(Instant.ofEpochMilli(nowMillis), ZoneId.systemDefault())
+
+
+        return when (this.routine) {
+            Routine.EveryHour -> now.plusMinutes(this.routineCount.toLong()).toInstant()
+                .toEpochMilli()
+
+            Routine.EveryDay -> now.plusDays(this.routineCount.toLong()).toInstant()
+                .toEpochMilli()
+
+            Routine.Weekly -> now.plusWeeks(this.routineCount.toLong()).toInstant()
+                .toEpochMilli()
+
+            Routine.Monthly -> now.plusMonths(this.routineCount.toLong()).toInstant()
+                .toEpochMilli()
+
+            Routine.Yearly -> now.plusYears(this.routineCount.toLong()).toInstant()
+                .toEpochMilli()
+
+            Routine.SpecifyDayOfTheWeek -> {
+                val targetDay = DayOfWeek.of((this.routineCount % 7) + 1)
+                val next = if (now.dayOfWeek == targetDay) {
+                    now.plusWeeks(1)
+                } else {
+                    now.with(TemporalAdjusters.next(targetDay))
+                }
+                next.toInstant().toEpochMilli()
+            }
+
+            else -> nowMillis + 86_400_000
+        }
+    }
 
 /**
  * Formats a double to a string with two decimal places.
@@ -135,16 +176,16 @@ val Adjustment.isForYesterday: Boolean
 fun Dataset.toMap(): Map<String, Any> {
     return mapOf(
         "id" to id,
-        "dataType" to dataType.name, // store enum as String
+        "dataType" to dataType.name,
         "amount" to amount,
         "label" to label,
         "description" to description,
-        "dateTime" to dateTime, // Firestore Timestamp as-is
+        "dateTime" to dateTime,
         "deadlineDateTime" to deadlineDateTime,
-        "tagIcon" to tagIcon.tagIconToMap, // change model to use a string key
+        "tagIcon" to tagIcon.tagIconToMap,
         "paymentMethod" to paymentMethod.name,
-        "adjustment" to adjustment.map { it.adjustmentToMap }, // already map form
-        "statusHistory" to statusHistory.map { it.statusHistoryToMap },
+        "adjustment" to adjustment.map { it.adjustmentToMap },
+        // statusHistory is now stored in subcollection, not in document
         "routineData" to routine.routineToMap
     )
 }
@@ -159,9 +200,9 @@ val RoutineData.routineToMap: Map<String, Any>
 val StatusHistory.statusHistoryToMap: Map<String, Any>
     get() = mapOf(
         "status" to status,
-        "adjustmentAmount" to adjustmentAmount,
-        "dateTime" to dateTime,
-        "deadlineTime" to deadlineTime
+        "totalAdjustmentAmount" to totalAdjustmentAmount,
+        "startDateTime" to startDateTime,
+        "deadlineDateTime" to deadlineDateTime
     )
 
 val Adjustment.adjustmentToMap: Map<String, Any>
@@ -196,8 +237,9 @@ fun Map<*, *>.asStatusHistory(): StatusHistory {
     } catch (_: Exception) {
         Status.INITIAL
     }
-    val adjustmentAmount = (this["adjustmentAmount"] as? Number)?.toDouble() ?: 0.0
-    val dateTime = when (val dt = this["dateTime"]) {
+    val totalAdjustmentAmount = (this["totalAdjustmentAmount"] as? Number)?.toDouble() ?: 0.0
+
+    val startDateTime = when (val dt = this["startDateTime"]) {
         is Timestamp -> dt
         is Map<*, *> -> {
             val seconds = (dt["seconds"] as? Number)?.toLong()
@@ -208,12 +250,12 @@ fun Map<*, *>.asStatusHistory(): StatusHistory {
                 ?: 0
             Timestamp(seconds, nanoseconds)
         }
-
         is Number -> Timestamp(dt.toLong(), 0)
         is String -> (dt.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
         else -> Timestamp(0, 0)
     }
-    val deadlineTime = when (val dt = this["deadlineTime"]) {
+
+    val deadlineDateTime = when (val dt = this["deadlineDateTime"]) {
         is Timestamp -> dt
         is Map<*, *> -> {
             val seconds = (dt["seconds"] as? Number)?.toLong()
@@ -224,7 +266,6 @@ fun Map<*, *>.asStatusHistory(): StatusHistory {
                 ?: 0
             Timestamp(seconds, nanoseconds)
         }
-
         is Number -> Timestamp(dt.toLong(), 0)
         is String -> (dt.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
         else -> Timestamp(0, 0)
@@ -232,9 +273,9 @@ fun Map<*, *>.asStatusHistory(): StatusHistory {
 
     return StatusHistory(
         status = status.name,
-        adjustmentAmount = adjustmentAmount,
-        dateTime = dateTime,
-        deadlineTime = deadlineTime
+        totalAdjustmentAmount = totalAdjustmentAmount,
+        startDateTime = startDateTime,
+        deadlineDateTime = deadlineDateTime
     )
 }
 
@@ -468,7 +509,7 @@ fun Map<*, *>.toDataset(): Dataset {
         ),
         routine = (this["routineData"] as? Map<*, *>)?.asRoutineData() ?: RoutineData(),
         adjustment = this.toAdjustment(),
-        statusHistory = this.toStatusHistory()
+        statusHistory = emptyList()  // StatusHistory is now in subcollection, load separately if needed
     )
 }
 

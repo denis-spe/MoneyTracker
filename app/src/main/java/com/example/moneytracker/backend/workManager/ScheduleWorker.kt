@@ -1,0 +1,159 @@
+// File: app/src/main/java/com/example/moneytracker/backend/workManager/ScheduleWorker.kt
+
+package com.example.moneytracker.backend.workManager
+
+import android.content.Context
+import android.util.Log
+import androidx.hilt.work.HiltWorker
+import androidx.work.CoroutineWorker
+import androidx.work.WorkerParameters
+import com.example.moneytracker.R
+import com.example.moneytracker.backend.alarmManager.AlarmItem
+import com.example.moneytracker.backend.alarmManager.AndroidAlarmManager
+import com.example.moneytracker.backend.datastore.RoutineDataStore
+import com.example.moneytracker.backend.notification.NotificationItem
+import com.example.moneytracker.backend.notification.Notifier
+import com.example.moneytracker.backend.storage.DataStorage
+import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.helper.status
+import com.example.moneytracker.helper.title
+import com.example.moneytracker.helper.toFirestoreTimestampUtc
+import com.example.moneytracker.helper.triggerMillis
+import dagger.assisted.Assisted
+import dagger.assisted.AssistedInject
+import kotlinx.coroutines.CancellationException
+import kotlinx.datetime.toKotlinLocalDateTime
+import java.time.Instant
+import java.time.ZoneId
+import java.time.ZonedDateTime
+
+@HiltWorker
+class ScheduleWorker @AssistedInject constructor(
+    @Assisted private val appContext: Context,
+    @Assisted private val params: WorkerParameters,
+    private val dataStorage: DataStorage,
+    private val notifier: Notifier,
+    private val routineDataStore: RoutineDataStore,
+    private val alarmManager: AndroidAlarmManager,
+) : CoroutineWorker(appContext, params) {
+
+    companion object {
+        const val TAG = "ScheduleWorker"
+    }
+
+    override suspend fun doWork(): Result {
+        Log.d(TAG, "ScheduleWorker started for ${params.id}")
+
+        val datasetId = inputData.getString("datasetId") ?: return Result.failure()
+        val userId = inputData.getString("userId") ?: return Result.failure()
+
+        return try {
+            val dataset = dataStorage.getDataset(userId, datasetId)
+                ?: return Result.failure()
+
+            val now = java.time.LocalDateTime.now().toKotlinLocalDateTime()
+
+            // Calculate the next trigger time
+            val nextTrigger = dataset.routine.triggerMillis
+            val nextDeadline = ZonedDateTime.ofInstant(
+                Instant.ofEpochMilli(nextTrigger),
+                ZoneId.systemDefault()
+            ).toLocalDateTime()
+
+            // ✅ FAST: Cache update in DataStore immediately
+            Log.d(TAG, "Caching routine update in DataStore for $datasetId")
+            routineDataStore.cacheRoutineUpdate(
+                datasetId = datasetId,
+                newDateTime = now.toString(),
+                newDeadline = nextDeadline.toString(),
+                triggerMillis = nextTrigger
+            )
+
+            // ✅ Show notification immediately
+            try {
+                val item = showResultNotification(dataset)
+                Log.d(TAG, "Showing notification: ${item.title}")
+                notifier.showNotification(item)
+            } catch (e: Exception) {
+                Log.w(TAG, "Failed to show notification", e)
+            }
+
+            // ✅ Update Firestore asynchronously
+            try {
+                dataStorage.completeRoutine(
+                    userId = userId,
+                    datasetId = datasetId,
+                    newDateTime = now.toFirestoreTimestampUtc(),
+                    nextDeadline = nextDeadline
+                        .toKotlinLocalDateTime()
+                        .toFirestoreTimestampUtc()
+                )
+                Log.d(TAG, "Firestore update successful for $datasetId")
+                routineDataStore.clearRoutineUpdate(datasetId)
+            } catch (e: Exception) {
+                Log.w(TAG, "Firestore update failed, keeping DataStore cache", e)
+                return Result.retry()
+            }
+
+            // ✅ CRITICAL: Schedule the NEXT alarm with the new trigger time
+            try {
+                Log.d(TAG, "Scheduling next alarm for $datasetId at $nextTrigger")
+                val nextAlarmItem = AlarmItem(datasetId, userId, nextTrigger)
+                alarmManager.schedule(nextAlarmItem)
+                Log.d(TAG, "Next alarm scheduled successfully for $datasetId")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to schedule next alarm for $datasetId", e)
+                // Don't fail the work - the alarm might be scheduled by RescheduleWorker later
+            }
+
+            Result.success()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in doWork", e)
+            Result.retry()
+        }
+    }
+
+    private fun showResultNotification(dataset: Dataset): NotificationItem {
+        val status = dataset.status
+        val datatypeName = dataset.dataType.text
+        val label = dataset.label
+
+        val bigMessage = when (status) {
+            Status.COMPLETED -> "${label.title} were successfully completed"
+            Status.OVERDUE -> "${label.title} was overdue"
+            Status.PENDING -> "Please adjust your ${datatypeName.lowercase()} for ${label.lowercase()}"
+            else -> "Processing ${label.title}..."
+        }
+
+        val message = when (status) {
+            Status.COMPLETED -> "Completed ${label.title}"
+            Status.OVERDUE -> "Overdue ${label.title}"
+            Status.PENDING -> "Adjust ${label.title}"
+            else -> "Processing..."
+        }
+
+        val progressPercent = try {
+            (dataset.adjustment.sumOf { it.amount } / dataset.amount * 100).toInt()
+        } catch (e: Exception) {
+            0
+        }
+
+        val smallIcon = R.drawable.ic_launcher_foreground
+        val largeIcon = when (status) {
+            Status.COMPLETED -> R.drawable.done
+            Status.OVERDUE -> R.drawable.circle_error
+            else -> R.drawable.pending
+        }
+
+        return NotificationItem(
+            title = "${datatypeName}: $label ($progressPercent%)",
+            message = message,
+            bigMessage = bigMessage,
+            icon = smallIcon,
+            largeIcon = largeIcon
+        )
+    }
+}
