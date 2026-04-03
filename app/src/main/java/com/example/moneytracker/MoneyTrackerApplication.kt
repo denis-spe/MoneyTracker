@@ -27,6 +27,7 @@ class MoneyTrackerApplication : Application(), Configuration.Provider {
     override val workManagerConfiguration: Configuration by lazy {
         Configuration.Builder()
             .setWorkerFactory(workerFactory)
+            .setMinimumLoggingLevel(Log.DEBUG)
             .build()
     }
 

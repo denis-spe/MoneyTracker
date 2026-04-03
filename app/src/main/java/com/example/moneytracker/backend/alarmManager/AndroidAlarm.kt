@@ -22,6 +22,10 @@ class AndroidAlarm @Inject constructor(
         action = "com.example.moneytracker.ALARM_ACTION"
     }
 
+    companion object {
+        const val TAG = "AndroidAlarm"
+    }
+
     /**
      * Schedules an alarm for the given [alarmItem].
      */
@@ -53,12 +57,20 @@ class AndroidAlarm @Inject constructor(
                         triggerTime,
                         pendingIntent
                     )
+                    Log.d(
+                        "AndroidAlarm",
+                        "Scheduled exact alarm for dataset=${alarmItem.datasetId}"
+                    )
                 } else {
                     // Fallback to inexact alarm if exact alarm permission is denied
                     alarmManager.setAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
                         triggerTime,
                         pendingIntent
+                    )
+                    Log.d(
+                        "AndroidAlarm",
+                        "Scheduled inexact alarm for dataset=${alarmItem.datasetId}"
                     )
                 }
             } else {
@@ -68,6 +80,7 @@ class AndroidAlarm @Inject constructor(
                     triggerTime,
                     pendingIntent
                 )
+                Log.d("AndroidAlarm", "Scheduled inexact alarm for dataset=${alarmItem.datasetId}")
             }
         } catch (e: SecurityException) {
             // Handle SecurityException by falling back to inexact alarm
@@ -76,6 +89,7 @@ class AndroidAlarm @Inject constructor(
                 triggerTime,
                 pendingIntent
             )
+            Log.d("AndroidAlarm", "Scheduled inexact alarm for dataset=${alarmItem.datasetId}")
         }
     }
 

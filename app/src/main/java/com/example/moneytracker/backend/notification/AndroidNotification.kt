@@ -89,6 +89,36 @@ class AndroidNotification @Inject constructor(
         }
     }
 
+    // In your Notifier class (usually injected via Hilt)
+    override fun buildForegroundNotification(context: Context): android.app.Notification {
+        val channelId = "money_tracker_updates"
+        val channelName = "Routine Updates"
+
+        // 1. Create the Notification Channel (Required for Android 8.0+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val manager =
+                context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            if (manager.getNotificationChannel(channelId) == null) {
+                val channel = NotificationChannel(
+                    channelId,
+                    channelName,
+                    NotificationManager.IMPORTANCE_LOW // Low priority so it doesn't beep every time
+                )
+                manager.createNotificationChannel(channel)
+            }
+        }
+
+        // 2. Build the notification
+        return NotificationCompat.Builder(context, channelId)
+            .setContentTitle("Money Tracker")
+            .setContentText("Syncing routine data...")
+            .setSmallIcon(R.drawable.ic_launcher_foreground) // Use your app icon
+            .setOngoing(true) // Prevents user from swiping it away while working
+            .setCategory(NotificationCompat.CATEGORY_SERVICE)
+            .setForegroundServiceBehavior(NotificationCompat.FOREGROUND_SERVICE_IMMEDIATE)
+            .build()
+    }
+
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val name = context.getString(R.string.channel_name)

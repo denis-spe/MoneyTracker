@@ -328,7 +328,7 @@ class DataStorageImpl(
             docRef.collection("statusHistory")
                 .document(statusId)
                 .set(statusHistory.statusHistoryToMap)
-                .await()
+//                .await()
 
             // Update dataset fields
             val routineMap = castToMutableMap(mapOf("routine" to dataset.routine))
@@ -342,7 +342,8 @@ class DataStorageImpl(
                     "routine" to routineMap,
                     "adjustment" to emptyList<Map<String, Any?>>()
                 )
-            ).await()
+            )
+//                .await()
 
             Log.d("DataStorageImpl", "completeRoutine: Update successful for $datasetId")
         } catch (e: Exception) {
@@ -456,28 +457,29 @@ class DataStorageImpl(
 
     override suspend fun removeDataset(userId: String, dataset: Dataset) {
         val id = dataset.id
-
-        Log.d("DataStorageImpl", "removeDataset called for datasetId=$id userId=$userId")
+        val docRef = db.collection(COLLECTION_NAME).document(userId)
+            .collection("datasets").document(id)
 
         try {
-            val docRef = db.collection(COLLECTION_NAME)
-                .document(userId)
-                .collection("datasets")
-                .document(id)
-
-            // First delete all status history documents in the subcollection
+            // 1. Get the snapshots (Try to use cache if offline)
             val statusHistorySnapshot = docRef.collection("statusHistory").get().await()
-            for (doc in statusHistorySnapshot.documents) {
-                doc.reference.delete().await()
-            }
-            Log.d(
-                "DataStorageImpl",
-                "Deleted ${statusHistorySnapshot.documents.size} status history entries"
-            )
 
-            // Then delete the dataset document itself
-            docRef.delete().await()
-            Log.d("DataStorageImpl", "Dataset $id deleted successfully")
+            // 2. Create a Write Batch
+            val batch = db.batch()
+
+            // 3. Add all subcollection deletes to the batch (No await here!)
+            for (doc in statusHistorySnapshot.documents) {
+                batch.delete(doc.reference)
+            }
+
+            // 4. Add the parent document delete to the batch
+            batch.delete(docRef)
+
+            // 5. Commit the batch
+            // Remove .await() if you want it to finish instantly while offline
+            batch.commit().await()
+
+            Log.d("DataStorageImpl", "Dataset and history deleted via batch")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to remove dataset", e)
             throw e

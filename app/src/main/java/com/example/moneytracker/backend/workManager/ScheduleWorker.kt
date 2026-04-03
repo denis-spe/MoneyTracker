@@ -3,9 +3,12 @@
 package com.example.moneytracker.backend.workManager
 
 import android.content.Context
+import android.content.pm.ServiceInfo
+import android.os.Build
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ForegroundInfo
 import androidx.work.WorkerParameters
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.alarmManager.AlarmItem
@@ -70,6 +73,14 @@ class ScheduleWorker @AssistedInject constructor(
                 triggerMillis = nextTrigger
             )
 
+            // 1. IMMEDIATELY tell the OS we are a Foreground Service
+            // This prevents Huawei from killing us in the first 5 seconds
+            try {
+                setForeground(getForegroundInfo())
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to set Foreground status", e)
+            }
+
             // ✅ Show notification immediately
             try {
                 val item = showResultNotification(dataset)
@@ -113,6 +124,21 @@ class ScheduleWorker @AssistedInject constructor(
         } catch (e: Exception) {
             Log.e(TAG, "Error in doWork", e)
             Result.retry()
+        }
+    }
+
+    override suspend fun getForegroundInfo(): ForegroundInfo {
+        val notification = notifier.buildForegroundNotification(appContext)
+
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            // ID 42 must be unique for your app's notifications
+            ForegroundInfo(
+                42,
+                notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC
+            )
+        } else {
+            ForegroundInfo(42, notification)
         }
     }
 

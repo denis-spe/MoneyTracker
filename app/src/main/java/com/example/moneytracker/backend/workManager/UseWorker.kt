@@ -1,6 +1,7 @@
 package com.example.moneytracker.backend.workManager
 
 import android.content.Context
+import android.util.Log
 import androidx.work.Data
 import androidx.work.ExistingWorkPolicy
 import androidx.work.OneTimeWorkRequestBuilder
@@ -36,6 +37,8 @@ class UseWorker @Inject constructor(
             ExistingWorkPolicy.REPLACE,  // Changed from KEEP to REPLACE for immediate execution
             workRequest
         )
+
+        Log.d(TAG, "Work scheduled for $datasetId")
     }
 
     override fun rescheduleWork(userId: String) {
@@ -54,5 +57,7 @@ class UseWorker @Inject constructor(
             ExistingWorkPolicy.REPLACE,  // Changed from KEEP to REPLACE for immediate execution
             workRequest
         )
+
+        Log.d(TAG, "Work rescheduled for $userId")
     }
 }
