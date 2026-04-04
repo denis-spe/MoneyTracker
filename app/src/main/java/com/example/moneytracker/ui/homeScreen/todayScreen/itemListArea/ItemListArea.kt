@@ -11,7 +11,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -78,7 +77,7 @@ import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
-import com.example.moneytracker.ui.theme.autoTextColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
 private val spacerWith = 14.dp
 private val labelFontSize = 13.sp
@@ -222,7 +221,7 @@ fun ItemListAreaSort(
                         else Icons.Outlined.Category,
                         contentDescription = "Category",
                         modifier = Modifier.size(FilterIconSize),
-                        tint = if (categorySorting.value != "Initial") Color.autoTextColorChange
+                        tint = if (categorySorting.value != "Initial") MoneyTrackerTheme.colors.autoText
                         else Color.Gray
                     )
                 }
@@ -232,7 +231,8 @@ fun ItemListAreaSort(
                         isTimeModelBottomOpen.value = true
                     }
                 ) {
-                    val color = if (timeSorting.value != SortType.Initial) Color.autoTextColorChange
+                    val color =
+                        if (timeSorting.value != SortType.Initial) MoneyTrackerTheme.colors.autoText
                     else Color.Gray
                     val imageVec = if (
                         timeSorting.value == SortType.Ascending ||
@@ -258,7 +258,7 @@ fun ItemListAreaSort(
                     else Icons.Outlined.Payments
                     val color = if (paymentSorting.value != null
                         || amountSorting.value != SortType.Initial
-                    ) Color.autoTextColorChange else Color.Gray
+                    ) MoneyTrackerTheme.colors.autoText else Color.Gray
 
 
                     Icon(
@@ -285,7 +285,7 @@ fun ItemListAreaSort(
                         contentDescription = "Sort",
                         modifier = Modifier.size(FilterIconSize),
                         tint = if (alphabeticalOrder.value != SortType.Initial)
-                            Color.autoTextColorChange else Color.Gray
+                            MoneyTrackerTheme.colors.autoText else Color.Gray
                     )
                 }
             }
@@ -452,7 +452,7 @@ fun ItemListAreaSort(
                                 isCategoryModelBottomOpen.value = false
                             },
                             colors = ButtonDefaults.textButtonColors()
-                                .copy(contentColor = Color.autoTextColorChange)
+                                .copy(contentColor = MoneyTrackerTheme.colors.autoText)
                         ) {
                             Text("Cancel")
                         }
@@ -464,7 +464,7 @@ fun ItemListAreaSort(
                             },
                             colors = ButtonDefaults.buttonColors()
                                 .copy(
-                                    contentColor = Color.autoTextColorChange,
+                                    contentColor = MoneyTrackerTheme.colors.autoText,
                                     containerColor = Color.LightGray.copy(alpha = 0.3f)
                                 )
                         ) {
@@ -583,7 +583,7 @@ fun ItemListAreaSort(
                         modifier = Modifier.padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
-                        val selectedColor = if (isSystemInDarkTheme()) Color.White else Color.Black
+                        val selectedColor = MoneyTrackerTheme.colors.autoText
                         val unselectedColor = Color.Gray.copy(0.4f)
 
                         Column {
@@ -698,7 +698,7 @@ fun ItemListAreaSort(
                                 isPaymentModelBottomOpen.value = false
                             },
                             colors = ButtonDefaults.textButtonColors()
-                                .copy(contentColor = Color.autoTextColorChange)
+                                .copy(contentColor = MoneyTrackerTheme.colors.autoText)
                         ) {
                             Text("Cancel")
                         }
@@ -711,7 +711,7 @@ fun ItemListAreaSort(
                             },
                             colors = ButtonDefaults.buttonColors()
                                 .copy(
-                                    contentColor = Color.autoTextColorChange,
+                                    contentColor = MoneyTrackerTheme.colors.autoText,
                                     containerColor = Color.LightGray.copy(alpha = 0.3f)
                                 )
                         ) {

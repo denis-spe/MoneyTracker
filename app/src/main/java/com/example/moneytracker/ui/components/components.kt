@@ -77,7 +77,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
-import com.example.moneytracker.ui.theme.autoColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
 
 @Composable
@@ -544,7 +544,7 @@ fun LoadableButton(
             .border(borderSize, color, shape)
             .clickable { onClick() },
         shape = shape,
-        color = Color.autoColorChange,
+        color = MoneyTrackerTheme.colors.autoBackground,
     ) {
         Surface(
             modifier = Modifier
@@ -602,7 +602,8 @@ fun AuthNextPageButton(
         isError = isError,
         gradient = Brush.sweepGradient(
             listOf(
-                colorResource(id = R.color.authBtnContainerColor), Color.autoColorChange
+                colorResource(id = R.color.authBtnContainerColor),
+                MoneyTrackerTheme.colors.autoBackground
             )
         )
     ) {

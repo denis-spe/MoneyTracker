@@ -33,7 +33,7 @@ import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.VicoBarChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
-import com.example.moneytracker.ui.theme.autoTextColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.coroutines.launch
 
 @Composable
@@ -219,7 +219,7 @@ fun YesterdayStatArea(
                 },
                 colors = ButtonDefaults.textButtonColors().copy(
                     contentColor = if (pageState.currentPage == 0)
-                        Color.White else Color.autoTextColorChange,
+                        Color.White else MoneyTrackerTheme.colors.autoText,
                     containerColor = if (pageState.currentPage == 0) {
                         Color.Blue
                     } else {
@@ -237,7 +237,7 @@ fun YesterdayStatArea(
                 },
                 colors = ButtonDefaults.textButtonColors().copy(
                     contentColor = if (pageState.currentPage == 1)
-                        Color.White else Color.autoTextColorChange,
+                        Color.White else MoneyTrackerTheme.colors.autoText,
                     containerColor = if (pageState.currentPage == 1) {
                         Color.Blue
                     } else {

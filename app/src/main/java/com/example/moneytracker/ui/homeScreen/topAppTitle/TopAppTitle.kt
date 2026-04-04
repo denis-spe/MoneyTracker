@@ -24,7 +24,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.theme.autoTextColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
 @Composable
 fun TopAppTitle(
@@ -63,7 +63,7 @@ fun TopAppTitle(
                     .padding(bottom = 2.dp),
                 width = 5.dp,
                 height = 5.dp,
-                color = Color.autoTextColorChange
+                color = MoneyTrackerTheme.colors.autoText
             )
         },
         divider = {},
@@ -83,7 +83,7 @@ fun TopAppTitle(
                             currentPageColor else
                             Color.Unspecified
                     ),
-                unselectedContentColor = Color.autoTextColorChange,
+                unselectedContentColor = MoneyTrackerTheme.colors.autoText,
                 selectedContentColor = contentColor
             ) {
                 Text(

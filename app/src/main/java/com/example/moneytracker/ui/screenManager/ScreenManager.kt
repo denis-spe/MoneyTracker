@@ -21,6 +21,7 @@ import com.example.moneytracker.ui.authScreens.registerScreen.RegisterViewModel
 import com.example.moneytracker.ui.homeScreen.HomeScreen
 import com.example.moneytracker.ui.loading.LoadingScreen
 import com.example.moneytracker.ui.loading.LoadingViewModel
+import com.example.moneytracker.ui.settings.SettingsScreen
 import com.example.moneytracker.ui.startUpScreen.StartUpScreen
 import com.google.firebase.auth.FirebaseAuth
 
@@ -86,6 +87,11 @@ fun ScreenManager(
             HomeScreen(
                 userId = backStackEntry.arguments?.getString("userId").orEmpty(),
                 onNavigate = navController
+            )
+        }
+        composable<SettingsScreenRouter> {
+            SettingsScreen(
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

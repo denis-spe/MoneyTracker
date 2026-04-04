@@ -113,8 +113,7 @@ import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.components.CustomAmountKeyBoard
-import com.example.moneytracker.ui.theme.autoColorChange
-import com.example.moneytracker.ui.theme.autoTextColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.datetime.DayOfWeek
@@ -1006,7 +1005,7 @@ fun RepeatableTransaction(
                                 modifier = Modifier.fillMaxWidth(0.6f),
                                 expanded = onDropDownOpen.value,
                                 onDismissRequest = { onDropDownOpen.value = false },
-                                containerColor = Color.autoColorChange.copy(0.9f)
+                                containerColor = MoneyTrackerTheme.colors.autoBackground.copy(0.9f)
                             ) {
 
                                 Routine.entries.forEach {
@@ -1205,7 +1204,7 @@ fun RepeatableTransaction(
                                             onClick = { showDayOfWeekDropDown.value = true },
                                             colors = ButtonDefaults.buttonColors().copy(
                                                 containerColor = color,
-                                                contentColor = Color.autoTextColorChange
+                                                contentColor = MoneyTrackerTheme.colors.autoText
                                             )
                                         ) {
                                             Text(

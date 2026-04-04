@@ -5,13 +5,22 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.example.moneytracker.ui.settings.SettingsViewModel
+import com.example.moneytracker.ui.settings.ThemeConfig
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    private val settingsViewModel: SettingsViewModel by viewModels()
+
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -36,7 +45,19 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
-            MoneyTrackerTheme {
+            val themeConfig by settingsViewModel.themeConfig.collectAsState()
+            val dynamicColor by settingsViewModel.dynamicColor.collectAsState()
+
+            val darkTheme = when (themeConfig) {
+                ThemeConfig.SYSTEM -> isSystemInDarkTheme()
+                ThemeConfig.LIGHT -> false
+                ThemeConfig.DARK -> true
+            }
+
+            MoneyTrackerTheme(
+                darkTheme = darkTheme,
+                dynamicColor = dynamicColor
+            ) {
                 App()
             }
         }

@@ -10,13 +10,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.components.charts.marker.rememberMarker
-import com.example.moneytracker.ui.theme.autoTextColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberAxisTickComponent
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
@@ -58,7 +57,7 @@ import com.patrykandpatrick.vico.core.common.shape.Shape
 //) {
 //    val modelProducer = remember { CartesianChartModelProducer() }
 //    val chartData = chartDataCollection.chartData
-//    val textComponent = rememberTextComponent(color = Color.autoTextColorChange)
+//    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.autoText)
 //    val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
 //
 //    val markerFormatter = DefaultCartesianMarker.ValueFormatter { context, targets ->
@@ -180,7 +179,7 @@ fun VicoBarChart(
     val modelProducer = remember { CartesianChartModelProducer() }
     val chartData = chartDataCollection.chartData
 
-    val textComponent = rememberTextComponent(color = Color.autoTextColorChange)
+    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.autoText)
     val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
 
     // ---------- Marker ----------

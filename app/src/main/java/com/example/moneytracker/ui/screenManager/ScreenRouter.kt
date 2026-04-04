@@ -26,3 +26,6 @@ object PasswordRegistrationScreenRouter
 
 @Serializable
 data class HomeScreenRouter(val userId: String)
+
+@Serializable
+object SettingsScreenRouter

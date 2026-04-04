@@ -8,6 +8,8 @@ import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
 private val DarkColorScheme = darkColorScheme(
@@ -49,9 +51,38 @@ fun MoneyTrackerTheme(
         else -> LightColorScheme
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    val darkBackgroundColor = Color(0xFF282626)
+    val lightBackgroundColor = Color(0xFFE0DDDD)
+
+    val extendedColors = if (darkTheme) {
+        ExtendedColors(
+            customBackground = darkBackgroundColor.copy(alpha = 0.5f),
+            customContent = Color.White.copy(alpha = 0.8f),
+            currentPage = Color(0xFF8F8686).copy(alpha = 0.2f),
+            autoBackground = darkBackgroundColor,
+            autoText = Color.White
+        )
+    } else {
+        ExtendedColors(
+            customBackground = lightBackgroundColor.copy(alpha = 0.5f),
+            customContent = Color.Black.copy(alpha = 0.8f),
+            currentPage = Color(0xFF8C8B8B).copy(alpha = 0.2f),
+            autoBackground = lightBackgroundColor,
+            autoText = Color.Black
+        )
+    }
+
+    CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
+}
+
+object MoneyTrackerTheme {
+    val colors: ExtendedColors
+        @Composable
+        get() = LocalExtendedColors.current
 }

@@ -82,7 +82,7 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerAmountFiel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTag
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTextField
-import com.example.moneytracker.ui.theme.autoTextColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
@@ -786,7 +786,7 @@ fun OnDeleteReceipt(
                                 containerColor = Color.Gray.copy(0.2f)
                             )
                         ) {
-                            Text("Cancel", color = Color.autoTextColorChange)
+                            Text("Cancel", color = MoneyTrackerTheme.colors.autoText)
                         }
 
                         Spacer(modifier = Modifier.width(10.dp))
@@ -797,7 +797,7 @@ fun OnDeleteReceipt(
                                 containerColor = colorResource(R.color.error_color)
                             )
                         ) {
-                            Text("Delete", color = Color.autoTextColorChange)
+                            Text("Delete", color = MoneyTrackerTheme.colors.autoText)
                         }
                     }
                 }

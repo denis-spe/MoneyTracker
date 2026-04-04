@@ -32,7 +32,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -41,7 +40,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.title
-import com.example.moneytracker.ui.theme.autoTextColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
 
 private val ICONS_TEXT_SIZE = 11.sp
@@ -130,7 +129,7 @@ fun IconList(
                             if (selectionIcon.icon == icon.second)
                                 Modifier.border(
                                     2.dp,
-                                    Color.autoTextColorChange,
+                                    MoneyTrackerTheme.colors.autoText,
                                     CircleShape
                                 )
                             else Modifier

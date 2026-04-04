@@ -16,12 +16,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
-import com.example.moneytracker.ui.theme.autoColorChange
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import com.google.firebase.auth.FirebaseUser
 import kotlinx.coroutines.delay
 
@@ -58,7 +57,7 @@ fun LoadingScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.autoColorChange),
+                .background(MoneyTrackerTheme.colors.autoBackground),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {

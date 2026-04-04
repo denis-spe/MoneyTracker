@@ -8,7 +8,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
@@ -44,7 +43,9 @@ import com.example.moneytracker.ui.homeScreen.topAppNavigation.TopAppNav
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopAppTitle
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
+import com.example.moneytracker.ui.screenManager.SettingsScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
+import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
 @Suppress("UNUSED_PARAMETER")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,21 +57,9 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val uiStates = viewModel.uiState.collectAsState()
     val userState = viewModel.userState.collectAsState()
     val snackBarHostState = viewModel.snackBarHostState.collectAsState()
-    val datasets = viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
+    viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
 
-    val colors = Colors()
-
-    // Define the colors for the button
-    val contentColor = (if (isSystemInDarkTheme()) colors.darkModeColor else colors.lightModeColor)
-
-    // Panel and button color
-    val backgroundColor = if (isSystemInDarkTheme()) colors.darkModeBackgroundColor else
-        colors.lightModeBackgroundColor
-
-    LaunchedEffect(datasets) {
-
-    }
-
+    val customColors = MoneyTrackerTheme.colors
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvents.collect {
@@ -108,16 +97,16 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                             title = {
                                 TopAppTitle(
                                     uiStates,
-                                    contentColor = contentColor,
-                                    currentPageColor = colors.currentPageColor,
-                                    backgroundColor = backgroundColor,
+                                    contentColor = customColors.customContent,
+                                    currentPageColor = customColors.currentPage,
+                                    backgroundColor = customColors.customBackground,
                                     viewModel::updateTopTitle
                                 )
                             },
                             navigationIcon = {
                                 TopAppNav(
                                     userState,
-                                    contentColor = contentColor,
+                                    contentColor = customColors.customContent,
                                     userColor = uiStates.value.info.color
                                 ) {
                                     viewModel.updateIsUserDropdownVisible(
@@ -151,11 +140,15 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     // Drop down user profile
                     DropDownUserProfile(
                         paddingValues,
-                        contentColor = contentColor,
-                        backgroundColor = backgroundColor.copy(alpha = 0.9f),
+                        contentColor = customColors.customContent,
+                        backgroundColor = customColors.customBackground.copy(alpha = 0.9f),
                         visible = uiStates.value.isUserDropdownVisible,
                         userState = userState,
                         isLoading = uiStates.value.isLogOutLoading,
+                        settingsClick = {
+                            onNavigate?.navigate(SettingsScreenRouter)
+                            viewModel.updateIsUserDropdownVisible(false)
+                        },
                     ) {
                         viewModel.handleLogout()
                     }
