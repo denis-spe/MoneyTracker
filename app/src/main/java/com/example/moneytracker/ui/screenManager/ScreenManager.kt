@@ -11,7 +11,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
-import com.example.moneytracker.backend.auth.AccountServicesImpl
+import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.ui.authScreens.loginScreen.LoginScreen
 import com.example.moneytracker.ui.authScreens.mailScreen.MailScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.EmailRegistrationScreen
@@ -23,15 +23,13 @@ import com.example.moneytracker.ui.loading.LoadingScreen
 import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.settings.SettingsScreen
 import com.example.moneytracker.ui.startUpScreen.StartUpScreen
-import com.google.firebase.auth.FirebaseAuth
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun ScreenManager(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    account: AccountServices = hiltViewModel<ScreenManagerViewModel>().account
 ) {
-
-    val account = AccountServicesImpl(FirebaseAuth.getInstance())
     val registerViewModel: RegisterViewModel = hiltViewModel()
     val user = account.userState.collectAsState()
     val loadingViewModel: LoadingViewModel = hiltViewModel()

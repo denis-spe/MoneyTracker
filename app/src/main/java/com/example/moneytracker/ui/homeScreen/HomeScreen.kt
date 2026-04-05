@@ -88,7 +88,8 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                                     viewModel.updateIsUserDropdownVisible(false)
                                 }
                             )
-                        },
+                        }
+                        .testTag(stringResource(R.string.homeScreenId)),
                     topBar = {
                         CenterAlignedTopAppBar(
                             colors = TopAppBarDefaults.topAppBarColors().copy(

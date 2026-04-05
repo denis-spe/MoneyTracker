@@ -48,6 +48,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
+
+    testOptions {
+        unitTests.isReturnDefaultValues = true
+    }
 }
 
 kotlin {
@@ -84,7 +88,6 @@ dependencies {
 
     // Hilt (Dagger)
     implementation(libs.hilt.android.v257)
-    implementation(libs.mockito.bom)
     implementation(libs.googleid)
     implementation(libs.firebase.crashlytics.buildtools)
     implementation(libs.firebase.firestore)
@@ -96,9 +99,8 @@ dependencies {
     ksp(libs.androidx.hilt.compiler)
 
     testImplementation(libs.junit)
-    testImplementation(libs.mockito.bom)
-    testImplementation("org.mockito:mockito-core:5.7.0")
-    testImplementation("org.mockito:mockito-inline:5.7.0")
+    testImplementation(platform(libs.mockito.bom))
+    testImplementation("org.mockito:mockito-core")
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

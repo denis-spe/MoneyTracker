@@ -1,8 +1,10 @@
 package com.example.moneytracker
 
 import com.example.moneytracker.backend.auth.AccountServices
-import com.example.moneytracker.backend.auth.AccountServicesImpl
+import com.example.moneytracker.backend.storage.DataStorage
+import com.example.moneytracker.backend.storage.DataStorageImpl
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.components.SingletonComponent
@@ -17,11 +19,30 @@ import javax.inject.Singleton
     replaces = [FirebaseAuthModule::class]
 )
 object TestFirebaseAuthModule {
+
+    @Singleton
+    @Provides
+    fun provideFirebaseAuth(): FirebaseAuth {
+        return FirebaseAuth.getInstance()
+    }
+
+    @Singleton
+    @Provides
+    fun provideFirebaseFirestore(): FirebaseFirestore {
+        return FirebaseFirestore.getInstance()
+    }
+
+    @Singleton
+    @Provides
+    fun provideDataStorage(firestore: FirebaseFirestore): DataStorage {
+        return DataStorageImpl(firestore)
+    }
+
     @Provides
     @Singleton
-    fun provideAccountService(auth: FirebaseAuth): AccountServices {
+    fun provideAccountService(): AccountServices {
         // Return fake service that doesn't call Firebase
-        return AccountServicesImpl(auth)
+        return FakeAccountServices()
     }
 
 }

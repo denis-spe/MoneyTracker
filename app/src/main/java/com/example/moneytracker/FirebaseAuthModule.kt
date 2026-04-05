@@ -17,15 +17,28 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object FirebaseAuthModule {
+
+    private const val EMULATOR_IP = "192.168.43.53"
+
     @Singleton
     @Provides
     fun provideFirebaseAuth(): FirebaseAuth {
-        return FirebaseAuth.getInstance()
+        val auth = FirebaseAuth.getInstance()
+        if (BuildConfig.DEBUG) {
+            auth.useEmulator(EMULATOR_IP, 9090)
+        }
+        return auth
     }
 
     @Singleton
     @Provides
     fun provideFirebaseFirestore(): FirebaseFirestore {
+        val firestore = FirebaseFirestore.getInstance()
+
+        if (BuildConfig.DEBUG) {
+            firestore.useEmulator(EMULATOR_IP, 8080)
+        }
+
         val settings = FirebaseFirestoreSettings.Builder()
             .setLocalCacheSettings(
                 PersistentCacheSettings.newBuilder()
@@ -33,9 +46,10 @@ object FirebaseAuthModule {
                     .build()
             )
             .build()
-        FirebaseFirestore.getInstance().firestoreSettings = settings
+        firestore.firestoreSettings = settings
+        
         FirebaseFirestore.setLoggingEnabled(true)
-        return FirebaseFirestore.getInstance()
+        return firestore
     }
 
     @Singleton
@@ -43,8 +57,6 @@ object FirebaseAuthModule {
     fun provideDataStorage(firestore: FirebaseFirestore): DataStorage {
         return DataStorageImpl(firestore)
     }
-
-
 
     @Singleton
     @Provides

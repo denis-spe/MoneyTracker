@@ -17,9 +17,8 @@ class AndroidAlarm @Inject constructor(
     @ApplicationContext private val context: Context
 ) : AndroidAlarmManager {
 
-    val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    val intent = Intent(context, AndroidAlarmReceiver::class.java).apply {
-        action = "com.example.moneytracker.ALARM_ACTION"
+    private val alarmManager: AlarmManager by lazy {
+        context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
     }
 
     companion object {
@@ -55,7 +54,7 @@ class AndroidAlarm @Inject constructor(
                     alarmManager.setExactAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
                         triggerTime,
-                        pendingIntent
+                        pendingIntent!!
                     )
                     Log.d(
                         "AndroidAlarm",
@@ -66,7 +65,7 @@ class AndroidAlarm @Inject constructor(
                     alarmManager.setAndAllowWhileIdle(
                         AlarmManager.RTC_WAKEUP,
                         triggerTime,
-                        pendingIntent
+                        pendingIntent!!
                     )
                     Log.d(
                         "AndroidAlarm",
@@ -78,7 +77,7 @@ class AndroidAlarm @Inject constructor(
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerTime,
-                    pendingIntent
+                    pendingIntent!!
                 )
                 Log.d("AndroidAlarm", "Scheduled inexact alarm for dataset=${alarmItem.datasetId}")
             }
@@ -87,7 +86,7 @@ class AndroidAlarm @Inject constructor(
             alarmManager.setAndAllowWhileIdle(
                 AlarmManager.RTC_WAKEUP,
                 triggerTime,
-                pendingIntent
+                pendingIntent!!
             )
             Log.d("AndroidAlarm", "Scheduled inexact alarm for dataset=${alarmItem.datasetId}")
         }
@@ -115,7 +114,7 @@ class AndroidAlarm @Inject constructor(
         )
 
         try {
-            alarmManager.cancel(pendingIntent)
+            alarmManager.cancel(pendingIntent!!)
             pendingIntent.cancel() // also cancel the PendingIntent itself
             Log.d("AndroidAlarm", "Cancelled alarm for dataset=${alarmItem.datasetId}")
         } catch (e: Exception) {

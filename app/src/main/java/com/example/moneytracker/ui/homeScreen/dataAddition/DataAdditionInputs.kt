@@ -13,12 +13,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -34,9 +35,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTime
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.EditCalendar
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
@@ -54,6 +52,7 @@ import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -81,7 +80,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.InterceptPlatformTextInput
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
@@ -113,7 +111,6 @@ import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.components.CustomAmountKeyBoard
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.datetime.DayOfWeek
@@ -868,6 +865,77 @@ fun AdjustmentField(
 }
 
 @Composable
+fun RepeatableInputComponent(
+    repeatByState: MutableState<RoutineData>,
+    routine: Routine,
+    lastText: String
+) {
+    val state = rememberTextFieldState(initialText = "1")
+
+    LaunchedEffect(state.text.toString()) {
+        repeatByState.value = RoutineData(
+            routine = routine,
+            routineCount = state.text.toString().toIntOrNull() ?: 0
+        )
+    }
+
+    Row(
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.fillMaxWidth(0.9f)
+        ) {
+            RadioButton(
+                selected = repeatByState.value.routine == routine,
+                onClick = {
+                    repeatByState.value = repeatByState.value.copy(
+                        routine = routine,
+                        routineCount = state.text.toString().toIntOrNull() ?: 0
+                    )
+                }
+            )
+
+
+            Row(
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (routine != Routine.Nothing) {
+                    Text("Every")
+                    TextField(
+                        state = state,
+                        modifier = Modifier
+                            .width(60.dp)
+                            .onFocusChanged {
+                                if (it.isFocused) {
+                                    repeatByState.value =
+                                        repeatByState.value.copy(
+                                            routine = routine,
+                                            routineCount = state.text.toString().toIntOrNull()
+                                                ?: 0
+                                        )
+                                }
+                            },
+                        inputTransformation = InputTransformation
+                            .maxLength(3),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        lineLimits = TextFieldLineLimits.SingleLine,
+                    )
+                }
+                Text(lastText)
+            }
+        }
+    }
+}
+
+@Composable
 fun RepeatableTransaction(
     repeatByState: MutableState<RoutineData>,
     dataType: DataType,
@@ -884,8 +952,11 @@ fun RepeatableTransaction(
             startLocalDateTimeState.value = now.toLocalDateTime()
                 .toKotlinLocalDateTime()
             endLocalDateTimeState.value = when (repeatByState.value.routine) {
-                Routine.EveryHour -> now
+                Routine.EveryMinute -> now
                     .plusMinutes(repeatByState.value.routineCount.toLong())
+
+                Routine.EveryHour -> now
+                    .plusHours(repeatByState.value.routineCount.toLong())
 
                 Routine.EveryDay -> now
                     .plusDays(repeatByState.value.routineCount.toLong())
@@ -916,20 +987,13 @@ fun RepeatableTransaction(
     }
 
 
-    val dayOfWeek = DayOfWeek.entries
+    DayOfWeek.entries
     LocalDate.now()
 
     val color = colorResource(dataType.color)
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
     val onDialogShow = remember { mutableStateOf(false) }
     val onDropDownOpen = remember { mutableStateOf(false) }
-    val dailyState = rememberTextFieldState(initialText = "1")
-    val hourState = rememberTextFieldState(initialText = "01")
-    val monthlyState = rememberTextFieldState(initialText = "00")
-    val weekState = rememberTextFieldState("1")
-    val yearState = rememberTextFieldState("1")
-    val dayOfWeekState = remember { mutableStateOf<DayOfWeek?>(null) }
-    val showDayOfWeekDropDown = remember { mutableStateOf(false) }
     val repeatBy = remember { mutableStateOf(RoutineData()) }
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
     val bgColor = if (goalDateTimeWarningState.value == GoalWarning.ERROR)
@@ -952,7 +1016,6 @@ fun RepeatableTransaction(
                             }
                         )
                     }
-                    .fillMaxHeight(0.5f)
             ) {
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
@@ -967,289 +1030,32 @@ fun RepeatableTransaction(
                     )
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
-                    Column(
-                        modifier = Modifier.fillMaxWidth(0.6f),
-                        verticalArrangement = Arrangement.Center,
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        LocalDensity.current
 
-                        TextButton(
-                            onClick = {
-                                onDropDownOpen.value = !onDropDownOpen.value
-                            },
-                            colors = ButtonDefaults.textButtonColors().copy(
-                                contentColor = color
-                            ),
-                            shape = RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
-                        ) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                val text = if (repeatByState.value.routine == Routine.Nothing)
-                                    "Nothing" else repeatByState.value.routine.text
-                                Text(text)
-                                Icon(
-                                    imageVector = if (onDropDownOpen.value)
-                                        Icons.Default.KeyboardArrowUp
-                                    else Icons.Default.KeyboardArrowDown,
-                                    contentDescription = "Arrow"
-                                )
-                            }
-                        }
-
-                        if (onDropDownOpen.value) {
-                            DropdownMenu(
-                                modifier = Modifier.fillMaxWidth(0.6f),
-                                expanded = onDropDownOpen.value,
-                                onDismissRequest = { onDropDownOpen.value = false },
-                                containerColor = MoneyTrackerTheme.colors.autoBackground.copy(0.9f)
-                            ) {
-
-                                Routine.entries.forEach {
-                                    DropdownMenuItem(
-                                        text = {
-                                            Text(it.text)
-                                        },
-                                        onClick = {
-                                            repeatByState.value =
-                                                repeatByState.value.copy(it)
-                                            onDropDownOpen.value = false
-                                        },
-                                    )
-                                }
-
-                            }
-                        }
-                    }
-
-                    Column(
+                    LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(10.dp),
+                            .padding(10.dp)
+                            .selectableGroup(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        repeatBy.value = when (repeatByState.value.routine) {
-                            Routine.Nothing -> {
-                                Text(
-                                    "Select the drop down to set the reset options",
-                                    textAlign = TextAlign.Center,
-                                    fontWeight = FONT_WEIGHT,
-                                    color = color
-                                )
-                                RoutineData()
-                            }
-
-                            Routine.EveryDay -> {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    TextField(
-                                        state = dailyState,
-                                        modifier = Modifier.width(60.dp),
-                                        inputTransformation = InputTransformation
-                                            .maxLength(3),
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number,
-                                            imeAction = ImeAction.Done
-                                        ),
-                                        lineLimits = TextFieldLineLimits.SingleLine,
-                                    )
-                                    Text("number of day")
-                                }
-                                if (dailyState.text.isNotEmpty()) {
-                                    RoutineData(
-                                        routine = Routine.EveryDay,
-                                        routineCount = dailyState.text.toString().toInt(),
-                                        stopRoutine = false
-                                    )
-                                } else {
-                                    RoutineData()
-                                }
-                            }
-
-                            Routine.EveryHour -> {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    TextField(
-                                        state = hourState,
-                                        modifier = Modifier.width(60.dp),
-                                        inputTransformation = InputTransformation
-                                            .maxLength(2),
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number,
-                                            imeAction = ImeAction.Done
-                                        ),
-                                        lineLimits = TextFieldLineLimits.SingleLine,
-                                    )
-                                }
-
-                                if (hourState.text.isNotEmpty()) {
-                                    RoutineData(
-                                        routine = Routine.EveryHour,
-                                        routineCount = hourState.text.toString().toInt(),
-                                        stopRoutine = false
-                                    )
-                                } else {
-                                    RoutineData()
-                                }
-                            }
-
-                            Routine.Weekly -> {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    TextField(
-                                        state = weekState,
-                                        modifier = Modifier.width(60.dp),
-                                        inputTransformation = InputTransformation
-                                            .maxLength(3),
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number,
-                                            imeAction = ImeAction.Done
-                                        ),
-                                        lineLimits = TextFieldLineLimits.SingleLine,
-                                    )
-                                    Text("number of weeks")
-                                }
-
-                                if (weekState.text.isNotEmpty()) {
-                                    RoutineData(
-                                        routine = Routine.Weekly,
-                                        routineCount = weekState.text.toString().toInt(),
-                                        stopRoutine = false
-                                    )
-                                } else {
-                                    RoutineData()
-                                }
-                            }
-
-                            Routine.Yearly -> {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    TextField(
-                                        state = yearState,
-                                        modifier = Modifier.width(60.dp),
-                                        inputTransformation = InputTransformation
-                                            .maxLength(4),
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number,
-                                            imeAction = ImeAction.Done
-                                        ),
-                                        lineLimits = TextFieldLineLimits.SingleLine,
-                                    )
-
-                                    Text("number of years")
-                                }
-
-                                if (yearState.text.isNotEmpty()) {
-                                    RoutineData(
-                                        routine = Routine.Yearly,
-                                        routineCount = yearState.text.toString().toInt(),
-                                        stopRoutine = false
-                                    )
-                                } else {
-                                    RoutineData()
-                                }
-                            }
-
-                            Routine.Monthly -> {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    TextField(
-                                        state = monthlyState,
-                                        modifier = Modifier.width(60.dp),
-                                        inputTransformation = InputTransformation
-                                            .maxLength(2),
-                                        keyboardOptions = KeyboardOptions(
-                                            keyboardType = KeyboardType.Number,
-                                            imeAction = ImeAction.Done
-                                        ),
-                                        lineLimits = TextFieldLineLimits.SingleLine,
-                                    )
-
-                                    Text("number of months")
-                                }
-
-                                if (monthlyState.text.isNotEmpty()) {
-                                    RoutineData(
-                                        routine = Routine.Monthly,
-                                        routineCount = monthlyState.text.toString().toInt(),
-                                        stopRoutine = false
-                                    )
-                                } else {
-                                    RoutineData()
-                                }
-
-                            }
-
-                            Routine.SpecifyDayOfTheWeek -> {
-                                Row(
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Column {
-                                        Button(
-                                            onClick = { showDayOfWeekDropDown.value = true },
-                                            colors = ButtonDefaults.buttonColors().copy(
-                                                containerColor = color,
-                                                contentColor = MoneyTrackerTheme.colors.autoText
-                                            )
-                                        ) {
-                                            Text(
-                                                dayOfWeekState.value?.name ?: "Select day"
-                                            )
-
-                                        }
-
-                                        if (showDayOfWeekDropDown.value) {
-                                            DropdownMenu(
-                                                expanded = showDayOfWeekDropDown.value,
-                                                onDismissRequest = {
-                                                    showDayOfWeekDropDown.value = false
-                                                }
-                                            ) {
-                                                dayOfWeek.forEach {
-                                                    DropdownMenuItem(
-                                                        text = {
-                                                            Text(it.name.title)
-                                                        },
-                                                        onClick = {
-                                                            dayOfWeekState.value = it
-                                                            showDayOfWeekDropDown.value = false
-                                                        }
-                                                    )
-                                                }
-                                            }
-                                        }
-
+                        Routine.entries.forEach {
+                            item(key = it.hashCode()) {
+                                RepeatableInputComponent(
+                                    repeatByState = repeatBy,
+                                    routine = it,
+                                    lastText = when (it) {
+                                        Routine.EveryMinute -> "minutes"
+                                        Routine.EveryHour -> "hours"
+                                        Routine.EveryDay -> "days"
+                                        Routine.Weekly -> "weeks"
+                                        Routine.Monthly -> "months"
+                                        Routine.Yearly -> "years"
+                                        Routine.SpecifyDayOfTheWeek -> "days"
+                                        else -> "Don't repeat"
                                     }
-
-                                    Text("will reset the goal")
-                                }
-
-                                if (dayOfWeekState.value != null) {
-                                    RoutineData(
-                                        routine = Routine.SpecifyDayOfTheWeek,
-                                        routineCount = (dayOfWeekState.value as DayOfWeek).ordinal,
-                                        stopRoutine = false
-                                    )
-                                } else {
-                                    RoutineData()
-                                }
+                                )
                             }
-
                         }
                     }
 
@@ -1266,6 +1072,8 @@ fun RepeatableTransaction(
                         ) {
                             Text("Cancel")
                         }
+
+                        Text("|", color = color)
 
                         TextButton(
                             onClick = {

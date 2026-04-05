@@ -34,40 +34,47 @@ import kotlin.math.log10
 import kotlin.math.pow
 
 val RoutineData.triggerMillis: Long
-    get() {
-        val nowMillis = System.currentTimeMillis()
-        val now = ZonedDateTime.ofInstant(Instant.ofEpochMilli(nowMillis), ZoneId.systemDefault())
+    get() = getTriggerMillisFrom(System.currentTimeMillis())
 
+/**
+ * Calculates the next trigger time based on a [baseMillis].
+ */
+fun RoutineData.getTriggerMillisFrom(baseMillis: Long): Long {
+    val base = ZonedDateTime.ofInstant(Instant.ofEpochMilli(baseMillis), ZoneId.systemDefault())
+    val count = if (this.routineCount <= 0) 1L else this.routineCount.toLong()
 
-        return when (this.routine) {
-            Routine.EveryHour -> now.plusMinutes(this.routineCount.toLong()).toInstant()
-                .toEpochMilli()
+    return when (this.routine) {
+        Routine.EveryMinute -> base.plusMinutes(count).toInstant()
+            .toEpochMilli()
 
-            Routine.EveryDay -> now.plusDays(this.routineCount.toLong()).toInstant()
-                .toEpochMilli()
+        Routine.EveryHour -> base.plusHours(count).toInstant()
+            .toEpochMilli()
 
-            Routine.Weekly -> now.plusWeeks(this.routineCount.toLong()).toInstant()
-                .toEpochMilli()
+        Routine.EveryDay -> base.plusDays(count).toInstant()
+            .toEpochMilli()
 
-            Routine.Monthly -> now.plusMonths(this.routineCount.toLong()).toInstant()
-                .toEpochMilli()
+        Routine.Weekly -> base.plusWeeks(count).toInstant()
+            .toEpochMilli()
 
-            Routine.Yearly -> now.plusYears(this.routineCount.toLong()).toInstant()
-                .toEpochMilli()
+        Routine.Monthly -> base.plusMonths(count).toInstant()
+            .toEpochMilli()
 
-            Routine.SpecifyDayOfTheWeek -> {
-                val targetDay = DayOfWeek.of((this.routineCount % 7) + 1)
-                val next = if (now.dayOfWeek == targetDay) {
-                    now.plusWeeks(1)
-                } else {
-                    now.with(TemporalAdjusters.next(targetDay))
-                }
-                next.toInstant().toEpochMilli()
+        Routine.Yearly -> base.plusYears(count).toInstant()
+            .toEpochMilli()
+
+        Routine.SpecifyDayOfTheWeek -> {
+            val targetDay = DayOfWeek.of(((count - 1) % 7 + 1).toInt())
+            val next = if (base.dayOfWeek == targetDay) {
+                base.plusWeeks(1)
+            } else {
+                base.with(TemporalAdjusters.next(targetDay))
             }
-
-            else -> nowMillis + 86_400_000
+            next.toInstant().toEpochMilli()
         }
+
+        else -> baseMillis + 86_400_000
     }
+}
 
 /**
  * Formats a double to a string with two decimal places.
@@ -441,7 +448,7 @@ val Dataset.status: Status
 
             DataType.GOAL if currentTime < deadlineDateTime && remainingAmount != 0.0
                 -> {
-                Status.PENDING
+                Status.ACTIVE
             }
 
             DataType.DEBT if remainingAmount == 0.0 -> {

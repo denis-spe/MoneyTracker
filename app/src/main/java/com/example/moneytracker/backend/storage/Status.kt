@@ -5,7 +5,7 @@ import com.example.moneytracker.R
 
 @Keep
 enum class Status(val text: String, val color: Int, val icon: Int) {
-    PENDING("Pending", R.color.teal_200, R.drawable.pending),
+    ACTIVE("ACTIVE", R.color.teal_200, R.drawable.pending),
     OVERDUE("Overdue", R.color.error_color, R.drawable.failed),
 
     SUCCESS("Success", R.color.success_complete, R.drawable.success),

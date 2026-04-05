@@ -19,10 +19,10 @@ import com.example.moneytracker.backend.notification.Notifier
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.helper.getTriggerMillisFrom
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
-import com.example.moneytracker.helper.triggerMillis
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
@@ -57,8 +57,11 @@ class ScheduleWorker @AssistedInject constructor(
 
             val now = java.time.LocalDateTime.now().toKotlinLocalDateTime()
 
-            // Calculate the next trigger time
-            val nextTrigger = dataset.routine.triggerMillis
+            // ✅ FIX: Calculate the next trigger time based on the CURRENT deadline, not "now"
+            // This prevents time drift and ensures the schedule stays consistent (e.g., always at 17:31)
+            val currentDeadlineMillis = dataset.deadlineDateTime.toDate().time
+            val nextTrigger = dataset.routine.getTriggerMillisFrom(currentDeadlineMillis)
+
             val nextDeadline = ZonedDateTime.ofInstant(
                 Instant.ofEpochMilli(nextTrigger),
                 ZoneId.systemDefault()
@@ -150,14 +153,14 @@ class ScheduleWorker @AssistedInject constructor(
         val bigMessage = when (status) {
             Status.COMPLETED -> "${label.title} were successfully completed"
             Status.OVERDUE -> "${label.title} was overdue"
-            Status.PENDING -> "Please adjust your ${datatypeName.lowercase()} for ${label.lowercase()}"
+            Status.ACTIVE -> "Please adjust your ${datatypeName.lowercase()} for ${label.lowercase()}"
             else -> "Processing ${label.title}..."
         }
 
         val message = when (status) {
             Status.COMPLETED -> "Completed ${label.title}"
             Status.OVERDUE -> "Overdue ${label.title}"
-            Status.PENDING -> "Adjust ${label.title}"
+            Status.ACTIVE -> "Adjust ${label.title}"
             else -> "Processing..."
         }
 

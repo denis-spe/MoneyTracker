@@ -65,7 +65,7 @@ fun CalendarViewSection(
     val selectedTabIndex = uiState.value.selectedTabIndex
     var selectedDate by remember { mutableStateOf(date.value) }
     val selectedColor = MoneyTrackerTheme.colors.autoText
-    val contentColor = MoneyTrackerTheme.colors.autoText.copy(0.3f)
+    val contentColor = MoneyTrackerTheme.colors.currentPage
 
 
 

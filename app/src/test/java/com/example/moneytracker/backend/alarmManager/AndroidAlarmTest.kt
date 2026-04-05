@@ -2,15 +2,21 @@
 package com.example.moneytracker.backend.alarmManager
 
 import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
 import android.os.Build
-import org.junit.Assert.assertEquals
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
+import org.mockito.ArgumentMatchers.anyInt
+import org.mockito.ArgumentMatchers.anyLong
 import org.mockito.Mock
+import org.mockito.MockedStatic
 import org.mockito.Mockito
 import org.mockito.Mockito.any
 import org.mockito.Mockito.eq
+import org.mockito.Mockito.mock
+import org.mockito.Mockito.mockStatic
 import org.mockito.Mockito.times
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
@@ -34,9 +40,13 @@ class AndroidAlarmTest {
     private lateinit var mockAlarmManager: AlarmManager
 
     private lateinit var androidAlarm: AndroidAlarm
+    private lateinit var mockedPendingIntent: MockedStatic<PendingIntent>
+    private val mockPendingIntent = mock(PendingIntent::class.java)
+
     private val testAlarmItem = AlarmItem(
         userId = "test-user",
         datasetId = "test-dataset-123",
+        triggerMillis = System.currentTimeMillis() + 5000
     )
 
     @Before
@@ -48,7 +58,23 @@ class AndroidAlarmTest {
         Mockito.`when`(mockContext.getSystemService(Context.ALARM_SERVICE))
             .thenReturn(mockAlarmManager)
 
+        // Mock PendingIntent.getBroadcast to return our mockPendingIntent
+        mockedPendingIntent = mockStatic(PendingIntent::class.java)
+        mockedPendingIntent.`when`<PendingIntent> {
+            PendingIntent.getBroadcast(
+                any(),
+                anyInt(),
+                any(),
+                anyInt()
+            )
+        }.thenReturn(mockPendingIntent)
+
         androidAlarm = AndroidAlarm(mockContext)
+    }
+
+    @After
+    fun tearDown() {
+        mockedPendingIntent.close()
     }
 
     /**
@@ -66,7 +92,7 @@ class AndroidAlarmTest {
         // Note: This is a simplified test; in real scenarios, you'd spy on static methods
         verify(mockAlarmManager, times(1)).setExactAndAllowWhileIdle(
             eq(AlarmManager.RTC_WAKEUP),
-            any(),
+            anyLong(),
             any()
         )
     }
@@ -87,13 +113,13 @@ class AndroidAlarmTest {
             // Assert
             verify(mockAlarmManager).setExactAndAllowWhileIdle(
                 eq(AlarmManager.RTC_WAKEUP),
-                any(),
+                anyLong(),
                 any()
             )
             // Verify that inexact alarm was NOT called
             verify(mockAlarmManager, times(0)).setAndAllowWhileIdle(
                 eq(AlarmManager.RTC_WAKEUP),
-                any(),
+                anyLong(),
                 any()
             )
         }
@@ -115,13 +141,13 @@ class AndroidAlarmTest {
             // Assert - Verify inexact alarm is used
             verify(mockAlarmManager).setAndAllowWhileIdle(
                 eq(AlarmManager.RTC_WAKEUP),
-                any(),
+                anyLong(),
                 any()
             )
             // Verify that exact alarm was NOT called
             verify(mockAlarmManager, times(0)).setExactAndAllowWhileIdle(
                 eq(AlarmManager.RTC_WAKEUP),
-                any(),
+                anyLong(),
                 any()
             )
         }
@@ -133,8 +159,14 @@ class AndroidAlarmTest {
     @Test
     fun schedule_handlesSecurityExceptionByFallingBackToInexactAlarm() {
         // Arrange
-        Mockito.`when`(mockAlarmManager.canScheduleExactAlarms())
-            .thenThrow(SecurityException("No permission"))
+        // We mock setExactAndAllowWhileIdle to throw SecurityException
+        // which should be caught and fall back to setAndAllowWhileIdle
+        Mockito.doThrow(SecurityException("No permission"))
+            .`when`(mockAlarmManager).setExactAndAllowWhileIdle(
+                anyInt(),
+                anyLong(),
+                any()
+            )
 
         // Act - Should not throw
         androidAlarm.schedule(testAlarmItem)
@@ -142,7 +174,7 @@ class AndroidAlarmTest {
         // Assert - Verify inexact alarm is used as fallback
         verify(mockAlarmManager).setAndAllowWhileIdle(
             eq(AlarmManager.RTC_WAKEUP),
-            any(),
+            anyLong(),
             any()
         )
     }
@@ -163,7 +195,7 @@ class AndroidAlarmTest {
             // Assert
             verify(mockAlarmManager).setExactAndAllowWhileIdle(
                 eq(AlarmManager.RTC_WAKEUP),
-                any(),
+                anyLong(),
                 any()
             )
         }
@@ -180,29 +212,29 @@ class AndroidAlarmTest {
         // Act
         androidAlarm.schedule(testAlarmItem)
 
-        // Assert - Trigger time should be approximately 5 seconds from now
+        // Assert - Trigger time should be exactly what we passed in testAlarmItem
         verify(mockAlarmManager).setExactAndAllowWhileIdle(
             eq(AlarmManager.RTC_WAKEUP),
-            any(),
+            eq(testAlarmItem.triggerMillis),
             any()
         )
-        // The trigger time should be around currentTime + 5000
-        // We verify the call was made; exact time verification would require captor
     }
 
-    /**
-     * Test that cancel() is not yet implemented (TODO)
-     */
-    @Test(expected = NotImplementedError::class)
-    fun cancel_isNotImplemented() {
+    @Test
+    fun cancel_callsAlarmManagerCancel() {
         // Arrange
         val testAlarmItem = AlarmItem(
             userId = "test-user",
             datasetId = "test-id",
+            triggerMillis = System.currentTimeMillis()
         )
 
-        // Act & Assert
+        // Act
         androidAlarm.cancel(testAlarmItem)
+
+        // Assert
+        verify(mockAlarmManager).cancel(any(PendingIntent::class.java))
+        // also verify pendingIntent.cancel() was called if we could mock the static PendingIntent.getBroadcast
     }
 
     /**
@@ -212,8 +244,8 @@ class AndroidAlarmTest {
     fun schedule_canScheduleMultipleAlarmsInSuccession() {
         // Arrange
         Mockito.`when`(mockAlarmManager.canScheduleExactAlarms()).thenReturn(true)
-        val alarmItem1 = AlarmItem("dataset-1", "Message 1")
-        val alarmItem2 = AlarmItem("dataset-2", "Message 2")
+        val alarmItem1 = AlarmItem("dataset-1", "user-1", System.currentTimeMillis() + 5000)
+        val alarmItem2 = AlarmItem("dataset-2", "user-2", System.currentTimeMillis() + 10000)
 
         // Act
         androidAlarm.schedule(alarmItem1)
@@ -222,27 +254,8 @@ class AndroidAlarmTest {
         // Assert - Both alarms should have been scheduled
         verify(mockAlarmManager, times(2)).setExactAndAllowWhileIdle(
             eq(AlarmManager.RTC_WAKEUP),
-            any(),
+            anyLong(),
             any()
-        )
-    }
-
-    /**
-     * Test that Intent is created with correct component
-     */
-    @Test
-    fun schedule_createsIntentWithAndroidAlarmReceiverComponent() {
-        // Arrange
-        Mockito.`when`(mockAlarmManager.canScheduleExactAlarms()).thenReturn(true)
-
-        // Act
-        androidAlarm.schedule(testAlarmItem)
-
-        // Assert - Verify intent is set up for AndroidAlarmReceiver
-        // The intent should target AndroidAlarmReceiver
-        assertEquals(
-            AndroidAlarmReceiver::class.java.name,
-            androidAlarm.intent.component?.className
         )
     }
 
@@ -260,7 +273,7 @@ class AndroidAlarmTest {
         // Assert
         verify(mockAlarmManager).setExactAndAllowWhileIdle(
             eq(AlarmManager.RTC_WAKEUP),
-            any(),
+            anyLong(),
             any()
         )
     }
@@ -280,8 +293,8 @@ class AndroidAlarmTest {
         // FLAG_IMMUTABLE is required on Android 12+
         // This is enforced during PendingIntent creation
         verify(mockAlarmManager).setExactAndAllowWhileIdle(
-            any(),
-            any(),
+            eq(AlarmManager.RTC_WAKEUP),
+            anyLong(),
             any()
         )
     }

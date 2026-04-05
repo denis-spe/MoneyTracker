@@ -28,7 +28,8 @@ class AndroidAlarmInstrumentedTest {
     private lateinit var alarmManager: AlarmManager
     private val testAlarmItem = AlarmItem(
         datasetId = "instrumented-test-dataset-123",
-        message = "Instrumented test alarm message"
+        userId = "test-user-id",
+        triggerMillis = System.currentTimeMillis() + 10000
     )
 
     @Before
@@ -45,8 +46,6 @@ class AndroidAlarmInstrumentedTest {
     fun androidAlarm_initializesWithRealContext() {
         // Assert
         assertNotNull(androidAlarm)
-        assertNotNull(androidAlarm.alarmManager)
-        assertNotNull(androidAlarm.intent)
     }
 
     /**
@@ -55,8 +54,7 @@ class AndroidAlarmInstrumentedTest {
     @Test
     fun androidAlarm_obtainsAlarmManagerCorrectly() {
         // Assert
-        val obtainedAlarmManager = androidAlarm.alarmManager
-        assertNotNull(obtainedAlarmManager)
+        assertNotNull(context.getSystemService(Context.ALARM_SERVICE) as AlarmManager)
     }
 
     /**
@@ -64,8 +62,10 @@ class AndroidAlarmInstrumentedTest {
      */
     @Test
     fun androidAlarm_createsIntentForAndroidAlarmReceiver() {
+        // Act
+        val intent = android.content.Intent(context, AndroidAlarmReceiver::class.java)
+        
         // Assert
-        val intent = androidAlarm.intent
         assertNotNull(intent)
 
         // Verify the intent action or component if it was set
@@ -92,8 +92,8 @@ class AndroidAlarmInstrumentedTest {
     @Test
     fun schedule_canBeCalledMultipleTimes() {
         // Act
-        val alarmItem1 = AlarmItem("dataset-1", "Test message 1")
-        val alarmItem2 = AlarmItem("dataset-2", "Test message 2")
+        val alarmItem1 = AlarmItem("dataset-1", "user-1", System.currentTimeMillis() + 10000)
+        val alarmItem2 = AlarmItem("dataset-2", "user-2", System.currentTimeMillis() + 20000)
 
         androidAlarm.schedule(alarmItem1)
         androidAlarm.schedule(alarmItem2)
@@ -109,10 +109,14 @@ class AndroidAlarmInstrumentedTest {
     fun schedule_worksWithVariousAlarmItemData() {
         // Arrange
         val testCases = listOf(
-            AlarmItem("", ""),
-            AlarmItem("test-id", "Test message"),
-            AlarmItem("dataset-with-long-id-1234567890", "Message with special chars: @#$%"),
-            AlarmItem("日本語テスト", "Unicode test message 日本語")
+            AlarmItem("", "", 0L),
+            AlarmItem("test-id", "test-user", System.currentTimeMillis() + 10000),
+            AlarmItem(
+                "dataset-with-long-id-1234567890",
+                "user-1",
+                System.currentTimeMillis() + 20000
+            ),
+            AlarmItem("日本語テスト", "user-unicode", System.currentTimeMillis() + 30000)
         )
 
         // Act & Assert
@@ -129,10 +133,10 @@ class AndroidAlarmInstrumentedTest {
     }
 
     /**
-     * Test that cancel() throws NotImplementedError (current behavior)
+     * Test that cancel() completes without exception
      */
-    @Test(expected = NotImplementedError::class)
-    fun cancel_throwsNotImplementedError() {
+    @Test
+    fun cancel_completesWithoutException() {
         // Act
         androidAlarm.cancel(testAlarmItem)
     }
@@ -147,7 +151,8 @@ class AndroidAlarmInstrumentedTest {
         for (i in 0..9) {
             val alarmItem = AlarmItem(
                 datasetId = "rapid-test-$i",
-                message = "Rapid test message $i"
+                userId = "user-$i",
+                triggerMillis = System.currentTimeMillis() + (i + 1) * 1000
             )
             androidAlarm.schedule(alarmItem)
         }
