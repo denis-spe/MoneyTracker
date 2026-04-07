@@ -75,7 +75,7 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.ui.components.StatusView
-import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.DataViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
@@ -730,7 +730,7 @@ fun ItemListAreaSort(
 @Composable
 fun ItemListArea(
     modifier: Modifier = Modifier,
-    viewModel: HomeScreenViewModel,
+    viewModel: DataViewModel,
     onActivateShow: MutableState<Boolean>
 ) {
     // States

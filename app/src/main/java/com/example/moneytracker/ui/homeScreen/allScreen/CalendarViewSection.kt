@@ -38,7 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.helper.getWeeks
 import com.example.moneytracker.helper.title
-import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.DataViewModel
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
@@ -50,7 +50,7 @@ import java.time.temporal.IsoFields
 @Composable
 fun CalendarViewSection(
     updateWeek: (dates: List<kotlinx.datetime.LocalDate>) -> Unit,
-    viewModel: HomeScreenViewModel
+    viewModel: DataViewModel
 ) {
     val uiState = viewModel.uiState.collectAsState()
     val now = kotlinx.datetime.LocalDate.now()
@@ -227,7 +227,7 @@ fun CalendarViewSection(
 @Composable
 fun GroupedWeeks(
     modifier: Modifier = Modifier,
-    viewModel: HomeScreenViewModel = hiltViewModel(),
+    viewModel: DataViewModel = hiltViewModel(),
     weeksAfter: Int = 100,
     weeksBefore: Int = 100,
     moveTo: (initialPage: Int, pageState: PagerState) -> Unit = { _, _ -> },
@@ -262,5 +262,6 @@ fun GroupedWeeks(
 
     moveTo(getIndexOfCurrentWeek, pageState)
 }
+
 
 

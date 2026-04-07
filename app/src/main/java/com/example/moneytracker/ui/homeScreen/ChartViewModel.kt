@@ -1,0 +1,22 @@
+package com.example.moneytracker.ui.homeScreen
+
+import android.content.Context
+import androidx.lifecycle.ViewModel
+import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.ui.components.charts.DonutChartData
+import com.example.moneytracker.ui.usecase.GetTodayChartDataUseCase
+import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+
+@HiltViewModel
+class ChartViewModel @Inject constructor(
+    private val getTodayChartDataUseCase: GetTodayChartDataUseCase,
+    @ApplicationContext private val context: Context
+) : ViewModel() {
+
+    fun todayChartData(datasets: List<Dataset>): Flow<List<DonutChartData>> {
+        return kotlinx.coroutines.flow.flowOf(getTodayChartDataUseCase(datasets, context))
+    }
+}

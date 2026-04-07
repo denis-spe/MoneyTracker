@@ -195,14 +195,18 @@ open class AccountServicesImpl(
     }
 
     override suspend fun signOut() {
-        if (auth.currentUser!!.isAnonymous) {
-            auth.currentUser!!.delete()
+        val user = auth.currentUser
+
+        try {
+            if (user?.isAnonymous == true) {
+                user.delete().await() // wait for completion
+            }
+        } catch (e: Exception) {
+            Log.w("Auth", "Anonymous delete failed", e)
         }
+
         auth.signOut()
 
         _userState.value = null
-
-        // Sign the user back in anonymously.
-        createAnonymousAccount()
     }
 }

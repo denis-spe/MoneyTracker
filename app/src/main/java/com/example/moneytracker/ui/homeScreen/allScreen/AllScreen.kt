@@ -15,13 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.DataViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AllScreen(
     paddingValues: PaddingValues,
-    viewModel: HomeScreenViewModel = hiltViewModel()
+    viewModel: DataViewModel = hiltViewModel()
 ) {
 
 

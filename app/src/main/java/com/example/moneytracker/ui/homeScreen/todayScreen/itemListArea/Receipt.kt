@@ -71,7 +71,8 @@ import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
-import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.DataViewModel
+import com.example.moneytracker.ui.homeScreen.UserViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeRange
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
@@ -811,7 +812,8 @@ fun OnDeleteReceipt(
 @Composable
 fun OnUpdate(
     dataAdjust: DataAdjust,
-    viewModel: HomeScreenViewModel,
+    viewModel: DataViewModel,
+    userViewModel: UserViewModel,
     isUpdateModelBottonOpen: MutableState<Boolean>,
     onShowDialog: MutableState<Boolean>
 ) {
@@ -854,6 +856,8 @@ fun OnUpdate(
         is DataAdjust.Adjust -> "Updating ${dataAdjust.adjustment.dataset?.label} " +
                 dataAdjust.adjustment.adjustmentType.text
     }
+
+    val color = colorResource(colorResId)
 
     if (isUpdateModelBottonOpen.value) {
         ModalBottomSheet(
@@ -1034,6 +1038,10 @@ fun OnUpdate(
 
 
                                             wasSuccess.value = State.SUCCESS
+                                            userViewModel.showActionNotification(
+                                                "Data updated successfully",
+                                                color
+                                            )
 
                                             // Reset all state
                                             amountState.clearText()
@@ -1090,6 +1098,10 @@ fun OnUpdate(
 
 
                                                 wasSuccess.value = State.SUCCESS
+                                                userViewModel.showActionNotification(
+                                                    "Adjustment updated successfully",
+                                                    color
+                                                )
 
                                                 // Reset all state
                                                 amountState.clearText()
@@ -1174,7 +1186,8 @@ fun Receipt(
 ) {
     val onShowDeleteDialog = remember { mutableStateOf(false) }
     val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
-    val viewModel: HomeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
+    val viewModel: DataViewModel = hiltViewModel<DataViewModel>()
+    val userViewModel: UserViewModel = hiltViewModel<UserViewModel>()
 
     Dialog(
         onDismissRequest = {
@@ -1226,19 +1239,26 @@ fun Receipt(
         onShowDeleteDialog = onShowDeleteDialog,
     ) {
         when (dataAdjust) {
-            is DataAdjust.Data -> viewModel.removeData(dataAdjust.dataset)
-            is DataAdjust.Adjust -> viewModel.removeAdjustmentDataset(
-                dataAdjust.adjustment.dataset!!.id,
-                dataAdjust.adjustment
-            )
+            is DataAdjust.Data -> {
+                viewModel.removeData(dataAdjust.dataset)
+                userViewModel.showActionNotification("Data deleted successfully", Color.Red)
+            }
+
+            is DataAdjust.Adjust -> {
+                viewModel.removeAdjustmentDataset(
+                    dataAdjust.adjustment.dataset!!.id,
+                    dataAdjust.adjustment
+                )
+                userViewModel.showActionNotification("Adjustment deleted successfully", Color.Red)
+            }
         }
-        onShowDialog.value = false
         onShowDialog.value = false
     }
 
     OnUpdate(
         dataAdjust = dataAdjust,
         viewModel = viewModel,
+        userViewModel = userViewModel,
         isUpdateModelBottonOpen = isUpdateModelBottonOpen,
         onShowDialog = onShowDialog
     )

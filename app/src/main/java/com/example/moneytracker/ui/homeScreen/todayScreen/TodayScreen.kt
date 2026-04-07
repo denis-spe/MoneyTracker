@@ -25,11 +25,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
-import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.ChartViewModel
+import com.example.moneytracker.ui.homeScreen.DataViewModel
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.ItemListArea
 import com.example.moneytracker.ui.homeScreen.todayScreen.statArea.StatArea
 
@@ -38,15 +38,16 @@ import com.example.moneytracker.ui.homeScreen.todayScreen.statArea.StatArea
 fun TodayScreen(
     paddingValues: PaddingValues,
 ) {
-    val viewModel: HomeScreenViewModel = hiltViewModel<HomeScreenViewModel>()
-    val todayDatasets by viewModel.todayDatasets.collectAsState()
+    val dataViewModel: DataViewModel = hiltViewModel()
+    val chartViewModel: ChartViewModel = hiltViewModel()
+    val todayDatasets by dataViewModel.todayDatasets.collectAsState()
 
     val configuration = LocalConfiguration.current
     val onActivateShow = remember { mutableStateOf(true) }
 
 
-    val context = LocalContext.current
-    val donutChartDataCollection = viewModel.todayChartData(context).collectAsState(emptyList())
+    val donutChartDataCollection =
+        chartViewModel.todayChartData(todayDatasets).collectAsState(emptyList())
 
     if (configuration.orientation == ORIENTATION_PORTRAIT) {
         Column(
@@ -79,7 +80,7 @@ fun TodayScreen(
                 modifier = Modifier
                     .fillMaxHeight(1f)
                     .fillMaxWidth(0.85f),
-                viewModel = viewModel,
+                viewModel = dataViewModel,
                 onActivateShow = onActivateShow
             )
         }
@@ -107,7 +108,7 @@ fun TodayScreen(
                 Modifier
                     .fillMaxHeight(1f)
                     .fillMaxWidth(0.8f),
-                viewModel = viewModel,
+                viewModel = dataViewModel,
                 onActivateShow = onActivateShow
             )
         }

@@ -38,7 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.helper.State
-import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.DataViewModel
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
@@ -47,7 +47,7 @@ private val FLOAT_BUTTON_SIZE = 45.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionFloatingButton(
-    viewModel: HomeScreenViewModel = hiltViewModel(),
+    viewModel: DataViewModel = hiltViewModel(),
     uiState: HomeUiState,
 ) {
     val isDatasetBottomSheetOpen = uiState.isDatasetBottomSheetOpen

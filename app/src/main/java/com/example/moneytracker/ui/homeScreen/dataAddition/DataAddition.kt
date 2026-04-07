@@ -60,8 +60,9 @@ import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.ActionNotification
-import com.example.moneytracker.ui.homeScreen.HomeScreenViewModel
+import com.example.moneytracker.ui.homeScreen.DataViewModel
 import com.example.moneytracker.ui.homeScreen.HomeUiState
+import com.example.moneytracker.ui.homeScreen.UserViewModel
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
@@ -75,7 +76,8 @@ const val MAX_LABEL_LENGTH = 15
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawer(
-    viewModel: HomeScreenViewModel,
+    viewModel: DataViewModel,
+    userViewModel: UserViewModel,
     uiState: HomeUiState,
 ) {
 
@@ -95,6 +97,7 @@ fun DataAdditionModelDrawer(
             /*... Text field and button ...*/
             DataAdditionModelDrawerContent(
                 viewModel = viewModel,
+                userViewModel = userViewModel,
                 entries = DataType.entries
             )
         }
@@ -116,6 +119,7 @@ fun DataAdditionModelDrawer(
             /*... Text field and button ...*/
             DataAdditionModelDrawerContent(
                 viewModel = viewModel,
+                userViewModel = userViewModel,
                 entries = AdjustmentType.entries.filter { it != AdjustmentType.INITIAL }
             )
         }
@@ -127,13 +131,14 @@ fun DataAdditionModelDrawer(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> DataAdditionModelDrawerContent(
-    viewModel: HomeScreenViewModel,
+    viewModel: DataViewModel,
+    userViewModel: UserViewModel,
     entries: List<T>,
 ) {
 
     val showDataTypeBottomSheet = remember { mutableStateOf(false) }
     val clickedDataType = remember { mutableStateOf<T?>(null) }
-    val uiStates = viewModel.uiState.collectAsState()
+    val userUiState by userViewModel.uiState.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -217,6 +222,7 @@ fun <T> DataAdditionModelDrawerContent(
                         placeholder = "Earned from",
                         dataType = DataType.EARNINGS,
                         buttonText = "Received",
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -228,6 +234,7 @@ fun <T> DataAdditionModelDrawerContent(
                         placeholder = "Spent on",
                         dataType = DataType.EXPENSE,
                         buttonText = "Spent",
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -239,6 +246,7 @@ fun <T> DataAdditionModelDrawerContent(
                         placeholder = "Borrowed from",
                         dataType = DataType.DEBT,
                         buttonText = "Set Debt",
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -250,6 +258,7 @@ fun <T> DataAdditionModelDrawerContent(
                         placeholder = "Lent to",
                         dataType = DataType.LENT,
                         buttonText = "Lent",
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -261,6 +270,7 @@ fun <T> DataAdditionModelDrawerContent(
                         placeholder = "Savings from",
                         dataType = DataType.SAVINGS,
                         buttonText = "Saved",
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -271,7 +281,8 @@ fun <T> DataAdditionModelDrawerContent(
                     GoalDataInput(
                         placeholder = "Goal for",
                         dataType = DataType.GOAL,
-                        buttonText = "Start Goal"
+                        buttonText = "Start Goal",
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -313,12 +324,12 @@ fun <T> DataAdditionModelDrawerContent(
 
             // Action Notification
             ActionNotification(
-                backgroundColor = uiStates.value.actionNotificationColor,
-                visible = uiStates.value.isActionNotificationVisible,
-                onDismiss = { viewModel.dismissActionNotification() }
+                backgroundColor = userUiState.actionNotificationColor,
+                visible = userUiState.isActionNotificationVisible,
+                onDismiss = { userViewModel.dismissActionNotification() }
             ) {
                 Text(
-                    text = uiStates.value.actionNotificationMessage,
+                    text = userUiState.actionNotificationMessage,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 12.sp
@@ -336,6 +347,7 @@ fun FinancialDataInput(
     placeholder: String,
     dataType: DataType,
     buttonText: String,
+    userViewModel: UserViewModel,
     onDismiss: () -> Unit,
 ) {
     val colorResId = dataType.color
@@ -365,7 +377,7 @@ fun FinancialDataInput(
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val lazyState = rememberLazyListState()
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
-    val viewModel: HomeScreenViewModel = hiltViewModel()
+    val viewModel: DataViewModel = hiltViewModel()
     val iconImage = painterResource(dataType.filledIcon)
     val description = dataType.typeDescription
     val color = (if (wasSuccess.value == State.ERROR) colorResource(R.color.error_color)
@@ -561,7 +573,7 @@ fun FinancialDataInput(
                             onDismiss()
 
                             // Show snackbar
-                            viewModel.launchSnackBarHostState(
+                            userViewModel.launchSnackBarHostState(
                                 "$label was added successfully",
                             )
                         } else {
@@ -579,7 +591,7 @@ fun FinancialDataInput(
                                 wasSuccess.value = State.ERROR
 
                                 // Show snackbar
-                                viewModel.showActionNotification(
+                                userViewModel.showActionNotification(
                                     errorMessage,
                                     color = Color.Red.copy(0.5f)
                                 )
@@ -599,6 +611,7 @@ fun GoalDataInput(
     placeholder: String,
     dataType: DataType,
     buttonText: String,
+    userViewModel: UserViewModel,
     onDismiss: () -> Unit,
 ) {
     val colorResId = dataType.color
@@ -619,7 +632,7 @@ fun GoalDataInput(
     val lazyState = rememberLazyListState()
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
     val goalDateTimeWarningState = remember { mutableStateOf(GoalWarning.INITIAL) }
-    val viewModel: HomeScreenViewModel = hiltViewModel()
+    val viewModel: DataViewModel = hiltViewModel()
     val routineData = remember { mutableStateOf(RoutineData()) }
     val iconImage = painterResource(dataType.filledIcon)
     val color = colorResource(dataType.color)
@@ -849,7 +862,7 @@ fun GoalDataInput(
                                 wasSuccess.value = State.ERROR
 
                                 // Show snackbar
-                                viewModel.showActionNotification(
+                                userViewModel.showActionNotification(
                                     errorMessage,
                                     color = color
                                 )
@@ -888,7 +901,7 @@ fun AdjustmentDataInputs(
     val adjustAmountState = rememberTextFieldState()
     val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
     val isBottomSheetOpen by remember { mutableStateOf(true) }
-    val viewModel = hiltViewModel<HomeScreenViewModel>()
+    val viewModel = hiltViewModel<DataViewModel>()
     val datasetList = viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
     val iconImage = painterResource(adjustmentType.icon)
     val color = colorResource(adjustmentType.color)

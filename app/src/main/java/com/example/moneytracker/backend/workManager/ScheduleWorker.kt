@@ -23,13 +23,15 @@ import com.example.moneytracker.helper.getTriggerMillisFrom
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
+import com.example.moneytracker.helper.toLocalDateTime
+import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.helper.toMillis
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
+import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
-import java.time.Instant
 import java.time.ZoneId
-import java.time.ZonedDateTime
 
 @HiltWorker
 class ScheduleWorker @AssistedInject constructor(
@@ -45,6 +47,8 @@ class ScheduleWorker @AssistedInject constructor(
         const val TAG = "ScheduleWorker"
     }
 
+    private val zone = ZoneId.systemDefault()
+
     override suspend fun doWork(): Result {
         Log.d(TAG, "ScheduleWorker started for ${params.id}")
 
@@ -59,13 +63,12 @@ class ScheduleWorker @AssistedInject constructor(
 
             // ✅ FIX: Calculate the next trigger time based on the CURRENT deadline, not "now"
             // This prevents time drift and ensures the schedule stays consistent (e.g., always at 17:31)
-            val currentDeadlineMillis = dataset.deadlineDateTime.toDate().time
+            val currentDeadlineMillis = dataset.deadlineDateTime
+                .toLocalDateTimeUtc()
+                .toJavaLocalDateTime()
+                .toMillis(zone)
             val nextTrigger = dataset.routine.getTriggerMillisFrom(currentDeadlineMillis)
-
-            val nextDeadline = ZonedDateTime.ofInstant(
-                Instant.ofEpochMilli(nextTrigger),
-                ZoneId.systemDefault()
-            ).toLocalDateTime()
+            val nextDeadline = nextTrigger.toLocalDateTime(zone)
 
             // ✅ FAST: Cache update in DataStore immediately
             Log.d(TAG, "Caching routine update in DataStore for $datasetId")
@@ -152,7 +155,7 @@ class ScheduleWorker @AssistedInject constructor(
 
         val bigMessage = when (status) {
             Status.COMPLETED -> "${label.title} were successfully completed"
-            Status.OVERDUE -> "${label.title} was overdue"
+            Status.OVERDUE -> "${label.title} was overdue, please to complete the goal before the deadline"
             Status.ACTIVE -> "Please adjust your ${datatypeName.lowercase()} for ${label.lowercase()}"
             else -> "Processing ${label.title}..."
         }

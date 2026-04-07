@@ -31,7 +31,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.DatasetUiState
+import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.ui.homeScreen.allScreen.AllScreen
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
@@ -51,24 +51,26 @@ import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(onNavigate: NavController? = null, userId: String) {
-    // Initialize ViewModel
-    val viewModel: HomeScreenViewModel = hiltViewModel()
-    // Collect user information from ViewModel
-    val uiStates = viewModel.uiState.collectAsState()
-    val userState = viewModel.userState.collectAsState()
-    val snackBarHostState = viewModel.snackBarHostState.collectAsState()
-    viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
+    // Initialize ViewModels
+    val dataViewModel: DataViewModel = hiltViewModel()
+    val userViewModel: UserViewModel = hiltViewModel()
+
+    // Collect user information from ViewModels
+    val uiStates = dataViewModel.uiState.collectAsState()
+    val userUiStates = userViewModel.uiState.collectAsState()
+    val userState = userViewModel.userState.collectAsState()
+    val snackBarHostState = userViewModel.snackBarHostState.collectAsState()
 
     val customColors = MoneyTrackerTheme.colors
 
     LaunchedEffect(Unit) {
-        viewModel.navigationEvents.collect {
+        userViewModel.navigationEvents.collect {
             onNavigate?.navigate(StartUpScreenRouter)
         }
     }
 
     AnimatedContent(
-        viewModel.datasetUiState,
+        dataViewModel.datasetState,
         transitionSpec = {
             fadeIn(
                 animationSpec = tween(1000)
@@ -77,7 +79,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         label = "Animated Content"
     ) { targetState ->
         when (targetState) {
-            is DatasetUiState.Success -> {
+            is DatasetState.Success -> {
                 Scaffold(
                     modifier = Modifier
                         .fillMaxSize()
@@ -85,7 +87,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         .pointerInput(Unit) {
                             detectTapGestures(
                                 onTap = {
-                                    viewModel.updateIsUserDropdownVisible(false)
+                                    userViewModel.updateIsUserDropdownVisible(false)
                                 }
                             )
                         }
@@ -101,7 +103,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                                     contentColor = customColors.customContent,
                                     currentPageColor = customColors.currentPage,
                                     backgroundColor = customColors.customBackground,
-                                    viewModel::updateTopTitle
+                                    dataViewModel::updateTopTitle
                                 )
                             },
                             navigationIcon = {
@@ -110,8 +112,8 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                                     contentColor = customColors.customContent,
                                     userColor = uiStates.value.info.color
                                 ) {
-                                    viewModel.updateIsUserDropdownVisible(
-                                        !uiStates.value.isUserDropdownVisible
+                                    userViewModel.updateIsUserDropdownVisible(
+                                        !userUiStates.value.isUserDropdownVisible
                                     )
                                 }
                             },
@@ -143,26 +145,27 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         paddingValues,
                         contentColor = customColors.customContent,
                         backgroundColor = customColors.customBackground.copy(alpha = 0.9f),
-                        visible = uiStates.value.isUserDropdownVisible,
+                        visible = userUiStates.value.isUserDropdownVisible,
                         userState = userState,
-                        isLoading = uiStates.value.isLogOutLoading,
+                        isLoading = userUiStates.value.isLoading,
                         settingsClick = {
                             onNavigate?.navigate(SettingsScreenRouter)
-                            viewModel.updateIsUserDropdownVisible(false)
+                            userViewModel.updateIsUserDropdownVisible(false)
                         },
                     ) {
-                        viewModel.handleLogout()
+                        userViewModel.handleLogout()
                     }
 
                     // Modal bottom sheet
                     DataAdditionModelDrawer(
-                        viewModel = viewModel,
+                        viewModel = dataViewModel,
+                        userViewModel = userViewModel,
                         uiState = uiStates.value
                     )
                 }
             }
 
-            is DatasetUiState.Loading -> {
+            is DatasetState.Loading -> {
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
@@ -176,7 +179,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 }
             }
 
-            is DatasetUiState.Error -> {
+            is DatasetState.Error -> {
                 Column(
                     modifier = Modifier.fillMaxSize(),
                     horizontalAlignment = Alignment.CenterHorizontally,

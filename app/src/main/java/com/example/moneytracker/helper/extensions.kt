@@ -33,6 +33,14 @@ import java.util.Locale
 import kotlin.math.log10
 import kotlin.math.pow
 
+private val zone = ZoneId.systemDefault()
+
+fun java.time.LocalDateTime.toMillis(zone: ZoneId = ZoneId.systemDefault()): Long =
+    atZone(zone).toInstant().toEpochMilli()
+
+fun Long.toLocalDateTime(zone: ZoneId = ZoneId.systemDefault()): java.time.LocalDateTime =
+    Instant.ofEpochMilli(this).atZone(zone).toLocalDateTime()
+
 val RoutineData.triggerMillis: Long
     get() = getTriggerMillisFrom(System.currentTimeMillis())
 
