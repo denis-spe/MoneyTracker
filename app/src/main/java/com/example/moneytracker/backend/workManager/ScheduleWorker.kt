@@ -8,12 +8,12 @@ import android.os.Build
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.ExistingWorkPolicy
 import androidx.work.ForegroundInfo
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.alarmManager.AlarmItem
-import com.example.moneytracker.backend.alarmManager.AndroidAlarmManager
-import com.example.moneytracker.backend.datastore.RoutineDataStore
 import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.notification.Notifier
 import com.example.moneytracker.backend.storage.DataStorage
@@ -32,6 +32,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
 import java.time.ZoneId
+import java.util.concurrent.TimeUnit
 
 @HiltWorker
 class ScheduleWorker @AssistedInject constructor(
@@ -39,8 +40,6 @@ class ScheduleWorker @AssistedInject constructor(
     @Assisted private val params: WorkerParameters,
     private val dataStorage: DataStorage,
     private val notifier: Notifier,
-    private val routineDataStore: RoutineDataStore,
-    private val alarmManager: AndroidAlarmManager,
 ) : CoroutineWorker(appContext, params) {
 
     companion object {
@@ -54,30 +53,13 @@ class ScheduleWorker @AssistedInject constructor(
 
         val datasetId = inputData.getString("datasetId") ?: return Result.failure()
         val userId = inputData.getString("userId") ?: return Result.failure()
+        val isRoutine = inputData.getBoolean("isRoutine", true)
 
         return try {
             val dataset = dataStorage.getDataset(userId, datasetId)
                 ?: return Result.failure()
 
             val now = java.time.LocalDateTime.now().toKotlinLocalDateTime()
-
-            // ✅ FIX: Calculate the next trigger time based on the CURRENT deadline, not "now"
-            // This prevents time drift and ensures the schedule stays consistent (e.g., always at 17:31)
-            val currentDeadlineMillis = dataset.deadlineDateTime
-                .toLocalDateTimeUtc()
-                .toJavaLocalDateTime()
-                .toMillis(zone)
-            val nextTrigger = dataset.routine.getTriggerMillisFrom(currentDeadlineMillis)
-            val nextDeadline = nextTrigger.toLocalDateTime(zone)
-
-            // ✅ FAST: Cache update in DataStore immediately
-            Log.d(TAG, "Caching routine update in DataStore for $datasetId")
-            routineDataStore.cacheRoutineUpdate(
-                datasetId = datasetId,
-                newDateTime = now.toString(),
-                newDeadline = nextDeadline.toString(),
-                triggerMillis = nextTrigger
-            )
 
             // 1. IMMEDIATELY tell the OS we are a Foreground Service
             // This prevents Huawei from killing us in the first 5 seconds
@@ -96,32 +78,57 @@ class ScheduleWorker @AssistedInject constructor(
                 Log.w(TAG, "Failed to show notification", e)
             }
 
-            // ✅ Update Firestore asynchronously
-            try {
-                dataStorage.completeRoutine(
-                    userId = userId,
-                    datasetId = datasetId,
-                    newDateTime = now.toFirestoreTimestampUtc(),
-                    nextDeadline = nextDeadline
-                        .toKotlinLocalDateTime()
-                        .toFirestoreTimestampUtc()
-                )
-                Log.d(TAG, "Firestore update successful for $datasetId")
-                routineDataStore.clearRoutineUpdate(datasetId)
-            } catch (e: Exception) {
-                Log.w(TAG, "Firestore update failed, keeping DataStore cache", e)
-                return Result.retry()
-            }
+            if (isRoutine) {
+                // ✅ FIX: Calculate the next trigger time based on the CURRENT deadline, not "now"
+                // This prevents time drift and ensures the schedule stays consistent (e.g., always at 17:31)
+                val currentDeadlineMillis = dataset.deadlineDateTime
+                    .toLocalDateTimeUtc()
+                    .toJavaLocalDateTime()
+                    .toMillis(zone)
+                val nextTrigger = dataset.routine.getTriggerMillisFrom(currentDeadlineMillis)
+                val nextDeadline = nextTrigger.toLocalDateTime(zone)
 
-            // ✅ CRITICAL: Schedule the NEXT alarm with the new trigger time
-            try {
-                Log.d(TAG, "Scheduling next alarm for $datasetId at $nextTrigger")
-                val nextAlarmItem = AlarmItem(datasetId, userId, nextTrigger)
-                alarmManager.schedule(nextAlarmItem)
-                Log.d(TAG, "Next alarm scheduled successfully for $datasetId")
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to schedule next alarm for $datasetId", e)
-                // Don't fail the work - the alarm might be scheduled by RescheduleWorker later
+                // ✅ Update Firestore asynchronously
+                try {
+                    dataStorage.completeRoutine(
+                        userId = userId,
+                        datasetId = datasetId,
+                        newDateTime = now.toFirestoreTimestampUtc(),
+                        nextDeadline = nextDeadline
+                            .toKotlinLocalDateTime()
+                            .toFirestoreTimestampUtc()
+                    )
+                    Log.d(TAG, "Firestore update successful for $datasetId")
+                } catch (e: Exception) {
+                    Log.w(TAG, "Firestore update failed", e)
+                    return Result.retry()
+                }
+
+                // ✅ CRITICAL: Schedule the NEXT work (OneTimeWorkRequest) for the next trigger
+                try {
+                    val delay = nextTrigger - System.currentTimeMillis()
+                    if (delay > 0) {
+                        Log.d(TAG, "Scheduling next work for $datasetId in ${delay}ms")
+                        val data = androidx.work.Data.Builder()
+                            .putString("datasetId", datasetId)
+                            .putString("userId", userId)
+                            .putBoolean("isRoutine", true)
+                            .build()
+
+                        val nextWorkRequest = OneTimeWorkRequestBuilder<ScheduleWorker>()
+                            .setInitialDelay(delay, TimeUnit.MILLISECONDS)
+                            .setInputData(data)
+                            .build()
+
+                        WorkManager.getInstance(appContext).enqueueUniqueWork(
+                            "RoutineUpdate_${datasetId}",
+                            ExistingWorkPolicy.REPLACE,
+                            nextWorkRequest
+                        )
+                    }
+                } catch (e: Exception) {
+                    Log.e(TAG, "Failed to schedule next work for $datasetId", e)
+                }
             }
 
             Result.success()

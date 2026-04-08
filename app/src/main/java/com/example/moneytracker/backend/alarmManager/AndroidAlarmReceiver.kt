@@ -14,6 +14,8 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
         val action = intent.action
         val userId = intent.getStringExtra("userId")
         val datasetId = intent.getStringExtra("datasetId")
+        val triggerMillis = intent.getLongExtra("triggerMillis", 0)
+
 
         // Use Log.e because Huawei devices often suppress Log.d by default
         val pendingResult = goAsync()
@@ -29,8 +31,7 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
             return
         }
 
-        entryPoint.alarmManager()
-        val useWorker = entryPoint.useWorker()
+        val work = entryPoint.useWorker()
 
         try {
             // Case 1: System Event (Boot or Update) or Test Action
@@ -39,10 +40,11 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
                 action == Intent.ACTION_MY_PACKAGE_REPLACED ||
                 action == "com.example.moneytracker.TEST_RESCHEDULE"
             ) {
+
                 Log.d("AndroidAlarmReceiver", "System event detected: $action")
                 if (!userId.isNullOrBlank()) {
-                    useWorker.rescheduleWork(userId)
-                    Log.d("AndroidAlarmReceiver", "Rescheduled work for user: $userId")
+                    work.rescheduleWork(userId)
+                    Log.d("AndroidAlarmReceiver", "Rescheduled all work for user: $userId")
                 } else {
                     Log.w("AndroidAlarmReceiver", "System event received but userId is null/blank")
                 }
@@ -60,12 +62,18 @@ class AndroidAlarmReceiver : BroadcastReceiver() {
 
             Log.d(
                 "AndroidAlarmReceiver",
-                "Alarm triggered for userId=$userId, datasetId=$datasetId"
+                "Alarm triggered for userId=$userId, datasetId=$datasetId. Starting WorkManager."
             )
 
-            // Schedule work for this alarm trigger (handles the actual data operation)
-            // The work will update the dataset with the new deadline
-            useWorker.scheduleWork(userId, datasetId)
+            // When triggered from an alarm, we want it to run IMMEDIATELY.
+            // By passing an empty RoutineData, getTriggerMillisFrom(System.currentTimeMillis()) 
+            // inside UseWorker might still calculate a delay if we are not careful.
+            // However, our scheduleWork uses triggerMillis - System.currentTimeMillis().
+            // If we want it to be 0, we should ensure triggerMillis equals current time.
+
+            work.scheduleWork(userId, datasetId, triggerMillis, false)
+
+
 
             // ✅ FIX: Don't schedule the next alarm here!
             // Let the ScheduleWorker/completeRoutine update Firestore with the new deadline

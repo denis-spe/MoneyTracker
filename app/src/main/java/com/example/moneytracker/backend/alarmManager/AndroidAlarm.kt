@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.os.Build
-import android.util.Log
 import androidx.core.net.toUri
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
@@ -25,101 +24,56 @@ class AndroidAlarm @Inject constructor(
         const val TAG = "AndroidAlarm"
     }
 
-    /**
-     * Schedules an alarm for the given [alarmItem].
-     */
-    override fun schedule(alarmItem: AlarmItem) {
-        // 1. Create a fresh intent or use the existing one, but add extras FIRST
-        val alarmIntent = Intent(context, AndroidAlarmReceiver::class.java).apply {
+    private fun buildIntent(alarmItem: AlarmItem) =
+        Intent(context, AndroidAlarmReceiver::class.java).apply {
             action = "com.example.moneytracker.ALARM_ACTION"
+            data = "timer:${alarmItem.datasetId}".toUri() // use in both schedule and cancel
             putExtra("datasetId", alarmItem.datasetId)
             putExtra("userId", alarmItem.userId)
             putExtra("triggerMillis", alarmItem.triggerMillis)
         }
 
-        // 2. Pass the updated intent to getBroadcast
+    override fun schedule(alarmItem: AlarmItem) {
+        val intent = buildIntent(alarmItem)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
-            alarmItem.datasetId.hashCode(), // Use a unique request code per dataset
-            alarmIntent,
+            alarmItem.datasetId.hashCode(),
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
         val triggerTime = alarmItem.triggerMillis
 
         try {
-            // Check if we can schedule exact alarms (Android 12+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                if (alarmManager.canScheduleExactAlarms()) {
-                    alarmManager.setExactAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        triggerTime,
-                        pendingIntent!!
-                    )
-                    Log.d(
-                        "AndroidAlarm",
-                        "Scheduled exact alarm for dataset=${alarmItem.datasetId}"
-                    )
-                } else {
-                    // Fallback to inexact alarm if exact alarm permission is denied
-                    alarmManager.setAndAllowWhileIdle(
-                        AlarmManager.RTC_WAKEUP,
-                        triggerTime,
-                        pendingIntent!!
-                    )
-                    Log.d(
-                        "AndroidAlarm",
-                        "Scheduled inexact alarm for dataset=${alarmItem.datasetId}"
-                    )
-                }
-            } else {
-                // For older Android versions, use setExactAndAllowWhileIdle directly
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
                     triggerTime,
-                    pendingIntent!!
+                    pendingIntent
                 )
-                Log.d("AndroidAlarm", "Scheduled inexact alarm for dataset=${alarmItem.datasetId}")
+            } else {
+                alarmManager.setAndAllowWhileIdle(
+                    AlarmManager.RTC_WAKEUP,
+                    triggerTime,
+                    pendingIntent
+                )
             }
         } catch (e: SecurityException) {
-            // Handle SecurityException by falling back to inexact alarm
-            alarmManager.setAndAllowWhileIdle(
-                AlarmManager.RTC_WAKEUP,
-                triggerTime,
-                pendingIntent!!
-            )
-            Log.d("AndroidAlarm", "Scheduled inexact alarm for dataset=${alarmItem.datasetId}")
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent)
         }
     }
 
-    /**
-     * Cancels the alarm for the given [alarmItem].
-     */
     override fun cancel(alarmItem: AlarmItem) {
-        // Build the same intent and pendingIntent used in schedule(...)
-        val alarmIntent = Intent(context, AndroidAlarmReceiver::class.java).apply {
-            action = "com.example.moneytracker.ALARM_ACTION"
-            data = "timer:${alarmItem.datasetId}".toUri()
-
-            putExtra("datasetId", alarmItem.datasetId)
-            putExtra("userId", alarmItem.userId)
-            putExtra("triggerMillis", alarmItem.triggerMillis)
-        }
-
+        val intent = buildIntent(alarmItem)
         val pendingIntent = PendingIntent.getBroadcast(
             context,
             alarmItem.datasetId.hashCode(),
-            alarmIntent,
+            intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        try {
-            alarmManager.cancel(pendingIntent!!)
-            pendingIntent.cancel() // also cancel the PendingIntent itself
-            Log.d("AndroidAlarm", "Cancelled alarm for dataset=${alarmItem.datasetId}")
-        } catch (e: Exception) {
-            Log.e("AndroidAlarm", "Failed to cancel alarm", e)
-        }
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
     }
 
 }

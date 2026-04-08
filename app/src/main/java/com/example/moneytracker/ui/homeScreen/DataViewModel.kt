@@ -5,14 +5,14 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneytracker.backend.alarmManager.AlarmItem
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.PaymentMethod
-import com.example.moneytracker.backend.storage.RoutineData
+import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.helper.triggerMillis
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
@@ -25,6 +25,7 @@ import com.example.moneytracker.ui.usecase.GetWeeklyDataUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayDataAdjustUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayDatasetsUseCase
 import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
+import com.example.moneytracker.ui.usecase.RoutineWorker
 import com.example.moneytracker.ui.usecase.ScheduleAlarmUseCase
 import com.example.moneytracker.ui.usecase.SortTodayDataAdjustUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,6 +57,7 @@ class DataViewModel @Inject constructor(
     private val getTodayDatasetsUseCase: GetTodayDatasetsUseCase,
     private val getYesterdayDatasetsUseCase: GetYesterdayDatasetsUseCase,
     private val getLenOfActivatesUseCase: GetLenOfActivatesUseCase,
+    private val routineWorker: RoutineWorker
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(HomeUiState())
@@ -198,14 +200,35 @@ class DataViewModel @Inject constructor(
         }
     }
 
-    fun setAlarm(datasetId: String, routineData: RoutineData) {
+    fun setAlarm(dataset: Dataset) {
         val uid = accountService.userState.value?.uid ?: return
-        scheduleAlarmUseCase(
-            AlarmItem(
-                datasetId = datasetId,
+        val isRoutine = dataset.routine.routine != Routine.Nothing
+
+        if (isRoutine || dataset.dataType == DataType.GOAL) {
+            val triggerMillis = if (isRoutine) {
+                dataset.routine.triggerMillis
+            } else {
+                dataset.deadlineDateTime.toDate().time
+            }
+
+            routineWorker(
                 userId = uid,
-                triggerMillis = routineData.triggerMillis
+                datasetId = dataset.id,
+                triggerMillis = triggerMillis,
+                isRoutine = isRoutine
             )
+        }
+    }
+
+    fun beginTheWork(dataset: Dataset) {
+        val uid = accountService.userState.value?.uid ?: return
+        if (dataset.routine.routine == Routine.Nothing) return
+
+        routineWorker(
+            userId = uid,
+            datasetId = dataset.id,
+            triggerMillis = dataset.routine.triggerMillis,
+            isRoutine = true
         )
     }
 

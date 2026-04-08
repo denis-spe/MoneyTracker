@@ -4,15 +4,18 @@ import android.content.Context
 import android.util.Log
 import androidx.hilt.work.HiltWorker
 import androidx.work.CoroutineWorker
+import androidx.work.Data
+import androidx.work.ExistingWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 import androidx.work.WorkerParameters
-import com.example.moneytracker.backend.alarmManager.AlarmItem
-import com.example.moneytracker.backend.alarmManager.AndroidAlarmManager
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.helper.triggerMillis
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
+import java.util.concurrent.TimeUnit
 
 
 @HiltWorker
@@ -20,7 +23,6 @@ class RescheduleWorker @AssistedInject constructor(
     @Assisted private val appContext: Context,
     @Assisted private val params: WorkerParameters,
     private val dataStorage: DataStorage,
-    private val alarmManager: AndroidAlarmManager
 ) : CoroutineWorker(appContext, params) {
 
     companion object {
@@ -36,17 +38,25 @@ class RescheduleWorker @AssistedInject constructor(
             val datasets = dataStorage.getWholeDatasets(userId, {}, {}).first()
             datasets.forEach { dataset ->
                 if (!dataset.routine.stopRoutine) {
-                    Log.e(
-                        "AndroidAlarmReceiver",
-                        "Rescheduling for ${dataset.label}"
+                    val triggerMillis = dataset.routine.triggerMillis
+                    val delay = triggerMillis - System.currentTimeMillis()
+
+                    val data = Data.Builder()
+                        .putString("datasetId", dataset.id)
+                        .putString("userId", userId)
+                        .build()
+
+                    val workRequest = OneTimeWorkRequestBuilder<ScheduleWorker>()
+                        .setInitialDelay(delay.coerceAtLeast(0), TimeUnit.MILLISECONDS)
+                        .setInputData(data)
+                        .build()
+
+                    WorkManager.getInstance(appContext).enqueueUniqueWork(
+                        "RoutineUpdate_${dataset.id}",
+                        ExistingWorkPolicy.REPLACE,
+                        workRequest
                     )
-                    alarmManager.schedule(
-                        AlarmItem(
-                            dataset.id,
-                            userId,
-                            dataset.routine.triggerMillis
-                        )
-                    )
+                    Log.d(TAG, "Rescheduled work for ${dataset.label} at $triggerMillis")
                 }
             }
 

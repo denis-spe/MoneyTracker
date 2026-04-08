@@ -859,6 +859,33 @@ fun OnUpdate(
 
     val color = colorResource(colorResId)
 
+    LaunchedEffect(dataAdjust, isUpdateModelBottonOpen.value) {
+        if (isUpdateModelBottonOpen.value) {
+            when (dataAdjust) {
+                is DataAdjust.Data -> {
+                    val dataset = dataAdjust.dataset
+                    amountState.setTextAndPlaceCursorAtEnd(dataset.amount.toString())
+                    labelState.setTextAndPlaceCursorAtEnd(dataset.label)
+                    descriptionState.setTextAndPlaceCursorAtEnd(dataset.description)
+                    localDateTimeState.value = dataset.dateTime.toLocalDateTimeUtc()
+                    endLocalDateTimeState.value = dataset.deadlineDateTime.toLocalDateTimeUtc()
+                    tagIconState.value = dataset.tagIcon
+                    selectedPaymentMethod.value = dataset.paymentMethod
+                }
+
+                is DataAdjust.Adjust -> {
+                    val adjustment = dataAdjust.adjustment
+                    amountState.setTextAndPlaceCursorAtEnd(adjustment.amount.toString())
+                    labelState.setTextAndPlaceCursorAtEnd(adjustment.label)
+                    descriptionState.setTextAndPlaceCursorAtEnd(adjustment.description)
+                    localDateTimeState.value = adjustment.dateTime.toLocalDateTimeUtc()
+                    tagIconState.value = adjustment.tagIcon
+                    selectedPaymentMethod.value = adjustment.paymentMethod
+                }
+            }
+        }
+    }
+
     if (isUpdateModelBottonOpen.value) {
         ModalBottomSheet(
             onDismissRequest = {
@@ -1020,20 +1047,18 @@ fun OnUpdate(
                                                 .isNotEmpty()
                                         ) {
                                             val dataset = dataAdjust.dataset
+                                            val newDataset = dataset.copy(
+                                                amount = amountAsDouble,
+                                                label = labelState.text.toString(),
+                                                description = descriptionState.text.toString(),
+                                                dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                                tagIcon = tagIconState.value,
+                                                paymentMethod = selectedPaymentMethod.value,
+                                                deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc()
+                                            )
                                             viewModel.updateData(
                                                 dataset,
-                                                newDataset = Dataset(
-                                                    id = dataset.id,
-                                                    dataType = dataset.dataType,
-                                                    amount = amountAsDouble,
-                                                    label = labelState.text.toString(),
-                                                    description = descriptionState.text.toString(),
-                                                    dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                                    tagIcon = tagIconState.value,
-                                                    paymentMethod = selectedPaymentMethod.value,
-                                                    deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc(),
-                                                    adjustment = dataset.adjustment
-                                                )
+                                                newDataset = newDataset
                                             )
 
 

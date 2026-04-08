@@ -546,21 +546,21 @@ fun FinancialDataInput(
                             amountAsDouble != null
                             && label.isNotEmpty()
                         ) {
-                            viewModel.addData(
-                                Dataset(
-                                    id = UUID.randomUUID().toString(),
-                                    dataType = dataType,
-                                    amount = amountAsDouble,
-                                    label = label,
-                                    description = descriptionState.text.toString(),
-                                    dateTime = localDateTimeState.value
-                                        .toFirestoreTimestampUtc(),
-                                    tagIcon = labelIconState.value,
-                                    paymentMethod = selectedPaymentMethod.value,
-                                    deadlineDateTime = endLocalDateTimeState.value
-                                        .toFirestoreTimestampUtc(),
-                                )
+                            val dataset = Dataset(
+                                id = UUID.randomUUID().toString(),
+                                dataType = dataType,
+                                amount = amountAsDouble,
+                                label = label,
+                                description = descriptionState.text.toString(),
+                                dateTime = localDateTimeState.value
+                                    .toFirestoreTimestampUtc(),
+                                tagIcon = labelIconState.value,
+                                paymentMethod = selectedPaymentMethod.value,
+                                deadlineDateTime = endLocalDateTimeState.value
+                                    .toFirestoreTimestampUtc(),
                             )
+                            viewModel.addData(dataset)
+                            viewModel.setAlarm(dataset)
 
                             wasSuccess.value = State.SUCCESS
 
@@ -811,29 +811,24 @@ fun GoalDataInput(
                             wasSuccess.value != State.ERROR && amountAsDouble != null &&
                             endLocalDateTimeState.value > localDateTimeState.value
                         ) {
-                            val id = UUID.randomUUID().toString()
-
-                            viewModel.addData(
-                                Dataset(
-                                    id = id,
-                                    dataType = dataType,
-                                    amount = amountAsDouble,
-                                    label = labelState.text.toString(),
-                                    description = descriptionState.text.toString(),
-                                    dateTime = localDateTimeState.value
-                                        .toFirestoreTimestampUtc(),
-                                    tagIcon = labelIconState.value,
-                                    paymentMethod = selectedPaymentMethod.value,
-                                    deadlineDateTime = endLocalDateTimeState.value
-                                        .toFirestoreTimestampUtc(),
-                                    routine = routineData.value
-                                )
+                            val dataset = Dataset(
+                                id = UUID.randomUUID().toString(),
+                                dataType = dataType,
+                                amount = amountAsDouble,
+                                label = labelState.text.toString(),
+                                description = descriptionState.text.toString(),
+                                dateTime = localDateTimeState.value
+                                    .toFirestoreTimestampUtc(),
+                                tagIcon = labelIconState.value,
+                                paymentMethod = selectedPaymentMethod.value,
+                                deadlineDateTime = endLocalDateTimeState.value
+                                    .toFirestoreTimestampUtc(),
+                                routine = routineData.value
                             )
 
-                            viewModel.setAlarm(
-                                datasetId = id,
-                                routineData = routineData.value
-                            )
+                            viewModel.addData(dataset)
+                            viewModel.setAlarm(dataset)
+                            viewModel.beginTheWork(dataset)
 
                             wasSuccess.value = State.SUCCESS
 

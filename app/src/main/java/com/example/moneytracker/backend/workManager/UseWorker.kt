@@ -8,6 +8,7 @@ import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.OutOfQuotaPolicy
 import androidx.work.WorkManager
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,26 +20,43 @@ class UseWorker @Inject constructor(
         const val TAG = "UseWorker"
     }
 
-    override fun scheduleWork(userId: String, datasetId: String) {
+    override fun scheduleWork(
+        userId: String,
+        datasetId: String,
+        triggerMillis: Long,
+        isRoutine: Boolean
+    ) {
         val data = Data.Builder()
             .putString("datasetId", datasetId)
             .putString("userId", userId)
+            .putBoolean("isRoutine", isRoutine)
             .build()
 
-        val workRequest = OneTimeWorkRequestBuilder<ScheduleWorker>()
-            .setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+        val delay = triggerMillis - System.currentTimeMillis()
+
+        val workRequestBuilder = OneTimeWorkRequestBuilder<ScheduleWorker>()
             .setInputData(data)
-            .build()
 
-        // Use REPLACE policy to immediately execute new work when alarm triggers
-        // This ensures immediate updates instead of queuing
+        if (delay > 0) {
+            workRequestBuilder.setInitialDelay(delay, TimeUnit.MILLISECONDS)
+        } else if (isRoutine) {
+            // If the time has already passed for a routine, run it as expedited to catch up
+            workRequestBuilder.setExpedited(OutOfQuotaPolicy.RUN_AS_NON_EXPEDITED_WORK_REQUEST)
+        }
+
+        val workRequest = workRequestBuilder.build()
+
+        // Use REPLACE policy to immediately execute/update the work
         WorkManager.getInstance(appContext).enqueueUniqueWork(
-            "RoutineUpdate_${datasetId}", // Unique name per dataset
-            ExistingWorkPolicy.REPLACE,  // Changed from KEEP to REPLACE for immediate execution
+            if (isRoutine) "RoutineUpdate_${datasetId}" else "GoalUpdate_${datasetId}",
+            ExistingWorkPolicy.REPLACE,
             workRequest
         )
 
-        Log.d(TAG, "Work scheduled for $datasetId")
+        Log.d(
+            TAG,
+            "Work scheduled for $datasetId at $triggerMillis (delay: $delay ms, isRoutine: $isRoutine)"
+        )
     }
 
     override fun rescheduleWork(userId: String) {
