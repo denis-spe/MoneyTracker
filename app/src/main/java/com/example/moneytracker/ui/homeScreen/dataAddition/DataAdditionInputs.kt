@@ -583,7 +583,7 @@ fun AdjustmentField(
         val current = selectedDataset.value ?: return@LaunchedEffect
 
         val matched = datasets.firstOrNull {
-            it.label == current.label && it.dateTime == current.dateTime
+            it.label == current.label && it.createdAt == current.createdAt
         }
 
         if (matched != null && matched !== current) {
@@ -960,6 +960,8 @@ fun RepeatableTransaction(
 
                 Routine.EveryDay -> now
                     .plusDays(repeatByState.value.routineCount.toLong())
+                    .plusHours(0)
+                    .plusMinutes(0)
 
                 Routine.Weekly -> now.plusWeeks(repeatByState.value.routineCount.toLong())
                 Routine.Yearly -> now.plusYears(repeatByState.value.routineCount.toLong())

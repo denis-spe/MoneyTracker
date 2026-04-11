@@ -28,14 +28,14 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
         coupledData = when (timeSorting) {
             SortType.Ascending -> coupledData.sortedBy {
                 when (it) {
-                    is DataAdjust.Data -> it.dataset.dateTime
+                    is DataAdjust.Data -> it.dataset.createdAt
                     is DataAdjust.Adjust -> it.adjustment.dateTime
                 }
             }
 
             SortType.Descending -> coupledData.sortedByDescending {
                 when (it) {
-                    is DataAdjust.Data -> it.dataset.dateTime
+                    is DataAdjust.Data -> it.dataset.createdAt
                     is DataAdjust.Adjust -> it.adjustment.dateTime
                 }
             }

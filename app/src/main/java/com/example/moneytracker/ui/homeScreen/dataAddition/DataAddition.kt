@@ -353,8 +353,8 @@ fun FinancialDataInput(
     val colorResId = dataType.color
     val showDate = remember { mutableStateOf(false) }
     val showTime = remember { mutableStateOf(false) }
-    val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
-    val endLocalDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
+    val creationDateTime = remember { mutableStateOf(LocalDateTime.now()) }
+    remember { mutableStateOf(LocalDateTime.now()) }
     val amountState = rememberTextFieldState()
     val amountToDisplay = rememberSaveable { mutableStateOf("") }
     val labelState = rememberTextFieldState()
@@ -506,7 +506,7 @@ fun FinancialDataInput(
                 DateTimeInput(
                     showTime = showTime,
                     showDate = showDate,
-                    localDateTimeState = localDateTimeState,
+                    localDateTimeState = creationDateTime,
                     colorResId = colorResId
                 )
             }
@@ -552,16 +552,12 @@ fun FinancialDataInput(
                                 amount = amountAsDouble,
                                 label = label,
                                 description = descriptionState.text.toString(),
-                                dateTime = localDateTimeState.value
+                                createdAt = creationDateTime.value
                                     .toFirestoreTimestampUtc(),
                                 tagIcon = labelIconState.value,
                                 paymentMethod = selectedPaymentMethod.value,
-                                deadlineDateTime = endLocalDateTimeState.value
-                                    .toFirestoreTimestampUtc(),
                             )
                             viewModel.addData(dataset)
-                            viewModel.setAlarm(dataset)
-
                             wasSuccess.value = State.SUCCESS
 
                             // Reset all state
@@ -811,23 +807,25 @@ fun GoalDataInput(
                             wasSuccess.value != State.ERROR && amountAsDouble != null &&
                             endLocalDateTimeState.value > localDateTimeState.value
                         ) {
+                            val routine = routineData.value.copy(
+                                deadlineDateTime = endLocalDateTimeState.value
+                                    .toFirestoreTimestampUtc()
+                            )
+
                             val dataset = Dataset(
                                 id = UUID.randomUUID().toString(),
                                 dataType = dataType,
                                 amount = amountAsDouble,
                                 label = labelState.text.toString(),
                                 description = descriptionState.text.toString(),
-                                dateTime = localDateTimeState.value
+                                createdAt = localDateTimeState.value
                                     .toFirestoreTimestampUtc(),
                                 tagIcon = labelIconState.value,
                                 paymentMethod = selectedPaymentMethod.value,
-                                deadlineDateTime = endLocalDateTimeState.value
-                                    .toFirestoreTimestampUtc(),
-                                routine = routineData.value
+                                routine = routine
                             )
 
                             viewModel.addData(dataset)
-                            viewModel.setAlarm(dataset)
                             viewModel.beginTheWork(dataset)
 
                             wasSuccess.value = State.SUCCESS
@@ -920,7 +918,7 @@ fun AdjustmentDataInputs(
             derivedStateOf {
                 datasetList.value.filter {
                     val now = LocalDateTime.now()
-                    val deadlineDateTime = it.deadlineDateTime
+                    val deadlineDateTime = it.routine.deadlineDateTime
                         .toLocalDateTimeUtc()
                     it.dataType == DataType.GOAL && now <= deadlineDateTime
                 }

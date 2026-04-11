@@ -6,6 +6,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
 import com.example.moneytracker.helper.castToMutableMap
+import com.example.moneytracker.helper.routineToMap
 import com.example.moneytracker.helper.statusHistoryToMap
 import com.example.moneytracker.helper.toDataset
 import com.example.moneytracker.helper.toMap
@@ -310,6 +311,7 @@ class DataStorageImpl(
             val snapshot = docRef.get().await()
             val dataset = snapshot.data?.toDataset() ?: return
 
+
             // Calculate status and total adjustment amount
             val totalAdjustmentAmount = dataset.adjustment.sumOf { it.amount }
             val remainingAmount = dataset.amount - totalAdjustmentAmount
@@ -328,22 +330,20 @@ class DataStorageImpl(
             docRef.collection("statusHistory")
                 .document(statusId)
                 .set(statusHistory.statusHistoryToMap)
-//                .await()
+                .await()
 
             // Update dataset fields
-            val routineMap = castToMutableMap(mapOf("routine" to dataset.routine))
-            routineMap["triggerMillis"] =
-                nextDeadline.seconds * 1000 + nextDeadline.nanoseconds / 1_000_000
+            val routineMap = dataset.routine.copy(
+                startDateTime = newDateTime,
+                deadlineDateTime = nextDeadline
+            )
 
             docRef.update(
                 mapOf(
-                    "dateTime" to newDateTime,
-                    "deadlineDateTime" to nextDeadline,
-                    "routine" to routineMap,
+                    "routineData" to routineMap.routineToMap,
                     "adjustment" to emptyList<Map<String, Any?>>()
                 )
-            )
-//                .await()
+            ).await()
 
             Log.d("DataStorageImpl", "completeRoutine: Update successful for $datasetId")
         } catch (e: Exception) {
@@ -394,8 +394,8 @@ class DataStorageImpl(
             // Update dataset timestamps
             datasetDocRef.update(
                 mapOf(
-                    "dateTime" to newDateTime,
-                    "deadlineDateTime" to newDeadlineDateTime
+                    "createdAt" to newDateTime,
+                    "routineData.deadlineDateTime" to newDeadlineDateTime
                 )
             ).await()
 

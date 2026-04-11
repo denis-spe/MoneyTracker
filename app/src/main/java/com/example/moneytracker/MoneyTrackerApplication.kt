@@ -1,14 +1,19 @@
 package com.example.moneytracker
 
 import android.app.Application
-import android.util.Log
 import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
-import com.example.moneytracker.backend.alarmManager.AlarmRescheduler
+import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.backend.storage.DataStorage
+import com.example.moneytracker.backend.storage.Routine
+import com.example.moneytracker.backend.workers.Workers
+import com.example.moneytracker.backend.workers.WorkersTask
+import com.example.moneytracker.helper.rescheduleDeadline
+import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.datetime.toKotlinLocalDateTime
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -18,22 +23,44 @@ class MoneyTrackerApplication : Application(), Configuration.Provider {
     lateinit var workerFactory: HiltWorkerFactory
 
     @Inject
-    lateinit var alarmRescheduler: AlarmRescheduler
+    lateinit var workers: Workers
 
-    override val workManagerConfiguration: Configuration by lazy {
-        Configuration.Builder()
+    @Inject
+    lateinit var auth: AccountServices
+
+    @Inject
+    lateinit var dataStorage: DataStorage
+
+
+    override val workManagerConfiguration: Configuration
+        get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
-            .setMinimumLoggingLevel(Log.DEBUG)
             .build()
-    }
 
     override fun onCreate() {
         super.onCreate()
 
-        // Reschedule alarms on every app start (handles Android Studio "Run")
-        CoroutineScope(Dispatchers.IO).launch {
-            Log.e("MoneyTrackerApp", "App started, triggering reschedule...")
-            alarmRescheduler.reschedule()
+        if (!auth.hasUser) return
+        val scope = CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
+        scope.launch {
+            val userId = auth.currentUserId
+            val datasets = dataStorage.getWholeDatasets(userId, {}, {})
+            datasets.collect { datasetList ->
+                datasetList.forEach {
+                    if (it.routine.routine != Routine.Nothing) {
+                        workers.startRoutineWorker(
+                            WorkersTask(
+                                userId = userId,
+                                datasetId = it.id,
+                                routineData = it.routine,
+                                deadlineDateTime = it.routine.rescheduleDeadline
+                                    .toKotlinLocalDateTime()
+                                    .toFirestoreTimestampUtc()
+                            )
+                        )
+                    }
+                }
+            }
         }
     }
 }

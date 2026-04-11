@@ -132,7 +132,7 @@ fun YesterdayChart(datasets: List<Dataset>) {
         .groupBy { it.dataType }
         .map { (dataType, datasets) ->
             val x = listOf(datasets.mean {
-                val time = it.dateTime.toLocalDateTimeUtc()
+                val time = it.createdAt.toLocalDateTimeUtc()
 
                 ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
             })

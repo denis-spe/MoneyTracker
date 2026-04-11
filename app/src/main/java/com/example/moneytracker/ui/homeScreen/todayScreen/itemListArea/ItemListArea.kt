@@ -827,7 +827,7 @@ fun ItemCard(
 
     val dateTime = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime
-        is DataAdjust.Data -> dataAdjust.dataset.dateTime
+        is DataAdjust.Data -> dataAdjust.dataset.createdAt
     }.formatToDateTime
 
     val paymentMethod = when (dataAdjust) {

@@ -37,7 +37,7 @@
             </intent-filter>
         </activity>
         <receiver
-            android:name=".backend.alarmManager.AndroidAlarmReceiver"
+            android:name=".backend.workers.RoutineBootReceiver"
             android:exported="true"
             android:directBootAware="true"
             tools:ignore="ExportedReceiver">

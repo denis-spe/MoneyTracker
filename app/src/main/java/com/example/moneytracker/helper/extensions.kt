@@ -35,6 +35,18 @@ import kotlin.math.pow
 
 private val zone = ZoneId.systemDefault()
 
+fun parseTimestamp(value: Any?): Timestamp = when (value) {
+    is Timestamp -> value
+    is Map<*, *> -> {
+        val sec = (value["seconds"] as? Number)?.toLong() ?: 0L
+        val nano = (value["nanoseconds"] as? Number)?.toInt() ?: 0
+        Timestamp(sec, nano)
+    }
+
+    is Number -> Timestamp(value.toLong(), 0)
+    else -> Timestamp.now()
+}
+
 fun java.time.LocalDateTime.toMillis(zone: ZoneId = ZoneId.systemDefault()): Long =
     atZone(zone).toInstant().toEpochMilli()
 
@@ -43,6 +55,41 @@ fun Long.toLocalDateTime(zone: ZoneId = ZoneId.systemDefault()): java.time.Local
 
 val RoutineData.triggerMillis: Long
     get() = getTriggerMillisFrom(System.currentTimeMillis())
+
+val RoutineData.rescheduleDeadline: java.time.LocalDateTime
+    get() {
+        val now = java.time.LocalDateTime.now()
+
+        return when (routine) {
+            Routine.EveryMinute -> {
+                now.plusMinutes(routineCount.toLong())
+            }
+
+            Routine.EveryHour -> {
+                now.plusHours(routineCount.toLong())
+            }
+
+            Routine.EveryDay -> {
+                now.plusDays(routineCount.toLong())
+            }
+
+            Routine.Weekly -> {
+                now.plusWeeks(routineCount.toLong())
+            }
+
+            Routine.Monthly -> {
+                now.plusMonths(routineCount.toLong())
+            }
+
+            Routine.Yearly -> {
+                now.plusYears(routineCount.toLong())
+            }
+
+            else -> {
+                now.plusMinutes(1)
+            }
+        }
+    }
 
 /**
  * Calculates the next trigger time based on a [baseMillis].
@@ -144,7 +191,7 @@ val List<Dataset>.std: Double
     get() = kotlin.math.sqrt(variance)
 
 val Dataset.isStartDateTimeNotEqualToDeadlineDateTime: Boolean
-    get() = dateTime != deadlineDateTime
+    get() = routine.startDateTime != routine.deadlineDateTime
 
 
 /**
@@ -154,7 +201,7 @@ val Dataset.isForToday: Boolean
     get() {
 
         val today = LocalDateTime.now().date
-        val dataDate = dateTime.toLocalDateTimeUtc().date
+        val dataDate = createdAt.toLocalDateTimeUtc().date
 
         return today == dataDate
     }
@@ -173,7 +220,7 @@ val Dataset.isForYesterday: Boolean
     get() {
         val yesterday = LocalDateTime.now()
             .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
-        val dataDate = dateTime.toLocalDateTimeUtc().date
+        val dataDate = createdAt.toLocalDateTimeUtc().date
 
         return yesterday == dataDate
     }
@@ -195,8 +242,7 @@ fun Dataset.toMap(): Map<String, Any> {
         "amount" to amount,
         "label" to label,
         "description" to description,
-        "dateTime" to dateTime,
-        "deadlineDateTime" to deadlineDateTime,
+        "createdAt" to createdAt,
         "tagIcon" to tagIcon.tagIconToMap,
         "paymentMethod" to paymentMethod.name,
         "adjustment" to adjustment.map { it.adjustmentToMap },
@@ -209,7 +255,9 @@ val RoutineData.routineToMap: Map<String, Any>
     get() = mapOf(
         "routine" to routine.name,
         "routineCount" to routineCount,
-        "stopRoutine" to stopRoutine
+        "stopRoutine" to stopRoutine,
+        "startDateTime" to startDateTime,
+        "deadlineDateTime" to deadlineDateTime
     )
 
 val StatusHistory.statusHistoryToMap: Map<String, Any>
@@ -325,11 +373,17 @@ fun Map<*, *>.asRoutineData(): RoutineData {
     val routine = parseRoutine(this["routine"])
     val routineCount = (this["routineCount"] as? Number)?.toInt() ?: 0
     val stopRoutine = this["stopRoutine"] as? Boolean ?: true
+    val startDateTime = parseTimestamp(this["startDateTime"])
+    val deadlineDateTime = parseTimestamp(this["deadlineDateTime"])
+    val triggerMillis = (this["triggerMillis"] as? Number)?.toLong() ?: 0L
 
     return RoutineData(
         routine = routine,
         routineCount = routineCount,
-        stopRoutine = stopRoutine
+        stopRoutine = stopRoutine,
+        startDateTime = startDateTime,
+        deadlineDateTime = deadlineDateTime,
+        triggerMillis = triggerMillis
     )
 }
 
@@ -441,7 +495,7 @@ fun LocalDateTime.plusDays(days: Int): LocalDateTime {
 val Dataset.status: Status
     get() {
         val currentTime = LocalDateTime.now()
-        val deadlineDateTime = deadlineDateTime.toLocalDateTimeUtc()
+        val deadlineDateTime = routine.deadlineDateTime.toLocalDateTimeUtc()
         return when (dataType) {
             DataType.GOAL if currentTime >= deadlineDateTime
                     && remainingAmount != 0.0
@@ -481,18 +535,6 @@ fun Map<*, *>.toAmount(): Double {
 
 fun Map<*, *>.toDataset(): Dataset {
 
-    fun parseTimestamp(value: Any?): Timestamp = when (value) {
-        is Timestamp -> value
-        is Map<*, *> -> {
-            val sec = (value["seconds"] as? Number)?.toLong() ?: 0L
-            val nano = (value["nanoseconds"] as? Number)?.toInt() ?: 0
-            Timestamp(sec, nano)
-        }
-
-        is Number -> Timestamp(value.toLong(), 0)
-        else -> Timestamp.now()
-    }
-
     fun <T : Enum<T>> parseEnum(
         value: Any?,
         values: Array<T>,
@@ -511,8 +553,7 @@ fun Map<*, *>.toDataset(): Dataset {
         amount = this.toAmount(),
         label = this["label"] as? String ?: "",
         description = this["description"] as? String ?: "",
-        dateTime = parseTimestamp(this["dateTime"]),
-        deadlineDateTime = parseTimestamp(this["deadlineDateTime"]),
+        createdAt = parseTimestamp(this["createdAt"]),
         tagIcon = (this["tagIcon"] as? Map<*, *>)?.asTagIcon() ?: TagIcon(
             name = "",
             icon = R.drawable.initial

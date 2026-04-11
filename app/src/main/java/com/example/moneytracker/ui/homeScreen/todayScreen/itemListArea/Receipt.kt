@@ -102,7 +102,7 @@ fun DatasetReceipt(
     onDelete: () -> Unit = {},
     onClose: () -> Unit = {}
 ) {
-    val datetime = dataset.dateTime.toLocalDateTimeUtc()
+    val datetime = dataset.createdAt.toLocalDateTimeUtc()
     val day = datetime.day.addZeroIfLessThenTen
     val month = datetime.month.name.title
     val year = datetime.year.addZeroIfLessThenTen
@@ -241,7 +241,7 @@ fun DatasetReceipt(
         }
 
         if (dataset.dataType == DataType.GOAL) {
-            val deadlineDateTime = dataset.deadlineDateTime.toLocalDateTimeUtc()
+            val deadlineDateTime = dataset.routine.deadlineDateTime.toLocalDateTimeUtc()
             val deadlineDay = deadlineDateTime.day.addZeroIfLessThenTen
             val deadlineMonth = deadlineDateTime.month.name.title.take(3)
             val deadlineYear = deadlineDateTime.year
@@ -867,8 +867,9 @@ fun OnUpdate(
                     amountState.setTextAndPlaceCursorAtEnd(dataset.amount.toString())
                     labelState.setTextAndPlaceCursorAtEnd(dataset.label)
                     descriptionState.setTextAndPlaceCursorAtEnd(dataset.description)
-                    localDateTimeState.value = dataset.dateTime.toLocalDateTimeUtc()
-                    endLocalDateTimeState.value = dataset.deadlineDateTime.toLocalDateTimeUtc()
+                    localDateTimeState.value = dataset.createdAt.toLocalDateTimeUtc()
+                    endLocalDateTimeState.value =
+                        dataset.routine.deadlineDateTime.toLocalDateTimeUtc()
                     tagIconState.value = dataset.tagIcon
                     selectedPaymentMethod.value = dataset.paymentMethod
                 }
@@ -1051,15 +1052,26 @@ fun OnUpdate(
                                                 amount = amountAsDouble,
                                                 label = labelState.text.toString(),
                                                 description = descriptionState.text.toString(),
-                                                dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                                createdAt = localDateTimeState.value.toFirestoreTimestampUtc(),
                                                 tagIcon = tagIconState.value,
                                                 paymentMethod = selectedPaymentMethod.value,
-                                                deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc()
+                                                routine = if (dataset.dataType == DataType.GOAL) {
+                                                    dataset.routine.copy(
+                                                        startDateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                                        deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc()
+                                                    )
+                                                } else {
+                                                    dataset.routine
+                                                }
                                             )
                                             viewModel.updateData(
                                                 dataset,
                                                 newDataset = newDataset
                                             )
+
+                                            if (dataset.dataType == DataType.GOAL) {
+                                                viewModel.beginTheWork(newDataset)
+                                            }
 
 
                                             wasSuccess.value = State.SUCCESS
@@ -1177,7 +1189,7 @@ fun OnUpdate(
         }
 
         val dateTime = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.dataset.dateTime
+            is DataAdjust.Data -> dataAdjust.dataset.createdAt
             is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime
         }
 

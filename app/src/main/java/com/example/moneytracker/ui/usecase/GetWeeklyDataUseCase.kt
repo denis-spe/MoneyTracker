@@ -15,7 +15,7 @@ class GetWeeklyDataUseCase @Inject constructor() {
         return coupleDatasetsWithAdjustments(datasets).filter { item ->
             when (item) {
                 is DataAdjust.Data ->
-                    item.dataset.dateTime.toLocalDateTimeUtc().date in dates
+                    item.dataset.createdAt.toLocalDateTimeUtc().date in dates
 
                 is DataAdjust.Adjust ->
                     item.adjustment.dateTime.toLocalDateTimeUtc().date in dates

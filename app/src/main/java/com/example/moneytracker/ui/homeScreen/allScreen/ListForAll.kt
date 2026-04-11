@@ -106,7 +106,7 @@ fun DataCard(
 
     val dateTime = when (dataAdjust) {
         is DataAdjust.Data -> {
-            val dateTime = dataAdjust.dataset.dateTime
+            val dateTime = dataAdjust.dataset.createdAt
             val date = dateTime.toLocalDateTimeUtc()
             val time = dateTime.toLocalDateTimeUtc()
             val hour = time.hour.addZeroIfLessThenTen

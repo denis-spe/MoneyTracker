@@ -4,8 +4,13 @@
  */
 package com.example.moneytracker.backend.storage
 
+import com.google.firebase.Timestamp
+
 data class RoutineData(
     var routine: Routine = Routine.Nothing,
     val routineCount: Int = 0,
-    val stopRoutine: Boolean = true
+    val stopRoutine: Boolean = true,
+    val startDateTime: Timestamp = Timestamp.now(),
+    val deadlineDateTime: Timestamp = Timestamp.now(),
+    val triggerMillis: Long = 0
 )

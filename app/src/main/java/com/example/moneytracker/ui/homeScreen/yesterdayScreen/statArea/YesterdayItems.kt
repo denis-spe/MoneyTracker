@@ -62,7 +62,7 @@ fun YesterdayItem(dataAdjust: DataAdjust) {
     }
 
     val dateTime = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.dataset.dateTime.toLocalDateTimeUtc()
+        is DataAdjust.Data -> dataAdjust.dataset.createdAt.toLocalDateTimeUtc()
         is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime.toLocalDateTimeUtc()
     }
 

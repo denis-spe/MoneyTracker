@@ -18,7 +18,7 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object FirebaseAuthModule {
 
-    private const val EMULATOR_IP = "192.168.43.53"
+    private const val EMULATOR_IP = "192.168.10.142"
 
     @Singleton
     @Provides

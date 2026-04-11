@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -73,7 +75,14 @@ fun PlaceHolderDonutChart(
     selectionView: @Composable (selectedItem: DonutChartData?) -> Unit = {},
 ) {
     var selectedIndex by remember { mutableStateOf(-1) }
-    val animationTargetState = (0..data.items.size).map {
+
+    LaunchedEffect(data.items.size) {
+        if (selectedIndex >= data.items.size) {
+            selectedIndex = -1
+        }
+    }
+
+    val animationTargetState = (0 until data.items.size).map {
         remember {
             mutableStateOf(
                 DonutChartState(
@@ -82,7 +91,7 @@ fun PlaceHolderDonutChart(
             )
         }
     }
-    val animValues = (0..data.items.size).map {
+    val animValues = (0 until data.items.size).map {
         animateDpAsState(
             targetValue = animationTargetState[it].value.stroke,
             animationSpec = TweenSpec(700)
@@ -163,8 +172,15 @@ fun DonutChart(
     selectionView: @Composable (selectedItem: DonutChartData?) -> Unit = {},
 ) {
 
-    var selectedIndex by remember { mutableStateOf(-1) }
-    val animationTargetState = (0..data.items.size).map {
+    var selectedIndex by remember { mutableIntStateOf(-1) }
+
+    LaunchedEffect(data.items.size) {
+        if (selectedIndex >= data.items.size) {
+            selectedIndex = -1
+        }
+    }
+
+    val animationTargetState = (0 until data.items.size).map {
         remember {
             mutableStateOf(
                 DonutChartState(
@@ -173,7 +189,7 @@ fun DonutChart(
             )
         }
     }
-    val animValues = (0..data.items.size).map {
+    val animValues = (0 until data.items.size).map {
         animateDpAsState(
             targetValue = animationTargetState[it].value.stroke,
             animationSpec = TweenSpec(700)
@@ -203,22 +219,26 @@ fun DonutChart(
                                 currentStrokeValues = animationTargetState.map { it.value.stroke.toPx() },
                                 onItemSelected = { index ->
                                     selectedIndex = index
-                                    animationTargetState[index].value = DonutChartState(
-                                        DonutChartState.State.Selected,
-                                        donutStroke = DonutStroke(
-                                            strokeWidth,
-                                            strokeWidthSelected
+                                    if (index in animationTargetState.indices) {
+                                        animationTargetState[index].value = DonutChartState(
+                                            DonutChartState.State.Selected,
+                                            donutStroke = DonutStroke(
+                                                strokeWidth,
+                                                strokeWidthSelected
+                                            )
                                         )
-                                    )
+                                    }
                                 },
                                 onItemDeselected = { index ->
-                                    animationTargetState[index].value = DonutChartState(
-                                        DonutChartState.State.Unselected,
-                                        donutStroke = DonutStroke(
-                                            strokeWidth,
-                                            strokeWidthSelected
+                                    if (index in animationTargetState.indices) {
+                                        animationTargetState[index].value = DonutChartState(
+                                            DonutChartState.State.Unselected,
+                                            donutStroke = DonutStroke(
+                                                strokeWidth,
+                                                strokeWidthSelected
+                                            )
                                         )
-                                    )
+                                    }
                                 },
                                 onNoItemSelected = {
                                     selectedIndex = -1
@@ -252,7 +272,7 @@ fun DonutChart(
                 }
             }
         )
-        selectionView(if (selectedIndex >= 0) data.items[selectedIndex] else null)
+        selectionView(data.items.getOrNull(selectedIndex))
     }
 }
 
@@ -276,18 +296,20 @@ private fun handleCanvasTap(
     var newDataTapped = false
 
     anglesList.forEachIndexed { ind, angle ->
-        val stroke = currentStrokeValues[ind]
-        if (angle.isInsideAngle(touchAngle)) {
-            if (distance > (center.x - stroke) &&
-                distance < (center.x)
-            ) { // since it's a square center.x or center.y will be the same
-                selectedIndex = ind
-                newDataTapped = true
+        if (ind < currentStrokeValues.size) {
+            val stroke = currentStrokeValues[ind]
+            if (angle.isInsideAngle(touchAngle)) {
+                if (distance > (center.x - stroke) &&
+                    distance < (center.x)
+                ) { // since it's a square center.x or center.y will be the same
+                    selectedIndex = ind
+                    newDataTapped = true
+                }
             }
         }
     }
 
-    if (selectedIndex >= 0 && newDataTapped) {
+    if (selectedIndex >= 0) {
         onItemSelected(selectedIndex)
     }
     if (currentSelectedIndex >= 0) {
