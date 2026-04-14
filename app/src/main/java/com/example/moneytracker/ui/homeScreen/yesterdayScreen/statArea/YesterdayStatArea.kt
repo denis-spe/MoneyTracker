@@ -191,7 +191,6 @@ fun YesterdayChart(datasets: List<Dataset>) {
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun YesterdayStatArea(
     modifier: Modifier = Modifier,
@@ -221,7 +220,7 @@ fun YesterdayStatArea(
                     contentColor = if (pageState.currentPage == 0)
                         Color.White else MoneyTrackerTheme.colors.autoText,
                     containerColor = if (pageState.currentPage == 0) {
-                        Color.Blue
+                        MoneyTrackerTheme.colors.themeColor
                     } else {
                         Color.Transparent
                     }
@@ -239,7 +238,7 @@ fun YesterdayStatArea(
                     contentColor = if (pageState.currentPage == 1)
                         Color.White else MoneyTrackerTheme.colors.autoText,
                     containerColor = if (pageState.currentPage == 1) {
-                        Color.Blue
+                        MoneyTrackerTheme.colors.themeColor
                     } else {
                         Color.Transparent
                     }

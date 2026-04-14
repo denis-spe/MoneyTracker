@@ -1,15 +1,12 @@
 package com.example.moneytracker.ui.homeScreen
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
-import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
@@ -42,7 +39,7 @@ import network.chaintech.kmp_date_time_picker.utils.now
 import javax.inject.Inject
 
 @HiltViewModel
-class DataViewModel @Inject constructor(
+class HomeViewModel @Inject constructor(
     private val accountService: AccountServices,
     private val datasetOperationsUseCase: DatasetOperationsUseCase,
     private val observeUserDataUseCase: ObserveUserDataUseCase,
@@ -61,11 +58,6 @@ class DataViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    var isBottomSheetContentLoading by mutableStateOf(true)
-        private set
-    var datasetState by mutableStateOf<DatasetState>(DatasetState.Loading)
-        private set
-
     init {
         observe()
     }
@@ -75,12 +67,12 @@ class DataViewModel @Inject constructor(
             observeUserDataUseCase(
                 accountService.userState.map { it?.uid }
             ).collect { homeData ->
-                datasetState = homeData.datasetState
                 _uiState.update {
                     it.copy(
                         datasets = homeData.datasets,
                         info = homeData.info,
-                        error = homeData.error
+                        error = homeData.error,
+                        datasetState = homeData.datasetState
                     )
                 }
             }
@@ -105,6 +97,12 @@ class DataViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LocalDate.now())
 
+    val goalDatasets: StateFlow<List<Dataset>> =
+        uiState
+            .map { state -> state.datasets.filter { it.dataType == DataType.GOAL } }
+            .distinctUntilChanged()
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val fetchLiveChangeDataset: Flow<List<Dataset>> = uiState
         .map { it.datasets }
         .distinctUntilChanged()
@@ -125,22 +123,17 @@ class DataViewModel @Inject constructor(
      * Sorting
      *******************/
 
-    fun sortTodayDataAdjust(
-        timeSorting: SortType,
-        categorySorting: String?,
-        paymentSorting: PaymentMethod?,
-        alphabeticalOrder: SortType,
-        amountSorting: SortType,
-        take: Int? = null
-    ): StateFlow<List<DataAdjust>> = uiState.map { state ->
+    val sortTodayDataAdjust: StateFlow<List<DataAdjust>> = uiState.map { state ->
+        val uiStateValue = uiState.value
+
         sortTodayDataAdjustUseCase(
             state.datasets,
-            timeSorting,
-            categorySorting,
-            paymentSorting,
-            alphabeticalOrder,
-            amountSorting,
-            take
+            uiStateValue.timeSorting,
+            uiStateValue.categorySorting,
+            uiStateValue.paymentSorting,
+            uiStateValue.alphabeticalOrder,
+            uiStateValue.amountSorting,
+            null
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -198,26 +191,6 @@ class DataViewModel @Inject constructor(
         }
     }
 
-//    fun setAlarm(dataset: Dataset) {
-//        val uid = accountService.userState.value?.uid ?: return
-//        val isRoutine = dataset.routine.routine != Routine.Nothing
-//
-//        if (isRoutine || dataset.dataType == DataType.GOAL) {
-//            val triggerMillis = if (isRoutine) {
-//                dataset.routine.triggerMillis
-//            } else {
-//                dataset.deadlineDateTime.toDate().time
-//            }
-//
-//            routineWorker(
-//                userId = uid,
-//                datasetId = dataset.id,
-//                triggerMillis = triggerMillis,
-//                isRoutine = isRoutine
-//            )
-//        }
-//    }
-
     fun beginTheWork(dataset: Dataset) {
         val uid = accountService.userState.value?.uid ?: return
         if (dataset.routine.routine == Routine.Nothing) return
@@ -259,7 +232,35 @@ class DataViewModel @Inject constructor(
     }
 
     fun updateIsBottomSheetContentLoading(isLoading: Boolean) {
-        isBottomSheetContentLoading = isLoading
+        _uiState.update { it.copy(isBottomSheetContentLoading = isLoading) }
+    }
+
+    fun updateTimeSorting(sortType: SortType) {
+        _uiState.update { it.copy(timeSorting = sortType) }
+    }
+
+    fun updateCategorySorting(category: String) {
+        _uiState.update { it.copy(categorySorting = category) }
+    }
+
+    fun updateAmountSorting(sortType: SortType) {
+        _uiState.update { it.copy(amountSorting = sortType) }
+    }
+
+    fun updatePaymentSorting(paymentMethod: PaymentMethod?) {
+        _uiState.update { it.copy(paymentSorting = paymentMethod) }
+    }
+
+    fun updateAlphabeticalOrder(sortType: SortType) {
+        _uiState.update { it.copy(alphabeticalOrder = sortType) }
+    }
+
+    fun updateOnFilterClick(isVisible: Boolean) {
+        _uiState.update { it.copy(onFilterClick = isVisible) }
+    }
+
+    fun updateOnActivateShow(isVisible: Boolean) {
+        _uiState.update { it.copy(onActivateShow = isVisible) }
     }
 
     fun getLenOfActivates(date: LocalDate): Int {

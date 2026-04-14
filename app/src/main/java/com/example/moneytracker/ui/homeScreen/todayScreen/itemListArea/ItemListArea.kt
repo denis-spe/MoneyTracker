@@ -49,7 +49,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -66,6 +66,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
@@ -75,7 +76,8 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.ui.components.StatusView
-import com.example.moneytracker.ui.homeScreen.DataViewModel
+import com.example.moneytracker.ui.homeScreen.HomeUiState
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
@@ -128,13 +130,14 @@ fun ItemFilter(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemListAreaSort(
-    onFilterClick: MutableState<Boolean>,
-    onActivateShow: MutableState<Boolean>,
-    categorySorting: MutableState<String>,
-    timeSorting: MutableState<SortType>,
-    amountSorting: MutableState<SortType>,
-    paymentSorting: MutableState<PaymentMethod?>,
-    alphabeticalOrder: MutableState<SortType>
+    uiState: HomeUiState,
+    onFilterClick: (Boolean) -> Unit,
+    onActivateShow: (Boolean) -> Unit,
+    categorySorting: (String) -> Unit,
+    timeSorting: (SortType) -> Unit,
+    amountSorting: (SortType) -> Unit,
+    paymentSorting: (PaymentMethod?) -> Unit,
+    alphabeticalOrder: (SortType) -> Unit
 ) {
 
     val isCategoryModelBottomOpen = remember { mutableStateOf(false) }
@@ -143,13 +146,8 @@ fun ItemListAreaSort(
     val isAlphabeticalOrderModelBottomOpen = remember { mutableStateOf(false) }
 
     val categoryState = remember { mutableStateOf("") }
-    val amountState = remember { mutableStateOf(SortType.Initial) }
     val paymentState = remember { mutableStateOf<PaymentMethod?>(null) }
-
-
-
-
-
+    val amountState = remember { mutableStateOf(SortType.Initial) }
 
     Column(
         modifier = Modifier
@@ -175,12 +173,13 @@ fun ItemListAreaSort(
             ) {
                 IconButton(
                     onClick = {
-                        onActivateShow.value = !onActivateShow.value
+                        onActivateShow(!uiState.onActivateShow)
                     }
                 ) {
                     Icon(
-                        imageVector = if (onActivateShow.value) Icons.Default.KeyboardArrowDown
-                        else Icons.Default.KeyboardArrowUp,
+                        imageVector = if (uiState.onActivateShow)
+                            Icons.Default.KeyboardArrowUp else
+                            Icons.Default.KeyboardArrowDown,
                         contentDescription = "arrow",
                         modifier = Modifier.size(20.dp)
                     )
@@ -188,11 +187,11 @@ fun ItemListAreaSort(
 
                 IconButton(
                     onClick = {
-                        onFilterClick.value = !onFilterClick.value
+                        onFilterClick(!uiState.onFilterClick)
                     }
                 ) {
                     Icon(
-                        imageVector = if (onFilterClick.value)
+                        imageVector = if (uiState.onFilterClick)
                             Icons.Outlined.AlignVerticalTop else
                             Icons.Outlined.AlignVerticalBottom,
                         contentDescription = "filter",
@@ -204,7 +203,7 @@ fun ItemListAreaSort(
         }
 
         AnimatedVisibility(
-            visible = onFilterClick.value,
+            visible = uiState.onFilterClick,
             exit = slideOutVertically() + shrinkVertically() + fadeOut()
         ) {
             Row(
@@ -217,11 +216,11 @@ fun ItemListAreaSort(
                     }
                 ) {
                     Icon(
-                        imageVector = if (categorySorting.value != "Initial") Icons.Default.Category
+                        imageVector = if (uiState.categorySorting != "Initial") Icons.Default.Category
                         else Icons.Outlined.Category,
                         contentDescription = "Category",
                         modifier = Modifier.size(FilterIconSize),
-                        tint = if (categorySorting.value != "Initial") MoneyTrackerTheme.colors.autoText
+                        tint = if (uiState.categorySorting != "Initial") MoneyTrackerTheme.colors.autoText
                         else Color.Gray
                     )
                 }
@@ -232,11 +231,11 @@ fun ItemListAreaSort(
                     }
                 ) {
                     val color =
-                        if (timeSorting.value != SortType.Initial) MoneyTrackerTheme.colors.autoText
-                    else Color.Gray
+                        if (uiState.timeSorting != SortType.Initial) MoneyTrackerTheme.colors.autoText
+                        else Color.Gray
                     val imageVec = if (
-                        timeSorting.value == SortType.Ascending ||
-                        timeSorting.value == SortType.Descending
+                        uiState.timeSorting == SortType.Ascending ||
+                        uiState.timeSorting == SortType.Descending
                     ) Icons.Default.AccessTimeFilled else Icons.Outlined.AccessTime
 
                     Icon(
@@ -252,12 +251,12 @@ fun ItemListAreaSort(
                         isPaymentModelBottomOpen.value = true
                     }
                 ) {
-                    val icon = if (paymentSorting.value != null
-                        || amountSorting.value != SortType.Initial
+                    val icon = if (uiState.paymentSorting != null
+                        || uiState.amountSorting != SortType.Initial
                     ) Icons.Default.Payments
                     else Icons.Outlined.Payments
-                    val color = if (paymentSorting.value != null
-                        || amountSorting.value != SortType.Initial
+                    val color = if (uiState.paymentSorting != null
+                        || uiState.amountSorting != SortType.Initial
                     ) MoneyTrackerTheme.colors.autoText else Color.Gray
 
 
@@ -274,7 +273,7 @@ fun ItemListAreaSort(
                         isAlphabeticalOrderModelBottomOpen.value = true
                     }
                 ) {
-                    val iconResId = when (alphabeticalOrder.value) {
+                    val iconResId = when (uiState.alphabeticalOrder) {
                         SortType.Descending -> R.drawable.sort_up
                         SortType.Ascending -> R.drawable.sort_down
                         else -> R.drawable.sort
@@ -284,7 +283,7 @@ fun ItemListAreaSort(
                         painter = painterResource(id = iconResId),
                         contentDescription = "Sort",
                         modifier = Modifier.size(FilterIconSize),
-                        tint = if (alphabeticalOrder.value != SortType.Initial)
+                        tint = if (uiState.alphabeticalOrder != SortType.Initial)
                             MoneyTrackerTheme.colors.autoText else Color.Gray
                     )
                 }
@@ -323,13 +322,13 @@ fun ItemListAreaSort(
                     HorizontalDivider()
                     TextButton(
                         onClick = {
-                            timeSorting.value = SortType.Ascending
+                            timeSorting(SortType.Ascending)
                             isTimeModelBottomOpen.value = false
                         },
                         colors = ButtonDefaults.textButtonColors()
                             .copy(
                                 contentColor =
-                                    if (timeSorting.value == SortType.Ascending) Color.Green
+                                    if (uiState.timeSorting == SortType.Ascending) Color.Green
                                     else Color.Gray
                             )
                     ) {
@@ -337,13 +336,13 @@ fun ItemListAreaSort(
                     }
                     TextButton(
                         onClick = {
-                            timeSorting.value = SortType.Descending
+                            timeSorting(SortType.Descending)
                             isTimeModelBottomOpen.value = false
                         },
                         colors = ButtonDefaults.textButtonColors()
                             .copy(
                                 contentColor =
-                                    if (timeSorting.value == SortType.Descending) Color.Red
+                                    if (uiState.timeSorting == SortType.Descending) Color.Red
                                     else Color.Gray
                             )
                     ) {
@@ -352,7 +351,7 @@ fun ItemListAreaSort(
 
                     TextButton(
                         onClick = {
-                            timeSorting.value = SortType.Initial
+                            timeSorting(SortType.Initial)
                             isTimeModelBottomOpen.value = false
                         },
                         colors = ButtonDefaults.textButtonColors()
@@ -419,7 +418,7 @@ fun ItemListAreaSort(
                                 onClick = {
                                     if (selectedCategory == "Don't sort") {
                                         categoryState.value = ""
-                                        categorySorting.value = "Initial"
+                                        categorySorting("Initial")
                                         isCategoryModelBottomOpen.value = false
                                     } else {
                                         categoryState.value = selectedCategory
@@ -447,7 +446,7 @@ fun ItemListAreaSort(
                     ) {
                         TextButton(
                             onClick = {
-                                categorySorting.value = "Initial"
+                                categorySorting("Initial")
                                 categoryState.value = ""
                                 isCategoryModelBottomOpen.value = false
                             },
@@ -459,7 +458,7 @@ fun ItemListAreaSort(
 
                         Button(
                             onClick = {
-                                categorySorting.value = categoryState.value
+                                categorySorting(categoryState.value)
                                 isCategoryModelBottomOpen.value = false
                             },
                             colors = ButtonDefaults.buttonColors()
@@ -507,13 +506,13 @@ fun ItemListAreaSort(
                     HorizontalDivider()
                     TextButton(
                         onClick = {
-                            alphabeticalOrder.value = SortType.Ascending
+                            alphabeticalOrder(SortType.Ascending)
                             isAlphabeticalOrderModelBottomOpen.value = false
                         },
                         colors = ButtonDefaults.textButtonColors()
                             .copy(
                                 contentColor =
-                                    if (alphabeticalOrder.value == SortType.Ascending) Color.Green
+                                    if (uiState.alphabeticalOrder == SortType.Ascending) Color.Green
                                     else Color.Gray
                             )
                     ) {
@@ -521,13 +520,13 @@ fun ItemListAreaSort(
                     }
                     TextButton(
                         onClick = {
-                            alphabeticalOrder.value = SortType.Descending
+                            alphabeticalOrder(SortType.Descending)
                             isAlphabeticalOrderModelBottomOpen.value = false
                         },
                         colors = ButtonDefaults.textButtonColors()
                             .copy(
                                 contentColor =
-                                    if (alphabeticalOrder.value == SortType.Descending) Color.Red
+                                    if (uiState.alphabeticalOrder == SortType.Descending) Color.Red
                                     else Color.Gray
                             )
                     ) {
@@ -536,7 +535,7 @@ fun ItemListAreaSort(
 
                     TextButton(
                         onClick = {
-                            alphabeticalOrder.value = SortType.Initial
+                            alphabeticalOrder(SortType.Initial)
                             isAlphabeticalOrderModelBottomOpen.value = false
                         },
                         colors = ButtonDefaults.textButtonColors()
@@ -691,10 +690,10 @@ fun ItemListAreaSort(
                     ) {
                         TextButton(
                             onClick = {
-                                paymentSorting.value = null
+                                paymentSorting(null)
                                 paymentState.value = null
                                 amountState.value = SortType.Initial
-                                amountSorting.value = SortType.Initial
+                                amountSorting(SortType.Initial)
                                 isPaymentModelBottomOpen.value = false
                             },
                             colors = ButtonDefaults.textButtonColors()
@@ -705,8 +704,8 @@ fun ItemListAreaSort(
 
                         Button(
                             onClick = {
-                                paymentSorting.value = paymentState.value
-                                amountSorting.value = amountState.value
+                                paymentSorting(paymentState.value)
+                                amountSorting(amountState.value)
                                 isPaymentModelBottomOpen.value = false
                             },
                             colors = ButtonDefaults.buttonColors()
@@ -726,47 +725,28 @@ fun ItemListAreaSort(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ItemListArea(
     modifier: Modifier = Modifier,
-    viewModel: DataViewModel,
-    onActivateShow: MutableState<Boolean>
+    viewModel: HomeViewModel
 ) {
-    // States
-    val onFilterClick = remember { mutableStateOf(false) }
-
-    val categorySorting = remember { mutableStateOf("Initial") }
-    val timeSorting = remember { mutableStateOf(SortType.Descending) }
-    val amountSorting = remember { mutableStateOf(SortType.Initial) }
-    val paymentSorting = remember { mutableStateOf<PaymentMethod?>(null) }
-    val alphabeticalOrder = remember { mutableStateOf(SortType.Initial) }
-
     // Sort with date time
-    val datasetWithAdjust = viewModel.sortTodayDataAdjust(
-        timeSorting.value,
-        categorySorting.value,
-        paymentSorting.value,
-        alphabeticalOrder.value,
-        amountSorting.value,
-        null
-    )
-
-
-    val datasetItems = datasetWithAdjust.collectAsState(initial = emptyList()).value
+    val datasetWithAdjust by viewModel.sortTodayDataAdjust.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
 
     Column(
         modifier = modifier
     ) {
         ItemListAreaSort(
-            onFilterClick,
-            onActivateShow = onActivateShow,
-            categorySorting = categorySorting,
-            timeSorting = timeSorting,
-            amountSorting = amountSorting,
-            paymentSorting = paymentSorting,
-            alphabeticalOrder = alphabeticalOrder
+            uiState = uiState,
+            onFilterClick = viewModel::updateOnFilterClick,
+            onActivateShow = viewModel::updateOnActivateShow,
+            categorySorting = viewModel::updateCategorySorting,
+            timeSorting = viewModel::updateTimeSorting,
+            amountSorting = viewModel::updateAmountSorting,
+            paymentSorting = viewModel::updatePaymentSorting,
+            alphabeticalOrder = viewModel::updateAlphabeticalOrder
         )
 
 
@@ -775,7 +755,7 @@ fun ItemListArea(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            items(datasetItems.size, key = { it }) { index ->
+            items(datasetWithAdjust.size, key = { it }) { index ->
                 Row(
                     modifier = Modifier.animateItem(
                         fadeInSpec = spring(
@@ -786,7 +766,7 @@ fun ItemListArea(
                 ) {
                     ItemCard(
                         modifier = Modifier.animateItem(),
-                        dataAdjust = datasetItems[index]
+                        dataAdjust = datasetWithAdjust[index]
                     )
                 }
             }

@@ -2,8 +2,6 @@
 package com.example.moneytracker.ui.homeScreen.todayScreen
 
 import android.content.res.Configuration.ORIENTATION_PORTRAIT
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
@@ -20,34 +18,32 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.ChartViewModel
-import com.example.moneytracker.ui.homeScreen.DataViewModel
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.ItemListArea
 import com.example.moneytracker.ui.homeScreen.todayScreen.statArea.StatArea
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TodayScreen(
     paddingValues: PaddingValues,
 ) {
-    val dataViewModel: DataViewModel = hiltViewModel()
+    val homeViewModel: HomeViewModel = hiltViewModel()
     val chartViewModel: ChartViewModel = hiltViewModel()
-    val todayDatasets by dataViewModel.todayDatasets.collectAsState()
+    val todayDatasets by homeViewModel.todayDatasets.collectAsState()
 
     val configuration = LocalConfiguration.current
-    val onActivateShow = remember { mutableStateOf(true) }
-
 
     val donutChartDataCollection =
         chartViewModel.todayChartData(todayDatasets).collectAsState(emptyList())
+
+    val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
 
     if (configuration.orientation == ORIENTATION_PORTRAIT) {
         Column(
@@ -58,7 +54,7 @@ fun TodayScreen(
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             AnimatedVisibility(
-                onActivateShow.value,
+                uiState.onActivateShow,
                 exit = fadeOut(animationSpec = tween(easing = LinearEasing)) +
                         shrinkVertically(animationSpec = tween(easing = LinearEasing))
             ) {
@@ -80,8 +76,7 @@ fun TodayScreen(
                 modifier = Modifier
                     .fillMaxHeight(1f)
                     .fillMaxWidth(0.85f),
-                viewModel = dataViewModel,
-                onActivateShow = onActivateShow
+                viewModel = homeViewModel
             )
         }
     } else {
@@ -108,8 +103,7 @@ fun TodayScreen(
                 Modifier
                     .fillMaxHeight(1f)
                     .fillMaxWidth(0.8f),
-                viewModel = dataViewModel,
-                onActivateShow = onActivateShow
+                viewModel = homeViewModel
             )
         }
     }

@@ -59,10 +59,10 @@ import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.ActionNotification
-import com.example.moneytracker.ui.homeScreen.DataViewModel
 import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.homeScreen.UserViewModel
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
@@ -76,7 +76,7 @@ const val MAX_LABEL_LENGTH = 15
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawer(
-    viewModel: DataViewModel,
+    viewModel: HomeViewModel,
     userViewModel: UserViewModel,
     uiState: HomeUiState,
 ) {
@@ -131,7 +131,7 @@ fun DataAdditionModelDrawer(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> DataAdditionModelDrawerContent(
-    viewModel: DataViewModel,
+    viewModel: HomeViewModel,
     userViewModel: UserViewModel,
     entries: List<T>,
 ) {
@@ -377,7 +377,7 @@ fun FinancialDataInput(
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val lazyState = rememberLazyListState()
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
-    val viewModel: DataViewModel = hiltViewModel()
+    val viewModel: HomeViewModel = hiltViewModel()
     val iconImage = painterResource(dataType.filledIcon)
     val description = dataType.typeDescription
     val color = (if (wasSuccess.value == State.ERROR) colorResource(R.color.error_color)
@@ -628,7 +628,7 @@ fun GoalDataInput(
     val lazyState = rememberLazyListState()
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
     val goalDateTimeWarningState = remember { mutableStateOf(GoalWarning.INITIAL) }
-    val viewModel: DataViewModel = hiltViewModel()
+    val viewModel: HomeViewModel = hiltViewModel()
     val routineData = remember { mutableStateOf(RoutineData()) }
     val iconImage = painterResource(dataType.filledIcon)
     val color = colorResource(dataType.color)
@@ -894,7 +894,7 @@ fun AdjustmentDataInputs(
     val adjustAmountState = rememberTextFieldState()
     val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
     val isBottomSheetOpen by remember { mutableStateOf(true) }
-    val viewModel = hiltViewModel<DataViewModel>()
+    val viewModel = hiltViewModel<HomeViewModel>()
     val datasetList = viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
     val iconImage = painterResource(adjustmentType.icon)
     val color = colorResource(adjustmentType.color)

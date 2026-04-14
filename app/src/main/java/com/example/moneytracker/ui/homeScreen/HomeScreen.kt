@@ -32,6 +32,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DatasetState
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.homeScreen.allScreen.AllScreen
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
@@ -52,11 +53,11 @@ import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 @Composable
 fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Initialize ViewModels
-    val dataViewModel: DataViewModel = hiltViewModel()
+    val homeViewModel: HomeViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
 
     // Collect user information from ViewModels
-    val uiStates = dataViewModel.uiState.collectAsState()
+    val uiStates = homeViewModel.uiState.collectAsState()
     val userUiStates = userViewModel.uiState.collectAsState()
     val userState = userViewModel.userState.collectAsState()
     val snackBarHostState = userViewModel.snackBarHostState.collectAsState()
@@ -70,7 +71,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     }
 
     AnimatedContent(
-        dataViewModel.datasetState,
+        uiStates.value.datasetState,
         transitionSpec = {
             fadeIn(
                 animationSpec = tween(1000)
@@ -100,16 +101,16 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                             title = {
                                 TopAppTitle(
                                     uiStates,
-                                    contentColor = customColors.customContent,
+                                    contentColor = customColors.contentColor,
                                     currentPageColor = customColors.currentPage,
                                     backgroundColor = customColors.customBackground,
-                                    dataViewModel::updateTopTitle
+                                    homeViewModel::updateTopTitle
                                 )
                             },
                             navigationIcon = {
                                 TopAppNav(
                                     userState,
-                                    contentColor = customColors.customContent,
+                                    contentColor = customColors.contentColor,
                                     userColor = uiStates.value.info.color
                                 ) {
                                     userViewModel.updateIsUserDropdownVisible(
@@ -143,7 +144,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     // Drop down user profile
                     DropDownUserProfile(
                         paddingValues,
-                        contentColor = customColors.customContent,
+                        contentColor = customColors.contentColor,
                         backgroundColor = customColors.customBackground.copy(alpha = 0.9f),
                         visible = userUiStates.value.isUserDropdownVisible,
                         userState = userState,
@@ -158,7 +159,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
 
                     // Modal bottom sheet
                     DataAdditionModelDrawer(
-                        viewModel = dataViewModel,
+                        viewModel = homeViewModel,
                         userViewModel = userViewModel,
                         uiState = uiStates.value
                     )

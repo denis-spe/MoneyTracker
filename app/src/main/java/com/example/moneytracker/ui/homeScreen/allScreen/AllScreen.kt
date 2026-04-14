@@ -3,8 +3,6 @@
 // and you shall love your neighbor as yourself
 package com.example.moneytracker.ui.homeScreen.allScreen
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,13 +13,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.moneytracker.ui.homeScreen.DataViewModel
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun AllScreen(
     paddingValues: PaddingValues,
-    viewModel: DataViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel()
 ) {
 
 

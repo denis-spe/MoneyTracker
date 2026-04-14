@@ -1,8 +1,6 @@
 // Praise be the name of the LORD of hosts
 package com.example.moneytracker.ui.homeScreen.allScreen
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -38,7 +36,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.helper.getWeeks
 import com.example.moneytracker.helper.title
-import com.example.moneytracker.ui.homeScreen.DataViewModel
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
@@ -46,11 +44,10 @@ import network.chaintech.kmp_date_time_picker.utils.now
 import java.time.LocalDate
 import java.time.temporal.IsoFields
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun CalendarViewSection(
     updateWeek: (dates: List<kotlinx.datetime.LocalDate>) -> Unit,
-    viewModel: DataViewModel
+    viewModel: HomeViewModel
 ) {
     val uiState = viewModel.uiState.collectAsState()
     val now = kotlinx.datetime.LocalDate.now()
@@ -64,8 +61,8 @@ fun CalendarViewSection(
     val weekNumber = date.value.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
     val selectedTabIndex = uiState.value.selectedTabIndex
     var selectedDate by remember { mutableStateOf(date.value) }
-    val selectedColor = MoneyTrackerTheme.colors.autoText
-    val contentColor = MoneyTrackerTheme.colors.currentPage
+    val selectedColor = MoneyTrackerTheme.colors.themeColor
+    val contentColor = MoneyTrackerTheme.colors.contentColor
 
 
 
@@ -96,7 +93,7 @@ fun CalendarViewSection(
             },
             divider = {
                 HorizontalDivider(
-                    color = contentColor
+                    color = MoneyTrackerTheme.colors.currentPage
                 )
             },
         ) {
@@ -184,7 +181,6 @@ fun CalendarViewSection(
                                     if (lenOfAct > 0) {
                                         Badge(
                                             containerColor = selectedColor,
-                                            contentColor = Color.White
                                         ) {
                                             Text(lenOfAct.toString())
                                         }
@@ -200,7 +196,7 @@ fun CalendarViewSection(
                                             width = 1.dp,
                                             color = if (date == selectedDate && selectedTabIndex == 0)
                                                 selectedColor else Color.Transparent,
-                                            shape = RoundedCornerShape(10)
+                                            shape = RoundedCornerShape(100)
                                         )
                                         .padding(horizontal = 5.dp, vertical = 5.dp),
                                     color = if (date == now) selectedColor else
@@ -223,11 +219,10 @@ fun CalendarViewSection(
 }
 
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun GroupedWeeks(
     modifier: Modifier = Modifier,
-    viewModel: DataViewModel = hiltViewModel(),
+    viewModel: HomeViewModel = hiltViewModel(),
     weeksAfter: Int = 100,
     weeksBefore: Int = 100,
     moveTo: (initialPage: Int, pageState: PagerState) -> Unit = { _, _ -> },

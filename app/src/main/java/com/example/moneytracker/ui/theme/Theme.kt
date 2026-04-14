@@ -57,18 +57,20 @@ fun MoneyTrackerTheme(
     val extendedColors = if (darkTheme) {
         ExtendedColors(
             customBackground = darkBackgroundColor.copy(alpha = 0.5f),
-            customContent = Color.White.copy(alpha = 0.8f),
+            contentColor = Color.White.copy(alpha = 0.8f),
             currentPage = Color(0xFF8F8686).copy(alpha = 0.2f),
             autoBackground = darkBackgroundColor,
-            autoText = Color.White
+            autoText = Color.White,
+            themeColor = Color(0xFF11575E)
         )
     } else {
         ExtendedColors(
             customBackground = lightBackgroundColor.copy(alpha = 0.5f),
-            customContent = Color.Black.copy(alpha = 0.8f),
+            contentColor = Color.Black.copy(alpha = 0.8f),
             currentPage = Color(0xFF8C8B8B).copy(alpha = 0.2f),
             autoBackground = lightBackgroundColor,
-            autoText = Color.Black
+            autoText = Color.Black,
+            themeColor = Color(0xFF688E26)
         )
     }
 

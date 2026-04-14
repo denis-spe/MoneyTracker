@@ -1,4 +1,4 @@
-package com.example.moneytracker.ui.homeScreen
+package com.example.moneytracker.ui
 
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.graphics.Color
@@ -67,11 +67,3 @@ class UserViewModel @Inject constructor(
         _uiState.update { it.copy(isActionNotificationVisible = false) }
     }
 }
-
-data class UserUiState(
-    val isLoading: Boolean = false,
-    val isUserDropdownVisible: Boolean = false,
-    val isActionNotificationVisible: Boolean = false,
-    val actionNotificationMessage: String = "",
-    val actionNotificationColor: Color = Color.Gray
-)

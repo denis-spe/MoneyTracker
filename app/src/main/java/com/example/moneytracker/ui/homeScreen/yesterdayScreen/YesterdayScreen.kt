@@ -21,7 +21,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.example.moneytracker.ui.homeScreen.DataViewModel
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayItems
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 
@@ -30,7 +30,7 @@ import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.Yesterday
 fun YesterdayScreen(
     paddingValues: PaddingValues,
 ) {
-    val viewModel: DataViewModel = hiltViewModel()
+    val viewModel: HomeViewModel = hiltViewModel()
     val yesterdayDatasets by viewModel.yesterdayDatasets.collectAsState()
     val sortAbleDataAdjust by viewModel.sortYesterdayDataAdjust().collectAsState()
     val configuration = LocalConfiguration.current

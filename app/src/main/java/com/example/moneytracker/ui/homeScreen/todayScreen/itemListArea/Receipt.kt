@@ -69,10 +69,10 @@ import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
-import com.example.moneytracker.ui.homeScreen.DataViewModel
-import com.example.moneytracker.ui.homeScreen.UserViewModel
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeRange
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
@@ -812,7 +812,7 @@ fun OnDeleteReceipt(
 @Composable
 fun OnUpdate(
     dataAdjust: DataAdjust,
-    viewModel: DataViewModel,
+    viewModel: HomeViewModel,
     userViewModel: UserViewModel,
     isUpdateModelBottonOpen: MutableState<Boolean>,
     onShowDialog: MutableState<Boolean>
@@ -1223,7 +1223,7 @@ fun Receipt(
 ) {
     val onShowDeleteDialog = remember { mutableStateOf(false) }
     val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
-    val viewModel: DataViewModel = hiltViewModel<DataViewModel>()
+    val viewModel: HomeViewModel = hiltViewModel<HomeViewModel>()
     val userViewModel: UserViewModel = hiltViewModel<UserViewModel>()
 
     Dialog(

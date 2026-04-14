@@ -4,7 +4,10 @@ import androidx.compose.ui.graphics.Color
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.Info
+import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import kotlinx.datetime.LocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
@@ -30,5 +33,14 @@ data class HomeUiState(
     val consecutiveGoal: List<Dataset> = emptyList(),
     val isActionNotificationVisible: Boolean = false,
     val actionNotificationMessage: String = "",
-    val actionNotificationColor: Color = Color.Gray
+    val actionNotificationColor: Color = Color.Gray,
+    val timeSorting: SortType = SortType.Descending,
+    val onFilterClick: Boolean = false,
+    val categorySorting: String = "Initial",
+    val amountSorting: SortType = SortType.Initial,
+    val paymentSorting: PaymentMethod? = null,
+    val alphabeticalOrder: SortType = SortType.Initial,
+    val datasetState: DatasetState = DatasetState.Loading,
+    val isBottomSheetContentLoading: Boolean = true,
+    val onActivateShow: Boolean = false
 )
