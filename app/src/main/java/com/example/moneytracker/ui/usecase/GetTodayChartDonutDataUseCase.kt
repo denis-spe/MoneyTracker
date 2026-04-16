@@ -3,13 +3,15 @@ package com.example.moneytracker.ui.usecase
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
+import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import javax.inject.Inject
 
-class GetTodayChartDataUseCase @Inject constructor() {
+class GetTodayChartDonutDataUseCase @Inject constructor() {
     operator fun invoke(
         datasets: List<Dataset>,
         context: Context
@@ -18,6 +20,11 @@ class GetTodayChartDataUseCase @Inject constructor() {
             when (item) {
                 is DataAdjust.Data -> item.dataset.isForToday
                 is DataAdjust.Adjust -> item.adjustment.isForToday
+            }
+        }.filterNot {
+            when (it) {
+                is DataAdjust.Data -> it.dataset.dataType == DataType.GOAL
+                is DataAdjust.Adjust -> it.adjustment.adjustmentType == AdjustmentType.GOAL_ATTAIN
             }
         }
 

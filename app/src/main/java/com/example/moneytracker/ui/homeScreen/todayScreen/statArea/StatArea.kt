@@ -153,31 +153,20 @@ fun DonutChartPager(
                     fontWeight = fontWeight, fontSize = fontSize
                 )
             } ?: run {
-                val earnings = donutChartDataCollection.items.filter { donutChartData ->
-                    donutChartData.title == DataType.EARNINGS.text
-                }.map { donutChartData -> donutChartData.amount }
-                val expense = donutChartDataCollection.items.filter { donutChartData ->
-                    donutChartData.title == DataType.EXPENSE.text
-                }.map { donutChartData -> donutChartData.amount }
-                val debt = donutChartDataCollection.items.filter { donutChartData ->
-                    donutChartData.title == DataType.DEBT.text
-                }.map { donutChartData -> donutChartData.amount }
-                val lent = donutChartDataCollection.items.filter { donutChartData ->
-                    donutChartData.title == DataType.LENT.text
-                }.map { donutChartData -> donutChartData.amount }
-                val savings = donutChartDataCollection.items.filter { donutChartData ->
-                    donutChartData.title == DataType.SAVINGS.text
-                }.map { donutChartData -> donutChartData.amount }
-                val loanRefund = donutChartDataCollection.items.filter { donutChartData ->
-                    donutChartData.title == AdjustmentType.LENT_REPAY.text
-                }.map { donutChartData -> donutChartData.amount }
-                val payBack = donutChartDataCollection.items.filter { donutChartData ->
-                    donutChartData.title == AdjustmentType.DEBT_REPAY.text
-                }.map { donutChartData -> donutChartData.amount }
+                val (flowIn, flowOut) = donutChartDataCollection.items.fold(0f to 0f) { (incoming, outgoing), item ->
+                    when (item.title) {
+                        DataType.EARNINGS.text,
+                        DataType.DEBT.text,
+                        AdjustmentType.LENT_REPAY.text -> (incoming + item.amount) to outgoing
 
+                        DataType.EXPENSE.text,
+                        DataType.LENT.text,
+                        DataType.SAVINGS.text,
+                        AdjustmentType.DEBT_REPAY.text -> incoming to (outgoing + item.amount)
 
-                val flowIn = earnings.sum() + debt.sum() + loanRefund.sum()
-                val flowOut = expense.sum() + lent.sum() + savings.sum() + payBack.sum()
+                        else -> incoming to outgoing
+                    }
+                }
 
                 var enabled by remember { mutableStateOf(true) }
                 val totalAmount: Float by animateFloatAsState(
@@ -247,7 +236,7 @@ fun StatArea(
             Pair(R.color.Goal, R.color.Attain)
         )
     )
-    val pagerState = rememberPagerState(pageCount = { items.size })
+    rememberPagerState(pageCount = { items.size })
 
     Column(
         modifier = modifier,
@@ -288,24 +277,9 @@ fun StatArea(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                InsightsPager(datasets, pagerState, items)
+                GoalInsightPager(datasets)
             }
         }
 
-        // Pager Indicator
-        Box(
-            modifier = Modifier
-                .weight(0.1f)
-                .fillMaxWidth(),
-            contentAlignment = Alignment.Center
-        ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                CurrentPagerIndicator(pagerState = pagerState, items = items)
-            }
-        }
     }
 }

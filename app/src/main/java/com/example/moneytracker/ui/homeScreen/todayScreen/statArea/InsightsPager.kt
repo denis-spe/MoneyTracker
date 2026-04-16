@@ -17,10 +17,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -42,16 +44,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.components.charts.InsightBar
 import kotlinx.coroutines.launch
 
@@ -60,17 +66,19 @@ import kotlinx.coroutines.launch
 @Composable
 fun Insights(
     modifier: Modifier = Modifier,
+    label: String,
     richTooltipSubheadText: String = "",
-    richTooltipActionText: String = "",
+    richTooltipActionText: String = "Close",
     firstFinancial: Double,
     secondFinancial: Double,
     colorResId: Int,
     barColorResId: Int,
-    builder: () -> AnnotatedString
+    showMargin: Boolean = false,
+    builder: () -> AnnotatedString,
 ) {
 
     Column(
-        modifier = Modifier.fillMaxHeight(),
+        modifier = modifier.fillMaxHeight(),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -83,65 +91,52 @@ fun Insights(
         LaunchedEffect(firstFinancial, secondFinancial) {
             if (firstFinancial == 0.0) {
                 percentage = 0.0
-                marginRatio = 0.0 // Ensure it's not NaN
+                marginRatio = 0.0
             } else {
                 percentage = secondFinancial / firstFinancial
-
-                // Calculate the raw difference ratio
                 val ratio = (secondFinancial - firstFinancial) / firstFinancial
-
-                // Use absolute value for the animation to prevent "NaN" or negative visuals
-                // We handle the "direction" (Loss vs Gain) in the text builder
                 marginRatio = if (ratio.isNaN()) 0.0 else ratio
             }
+            text = builder()
         }
 
         val animatePercentage = animateIntAsState(
             targetValue = (percentage.toFloat() * 100).toInt(),
-            animationSpec = tween(durationMillis = 700, easing = LinearEasing)
+            animationSpec = tween(durationMillis = 700, easing = LinearEasing),
+            label = "percentage"
         )
         val animateNetLoss = animateIntAsState(
             targetValue = (marginRatio.toFloat() * 100).toInt(),
-            animationSpec = tween(durationMillis = 700, easing = LinearEasing)
+            animationSpec = tween(durationMillis = 700, easing = LinearEasing),
+            label = "margin"
         )
 
-        LaunchedEffect(firstFinancial, secondFinancial) {
-            text = builder()
-        }
+        when {
+            firstFinancial > 0 && firstFinancial > secondFinancial && secondFinancial != 0.0 ->
+                colorResource(barColorResId).copy(0.3f)
 
-        val barColor = when {
-            firstFinancial > 0
-                    && firstFinancial > secondFinancial
-                    && secondFinancial != 0.0 -> colorResource(barColorResId)
-                .copy(0.3f)
+            firstFinancial == 0.0 && secondFinancial == 0.0 ->
+                colorResource(barColorResId).copy(0.3f)
 
-            firstFinancial == 0.0 && secondFinancial == 0.0 -> colorResource(barColorResId)
-                .copy(0.3f)
+            secondFinancial > firstFinancial ->
+                colorResource(colorResId)
 
-            secondFinancial > firstFinancial -> colorResource(colorResId)
-            else -> {
-                colorResource(barColorResId)
-            }
+            else -> colorResource(barColorResId)
         }
 
 
         TooltipBox(
-            modifier = modifier,
             positionProvider = TooltipDefaults.rememberTooltipPositionProvider(
                 TooltipAnchorPosition.Below
             ),
             tooltip = {
                 RichTooltip(
-                    title = { Text(richTooltipSubheadText) },
+                    title = { Text(richTooltipSubheadText.ifEmpty { label }) },
                     action = {
-                        Row {
-                            TextButton(onClick = {
-                                coroutineScope.launch {
-                                    tooltipState.dismiss()
-                                }
-                            }) {
-                                Text(richTooltipActionText)
-                            }
+                        TextButton(onClick = {
+                            coroutineScope.launch { tooltipState.dismiss() }
+                        }) {
+                            Text(richTooltipActionText)
                         }
                     },
                 ) {
@@ -150,33 +145,53 @@ fun Insights(
             },
             state = tooltipState
         ) {
-            InsightBar(
-                percentage.toFloat(),
-                modifier = Modifier
-                    .fillMaxWidth(0.6f)
-                    .clickable {
-                        coroutineScope.launch {
-                            tooltipState.show()
-                        }
-                    },
-                color = colorResource(colorResId),
-                barColor = barColor
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Text(
+                    text = label,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    textAlign = TextAlign.Center
+                )
+                InsightBar(
+                    percentage.toFloat(),
+                    modifier = Modifier
+                        .fillMaxWidth(0.6f)
+                        .padding(vertical = 4.dp)
+                        .clickable {
+                            coroutineScope.launch { tooltipState.show() }
+                        },
+                    color = colorResource(colorResId),
+                    barColor = colorResource(barColorResId).copy(alpha = 0.3f)
+                )
+            }
         }
 
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "${animatePercentage.value}% (${
-                    if (animatePercentage.value > 0) animateNetLoss.value else 0
-                } margin ratio)",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
-            )
+        if (showMargin) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "${animatePercentage.value}% (${animateNetLoss.value} margin ratio)",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center
+                )
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(0.6f),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text("0%", fontSize = 11.sp)
+                Text(
+                    text = "${animatePercentage.value}%",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Text("100%", fontSize = 11.sp)
+            }
         }
     }
 }
@@ -185,6 +200,7 @@ fun Insights(
 fun CurrentPagerIndicator(
     pagerState: PagerState,
     items: List<PagerItem>,
+    modifier: Modifier = Modifier
 ) {
     val pagerScope = rememberCoroutineScope()
     val buttonSize = 10.dp
@@ -196,55 +212,44 @@ fun CurrentPagerIndicator(
 
 
     Row(
+        modifier = modifier,
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center
     ) {
         items.forEachIndexed { idx, value ->
-            if (pagerState.currentPage != idx) {
-                IconButton(
-                    onClick = {
-                        pagerScope.launch {
-                            pagerState.animateScrollToPage(idx)
-                        }
-                    },
-                    shape = CircleShape,
-                    modifier = Modifier.size(buttonSize)
-                ) {
-
-                    Box(
-                        modifier = Modifier
-                            .size(buttonSize)
-                            .border(
-                                1.dp,
-                                color = colorResource(value.color.second),
-                                CircleShape
-                            )
-                    )
-                }
-            } else {
-                IconButton(
-                    onClick = {
-                        pagerScope.launch {
-                            pagerState.animateScrollToPage(idx)
-                        }
-                    },
-                    shape = CircleShape,
+            val isSelected = pagerState.currentPage == idx
+            IconButton(
+                onClick = {
+                    pagerScope.launch {
+                        pagerState.animateScrollToPage(idx)
+                    }
+                },
+                modifier = Modifier
+                    .height(buttonSize)
+                    .width(if (isSelected) currentWidth.value.dp else buttonSize)
+            ) {
+                Box(
                     modifier = Modifier
-                        .height(buttonSize)
-                        .width(currentWidth.value.dp)
-                ) {
-
-                    Box(
-                        modifier = Modifier
-                            .height(buttonSize)
-                            .width(currentWidth.value.dp)
-                            .background(
-                                colorResource(value.color.second),
-                                RoundedCornerShape(10.dp)
-                            )
-                    )
-
-                }
+                        .fillMaxSize()
+                        .background(
+                            colorResource(value.color.second),
+                            if (isSelected) RoundedCornerShape(10.dp) else CircleShape
+                        )
+                        .then(
+                            if (!isSelected) {
+                                Modifier
+                                    .border(
+                                        1.dp,
+                                        colorResource(value.color.second),
+                                        CircleShape
+                                    )
+                                    .background(
+                                        colorResource(value.color.second).copy(0.2f),
+                                        CircleShape
+                                    )
+                            } else Modifier
+                        )
+                )
             }
 
             if (idx != items.size - 1) {
@@ -256,32 +261,29 @@ fun CurrentPagerIndicator(
 
 @Composable
 fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<PagerItem>) {
-
-    val earnings =
-        datasets.filter { it.dataType == DataType.EARNINGS }.sumOf { it.amount }
-    val expense =
-        datasets.filter { it.dataType == DataType.EXPENSE }.sumOf { it.amount }
-    val debt =
-        datasets.filter { it.dataType == DataType.DEBT }.sumOf { it.amount }
-    val lent =
-        datasets.filter { it.dataType == DataType.LENT }.sumOf { it.amount }
-    val savings =
-        datasets.filter { it.dataType == DataType.SAVINGS }.sumOf { it.amount }
-    val debtRepay =
-        datasets.filter { it.dataType == DataType.DEBT }.map { it.adjustment }
-            .flatten()
-            .sumOf { it.amount }
-    val lentRepay =
-        datasets.filter { it.dataType == DataType.LENT }.map { it.adjustment }
-            .flatten()
-            .sumOf { it.amount }
-    val goal =
-        datasets.filter { it.dataType == DataType.GOAL }.sumOf { it.amount }
-    val score = datasets.filter { it.dataType == DataType.GOAL }
-        .map { it.adjustment }
-        .flatten()
-        .sumOf { it.amount }
-
+    // Single pass calculation for better performance
+    val totals = remember(datasets) {
+        val map = mutableMapOf<DataType, Double>()
+        val adjMap = mutableMapOf<DataType, Double>()
+        datasets.forEach { dataset ->
+            map[dataset.dataType] = (map[dataset.dataType] ?: 0.0) + dataset.amount
+            if (dataset.dataType == DataType.DEBT || dataset.dataType == DataType.LENT || dataset.dataType == DataType.GOAL) {
+                adjMap[dataset.dataType] =
+                    (adjMap[dataset.dataType] ?: 0.0) + dataset.adjustment.sumOf { it.amount }
+            }
+        }
+        object {
+            val earnings = map[DataType.EARNINGS] ?: 0.0
+            val expense = map[DataType.EXPENSE] ?: 0.0
+            val debt = map[DataType.DEBT] ?: 0.0
+            val lent = map[DataType.LENT] ?: 0.0
+            val savings = map[DataType.SAVINGS] ?: 0.0
+            val goal = map[DataType.GOAL] ?: 0.0
+            val debtRepay = adjMap[DataType.DEBT] ?: 0.0
+            val lentRepay = adjMap[DataType.LENT] ?: 0.0
+            val score = adjMap[DataType.GOAL] ?: 0.0
+        }
+    }
 
 
     Column(
@@ -293,183 +295,307 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
             pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(100.dp),
+                .heightIn(min = 100.dp),
             key = { it }
-        ) {
+        ) { pageIndex ->
+            val pagerItem = items[pageIndex]
             Column(
                 modifier = Modifier.fillMaxSize(),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                val pagerItem = items[it]
-
                 when (pagerItem.label) {
                     "EarningsVsExpense" -> {
                         Insights(
-                            firstFinancial = earnings,
-                            secondFinancial = expense,
+                            label = "Earnings vs Expense",
+                            firstFinancial = totals.earnings,
+                            secondFinancial = totals.expense,
                             colorResId = R.color.Expense,
                             barColorResId = R.color.Earnings,
-                        ) {
-                            if (expense > earnings) {
+                            builder = {
                                 buildAnnotatedString {
-                                    append("You spent more then your earnings")
-                                }
-                            } else if (earnings > 0) {
-                                buildAnnotatedString {
-                                    append("Earnings are more then your expenses")
-                                }
-                            } else {
-                                buildAnnotatedString {
-                                    append("You have no earnings")
+                                    when {
+                                        totals.expense > totals.earnings -> append("You spent more than your earnings")
+                                        totals.earnings > 0 -> append("Earnings are more than your expenses")
+                                        else -> append("You have no earnings")
+                                    }
                                 }
                             }
-                        }
+                        )
                     }
 
                     "DebtVsEarnings" -> {
                         Insights(
-                            firstFinancial = earnings,
-                            secondFinancial = debt,
+                            label = "Debt vs Earnings",
+                            firstFinancial = totals.earnings,
+                            secondFinancial = totals.debt,
                             colorResId = R.color.Debt,
                             barColorResId = R.color.Earnings,
-                        ) {
-                            buildAnnotatedString {
-                                if (debt > earnings) {
-                                    append("You have more debt than your earnings")
-                                } else if (earnings > 0) {
-                                    append("Earnings are more then your debt")
-                                } else {
-                                    append("You have no debts to worry about")
+                            builder = {
+                                buildAnnotatedString {
+                                    when {
+                                        totals.debt > totals.earnings -> append("You have more debt than your earnings")
+                                        totals.earnings > 0 -> append("Earnings are more than your debt")
+                                        else -> append("You have no debts to worry about")
+                                    }
                                 }
                             }
-                        }
+                        )
                     }
 
                     "GoalVsEarnings" -> {
                         Insights(
-                            firstFinancial = earnings,
-                            secondFinancial = goal,
+                            label = "Goal vs Earnings",
+                            firstFinancial = totals.earnings,
+                            secondFinancial = totals.goal,
                             colorResId = R.color.Goal,
                             barColorResId = R.color.Earnings,
-                        ) {
-                            buildAnnotatedString {
-                                if (goal == earnings) {
-                                    append("You have more goal than your earnings")
-                                } else if (earnings > 0) {
-                                    append("Earnings are more then your goal")
-                                } else {
-                                    append("You have no goal")
+                            builder = {
+                                buildAnnotatedString {
+                                    when {
+                                        totals.goal >= totals.earnings && totals.goal > 0 -> append(
+                                            "You have more goal than your earnings"
+                                        )
+
+                                        totals.earnings > 0 -> append("Earnings are more than your goal")
+                                        else -> append("You have no goal")
+                                    }
                                 }
-                            }
-                        }
+                            },
+                        )
                     }
 
                     "LentVsEarnings" -> {
                         Insights(
-                            firstFinancial = earnings,
-                            secondFinancial = lent,
+                            label = "Lent vs Earnings",
+                            firstFinancial = totals.earnings,
+                            secondFinancial = totals.lent,
                             colorResId = R.color.Lent,
                             barColorResId = R.color.Earnings,
-                        ) {
-                            if (lent > earnings) {
+                            builder = {
                                 buildAnnotatedString {
-                                    append("You lend more than your earnings")
+                                    if (totals.lent > totals.earnings) append("You lend more than your earnings")
+                                    else append("You have not lent significant amounts")
                                 }
-                            } else {
-                                buildAnnotatedString {
-                                    append("You have not lent to any one")
-                                }
-                            }
-                        }
+                            },
+                        )
                     }
 
                     "SavingsVsEarnings" -> {
                         Insights(
-                            firstFinancial = earnings,
-                            secondFinancial = savings,
+                            label = "Savings vs Earnings",
+                            firstFinancial = totals.earnings,
+                            secondFinancial = totals.savings,
                             colorResId = R.color.Savings,
-                            barColorResId = R.color.Earnings
-                        ) {
-                            if (savings > earnings) {
+                            barColorResId = R.color.Earnings,
+                            builder = {
                                 buildAnnotatedString {
-                                    append("You have more savings than your earnings")
-                                }
-                            } else {
-                                buildAnnotatedString {
-                                    append("You have no savings")
+                                    if (totals.savings > totals.earnings) append("You have more savings than your earnings")
+                                    else append("You have no significant savings")
                                 }
                             }
-                        }
+                        )
                     }
 
                     "DebtRepay" -> {
                         Insights(
-                            firstFinancial = debt,
-                            secondFinancial = debtRepay,
+                            label = "Debt Repayment",
+                            firstFinancial = totals.debt,
+                            secondFinancial = totals.debtRepay,
                             colorResId = R.color.RepayDebt,
-                            barColorResId = R.color.Debt
-                        ) {
-                            if (debtRepay == debt) {
+                            barColorResId = R.color.Debt,
+                            builder = {
                                 buildAnnotatedString {
-                                    append("You have repaid your debt")
-                                }
-                            } else if (debt > 0) {
-                                buildAnnotatedString {
-                                    append("You have a debt to repay")
-                                }
-                            } else {
-                                buildAnnotatedString {
-                                    append("You do not have any debt")
+                                    when {
+                                        totals.debtRepay >= totals.debt && totals.debt > 0 -> append(
+                                            "You have repaid your debt"
+                                        )
+
+                                        totals.debt > 0 -> append("You have a debt to repay")
+                                        else -> append("You do not have any debt")
+                                    }
                                 }
                             }
-                        }
+                        )
                     }
 
                     "LentRepay" -> {
                         Insights(
-                            firstFinancial = lent,
-                            secondFinancial = lentRepay,
+                            label = "Lent Repayment",
+                            firstFinancial = totals.lent,
+                            secondFinancial = totals.lentRepay,
                             colorResId = R.color.RepayLoan,
-                            barColorResId = R.color.Lent
-                        ) {
-                            if (lentRepay == lent) {
+                            barColorResId = R.color.Lent,
+                            builder = {
                                 buildAnnotatedString {
-                                    append("All your loans has been repaid")
-                                }
-                            } else if (lent > 0) {
-                                buildAnnotatedString {
-                                    append("You owes someone")
-                                }
-                            } else {
-                                buildAnnotatedString {
-                                    append("You haven't lent to anyone")
+                                    when {
+                                        totals.lentRepay >= totals.lent && totals.lent > 0 -> append(
+                                            "All your loans have been repaid"
+                                        )
+
+                                        totals.lent > 0 -> append("You are owed money")
+                                        else -> append("You haven't lent to anyone")
+                                    }
                                 }
                             }
-                        }
+                        )
                     }
 
                     "GoalVsScore" -> {
                         Insights(
-                            firstFinancial = goal,
-                            secondFinancial = score,
+                            label = "Goal Attainment",
+                            firstFinancial = totals.goal,
+                            secondFinancial = totals.score,
                             colorResId = R.color.Attain,
-                            barColorResId = R.color.Goal
-                        ) {
-
-                            buildAnnotatedString {
-                                if (score == goal) {
-                                    append("You have met your goal")
-                                } else if (goal > 0) {
-                                    append("You have not met your goal")
-                                } else {
-                                    append("You have no goal")
+                            barColorResId = R.color.Goal,
+                            builder = {
+                                buildAnnotatedString {
+                                    when {
+                                        totals.score >= totals.goal && totals.goal > 0 -> append("You have met your goal")
+                                        totals.goal > 0 -> append("You have not met your goal")
+                                        else -> append("You have no goal")
+                                    }
                                 }
                             }
+                        )
+                    }
+                }
+            }
+        }
+    }
 
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        CurrentPagerIndicator(pagerState = pagerState, items = items)
+    }
+}
+
+
+@Composable
+fun GoalInsightPager(datasets: List<Dataset>) {
+    val goals = remember(datasets) {
+        datasets.filter { it.dataType == DataType.GOAL }
+    }
+
+    if (goals.isEmpty()) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(100.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Insights(
+                label = "Goal",
+                firstFinancial = 0.0,
+                secondFinancial = 0.0,
+                colorResId = R.color.Attain,
+                barColorResId = R.color.Attain,
+                builder = {
+                    buildAnnotatedString {
+                        append("No goal has been set so far")
+                    }
+                }
+            )
+        }
+        return
+    }
+
+    val pagerState = rememberPagerState(pageCount = { goals.size })
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        HorizontalPager(
+            state = pagerState,
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = 100.dp),
+            key = { goals[it].id }
+        ) { pageIndex ->
+            val goal = goals[pageIndex]
+            val score = goal.adjustment.sumOf { it.amount }
+
+            Column(
+                modifier = Modifier.fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Insights(
+                    label = goal.label.ifEmpty { "No goal for today" },
+                    firstFinancial = goal.amount,
+                    secondFinancial = score,
+                    colorResId = R.color.Attain,
+                    barColorResId = R.color.Goal,
+                    builder = {
+                        val remaining = goal.amount - score
+                        val now = System.currentTimeMillis()
+                        val deadline = goal.routine.deadlineDateTime.toDate().time
+                        val diffMillis = deadline - now
+
+                        buildAnnotatedString {
+                            when {
+                                score >= goal.amount && goal.amount > 0 -> append("Goal Achieved!")
+                                goal.amount > 0 -> {
+                                    withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                        append(remaining.formatToAmount())
+                                    }
+                                    append(" more to go\n")
+                                    if (diffMillis > 0) {
+                                        val minute = 60 * 1000L
+                                        val hour = 60 * minute
+                                        val day = 24 * hour
+                                        val week = 7 * day
+                                        val month = 30 * day
+                                        val year = 365 * day
+
+                                        val (unitValue, unitLabel) = when {
+                                            diffMillis >= year -> year to "year"
+                                            diffMillis >= month -> month to "month"
+                                            diffMillis >= week -> week to "week"
+                                            diffMillis >= day -> day to "day"
+                                            diffMillis >= hour -> hour to "hour"
+                                            else -> minute to "minute"
+                                        }
+
+                                        val rate = remaining / (diffMillis.toDouble() / unitValue)
+                                        if (rate > 0.0) {
+                                            withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
+                                                append(rate.formatToAmount())
+                                            }
+                                            append(" every $unitLabel to achieve your goal")
+                                        }
+                                    }
+                                }
+
+                                else -> append("Invalid goal amount")
+                            }
                         }
                     }
+                )
+            }
+        }
 
+        if (goals.size > 1) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                repeat(goals.size) { iteration ->
+                    val color =
+                        if (pagerState.currentPage == iteration) R.color.Goal else R.color.gray
+                    Box(
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .clip(CircleShape)
+                            .background(colorResource(color))
+                            .size(8.dp)
+                    )
                 }
             }
         }
