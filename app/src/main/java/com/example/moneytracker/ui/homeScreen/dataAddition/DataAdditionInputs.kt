@@ -66,6 +66,7 @@ import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -107,9 +108,9 @@ import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.eval
 import com.example.moneytracker.helper.formatResult
 import com.example.moneytracker.helper.formatToAmount
-import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
+import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.CustomAmountKeyBoard
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.awaitCancellation
@@ -119,6 +120,7 @@ import kotlinx.datetime.atTime
 import kotlinx.datetime.number
 import kotlinx.datetime.toKotlinLocalDate
 import kotlinx.datetime.toKotlinLocalDateTime
+import network.chaintech.kmp_date_time_picker.utils.now
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.LocalDate
@@ -591,6 +593,32 @@ fun AdjustmentField(
         }
     }
 
+    val filteredDataset = when (datatype) {
+        DataType.LENT -> remember {
+            derivedStateOf {
+                datasets.filter { it.dataType == DataType.LENT }
+            }
+        }
+
+        DataType.DEBT -> remember {
+            derivedStateOf {
+                datasets.filter { it.dataType == DataType.DEBT }
+            }
+        }
+
+        // Else it's a goal
+        else -> remember {
+            derivedStateOf {
+                datasets.filter {
+                    val now = LocalDateTime.now()
+                    val deadlineDateTime = it.routine.deadlineDateTime
+                        .toLocalDateTimeUtc()
+                    it.dataType == DataType.GOAL && now <= deadlineDateTime
+                }
+            }
+        }
+    }
+
     /* ----------------------------------------------------------
      * 2) UI
      * ---------------------------------------------------------- */
@@ -604,9 +632,6 @@ fun AdjustmentField(
     val interactionSource = remember { MutableInteractionSource() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val showCustomKeyboard = remember { mutableStateOf(false) }
-
-    val filteredDataset = datasets
-        .filterNot { it.isAmountEqualToAdjustAmount() }
 
     val color = colorResource(colorResId)
 
@@ -667,7 +692,7 @@ fun AdjustmentField(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        filteredDataset.forEach { dataset ->
+                        filteredDataset.value.forEach { dataset ->
 
                             DropdownMenuItem(
                                 text = {

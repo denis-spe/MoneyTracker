@@ -8,21 +8,25 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DatasetState
+import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.ItemListAreaShimmer
 
 @Composable
 fun AllScreen(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel,
+    weeklyData: State<List<DataAdjust>>,
+    uiState: HomeUiState
 ) {
 
-
-    val weeklyData = viewModel.weeklyData.collectAsState(initial = emptyList())
+    val isLoading = uiState.datasetState is DatasetState.Loading
 
     Column(
         modifier = Modifier
@@ -31,11 +35,16 @@ fun AllScreen(
             .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        CalendarViewSection(
-            updateWeek = viewModel::updateWeekDays,
-            viewModel = viewModel
-        )
+        if (isLoading) {
+            // Calendar Shimmer (simplified as a box for now)
+            ItemListAreaShimmer(modifier = Modifier.fillMaxSize())
+        } else {
+            CalendarViewSection(
+                updateWeek = viewModel::updateWeekDays,
+                viewModel = viewModel
+            )
 
-        ListForAll(dataAdjusts = weeklyData.value)
+            ListForAll(dataAdjusts = weeklyData.value)
+        }
     }
 }

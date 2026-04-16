@@ -29,7 +29,6 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,7 +57,6 @@ import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
-import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.ActionNotification
 import com.example.moneytracker.ui.homeScreen.HomeUiState
@@ -78,6 +76,7 @@ const val MAX_LABEL_LENGTH = 15
 fun DataAdditionModelDrawer(
     viewModel: HomeViewModel,
     userViewModel: UserViewModel,
+    datasets: List<Dataset>,
     uiState: HomeUiState,
 ) {
 
@@ -98,7 +97,8 @@ fun DataAdditionModelDrawer(
             DataAdditionModelDrawerContent(
                 viewModel = viewModel,
                 userViewModel = userViewModel,
-                entries = DataType.entries
+                entries = DataType.entries,
+                datasets = datasets
             )
         }
     }
@@ -120,7 +120,8 @@ fun DataAdditionModelDrawer(
             DataAdditionModelDrawerContent(
                 viewModel = viewModel,
                 userViewModel = userViewModel,
-                entries = AdjustmentType.entries.filter { it != AdjustmentType.INITIAL }
+                entries = AdjustmentType.entries.filter { it != AdjustmentType.INITIAL },
+                datasets = datasets
             )
         }
     }
@@ -133,6 +134,7 @@ fun DataAdditionModelDrawer(
 fun <T> DataAdditionModelDrawerContent(
     viewModel: HomeViewModel,
     userViewModel: UserViewModel,
+    datasets: List<Dataset>,
     entries: List<T>,
 ) {
 
@@ -293,6 +295,7 @@ fun <T> DataAdditionModelDrawerContent(
                     AdjustmentDataInputs(
                         DataType.LENT,
                         AdjustmentType.LENT_REPAY,
+                        datasets = datasets
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -303,6 +306,7 @@ fun <T> DataAdditionModelDrawerContent(
                     AdjustmentDataInputs(
                         DataType.GOAL,
                         AdjustmentType.GOAL_ATTAIN,
+                        datasets = datasets
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -313,6 +317,7 @@ fun <T> DataAdditionModelDrawerContent(
                     AdjustmentDataInputs(
                         DataType.DEBT,
                         AdjustmentType.DEBT_REPAY,
+                        datasets = datasets
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -881,6 +886,7 @@ fun GoalDataInput(
 fun AdjustmentDataInputs(
     dataType: DataType,
     adjustmentType: AdjustmentType,
+    datasets: List<Dataset>,
     onDismiss: () -> Unit
 ) {
     val lazyState = rememberLazyListState()
@@ -895,36 +901,10 @@ fun AdjustmentDataInputs(
     val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
     val isBottomSheetOpen by remember { mutableStateOf(true) }
     val viewModel = hiltViewModel<HomeViewModel>()
-    val datasetList = viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
+    viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
     val iconImage = painterResource(adjustmentType.icon)
     val color = colorResource(adjustmentType.color)
     val description = adjustmentType.typeDescription
-
-    val datasets = when (dataType) {
-        DataType.LENT -> remember {
-            derivedStateOf {
-                datasetList.value.filter { it.dataType == DataType.LENT }
-            }
-        }
-
-        DataType.DEBT -> remember {
-            derivedStateOf {
-                datasetList.value.filter { it.dataType == DataType.DEBT }
-            }
-        }
-
-        // Else it's a goal
-        else -> remember {
-            derivedStateOf {
-                datasetList.value.filter {
-                    val now = LocalDateTime.now()
-                    val deadlineDateTime = it.routine.deadlineDateTime
-                        .toLocalDateTimeUtc()
-                    it.dataType == DataType.GOAL && now <= deadlineDateTime
-                }
-            }
-        }
-    }
 
     Column(
         modifier = Modifier
@@ -968,7 +948,7 @@ fun AdjustmentDataInputs(
                     isBottomSheetOpen,
                     datatype = dataType,
                     amountState = adjustAmountState,
-                    datasets = datasets.value,
+                    datasets = datasets,
                     wasRepaySuccess = wasRepaySuccess,
                     selectedDataset = selectedDataset,
                     colorResId = adjustmentType.color

@@ -3,6 +3,7 @@ package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +28,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
@@ -38,6 +40,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
@@ -49,6 +52,7 @@ private val FLOAT_BUTTON_SIZE = 45.dp
 fun DataAdditionFloatingButton(
     viewModel: HomeViewModel = hiltViewModel(),
     uiState: HomeUiState,
+    isLoading: Boolean = false
 ) {
     val isDatasetBottomSheetOpen = uiState.isDatasetBottomSheetOpen
     val isAdjustmentBottomSheetOpen = uiState.isAdjustmentBottomSheetOpen
@@ -58,41 +62,59 @@ fun DataAdditionFloatingButton(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        FloatingActionButton(
-            onClick = {
-                viewModel.updateOnDatasetModelBottomSheetShow(true)
-            },
-            shape = CircleShape,
-            modifier = Modifier.size(FLOAT_BUTTON_SIZE),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
-            containerColor = MoneyTrackerTheme.colors.autoBackground
-        ) {
-            Icon(
-                imageVector = if (isDatasetBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
-                contentDescription = "Add data",
-                tint = MoneyTrackerTheme.colors.autoText,
-                modifier = Modifier.size(20.dp)
+        if (isLoading) {
+            Box(
+                modifier = Modifier
+                    .size(FLOAT_BUTTON_SIZE)
+                    .clip(CircleShape)
+                    .shimmerEffect()
             )
-        }
 
-        Spacer(modifier = Modifier.height(10.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
-        FloatingActionButton(
-            onClick = {
-                viewModel.updateOnAdjustModelBottomSheetShow(true)
-            },
-            shape = CircleShape,
-            modifier = Modifier.size(43.dp),
-            elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
-            containerColor = MoneyTrackerTheme.colors.autoBackground
-        ) {
-            Icon(
-                imageVector = if (isAdjustmentBottomSheetOpen) Icons.Outlined.DoDisturbOn
-                else Icons.Default.Adjust,
-                contentDescription = "Add adjustment",
-                tint = MoneyTrackerTheme.colors.autoText,
-                modifier = Modifier.size(20.dp)
+            Box(
+                modifier = Modifier
+                    .size(43.dp)
+                    .clip(CircleShape)
+                    .shimmerEffect()
             )
+        } else {
+            FloatingActionButton(
+                onClick = {
+                    viewModel.updateOnDatasetModelBottomSheetShow(true)
+                },
+                shape = CircleShape,
+                modifier = Modifier.size(FLOAT_BUTTON_SIZE),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
+                containerColor = MoneyTrackerTheme.colors.autoBackground
+            ) {
+                Icon(
+                    imageVector = if (isDatasetBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
+                    contentDescription = "Add data",
+                    tint = MoneyTrackerTheme.colors.autoText,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            FloatingActionButton(
+                onClick = {
+                    viewModel.updateOnAdjustModelBottomSheetShow(true)
+                },
+                shape = CircleShape,
+                modifier = Modifier.size(43.dp),
+                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
+                containerColor = MoneyTrackerTheme.colors.autoBackground
+            ) {
+                Icon(
+                    imageVector = if (isAdjustmentBottomSheetOpen) Icons.Outlined.DoDisturbOn
+                    else Icons.Default.Adjust,
+                    contentDescription = "Add adjustment",
+                    tint = MoneyTrackerTheme.colors.autoText,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

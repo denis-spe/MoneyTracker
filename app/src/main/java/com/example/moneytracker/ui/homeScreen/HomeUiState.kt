@@ -42,5 +42,5 @@ data class HomeUiState(
     val alphabeticalOrder: SortType = SortType.Initial,
     val datasetState: DatasetState = DatasetState.Loading,
     val isBottomSheetContentLoading: Boolean = true,
-    val onActivateShow: Boolean = false
+    val onActivateShow: Boolean = true
 )

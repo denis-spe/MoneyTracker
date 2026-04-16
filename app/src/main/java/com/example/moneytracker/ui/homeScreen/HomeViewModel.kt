@@ -12,6 +12,7 @@ import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import com.example.moneytracker.ui.usecase.DatasetOperationsUseCase
+import com.example.moneytracker.ui.usecase.GetAdjustDatasetUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentDateUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentWeekUseCase
 import com.example.moneytracker.ui.usecase.GetLenOfActivatesUseCase
@@ -52,6 +53,7 @@ class HomeViewModel @Inject constructor(
     private val getTodayDatasetsUseCase: GetTodayDatasetsUseCase,
     private val getYesterdayDatasetsUseCase: GetYesterdayDatasetsUseCase,
     private val getLenOfActivatesUseCase: GetLenOfActivatesUseCase,
+    private val getAdjustDatasetUseCase: GetAdjustDatasetUseCase,
     private val routineWorker: RoutineWorkerUseCase
 ) : ViewModel() {
 
@@ -102,6 +104,12 @@ class HomeViewModel @Inject constructor(
             .map { state -> state.datasets.filter { it.dataType == DataType.GOAL } }
             .distinctUntilChanged()
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+
+    val adjustDatasets: StateFlow<List<Dataset>> = uiState
+        .map { state -> getAdjustDatasetUseCase(state.datasets) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
 
     val fetchLiveChangeDataset: Flow<List<Dataset>> = uiState
         .map { it.datasets }
