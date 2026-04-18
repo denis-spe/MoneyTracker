@@ -7,19 +7,15 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -54,11 +50,11 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val homeViewModel: HomeViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
     val chartViewModel: ChartViewModel = hiltViewModel()
-    val todayDatasets by homeViewModel.todayDatasets.collectAsStateWithLifecycle()
+    val todayDatasets by homeViewModel.todayDatasetsState.collectAsStateWithLifecycle()
 
     val donutChartDataCollection =
         chartViewModel.todayChartData(todayDatasets).collectAsStateWithLifecycle(emptyList())
-    val weeklyData = homeViewModel.weeklyData.collectAsStateWithLifecycle(emptyList())
+    val weeklyData = homeViewModel.weeklyDataState.collectAsStateWithLifecycle()
 
     // Collect user information from ViewModels
     val uiStates = homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -66,10 +62,11 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val userState = userViewModel.userState.collectAsStateWithLifecycle()
     val snackBarHostState = userViewModel.snackBarHostState.collectAsStateWithLifecycle()
 
-    val yesterdayDatasets by homeViewModel.yesterdayDatasets.collectAsStateWithLifecycle()
-    val sortAbleDataAdjust by homeViewModel.sortYesterdayDataAdjust().collectAsStateWithLifecycle()
-    val goalDatasets by homeViewModel.goalDatasets.collectAsStateWithLifecycle()
-    val adjustmentDatasets by homeViewModel.adjustDatasets.collectAsStateWithLifecycle()
+    val yesterdayDatasets by homeViewModel.yesterdayDatasetsState.collectAsStateWithLifecycle()
+    val sortAbleDataAdjust by homeViewModel.sortedYesterdayState.collectAsStateWithLifecycle()
+    val goalDatasets by homeViewModel.goalDatasetsState.collectAsStateWithLifecycle()
+    val adjustmentDatasets by homeViewModel.adjustDatasetsState.collectAsStateWithLifecycle()
+
 
 
     val customColors = MoneyTrackerTheme.colors
@@ -135,62 +132,52 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             SnackbarHost(hostState = snackBarHostState.value)
         }
     ) { paddingValues ->
+        val hasLoadedData = uiStates.value.datasetState is DatasetState.Success
+
         AnimatedContent(
-            uiStates.value.datasetState,
+            uiStates.value.topTitle,
             transitionSpec = {
                 fadeIn(
-                    animationSpec = tween(1000)
-                ) togetherWith fadeOut(animationSpec = tween(1000))
+                    animationSpec = tween(300)
+                ) togetherWith fadeOut(animationSpec = tween(300))
             },
             label = "Animated Content"
-        ) { targetState ->
-            when (targetState) {
-                is DatasetState.Success -> {
-                    when (uiStates.value.topTitle) {
-                        TopBarNav.TODAY -> TodayScreen(
-                            paddingValues,
-                            todayDatasets = todayDatasets,
-                            donutChartDataCollection = donutChartDataCollection.value,
-                            uiState = uiStates.value,
-                            homeViewModel = homeViewModel
-                        )
+        ) { targetTopTitle ->
+            when (targetTopTitle) {
+                TopBarNav.TODAY -> TodayScreen(
+                    paddingValues,
+                    todayDatasets = todayDatasets,
+                    donutChartDataCollection = donutChartDataCollection.value,
+                    uiState = uiStates.value,
+                    homeViewModel = homeViewModel,
+                    hasLoadedData = hasLoadedData
+                )
 
-                        TopBarNav.YESTERDAY -> YesterdayScreen(
-                            paddingValues,
-                            uiState = uiStates.value,
-                            sortAbleDataAdjust = sortAbleDataAdjust,
-                            yesterdayDatasets = yesterdayDatasets,
-                        )
+                TopBarNav.YESTERDAY -> YesterdayScreen(
+                    paddingValues,
+                    uiState = uiStates.value,
+                    sortAbleDataAdjust = sortAbleDataAdjust,
+                    yesterdayDatasets = yesterdayDatasets,
+                    hasLoadedData = hasLoadedData
+                )
 
-                        TopBarNav.ALL -> AllScreen(
-                            paddingValues,
-                            viewModel = homeViewModel,
-                            weeklyData = weeklyData,
-                            uiState = uiStates.value
-                        )
+                TopBarNav.ALL -> AllScreen(
+                    paddingValues,
+                    viewModel = homeViewModel,
+                    weeklyData = weeklyData,
+                    uiState = uiStates.value,
+                    hasLoadedData = hasLoadedData
+                )
 
-                        TopBarNav.GOAL -> GoalScreen(
-                            paddingValues,
-                            goalDatasets = goalDatasets
-                        )
-                    }
-                }
-
-                is DatasetState.Loading -> {
-                    HomeShimmer(paddingValues)
-                }
-
-                is DatasetState.Error -> {
-                    Column(
-                        modifier = Modifier.fillMaxSize(),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text(text = targetState.message ?: "Unknown error")
-                    }
-                }
+                TopBarNav.GOAL -> GoalScreen(
+                    paddingValues,
+                    goalDatasets = goalDatasets,
+                    uiState = uiStates.value,
+                    hasLoadedData = hasLoadedData
+                )
             }
         }
+
 
         // Drop down user profile
         DropDownUserProfile(

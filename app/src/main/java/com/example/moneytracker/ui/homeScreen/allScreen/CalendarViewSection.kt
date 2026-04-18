@@ -51,11 +51,10 @@ fun CalendarViewSection(
 ) {
     val uiState = viewModel.uiState.collectAsState()
     val now = kotlinx.datetime.LocalDate.now()
-    val currentWeek = viewModel.getCurrentWeek.collectAsState(initial = emptyList())
+    val currentWeek = viewModel.currentWeekState.collectAsState()
     val fontSizeMonthDay = 13.sp
-    val date = viewModel.getAllCurrentDate.collectAsState(
-        initial = now
-    )
+    val date = viewModel.currentDateState.collectAsState()
+
     val month = date.value.month.name.title
     val year = date.value.year.toString()
     val weekNumber = date.value.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
@@ -242,7 +241,7 @@ fun GroupedWeeks(
     val pageState = rememberPagerState(initialPage = getIndexOfCurrentWeek) { localDateList.size }
 
     LaunchedEffect(pageState.currentPage) {
-        viewModel.updateCurrentWeek(localDateList[pageState.currentPage])
+        viewModel.updateCurrentWeek(localDateList[pageState.currentPage].map { it.toKotlinLocalDate() })
     }
 
 

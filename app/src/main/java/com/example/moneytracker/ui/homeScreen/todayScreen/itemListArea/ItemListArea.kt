@@ -731,7 +731,7 @@ fun ItemListArea(
     viewModel: HomeViewModel
 ) {
     // Sort with date time
-    val datasetWithAdjust by viewModel.sortTodayDataAdjust.collectAsStateWithLifecycle()
+    val datasetWithAdjust by viewModel.sortedTodayState.collectAsStateWithLifecycle()
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
 

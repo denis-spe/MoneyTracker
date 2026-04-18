@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.PaymentMethod
@@ -28,10 +27,11 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -57,8 +57,11 @@ class HomeViewModel @Inject constructor(
     private val routineWorker: RoutineWorkerUseCase
 ) : ViewModel() {
 
+    /*******************
+     * UI STATE
+     *******************/
     private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
+    val uiState = _uiState.asStateFlow()
 
     init {
         observe()
@@ -82,196 +85,222 @@ class HomeViewModel @Inject constructor(
     }
 
     /*******************
-     * Data Flows
+     * BASE FLOWS (Single Source of Truth)
      *******************/
-
-    val getCurrentWeek: StateFlow<List<LocalDate>> = uiState
-        .map { state -> getCurrentWeekUseCase(state.currentWeek) }
-        .distinctUntilChanged()
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val getAllCurrentDate: StateFlow<LocalDate> = uiState
-        .map { state ->
-            getCurrentDateUseCase(
-                currentWeek = state.currentWeek,
-                fallbackDate = state.date
-            )
-        }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LocalDate.now())
-
-    val goalDatasets: StateFlow<List<Dataset>> =
-        uiState
-            .map { state -> state.datasets.filter { it.dataType == DataType.GOAL } }
-            .distinctUntilChanged()
-            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-
-    val adjustDatasets: StateFlow<List<Dataset>> = uiState
-        .map { state -> getAdjustDatasetUseCase(state.datasets) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
-
-
-    val fetchLiveChangeDataset: Flow<List<Dataset>> = uiState
+    private val datasetsFlow = uiState
         .map { it.datasets }
         .distinctUntilChanged()
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 
-    val weeklyData: StateFlow<List<DataAdjust>> = uiState
-        .map { state -> getWeeklyDataUseCase(state.datasets, state.dates) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    private val datesFlow = uiState
+        .map { it.dates }
+        .distinctUntilChanged()
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 
-    val todayDatasets: StateFlow<List<Dataset>> = uiState
-        .map { state -> getTodayDatasetsUseCase(state.datasets) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    private val currentWeekFlow = uiState
+        .map { it.currentWeek }
+        .distinctUntilChanged()
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 
-    val yesterdayDatasets: StateFlow<List<Dataset>> = uiState
-        .map { state -> getYesterdayDatasetsUseCase(state.datasets) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    private val currentDateFlow = uiState
+        .map { it.date to it.currentWeek }
+        .distinctUntilChanged()
+
+    private val sortingFlow = uiState
+        .map {
+            SortingState(
+                time = it.timeSorting,
+                category = it.categorySorting,
+                payment = it.paymentSorting,
+                alphabetical = it.alphabeticalOrder,
+                amount = it.amountSorting
+            )
+        }
+        .distinctUntilChanged()
+        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
 
     /*******************
-     * Sorting
+     * DERIVED FLOWS (Business Logic)
      *******************/
+    val goalDatasetsFlow = datasetsFlow
+        .map { it.filter { d -> d.dataType == DataType.GOAL } }
 
-    val sortTodayDataAdjust: StateFlow<List<DataAdjust>> = uiState.map { state ->
-        val uiStateValue = uiState.value
+    val adjustDatasetsFlow = datasetsFlow
+        .map { getAdjustDatasetUseCase(it) }
 
+    val todayDatasetsFlow = datasetsFlow
+        .map { getTodayDatasetsUseCase(it) }
+
+    val yesterdayDatasetsFlow = datasetsFlow
+        .map { getYesterdayDatasetsUseCase(it) }
+
+    val weeklyDataFlow = combine(datasetsFlow, datesFlow) { datasets, dates ->
+        getWeeklyDataUseCase(datasets, dates)
+    }
+
+    val currentWeekDerivedFlow = currentWeekFlow
+        .map { getCurrentWeekUseCase(it) }
+
+    val currentDateDerivedFlow = currentDateFlow
+        .map { (date, week) ->
+            getCurrentDateUseCase(week, date)
+        }
+
+    val sortedTodayFlow = combine(datasetsFlow, sortingFlow) { datasets, sorting ->
         sortTodayDataAdjustUseCase(
-            state.datasets,
-            uiStateValue.timeSorting,
-            uiStateValue.categorySorting,
-            uiStateValue.paymentSorting,
-            uiStateValue.alphabeticalOrder,
-            uiStateValue.amountSorting,
+            datasets,
+            sorting.time,
+            sorting.category,
+            sorting.payment,
+            sorting.alphabetical,
+            sorting.amount,
             null
         )
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    }
 
-    fun sortYesterdayDataAdjust(): StateFlow<List<DataAdjust>> = uiState.map { state ->
-        getYesterdayDataAdjustUseCase(state.datasets)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+    val sortedYesterdayFlow = datasetsFlow
+        .map { getYesterdayDataAdjustUseCase(it) }
 
     /*******************
-     * Operations
+     * UI STATE FLOWS (ONLY what UI collects)
      *******************/
+    val todayDatasetsState = todayDatasetsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun addData(dataset: Dataset) {
+    val yesterdayDatasetsState = yesterdayDatasetsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val goalDatasetsState = goalDatasetsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val adjustDatasetsState = adjustDatasetsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val weeklyDataState = weeklyDataFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val sortedTodayState = sortedTodayFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val sortedYesterdayState = sortedYesterdayFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val currentWeekState = currentWeekDerivedFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val currentDateState = currentDateDerivedFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LocalDate.now())
+
+
+    /*******************
+     * OPERATIONS
+     *******************/
+    fun addData(dataset: Dataset) = launchWithUid {
+        datasetOperationsUseCase.addData(it, dataset)
+    }
+
+    fun updateData(old: Dataset, new: Dataset) = launchWithUid {
+        datasetOperationsUseCase.updateData(it, old, new)
+    }
+
+    fun removeData(dataset: Dataset) = launchWithUid {
+        datasetOperationsUseCase.removeData(it, dataset)
+    }
+
+    fun addAdjustment(dataset: Dataset, adj: Adjustment) = launchWithUid {
+        datasetOperationsUseCase.addAdjustment(it, dataset.id, adj)
+    }
+
+    fun updateAdjustment(dataset: Dataset, old: Adjustment, new: Adjustment) = launchWithUid {
+        datasetOperationsUseCase.updateAdjustment(it, dataset.id, old, new)
+    }
+
+    fun removeAdjustment(datasetId: String, adj: Adjustment) = launchWithUid {
+        datasetOperationsUseCase.removeAdjustment(it, datasetId, adj)
+    }
+
+    private fun launchWithUid(block: suspend (String) -> Unit) {
         viewModelScope.launch {
             val uid = accountService.userState.value?.uid ?: return@launch
-            datasetOperationsUseCase.addData(uid, dataset)
+            block(uid)
         }
     }
 
-    fun updateData(oldDataset: Dataset, newDataset: Dataset) {
-        viewModelScope.launch {
-            val uid = accountService.userState.value?.uid ?: return@launch
-            datasetOperationsUseCase.updateData(uid, oldDataset, newDataset)
-        }
-    }
-
-    fun removeData(dataset: Dataset) {
-        viewModelScope.launch {
-            val uid = accountService.userState.value?.uid ?: return@launch
-            datasetOperationsUseCase.removeData(uid, dataset)
-        }
-    }
-
-    fun addAdjustmentData(dataset: Dataset, adjustment: Adjustment) {
-        viewModelScope.launch {
-            val uid = accountService.userState.value?.uid ?: return@launch
-            datasetOperationsUseCase.addAdjustment(uid, dataset.id, adjustment)
-        }
-    }
-
-    fun updateAdjustmentData(
-        dataset: Dataset,
-        oldAdjustment: Adjustment,
-        newAdjustment: Adjustment
-    ) {
-        viewModelScope.launch {
-            val uid = accountService.userState.value?.uid ?: return@launch
-            datasetOperationsUseCase.updateAdjustment(uid, dataset.id, oldAdjustment, newAdjustment)
-        }
-    }
-
-    fun removeAdjustmentDataset(datasetId: String, adjustment: Adjustment) {
-        viewModelScope.launch {
-            val uid = accountService.userState.value?.uid ?: return@launch
-            datasetOperationsUseCase.removeAdjustment(uid, datasetId, adjustment)
-        }
-    }
-
-    fun beginTheWork(dataset: Dataset) {
+    fun beginWork(dataset: Dataset) {
         val uid = accountService.userState.value?.uid ?: return
         if (dataset.routine.routine == Routine.Nothing) return
 
-        routineWorker(
-            userId = uid,
-            datasetId = dataset.id,
-            triggerMillis = dataset.routine.triggerMillis,
-            isRoutine = true
-        )
+        routineWorker(uid, dataset.id, dataset.routine.triggerMillis, true)
     }
 
     /*******************
-     * UI State Updates
+     * UI STATE MUTATIONS
      *******************/
-
-    fun updateCurrentWeek(dates: List<java.time.LocalDate>) {
-        _uiState.update { it.copy(currentWeek = dates) }
-    }
-
-    fun updateWeekDays(dates: List<LocalDate>) {
-        _uiState.update { it.copy(dates = dates) }
+    fun updateTopTitle(nav: TopBarNav) {
+        _uiState.update { it.copy(topTitle = nav) }
     }
 
     fun updateSelectedTabIndex(index: Int) {
         _uiState.update { it.copy(selectedTabIndex = index) }
     }
 
-    fun updateTopTitle(topBarNav: TopBarNav) {
-        _uiState.update { it.copy(topTitle = topBarNav) }
+    fun updateCurrentWeek(dates: List<LocalDate>) =
+        _uiState.update { it.copy(currentWeek = dates) }
+
+    fun updateWeekDays(dates: List<LocalDate>) =
+        _uiState.update { it.copy(dates = dates) }
+
+    fun updateSorting(
+        time: SortType? = null,
+        category: String? = null,
+        amount: SortType? = null,
+        payment: PaymentMethod? = null,
+        alpha: SortType? = null
+    ) {
+        _uiState.update {
+            it.copy(
+                timeSorting = time ?: it.timeSorting,
+                categorySorting = category ?: it.categorySorting,
+                amountSorting = amount ?: it.amountSorting,
+                paymentSorting = payment ?: it.paymentSorting,
+                alphabeticalOrder = alpha ?: it.alphabeticalOrder
+            )
+        }
     }
 
-    fun updateOnDatasetModelBottomSheetShow(isVisible: Boolean) {
-        _uiState.update { it.copy(isDatasetBottomSheetOpen = isVisible) }
-    }
+    fun updateTimeSorting(type: SortType) = updateSorting(time = type)
+    fun updateCategorySorting(category: String) = updateSorting(category = category)
+    fun updateAmountSorting(type: SortType) = updateSorting(amount = type)
+    fun updatePaymentSorting(method: PaymentMethod?) = updateSorting(payment = method)
+    fun updateAlphabeticalOrder(type: SortType) = updateSorting(alpha = type)
 
-    fun updateOnAdjustModelBottomSheetShow(isVisible: Boolean) {
-        _uiState.update { it.copy(isAdjustmentBottomSheetOpen = isVisible) }
-    }
+    fun updateOnDatasetModelBottomSheetShow(show: Boolean) =
+        _uiState.update { it.copy(isDatasetBottomSheetOpen = show) }
 
-    fun updateIsBottomSheetContentLoading(isLoading: Boolean) {
-        _uiState.update { it.copy(isBottomSheetContentLoading = isLoading) }
-    }
+    fun updateOnAdjustModelBottomSheetShow(show: Boolean) =
+        _uiState.update { it.copy(isAdjustmentBottomSheetOpen = show) }
 
-    fun updateTimeSorting(sortType: SortType) {
-        _uiState.update { it.copy(timeSorting = sortType) }
-    }
+    fun updateIsBottomSheetContentLoading(loading: Boolean) =
+        _uiState.update { it.copy(isBottomSheetContentLoading = loading) }
 
-    fun updateCategorySorting(category: String) {
-        _uiState.update { it.copy(categorySorting = category) }
-    }
+    fun updateOnFilterClick(show: Boolean) =
+        _uiState.update { it.copy(onFilterClick = show) }
 
-    fun updateAmountSorting(sortType: SortType) {
-        _uiState.update { it.copy(amountSorting = sortType) }
-    }
+    fun updateOnActivateShow(show: Boolean) =
+        _uiState.update { it.copy(onActivateShow = show) }
 
-    fun updatePaymentSorting(paymentMethod: PaymentMethod?) {
-        _uiState.update { it.copy(paymentSorting = paymentMethod) }
-    }
+    fun beginTheWork(dataset: Dataset) = beginWork(dataset)
 
-    fun updateAlphabeticalOrder(sortType: SortType) {
-        _uiState.update { it.copy(alphabeticalOrder = sortType) }
-    }
+    fun addAdjustmentData(dataset: Dataset, adj: Adjustment) = addAdjustment(dataset, adj)
 
-    fun updateOnFilterClick(isVisible: Boolean) {
-        _uiState.update { it.copy(onFilterClick = isVisible) }
-    }
+    fun updateAdjustmentData(dataset: Dataset, old: Adjustment, new: Adjustment) =
+        updateAdjustment(dataset, old, new)
 
-    fun updateOnActivateShow(isVisible: Boolean) {
-        _uiState.update { it.copy(onActivateShow = isVisible) }
-    }
+    fun removeAdjustmentDataset(datasetId: String, adj: Adjustment) =
+        removeAdjustment(datasetId, adj)
 
-    fun getLenOfActivates(date: LocalDate): Int {
-        return getLenOfActivatesUseCase(uiState.value.datasets, date)
-    }
+    val fetchLiveChangeDataset: Flow<List<Dataset>> = datasetsFlow
+
+    fun getLenOfActivates(date: LocalDate): Int =
+        getLenOfActivatesUseCase(uiState.value.datasets, date)
 }

@@ -168,7 +168,7 @@ import com.patrykandpatrick.vico.core.common.shape.Shape
 fun VicoBarChart(
     modifier: Modifier = Modifier,
     chartDataCollection: ChartDataCollection,
-    thickness: Dp = 24.dp,
+    thickness: Dp = 12.dp,
     strokeThickness: Dp = 0.dp,
     showLegend: Boolean = false,
     xValueFormatter: (value: Double) -> CharSequence = { value -> value.toInt().toString() },
@@ -176,6 +176,7 @@ fun VicoBarChart(
     markerFormatter: (value: Double) -> CharSequence =
         { value -> "$value" },
 ) {
+
     val modelProducer = remember { CartesianChartModelProducer() }
     val chartData = chartDataCollection.chartData
 

@@ -13,21 +13,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataAdjust
-import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
-import com.example.moneytracker.ui.homeScreen.ItemListAreaShimmer
 
 @Composable
 fun AllScreen(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel,
     weeklyData: State<List<DataAdjust>>,
-    uiState: HomeUiState
+    uiState: HomeUiState,
+    hasLoadedData: Boolean
 ) {
-
-    val isLoading = uiState.datasetState is DatasetState.Loading
-
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -35,16 +31,18 @@ fun AllScreen(
             .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (isLoading) {
-            // Calendar Shimmer (simplified as a box for now)
-            ItemListAreaShimmer(modifier = Modifier.fillMaxSize())
-        } else {
+
+        if (hasLoadedData) {
             CalendarViewSection(
                 updateWeek = viewModel::updateWeekDays,
                 viewModel = viewModel
             )
 
             ListForAll(dataAdjusts = weeklyData.value)
+        } else {
+            CalendarViewSectionShimmer()
+            ListForAllShimmer()
         }
     }
 }
+

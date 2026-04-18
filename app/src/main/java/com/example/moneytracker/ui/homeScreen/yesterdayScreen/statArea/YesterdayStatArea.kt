@@ -1,8 +1,6 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -124,7 +122,6 @@ fun YesterdayStat(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun YesterdayChart(datasets: List<Dataset>) {
 //    val sorted = datasets.sortedBy { it.dateTime }
@@ -173,10 +170,9 @@ fun YesterdayChart(datasets: List<Dataset>) {
         VicoBarChart(
             modifier = Modifier
                 .height(230.dp),
-            thickness = 20.dp,
-            strokeThickness = 0.dp,
             chartDataCollection = ChartDataCollection(state.value),
             yValueFormatter = { value -> value.formatToAmount() },
+
             xValueFormatter = { value ->
                 val hour = (value / 3600).toInt()
                 val minute = ((value % 3600) / 60).toInt()

@@ -1066,7 +1066,7 @@ fun OnUpdate(
                                             )
                                             viewModel.updateData(
                                                 dataset,
-                                                newDataset = newDataset
+                                                newDataset
                                             )
 
                                             if (dataset.dataType == DataType.GOAL) {
@@ -1119,8 +1119,8 @@ fun OnUpdate(
                                                 val adjustment = dataAdjust.adjustment
                                                 viewModel.updateAdjustmentData(
                                                     adjustment.dataset!!,
-                                                    oldAdjustment = adjustment,
-                                                    newAdjustment = Adjustment(
+                                                    adjustment,
+                                                    Adjustment(
                                                         adjustmentId = adjustment.adjustmentId,
                                                         amount = amountAsDouble,
                                                         label = adjustment.label,

@@ -7,7 +7,6 @@ import android.content.res.Configuration.ORIENTATION_PORTRAIT
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -18,10 +17,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Dataset
-import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.homeScreen.ItemListAreaShimmer
-import com.example.moneytracker.ui.homeScreen.StatAreaShimmer
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayItems
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 
@@ -31,11 +27,10 @@ fun YesterdayScreen(
     uiState: HomeUiState,
     sortAbleDataAdjust: List<DataAdjust>,
     yesterdayDatasets: List<Dataset>,
+    hasLoadedData: Boolean
 ) {
-
-    val isLoading = uiState.datasetState is DatasetState.Loading
-
     val configuration = LocalConfiguration.current
+
 
     if (configuration.orientation == ORIENTATION_PORTRAIT) {
         Column(
@@ -46,11 +41,7 @@ fun YesterdayScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            if (isLoading) {
-                StatAreaShimmer(modifier = Modifier.weight(0.4f))
-                Spacer(modifier = Modifier.weight(0.05f))
-                ItemListAreaShimmer(modifier = Modifier.weight(0.6f))
-            } else {
+            if (hasLoadedData) {
                 YesterdayStatArea(
                     modifier = Modifier.weight(0.4f),
                     datasets = yesterdayDatasets
@@ -62,30 +53,19 @@ fun YesterdayScreen(
                     modifier = Modifier.weight(0.6f),
                     dataAdjust = sortAbleDataAdjust
                 )
-            }
-        }
-    } else {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            if (isLoading) {
-                StatAreaShimmer(modifier = Modifier.weight(0.4f))
-                ItemListAreaShimmer(modifier = Modifier.weight(0.6f))
             } else {
-                YesterdayStatArea(
-                    modifier = Modifier.weight(0.4f),
-                    datasets = yesterdayDatasets
+                YesterdayStatAreaShimmer(
+                    modifier = Modifier.weight(0.4f)
                 )
-                YesterdayItems(
-                    modifier = Modifier.weight(0.6f),
-                    dataAdjust = sortAbleDataAdjust
+
+                Spacer(modifier = Modifier.weight(0.05f))
+
+                YesterdayItemsShimmer(
+                    modifier = Modifier.weight(0.6f)
                 )
             }
         }
     }
 }
+
 

@@ -26,8 +26,9 @@ data class HomeUiState(
     val isAdjustmentBottomSheetOpen: Boolean = false,
     val combinedDataWithAdjust: List<DataAdjust> = emptyList(),
     val dates: List<LocalDate> = emptyList(),
-    val currentWeek: List<java.time.LocalDate> = emptyList(),
+    val currentWeek: List<LocalDate> = emptyList(),
     val selectedTabIndex: Int = 1,
+
     val date: LocalDate = LocalDate.now(),
     val localDateList: List<List<LocalDate>> = emptyList(),
     val consecutiveGoal: List<Dataset> = emptyList(),
@@ -42,5 +43,5 @@ data class HomeUiState(
     val alphabeticalOrder: SortType = SortType.Initial,
     val datasetState: DatasetState = DatasetState.Loading,
     val isBottomSheetContentLoading: Boolean = true,
-    val onActivateShow: Boolean = true
+    val onActivateShow: Boolean = false
 )
