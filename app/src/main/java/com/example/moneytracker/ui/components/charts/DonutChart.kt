@@ -10,8 +10,6 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -102,9 +100,7 @@ fun PlaceHolderDonutChart(
     var center = Offset(0f, 0f)
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 24.dp),
+        modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
         Canvas(
@@ -131,24 +127,24 @@ fun PlaceHolderDonutChart(
                     )
                 },
             onDraw = {
-                val defaultStrokeWidth = strokeWidth.toPx()
+                val maxStrokeWidth = maxOf(strokeWidth, strokeWidthSelected).toPx()
                 center = this.center
                 anglesList.clear()
                 var lastAngle = 0f
                 data.items.forEachIndexed { ind, item ->
                     val sweepAngle = data.findSweepAngle(ind, gapPercentage)
                     anglesList.add(DrawingAngles(lastAngle, sweepAngle))
-                    val strokeWidth = animValues[ind].value.toPx()
+                    val currentStrokeWidth = animValues[ind].value.toPx()
                     drawArc(
                         color = item.color,
                         startAngle = lastAngle,
                         sweepAngle = sweepAngle,
                         useCenter = false,
-                        topLeft = Offset(defaultStrokeWidth / 2, defaultStrokeWidth / 2),
-                        style = Stroke(strokeWidth, cap = strokeCap),
+                        topLeft = Offset(maxStrokeWidth / 2, maxStrokeWidth / 2),
+                        style = Stroke(currentStrokeWidth, cap = strokeCap),
                         size = Size(
-                            size.width - defaultStrokeWidth,
-                            size.height - defaultStrokeWidth
+                            size.width - maxStrokeWidth,
+                            size.height - maxStrokeWidth
                         )
                     )
                     lastAngle += sweepAngle + gapAngle
@@ -200,9 +196,7 @@ fun DonutChart(
     var center = Offset(0f, 0f)
 
     Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(top = 24.dp),
+        modifier = modifier,
         contentAlignment = Alignment.Center,
     ) {
         Canvas(
@@ -248,24 +242,24 @@ fun DonutChart(
                     )
                 },
             onDraw = {
-                val defaultStrokeWidth = strokeWidth.toPx()
+                val maxStrokeWidth = maxOf(strokeWidth, strokeWidthSelected).toPx()
                 center = this.center
                 anglesList.clear()
                 var lastAngle = 0f
                 data.items.forEachIndexed { ind, item ->
                     val sweepAngle = data.findSweepAngle(ind, gapPercentage)
                     anglesList.add(DrawingAngles(lastAngle, sweepAngle))
-                    val strokeWidth = animValues[ind].value.toPx()
+                    val currentStrokeWidth = animValues[ind].value.toPx()
                     drawArc(
                         color = item.color,
                         startAngle = lastAngle,
                         sweepAngle = sweepAngle,
                         useCenter = false,
-                        topLeft = Offset(defaultStrokeWidth / 2, defaultStrokeWidth / 2),
-                        style = Stroke(strokeWidth, cap = strokeCap),
+                        topLeft = Offset(maxStrokeWidth / 2, maxStrokeWidth / 2),
+                        style = Stroke(currentStrokeWidth, cap = strokeCap),
                         size = Size(
-                            size.width - defaultStrokeWidth,
-                            size.height - defaultStrokeWidth
+                            size.width - maxStrokeWidth,
+                            size.height - maxStrokeWidth
                         )
                     )
                     lastAngle += sweepAngle + gapAngle
