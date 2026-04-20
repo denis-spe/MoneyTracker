@@ -185,18 +185,26 @@ fun VicoBarChart(
 
     // ---------- Marker ----------
     val markerValueFormatter = DefaultCartesianMarker.ValueFormatter { _, targets ->
-        val primaryTarget = targets.firstOrNull() as? ColumnCartesianLayerMarkerTarget
-        val entry = primaryTarget?.columns?.firstOrNull()?.entry
+        val columnTarget =
+            targets.filterIsInstance<ColumnCartesianLayerMarkerTarget>().firstOrNull()
 
+        if (columnTarget != null && columnTarget.columns.isNotEmpty()) {
+            val timeLabel = xValueFormatter(columnTarget.columns.first().entry.x)
 
-        if (entry != null) {
-            val index = entry.x.toInt()
+            // Get labels for all series that have a non-zero value at this point
+            val valuesLabel = columnTarget.columns
+                .mapIndexedNotNull { index, column ->
+                    if (column.entry.y <= 0) return@mapIndexedNotNull null
+                    val seriesLabel = chartData.getOrNull(index)?.label?.let { "$it: " } ?: ""
+                    seriesLabel + markerFormatter(column.entry.y)
+                }
+                .joinToString(", ")
 
-            val originalX = chartData.firstOrNull()
-                ?.x
-                ?.getOrNull(index)
-
-            if (originalX != null) markerFormatter(entry.y) else ""
+            if (valuesLabel.isEmpty()) {
+                "$timeLabel: 0"
+            } else {
+                "$timeLabel | $valuesLabel"
+            }
         } else ""
     }
 
@@ -238,8 +246,7 @@ fun VicoBarChart(
                         )
                     }
                 ),
-//                columnCollectionSpacing = 12.dp,  // Increased spacing for better label visibility
-//                mergeMode = { ColumnCartesianLayer.MergeMode.Stacked }
+                mergeMode = { ColumnCartesianLayer.MergeMode.Stacked }
             )
         } else {
             rememberColumnCartesianLayer()
@@ -250,23 +257,12 @@ fun VicoBarChart(
         columnLayer,
         marker = marker,
 
-        // map index -> original x label
+        // Use real X values (time in seconds)
         bottomAxis = HorizontalAxis.rememberBottom(
             guideline = null,
             tick = rememberAxisTickComponent(),
             valueFormatter = { _, value, _ ->
-                val index = value.toInt()
-
-                // get original x value (seconds of day)
-                val originalX = chartData.firstOrNull()
-                    ?.x
-                    ?.getOrNull(index)
-
-                if (originalX != null) {
-                    xValueFormatter(originalX) // format real time
-                } else {
-                    ""
-                }
+                xValueFormatter(value)
             }
         ),
 
@@ -291,8 +287,7 @@ fun VicoBarChart(
             columnSeries {
                 chartDataCollection.chartData.forEach { lineData ->
                     series(
-                        // ⭐ KEY FIX → normalize X values to indices
-                        x = lineData.y.indices.map { it.toDouble() },
+                        x = lineData.x,
                         y = lineData.y
                     )
                 }
