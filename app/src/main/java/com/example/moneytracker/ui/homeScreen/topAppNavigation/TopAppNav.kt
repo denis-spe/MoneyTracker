@@ -42,8 +42,7 @@ fun TopAppNav(
             .then(
                 if (isLoading) {
                     Modifier
-                        .clip(RoundedCornerShape(100))
-                        .shimmerEffect()
+                        .shimmerEffect(shape = RoundedCornerShape(100), size = 40.dp)
                 } else {
                     Modifier
                         .border(4.dp, contentColor.copy(0.5f), RoundedCornerShape(100))

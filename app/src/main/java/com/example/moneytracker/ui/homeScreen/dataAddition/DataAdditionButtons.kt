@@ -28,7 +28,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
@@ -65,18 +64,14 @@ fun DataAdditionFloatingButton(
         if (isLoading) {
             Box(
                 modifier = Modifier
-                    .size(FLOAT_BUTTON_SIZE)
-                    .clip(CircleShape)
-                    .shimmerEffect()
+                    .shimmerEffect(shape = CircleShape, size = FLOAT_BUTTON_SIZE)
             )
 
             Spacer(modifier = Modifier.height(10.dp))
 
             Box(
                 modifier = Modifier
-                    .size(43.dp)
-                    .clip(CircleShape)
-                    .shimmerEffect()
+                    .shimmerEffect(shape = CircleShape, size = 43.dp)
             )
         } else {
             FloatingActionButton(

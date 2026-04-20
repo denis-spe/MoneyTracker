@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -45,15 +46,13 @@ fun CalendarViewSectionShimmer() {
             Box(
                 modifier = Modifier
                     .padding(horizontal = 4.dp)
-                    .shimmerEffect()
-                    .fillMaxWidth(0.25f)
+                    .shimmerEffect(shape = RoundedCornerShape(4.dp), width = 80.dp, height = 24.dp)
             )
 
             Box(
                 modifier = Modifier
                     .padding(horizontal = 4.dp)
-                    .shimmerEffect()
-                    .fillMaxWidth(0.25f)
+                    .shimmerEffect(shape = RoundedCornerShape(4.dp), width = 80.dp, height = 24.dp)
             )
         }
 
@@ -63,8 +62,11 @@ fun CalendarViewSectionShimmer() {
         ) {
             Box(
                 modifier = Modifier
-                    .shimmerEffect()
-                    .fillMaxWidth()
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(8.dp),
+                        width = 300.dp,
+                        height = 300.dp
+                    )
             )
         }
     }

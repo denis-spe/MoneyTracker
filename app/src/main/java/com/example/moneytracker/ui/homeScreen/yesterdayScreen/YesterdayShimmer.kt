@@ -13,7 +13,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.ui.homeScreen.todayScreen.ItemCardShimmer
@@ -34,18 +33,20 @@ fun YesterdayStatAreaShimmer(modifier: Modifier = Modifier) {
         ) {
             Box(
                 modifier = Modifier
-                    .width(100.dp)
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .shimmerEffect()
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(18.dp),
+                        width = 100.dp,
+                        height = 36.dp
+                    )
             )
             Spacer(modifier = Modifier.width(8.dp))
             Box(
                 modifier = Modifier
-                    .width(100.dp)
-                    .height(36.dp)
-                    .clip(RoundedCornerShape(18.dp))
-                    .shimmerEffect()
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(18.dp),
+                        width = 100.dp,
+                        height = 36.dp
+                    )
             )
         }
 
@@ -54,8 +55,7 @@ fun YesterdayStatAreaShimmer(modifier: Modifier = Modifier) {
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
-                .clip(RoundedCornerShape(12.dp))
-                .shimmerEffect()
+                .shimmerEffect(shape = RoundedCornerShape(12.dp), width = 360.dp, height = 200.dp)
         )
     }
 }

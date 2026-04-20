@@ -184,51 +184,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             }
         }
 
-//        AnimatedContent(
-//            uiStates.value.topTitle,
-//            transitionSpec = {
-//                fadeIn(
-//                    animationSpec = tween(300)
-//                ) togetherWith fadeOut(animationSpec = tween(300))
-//            },
-//            label = "Animated Content"
-//        ) { targetTopTitle ->
-//            when (targetTopTitle) {
-//                TopBarNav.TODAY -> TodayScreen(
-//                    paddingValues,
-//                    todayDatasets = todayDatasets,
-//                    donutChartDataCollection = donutChartDataCollection.value,
-//                    uiState = uiStates.value,
-//                    homeViewModel = homeViewModel,
-//                    hasLoadedData = hasLoadedData
-//                )
-//
-//                TopBarNav.YESTERDAY -> YesterdayScreen(
-//                    paddingValues,
-//                    uiState = uiStates.value,
-//                    sortAbleDataAdjust = sortAbleDataAdjust,
-//                    yesterdayDatasets = yesterdayDatasets,
-//                    hasLoadedData = hasLoadedData
-//                )
-//
-//                TopBarNav.ALL -> AllScreen(
-//                    paddingValues,
-//                    viewModel = homeViewModel,
-//                    weeklyData = weeklyData,
-//                    uiState = uiStates.value,
-//                    hasLoadedData = hasLoadedData
-//                )
-//
-//                TopBarNav.GOAL -> GoalScreen(
-//                    paddingValues,
-//                    goalDatasets = goalDatasets,
-//                    uiState = uiStates.value,
-//                    hasLoadedData = hasLoadedData
-//                )
-//            }
-//        }
-
-
         // Drop down user profile
         DropDownUserProfile(
             paddingValues,

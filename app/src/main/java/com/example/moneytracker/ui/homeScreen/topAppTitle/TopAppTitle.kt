@@ -4,7 +4,6 @@
 package com.example.moneytracker.ui.homeScreen.topAppTitle
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.PagerState
@@ -57,9 +56,7 @@ fun TopAppTitle(
             selectedTabIndex,
             modifier = Modifier
                 .widthIn(min = 160.dp, max = 300.dp)
-                .height(40.dp)
-                .clip(RoundedCornerShape(50.dp))
-                .shimmerEffect(),
+                .shimmerEffect(shape = RoundedCornerShape(50.dp), width = 230.dp, height = 40.dp),
             containerColor = backgroundColor,
             indicator = {},
             divider = {},
