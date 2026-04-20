@@ -7,13 +7,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.PrimaryScrollableTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -25,12 +26,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.helper.shimmerEffect
-import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
 @Composable
 fun TopAppTitle(
-    state: State<HomeUiState>,
+    state: PagerState,
     contentColor: Color,
     currentPageColor: Color,
     backgroundColor: Color,
@@ -45,10 +45,11 @@ fun TopAppTitle(
     val fontSize = 13.sp
 
     var selectedTabIndex by remember {
-        mutableIntStateOf(
-            topBarNav
-            .find { it == state.value.topTitle }?.ordinal ?: 0
-        )
+        mutableIntStateOf(state.currentPage)
+    }
+
+    LaunchedEffect(state.currentPage) {
+        selectedTabIndex = state.currentPage
     }
 
     if (isLoading) {
@@ -84,7 +85,7 @@ fun TopAppTitle(
             divider = {},
         ) {
             topBarNav.forEachIndexed { index, nav ->
-                val isSelected = state.value.topTitle == nav && selectedTabIndex == index
+                val isSelected = state.currentPage == index
                 Tab(
                     selected = isSelected,
                     onClick = {

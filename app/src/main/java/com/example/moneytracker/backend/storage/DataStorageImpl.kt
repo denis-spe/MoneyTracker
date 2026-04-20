@@ -12,13 +12,13 @@ import com.example.moneytracker.helper.toDataset
 import com.example.moneytracker.helper.toMap
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
-import kotlin.coroutines.resumeWithException
 import kotlin.random.Random
 
 class DataStorageImpl(
@@ -195,7 +195,7 @@ class DataStorageImpl(
             )
 
             // Simply update the document
-            docRef.set(modifyNewDataset.toMap()).await()
+            docRef.set(modifyNewDataset.toMap())
             Log.d("Dataset update", "Updated dataset ${oldDataset.id}")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to update dataset", e)
@@ -218,7 +218,11 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = docRef.get().await()
+            val snapshot = try {
+                docRef.get().await()
+            } catch (e: Exception) {
+                docRef.get(Source.CACHE).await()
+            }
             val dataset = snapshot.data?.toDataset() ?: return
 
             // Add new adjustment to list
@@ -230,7 +234,7 @@ class DataStorageImpl(
             )
 
             // Update only the adjustment array
-            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap }).await()
+            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
             Log.d("DataStorageImpl", "Added adjustment to dataset $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to add adjustment", e)
@@ -254,14 +258,18 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = docRef.get().await()
+            val snapshot = try {
+                docRef.get().await()
+            } catch (e: Exception) {
+                docRef.get(Source.CACHE).await()
+            }
             val dataset = snapshot.data?.toDataset() ?: return
 
             // Update routine field
             val routineMap = castToMutableMap(mapOf("routine" to dataset.routine))
             routineMap["stopRoutine"] = true
 
-            docRef.update("routine", routineMap).await()
+            docRef.update("routine", routineMap)
             Log.d("DataStorageImpl", "Stopped routine for dataset $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to stop routine", e)
@@ -273,26 +281,23 @@ class DataStorageImpl(
      * @param userId the user id
      * @param datasetId the dataset id
      */
-    override suspend fun getDataset(userId: String, datasetId: String): Dataset? =
-        suspendCancellableCoroutine { cont ->
-            val docRef = db.collection(COLLECTION_NAME)
-                .document(userId)
-                .collection("datasets")
-                .document(datasetId)
+    override suspend fun getDataset(userId: String, datasetId: String): Dataset? {
+        val docRef = db.collection(COLLECTION_NAME)
+            .document(userId)
+            .collection("datasets")
+            .document(datasetId)
 
-            val task = docRef.get()
-            task.addOnSuccessListener { snapshot ->
-                try {
-                    val dataset = snapshot.data?.toDataset()
-                    if (!cont.isCompleted) cont.resume(dataset) { cause, _, _ -> }
-                } catch (e: Exception) {
-                    if (!cont.isCompleted) cont.resumeWithException(e)
-                }
-            }
-            task.addOnFailureListener { exc ->
-                if (!cont.isCompleted) cont.resumeWithException(exc)
+        return try {
+            docRef.get().await().data?.toDataset()
+        } catch (e: Exception) {
+            try {
+                docRef.get(Source.CACHE).await().data?.toDataset()
+            } catch (cacheException: Exception) {
+                if (e is FirebaseFirestoreException) throw e
+                null
             }
         }
+    }
 
     override suspend fun completeRoutine(
         userId: String,
@@ -308,7 +313,11 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = docRef.get().await()
+            val snapshot = try {
+                docRef.get().await()
+            } catch (e: Exception) {
+                docRef.get(Source.CACHE).await()
+            }
             val dataset = snapshot.data?.toDataset() ?: return
 
 
@@ -330,7 +339,6 @@ class DataStorageImpl(
             docRef.collection("statusHistory")
                 .document(statusId)
                 .set(statusHistory.statusHistoryToMap)
-                .await()
 
             // Update dataset fields
             val routineMap = dataset.routine.copy(
@@ -340,14 +348,15 @@ class DataStorageImpl(
 
             docRef.update(
                 mapOf(
-                    "routineData" to routineMap.routineToMap,
+                    "routine" to routineMap.routineToMap,
                     "adjustment" to emptyList<Map<String, Any?>>()
                 )
-            ).await()
+            )
 
             Log.d("DataStorageImpl", "completeRoutine: Update successful for $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Error in completeRoutine for $datasetId", e)
+            throw e
         }
     }
 
@@ -369,7 +378,11 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = datasetDocRef.get().await()
+            val snapshot = try {
+                datasetDocRef.get().await()
+            } catch (e: Exception) {
+                datasetDocRef.get(Source.CACHE).await()
+            }
             val dataset = snapshot.data?.toDataset() ?: return
 
             val totalAdjustmentAmount = dataset.adjustment.sumOf { it.amount }
@@ -389,7 +402,6 @@ class DataStorageImpl(
             datasetDocRef.collection("statusHistory")
                 .document(statusId)
                 .set(statusHistory.statusHistoryToMap)
-                .await()
 
             // Update dataset timestamps
             datasetDocRef.update(
@@ -397,7 +409,7 @@ class DataStorageImpl(
                     "createdAt" to newDateTime,
                     "routineData.deadlineDateTime" to newDeadlineDateTime
                 )
-            ).await()
+            )
 
             Log.d("addStatus", "Status added and dataset updated for $datasetId")
         } catch (e: Exception) {
@@ -417,7 +429,7 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            docRef.update("adjustment", emptyList<Map<String, Any?>>()).await()
+            docRef.update("adjustment", emptyList<Map<String, Any?>>())
             Log.d("clearAdjustmentList", "Adjustment list cleared for dataset $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to clear adjustment list", e)
@@ -462,7 +474,11 @@ class DataStorageImpl(
 
         try {
             // 1. Get the snapshots (Try to use cache if offline)
-            val statusHistorySnapshot = docRef.collection("statusHistory").get().await()
+            val statusHistorySnapshot = try {
+                docRef.collection("statusHistory").get().await()
+            } catch (e: Exception) {
+                docRef.collection("statusHistory").get(Source.CACHE).await()
+            }
 
             // 2. Create a Write Batch
             val batch = db.batch()
@@ -477,7 +493,7 @@ class DataStorageImpl(
 
             // 5. Commit the batch
             // Remove .await() if you want it to finish instantly while offline
-            batch.commit().await()
+            batch.commit()
 
             Log.d("DataStorageImpl", "Dataset and history deleted via batch")
         } catch (e: Exception) {
@@ -502,7 +518,11 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = docRef.get().await()
+            val snapshot = try {
+                docRef.get().await()
+            } catch (e: Exception) {
+                docRef.get(Source.CACHE).await()
+            }
             val dataset = snapshot.data?.toDataset() ?: return
 
             // Remove adjustment from list
@@ -510,7 +530,7 @@ class DataStorageImpl(
                 it.adjustmentId != adjustment.adjustmentId
             }
 
-            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap }).await()
+            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
             Log.d("DataStorageImpl", "Removed adjustment from dataset $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to remove adjustment", e)
@@ -535,7 +555,11 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = docRef.get().await()
+            val snapshot = try {
+                docRef.get().await()
+            } catch (e: Exception) {
+                docRef.get(Source.CACHE).await()
+            }
             val dataset = snapshot.data?.toDataset() ?: return
 
             // Remove old adjustment and add new one
@@ -545,7 +569,7 @@ class DataStorageImpl(
 
             updatedAdjustments.add(newAdjustment)
 
-            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap }).await()
+            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
             Log.d("Adjustment update", "Updated adjustment ${oldAdjustment.adjustmentId}")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to update adjustment", e)

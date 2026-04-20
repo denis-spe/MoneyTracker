@@ -1,5 +1,6 @@
 package com.example.moneytracker.ui.homeScreen
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
@@ -10,20 +11,25 @@ import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
 import com.example.moneytracker.ui.usecase.DatasetOperationsUseCase
 import com.example.moneytracker.ui.usecase.GetAdjustDatasetUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentDateUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentWeekUseCase
 import com.example.moneytracker.ui.usecase.GetLenOfActivatesUseCase
+import com.example.moneytracker.ui.usecase.GetTodayChartDonutDataUseCase
 import com.example.moneytracker.ui.usecase.GetTodayDatasetsUseCase
 import com.example.moneytracker.ui.usecase.GetWeeklyDataUseCase
+import com.example.moneytracker.ui.usecase.GetYesterdayChartDataUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayDataAdjustUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayDatasetsUseCase
+import com.example.moneytracker.ui.usecase.GetYesterdayStatsUseCase
 import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
 import com.example.moneytracker.ui.usecase.RoutineWorkerUseCase
 import com.example.moneytracker.ui.usecase.ScheduleAlarmUseCase
 import com.example.moneytracker.ui.usecase.SortTodayDataAdjustUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -54,7 +60,11 @@ class HomeViewModel @Inject constructor(
     private val getYesterdayDatasetsUseCase: GetYesterdayDatasetsUseCase,
     private val getLenOfActivatesUseCase: GetLenOfActivatesUseCase,
     private val getAdjustDatasetUseCase: GetAdjustDatasetUseCase,
-    private val routineWorker: RoutineWorkerUseCase
+    private val getTodayChartDonutDataUseCase: GetTodayChartDonutDataUseCase,
+    private val getYesterdayChartDataUseCase: GetYesterdayChartDataUseCase,
+    private val getYesterdayStatsUseCase: GetYesterdayStatsUseCase,
+    private val routineWorker: RoutineWorkerUseCase,
+    @ApplicationContext private val context: Context
 ) : ViewModel() {
 
     /*******************
@@ -161,6 +171,15 @@ class HomeViewModel @Inject constructor(
     val sortedYesterdayFlow = datasetsFlow
         .map { getYesterdayDataAdjustUseCase(it) }
 
+    val donutChartDataFlow = todayDatasetsFlow
+        .map { getTodayChartDonutDataUseCase(it, context) }
+
+    val yesterdayChartDataFlow = yesterdayDatasetsFlow
+        .map { getYesterdayChartDataUseCase(it, context) }
+
+    val yesterdayStatsFlow = yesterdayDatasetsFlow
+        .map { getYesterdayStatsUseCase(it) }
+
     /*******************
      * UI STATE FLOWS (ONLY what UI collects)
      *******************/
@@ -184,6 +203,15 @@ class HomeViewModel @Inject constructor(
 
     val sortedYesterdayState = sortedYesterdayFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val donutChartDataState = donutChartDataFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val yesterdayChartDataState = yesterdayChartDataFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    val yesterdayStatsState = yesterdayStatsFlow
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YesterdayStats())
 
     val currentWeekState = currentWeekDerivedFlow
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())

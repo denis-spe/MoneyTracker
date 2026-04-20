@@ -14,6 +14,7 @@ import com.example.moneytracker.helper.rescheduleDeadline
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestoreException
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
 import kotlinx.datetime.toKotlinLocalDateTime
@@ -58,6 +59,7 @@ class RoutineWorker @AssistedInject constructor(
                     .rescheduleDeadline
                     .toKotlinLocalDateTime()
                     .toFirestoreTimestampUtc()
+
                 val adjustSum = dataset.adjustment.sumOf { it.amount }
                 val precent = ((adjustSum / dataset.amount) * 100)
                 val formatPrecent = String.format(
@@ -110,6 +112,9 @@ class RoutineWorker @AssistedInject constructor(
 
             // Indicate that the work finished successfully
             Result.success()
+        } catch (e: FirebaseFirestoreException) {
+            Log.e(TAG, "Firestore error in RoutineWorker", e)
+            Result.retry()
         } catch (e: Exception) {
             // Handle any exceptions that occur during the work
             Log.e(TAG, "Error in RoutineWorker", e)

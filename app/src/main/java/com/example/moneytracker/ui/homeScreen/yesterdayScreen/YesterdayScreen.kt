@@ -17,9 +17,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayItems
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
 
 @Composable
 fun YesterdayScreen(
@@ -27,6 +29,8 @@ fun YesterdayScreen(
     uiState: HomeUiState,
     sortAbleDataAdjust: List<DataAdjust>,
     yesterdayDatasets: List<Dataset>,
+    yesterdayChartData: List<ChartData>,
+    yesterdayStats: YesterdayStats,
     hasLoadedData: Boolean
 ) {
     val configuration = LocalConfiguration.current
@@ -44,7 +48,9 @@ fun YesterdayScreen(
             if (hasLoadedData) {
                 YesterdayStatArea(
                     modifier = Modifier.weight(0.4f),
-                    datasets = yesterdayDatasets
+                    datasets = yesterdayDatasets,
+                    chartData = yesterdayChartData,
+                    stats = yesterdayStats
                 )
 
                 Spacer(modifier = Modifier.weight(0.05f))

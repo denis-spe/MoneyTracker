@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -20,7 +19,7 @@ import com.example.moneytracker.ui.homeScreen.HomeViewModel
 fun AllScreen(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel,
-    weeklyData: State<List<DataAdjust>>,
+    weeklyData: List<DataAdjust>,
     uiState: HomeUiState,
     hasLoadedData: Boolean
 ) {
@@ -38,7 +37,7 @@ fun AllScreen(
                 viewModel = viewModel
             )
 
-            ListForAll(dataAdjusts = weeklyData.value)
+            ListForAll(dataAdjusts = weeklyData)
         } else {
             CalendarViewSectionShimmer()
             ListForAllShimmer()

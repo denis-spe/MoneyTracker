@@ -1,13 +1,10 @@
 // Bless be the Name of the Lord
 package com.example.moneytracker.ui.homeScreen
 
-import androidx.compose.animation.AnimatedContent
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
@@ -16,6 +13,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -41,6 +39,7 @@ import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 import com.example.moneytracker.ui.screenManager.SettingsScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import kotlinx.coroutines.launch
 
 @Suppress("UNUSED_PARAMETER")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -49,12 +48,10 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Initialize ViewModels
     val homeViewModel: HomeViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
-    val chartViewModel: ChartViewModel = hiltViewModel()
     val todayDatasets by homeViewModel.todayDatasetsState.collectAsStateWithLifecycle()
 
-    val donutChartDataCollection =
-        chartViewModel.todayChartData(todayDatasets).collectAsStateWithLifecycle(emptyList())
-    val weeklyData = homeViewModel.weeklyDataState.collectAsStateWithLifecycle()
+    val donutChartData by homeViewModel.donutChartDataState.collectAsStateWithLifecycle()
+    val weeklyData by homeViewModel.weeklyDataState.collectAsStateWithLifecycle()
 
     // Collect user information from ViewModels
     val uiStates = homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -63,9 +60,16 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val snackBarHostState = userViewModel.snackBarHostState.collectAsStateWithLifecycle()
 
     val yesterdayDatasets by homeViewModel.yesterdayDatasetsState.collectAsStateWithLifecycle()
+    val yesterdayChartData by homeViewModel.yesterdayChartDataState.collectAsStateWithLifecycle()
     val sortAbleDataAdjust by homeViewModel.sortedYesterdayState.collectAsStateWithLifecycle()
     val goalDatasets by homeViewModel.goalDatasetsState.collectAsStateWithLifecycle()
     val adjustmentDatasets by homeViewModel.adjustDatasetsState.collectAsStateWithLifecycle()
+    val yesterdayStats by homeViewModel.yesterdayStatsState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val topBarNavEntries = TopBarNav.entries
+    val pagerState = rememberPagerState(initialPage = 1) {
+        topBarNavEntries.size
+    }
 
 
 
@@ -97,12 +101,16 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 ),
                 title = {
                     TopAppTitle(
-                        uiStates,
+                        state = pagerState,
                         contentColor = customColors.contentColor,
                         currentPageColor = customColors.currentPage,
                         backgroundColor = customColors.customBackground,
                         isLoading = isLoading,
-                        function = homeViewModel::updateTopTitle
+                        function = {
+                            scope.launch {
+                                pagerState.animateScrollToPage(topBarNavEntries.indexOf(it))
+                            }
+                        }
                     )
                 },
                 navigationIcon = {
@@ -134,49 +142,91 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     ) { paddingValues ->
         val hasLoadedData = uiStates.value.datasetState is DatasetState.Success
 
-        AnimatedContent(
-            uiStates.value.topTitle,
-            transitionSpec = {
-                fadeIn(
-                    animationSpec = tween(300)
-                ) togetherWith fadeOut(animationSpec = tween(300))
-            },
-            label = "Animated Content"
-        ) { targetTopTitle ->
-            when (targetTopTitle) {
-                TopBarNav.TODAY -> TodayScreen(
+        HorizontalPager(
+            state = pagerState,
+            beyondViewportPageCount = 1,
+            key = { it }
+        ) { page ->
+            when (page) {
+                0 -> GoalScreen(
+                    paddingValues,
+                    goalDatasets = goalDatasets,
+                    uiState = uiStates.value,
+                    hasLoadedData = hasLoadedData
+                )
+
+                1 -> TodayScreen(
                     paddingValues,
                     todayDatasets = todayDatasets,
-                    donutChartDataCollection = donutChartDataCollection.value,
+                    donutChartDataCollection = donutChartData,
                     uiState = uiStates.value,
                     homeViewModel = homeViewModel,
                     hasLoadedData = hasLoadedData
                 )
 
-                TopBarNav.YESTERDAY -> YesterdayScreen(
+                2 -> YesterdayScreen(
                     paddingValues,
                     uiState = uiStates.value,
                     sortAbleDataAdjust = sortAbleDataAdjust,
                     yesterdayDatasets = yesterdayDatasets,
-                    hasLoadedData = hasLoadedData
+                    yesterdayChartData = yesterdayChartData,
+                    hasLoadedData = hasLoadedData,
+                    yesterdayStats = yesterdayStats
                 )
 
-                TopBarNav.ALL -> AllScreen(
+                3 -> AllScreen(
                     paddingValues,
                     viewModel = homeViewModel,
                     weeklyData = weeklyData,
                     uiState = uiStates.value,
                     hasLoadedData = hasLoadedData
                 )
-
-                TopBarNav.GOAL -> GoalScreen(
-                    paddingValues,
-                    goalDatasets = goalDatasets,
-                    uiState = uiStates.value,
-                    hasLoadedData = hasLoadedData
-                )
             }
         }
+
+//        AnimatedContent(
+//            uiStates.value.topTitle,
+//            transitionSpec = {
+//                fadeIn(
+//                    animationSpec = tween(300)
+//                ) togetherWith fadeOut(animationSpec = tween(300))
+//            },
+//            label = "Animated Content"
+//        ) { targetTopTitle ->
+//            when (targetTopTitle) {
+//                TopBarNav.TODAY -> TodayScreen(
+//                    paddingValues,
+//                    todayDatasets = todayDatasets,
+//                    donutChartDataCollection = donutChartDataCollection.value,
+//                    uiState = uiStates.value,
+//                    homeViewModel = homeViewModel,
+//                    hasLoadedData = hasLoadedData
+//                )
+//
+//                TopBarNav.YESTERDAY -> YesterdayScreen(
+//                    paddingValues,
+//                    uiState = uiStates.value,
+//                    sortAbleDataAdjust = sortAbleDataAdjust,
+//                    yesterdayDatasets = yesterdayDatasets,
+//                    hasLoadedData = hasLoadedData
+//                )
+//
+//                TopBarNav.ALL -> AllScreen(
+//                    paddingValues,
+//                    viewModel = homeViewModel,
+//                    weeklyData = weeklyData,
+//                    uiState = uiStates.value,
+//                    hasLoadedData = hasLoadedData
+//                )
+//
+//                TopBarNav.GOAL -> GoalScreen(
+//                    paddingValues,
+//                    goalDatasets = goalDatasets,
+//                    uiState = uiStates.value,
+//                    hasLoadedData = hasLoadedData
+//                )
+//            }
+//        }
 
 
         // Drop down user profile

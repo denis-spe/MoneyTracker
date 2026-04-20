@@ -14,20 +14,13 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.helper.formatToAmount
-import com.example.moneytracker.helper.mean
-import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.VicoBarChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
@@ -36,17 +29,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun YesterdayStat(
-    datasets: List<Dataset>,
+    stats: YesterdayStats,
 ) {
-    val earnings = datasets.filter { it.dataType == DataType.EARNINGS }.sumOf { it.amount }
-    val expenses = datasets.filter { it.dataType == DataType.EXPENSE }.sumOf { it.amount }
-    val debts = datasets.filter { it.dataType == DataType.DEBT }.sumOf { it.amount }
-    val lent = datasets.filter { it.dataType == DataType.LENT }.sumOf { it.amount }
-    val savings = datasets.filter { it.dataType === DataType.SAVINGS }.sumOf { it.amount }
-    datasets.filter { it.dataType == DataType.GOAL }.sumOf { it.amount }
-    val attained = datasets.filter { it.dataType == DataType.GOAL }.flatMap { it.adjustment }
-        .sumOf { it.amount }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -61,7 +45,7 @@ fun YesterdayStat(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Earned:")
-            Text(earnings.formatToAmount())
+            Text(stats.earnings.formatToAmount())
         }
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -69,7 +53,7 @@ fun YesterdayStat(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Expenses:")
-            Text(expenses.formatToAmount())
+            Text(stats.expenses.formatToAmount())
         }
 
         Row(
@@ -78,7 +62,7 @@ fun YesterdayStat(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Settle Debts:")
-            Text(debts.formatToAmount())
+            Text(stats.debts.formatToAmount())
         }
 
         Row(
@@ -87,7 +71,7 @@ fun YesterdayStat(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Refund:")
-            Text(lent.formatToAmount())
+            Text(stats.lent.formatToAmount())
         }
 
         Row(
@@ -96,7 +80,7 @@ fun YesterdayStat(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Savings:")
-            Text(savings.formatToAmount())
+            Text(stats.savings.formatToAmount())
         }
 
         Row(
@@ -105,7 +89,7 @@ fun YesterdayStat(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Attained:")
-            Text(attained.formatToAmount())
+            Text(stats.attained.formatToAmount())
         }
 
         HorizontalDivider()
@@ -116,41 +100,15 @@ fun YesterdayStat(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Text("Reminder:")
-            val reminder = (earnings - expenses) - (debts + lent + savings + attained)
-            Text(reminder.formatToAmount())
+            Text(stats.reminder.formatToAmount())
         }
     }
 }
 
 @Composable
-fun YesterdayChart(datasets: List<Dataset>) {
-//    val sorted = datasets.sortedBy { it.dateTime }
-    val groupedDataset = datasets
-        .groupBy { it.dataType }
-        .map { (dataType, datasets) ->
-            val x = listOf(datasets.mean {
-                val time = it.createdAt.toLocalDateTimeUtc()
-
-                ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
-            })
-            val y = listOf(datasets.sumOf { it.amount.toInt() })
-
-            ChartData(
-                x = x,
-                y = y,
-                label = dataType.text,
-                color = colorResource(id = dataType.color)
-            )
-        }
-
-    val state = remember { mutableStateOf<List<ChartData>>(emptyList()) }
-
-    LaunchedEffect(datasets) {
-        state.value = groupedDataset
-    }
-
+fun YesterdayChart(chartData: List<ChartData>) {
     // Optionally, show a message if no data
-    if (state.value.isEmpty()) {
+    if (chartData.isEmpty()) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -161,16 +119,10 @@ fun YesterdayChart(datasets: List<Dataset>) {
             Text("No data to display")
         }
     } else {
-//        datasets.associate {
-//            val time = it.dateTime.toLocalDateTimeUtc()
-//            val xValue = ((time.hour * 3600) + (time.minute * 60) + time.second).toDouble()
-//            xValue.toFloat() to "%02d:%02d".format(time.hour, time.minute)
-//        }
-
         VicoBarChart(
             modifier = Modifier
                 .height(230.dp),
-            chartDataCollection = ChartDataCollection(state.value),
+            chartDataCollection = ChartDataCollection(chartData),
             yValueFormatter = { value -> value.formatToAmount() },
 
             xValueFormatter = { value ->
@@ -190,7 +142,9 @@ fun YesterdayChart(datasets: List<Dataset>) {
 @Composable
 fun YesterdayStatArea(
     modifier: Modifier = Modifier,
-    datasets: List<Dataset>
+    datasets: List<Dataset>,
+    chartData: List<ChartData>,
+    stats: YesterdayStats
 ) {
     // Page state
     val pageState = rememberPagerState { 2 }
@@ -248,8 +202,8 @@ fun YesterdayStatArea(
             state = pageState
         ) {
             when (it) {
-                0 -> YesterdayStat(datasets)
-                1 -> YesterdayChart(datasets)
+                0 -> YesterdayStat(stats)
+                1 -> YesterdayChart(chartData)
             }
         }
     }
