@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
+import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
@@ -34,6 +35,7 @@ fun TodayScreen(
     uiState: HomeUiState,
     todayDatasets: List<Dataset>,
     homeViewModel: HomeViewModel,
+    datasetWithAdjust: List<DataAdjust>,
     hasLoadedData: Boolean
 ) {
     val isTransactionListExpended = uiState.onActivateShow
@@ -74,7 +76,9 @@ fun TodayScreen(
                     modifier = Modifier
                         .fillMaxHeight(1f)
                         .fillMaxWidth(0.85f),
-                    viewModel = homeViewModel
+                    uiState = uiState,
+                    viewModel = homeViewModel,
+                    datasetWithAdjust = datasetWithAdjust
                 )
             } else {
                 StatAreaShimmer(

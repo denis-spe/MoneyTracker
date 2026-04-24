@@ -901,7 +901,6 @@ fun AdjustmentDataInputs(
     val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
     val isBottomSheetOpen by remember { mutableStateOf(true) }
     val viewModel = hiltViewModel<HomeViewModel>()
-    viewModel.fetchLiveChangeDataset.collectAsState(emptyList())
     val iconImage = painterResource(adjustmentType.icon)
     val color = colorResource(adjustmentType.color)
     val description = adjustmentType.typeDescription

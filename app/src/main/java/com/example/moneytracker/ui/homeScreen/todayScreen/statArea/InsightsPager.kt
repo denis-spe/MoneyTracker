@@ -488,7 +488,7 @@ fun GoalInsightPager(datasets: List<Dataset>) {
             contentAlignment = Alignment.Center
         ) {
             Insights(
-                label = "Goal",
+                label = "No Goal",
                 firstFinancial = 0.0,
                 secondFinancial = 0.0,
                 colorResId = R.color.Attain,

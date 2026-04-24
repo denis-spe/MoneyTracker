@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.helper.getWeeks
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
@@ -50,16 +51,17 @@ fun CalendarViewSection(
     viewModel: HomeViewModel
 ) {
     val uiState = viewModel.uiState.collectAsState()
+    val dataState by viewModel.screenDataState.collectAsStateWithLifecycle()
     val now = kotlinx.datetime.LocalDate.now()
-    val currentWeek = viewModel.currentWeekState.collectAsState()
+    val currentWeek = dataState.currentWeekDerived
     val fontSizeMonthDay = 13.sp
-    val date = viewModel.currentDateState.collectAsState()
+    val date = dataState.currentDateDerived
 
-    val month = date.value.month.name.title
-    val year = date.value.year.toString()
-    val weekNumber = date.value.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
+    val month = date.month.name.title
+    val year = date.year.toString()
+    val weekNumber = date.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
     val selectedTabIndex = uiState.value.selectedTabIndex
-    var selectedDate by remember { mutableStateOf(date.value) }
+    var selectedDate by remember { mutableStateOf(date) }
     val selectedColor = MoneyTrackerTheme.colors.themeColor
     val contentColor = MoneyTrackerTheme.colors.contentColor
 
@@ -209,10 +211,10 @@ fun CalendarViewSection(
         }
     }
 
-    LaunchedEffect(selectedTabIndex, selectedDate, currentWeek.value) {
+    LaunchedEffect(selectedTabIndex, selectedDate, currentWeek) {
         when (selectedTabIndex) {
             0 -> updateWeek(listOf(selectedDate))
-            1 -> updateWeek(currentWeek.value)
+            1 -> updateWeek(currentWeek)
         }
     }
 }

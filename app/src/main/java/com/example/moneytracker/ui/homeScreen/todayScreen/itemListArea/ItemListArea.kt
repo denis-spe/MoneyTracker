@@ -49,7 +49,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -66,7 +65,6 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
@@ -728,12 +726,10 @@ fun ItemListAreaSort(
 @Composable
 fun ItemListArea(
     modifier: Modifier = Modifier,
+    uiState: HomeUiState,
+    datasetWithAdjust: List<DataAdjust>,
     viewModel: HomeViewModel
 ) {
-    // Sort with date time
-    val datasetWithAdjust by viewModel.sortedTodayState.collectAsStateWithLifecycle()
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
 
     Column(
         modifier = modifier

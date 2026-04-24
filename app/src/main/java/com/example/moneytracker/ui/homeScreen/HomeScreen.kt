@@ -2,10 +2,13 @@
 package com.example.moneytracker.ui.homeScreen
 
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -14,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -48,10 +52,12 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Initialize ViewModels
     val homeViewModel: HomeViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
-    val todayDatasets by homeViewModel.todayDatasetsState.collectAsStateWithLifecycle()
+    val dataState by homeViewModel.screenDataState.collectAsStateWithLifecycle()
+    val todayDatasets = dataState.todayDatasets
+    val datasetWithAdjust = dataState.combinedDataWithAdjust
 
-    val donutChartData by homeViewModel.donutChartDataState.collectAsStateWithLifecycle()
-    val weeklyData by homeViewModel.weeklyDataState.collectAsStateWithLifecycle()
+    val donutChartData = dataState.donutChartData
+    val weeklyData = dataState.weeklyData
 
     // Collect user information from ViewModels
     val uiStates = homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -59,12 +65,12 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val userState = userViewModel.userState.collectAsStateWithLifecycle()
     val snackBarHostState = userViewModel.snackBarHostState.collectAsStateWithLifecycle()
 
-    val yesterdayDatasets by homeViewModel.yesterdayDatasetsState.collectAsStateWithLifecycle()
-    val yesterdayChartData by homeViewModel.yesterdayChartDataState.collectAsStateWithLifecycle()
-    val sortAbleDataAdjust by homeViewModel.sortedYesterdayState.collectAsStateWithLifecycle()
-    val goalDatasets by homeViewModel.goalDatasetsState.collectAsStateWithLifecycle()
-    val adjustmentDatasets by homeViewModel.adjustDatasetsState.collectAsStateWithLifecycle()
-    val yesterdayStats by homeViewModel.yesterdayStatsState.collectAsStateWithLifecycle()
+    val yesterdayDatasets = dataState.yesterdayDatasets
+    val yesterdayChartData = dataState.yesterdayChartData
+    val sortAbleDataAdjust = dataState.sortedYesterdayDatasets
+    val goalDatasets = dataState.goalDatasets
+    val adjustmentDatasets = dataState.adjustDatasets
+    val yesterdayStats = dataState.yesterdayStats
     val scope = rememberCoroutineScope()
     val topBarNavEntries = TopBarNav.entries
     val pagerState = rememberPagerState(initialPage = 1) {
@@ -140,47 +146,61 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             SnackbarHost(hostState = snackBarHostState.value)
         }
     ) { paddingValues ->
-        val hasLoadedData = uiStates.value.datasetState is DatasetState.Success
+        val uiState = uiStates.value
+        val hasLoadedData = uiState.datasetState is DatasetState.Success
 
-        HorizontalPager(
-            state = pagerState,
-            beyondViewportPageCount = 1,
-            key = { it }
-        ) { page ->
-            when (page) {
-                0 -> GoalScreen(
-                    paddingValues,
-                    goalDatasets = goalDatasets,
-                    uiState = uiStates.value,
-                    hasLoadedData = hasLoadedData
-                )
+        if (uiState.datasetState is DatasetState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
+            }
+        } else {
+            HorizontalPager(
+                state = pagerState,
+                beyondViewportPageCount = 1,
+                key = { it }
+            ) { page ->
+                when (page) {
+                    0 -> GoalScreen(
+                        paddingValues,
+                        goalDatasets = goalDatasets,
+                        uiState = uiState,
+                        hasLoadedData = hasLoadedData
 
-                1 -> TodayScreen(
-                    paddingValues,
-                    todayDatasets = todayDatasets,
-                    donutChartDataCollection = donutChartData,
-                    uiState = uiStates.value,
-                    homeViewModel = homeViewModel,
-                    hasLoadedData = hasLoadedData
-                )
+                    )
 
-                2 -> YesterdayScreen(
-                    paddingValues,
-                    uiState = uiStates.value,
-                    sortAbleDataAdjust = sortAbleDataAdjust,
-                    yesterdayDatasets = yesterdayDatasets,
-                    yesterdayChartData = yesterdayChartData,
-                    hasLoadedData = hasLoadedData,
-                    yesterdayStats = yesterdayStats
-                )
+                    1 -> TodayScreen(
+                        paddingValues,
+                        todayDatasets = todayDatasets,
+                        donutChartDataCollection = donutChartData,
+                        uiState = uiState,
+                        homeViewModel = homeViewModel,
+                        hasLoadedData = hasLoadedData,
+                        datasetWithAdjust = datasetWithAdjust
+                    )
 
-                3 -> AllScreen(
-                    paddingValues,
-                    viewModel = homeViewModel,
-                    weeklyData = weeklyData,
-                    uiState = uiStates.value,
-                    hasLoadedData = hasLoadedData
-                )
+                    2 -> YesterdayScreen(
+                        paddingValues,
+                        uiState = uiState,
+                        sortAbleDataAdjust = sortAbleDataAdjust,
+                        yesterdayDatasets = yesterdayDatasets,
+                        yesterdayChartData = yesterdayChartData,
+                        yesterdayStats = yesterdayStats,
+                        hasLoadedData = hasLoadedData
+                    )
+
+                    3 -> AllScreen(
+                        paddingValues,
+                        viewModel = homeViewModel,
+                        weeklyData = weeklyData,
+                        uiState = uiState,
+                        hasLoadedData = hasLoadedData
+                    )
+                }
             }
         }
 

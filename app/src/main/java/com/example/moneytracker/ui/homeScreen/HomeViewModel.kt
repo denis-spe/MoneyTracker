@@ -11,7 +11,6 @@ import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
-import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
 import com.example.moneytracker.ui.usecase.DatasetOperationsUseCase
 import com.example.moneytracker.ui.usecase.GetAdjustDatasetUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentDateUseCase
@@ -30,19 +29,21 @@ import com.example.moneytracker.ui.usecase.ScheduleAlarmUseCase
 import com.example.moneytracker.ui.usecase.SortTodayDataAdjustUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
-import network.chaintech.kmp_date_time_picker.utils.now
 import javax.inject.Inject
 
 @HiltViewModel
@@ -67,162 +68,102 @@ class HomeViewModel @Inject constructor(
     @ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    /*******************
-     * UI STATE
-     *******************/
+    private companion object {
+        private const val STATE_TIMEOUT = 5_000L
+    }
+
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
+
+    private val _dataState = MutableStateFlow(DataState())
+    val dataState = _dataState.asStateFlow()
+
+    /**
+     * Collect this in Compose.
+     * This is the only flow the UI should need.
+     */
+    val screenDataState: StateFlow<DataState> = dataState
+        .map { state ->
+            val datasets = state.datasets
+
+            val todayDatasets = getTodayDatasetsUseCase(datasets)
+            val yesterdayDatasets = getYesterdayDatasetsUseCase(datasets)
+            val goalDatasets = datasets.filter { it.dataType == DataType.GOAL }
+            val adjustDatasets = getAdjustDatasetUseCase(datasets)
+
+            val weeklyData = getWeeklyDataUseCase(datasets, state.dates)
+            val currentWeekDerived = getCurrentWeekUseCase(state.currentWeekDerived)
+            val currentDateDerived = getCurrentDateUseCase(
+                state.currentWeekDerived, state.currentDateDerived
+            )
+
+            val sortedYesterday = getYesterdayDataAdjustUseCase(datasets)
+
+            val donutChartData = getTodayChartDonutDataUseCase(todayDatasets, context)
+            val yesterdayChartData = getYesterdayChartDataUseCase(yesterdayDatasets, context)
+            val yesterdayStats = getYesterdayStatsUseCase(yesterdayDatasets)
+            val combinedDataWithAdjust = sortTodayDataAdjustUseCase(
+                datasets = datasets,
+                timeSorting = state.timeSorting,
+                categorySorting = state.categorySorting,
+                paymentSorting = state.paymentSorting,
+                alphabeticalOrder = state.alphabeticalOrder,
+                amountSorting = state.amountSorting,
+                take = null
+            )
+
+            state.copy(
+                goalDatasets = goalDatasets,
+                adjustDatasets = adjustDatasets,
+                todayDatasets = todayDatasets,
+                yesterdayDatasets = yesterdayDatasets,
+                weeklyData = weeklyData,
+                sortedYesterdayDatasets = sortedYesterday,
+                donutChartData = donutChartData,
+                yesterdayChartData = yesterdayChartData,
+                yesterdayStats = yesterdayStats,
+                currentWeekDerived = currentWeekDerived,
+                currentDateDerived = currentDateDerived,
+                combinedDataWithAdjust = combinedDataWithAdjust
+            )
+        }
+        .distinctUntilChanged()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
+            initialValue = DataState()
+        )
 
     init {
         observe()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private fun observe() {
-        viewModelScope.launch {
-            observeUserDataUseCase(
-                accountService.userState.map { it?.uid }
-            ).collect { homeData ->
-                _uiState.update {
-                    it.copy(
+        accountService.userState
+            .map { it?.uid }
+            .distinctUntilChanged()
+            .flatMapLatest { uid ->
+                observeUserDataUseCase(flowOf(uid))
+            }
+            .onEach { homeData ->
+                _uiState.update { current ->
+                    current.copy(
                         datasets = homeData.datasets,
                         info = homeData.info,
                         error = homeData.error,
                         datasetState = homeData.datasetState
                     )
                 }
+                _dataState.update { current ->
+                    current.copy(
+                        datasets = homeData.datasets
+                    )
+                }
             }
-        }
+            .launchIn(viewModelScope)
     }
 
-    /*******************
-     * BASE FLOWS (Single Source of Truth)
-     *******************/
-    private val datasetsFlow = uiState
-        .map { it.datasets }
-        .distinctUntilChanged()
-        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
-
-    private val datesFlow = uiState
-        .map { it.dates }
-        .distinctUntilChanged()
-        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
-
-    private val currentWeekFlow = uiState
-        .map { it.currentWeek }
-        .distinctUntilChanged()
-        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
-
-    private val currentDateFlow = uiState
-        .map { it.date to it.currentWeek }
-        .distinctUntilChanged()
-
-    private val sortingFlow = uiState
-        .map {
-            SortingState(
-                time = it.timeSorting,
-                category = it.categorySorting,
-                payment = it.paymentSorting,
-                alphabetical = it.alphabeticalOrder,
-                amount = it.amountSorting
-            )
-        }
-        .distinctUntilChanged()
-        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), replay = 1)
-
-    /*******************
-     * DERIVED FLOWS (Business Logic)
-     *******************/
-    val goalDatasetsFlow = datasetsFlow
-        .map { it.filter { d -> d.dataType == DataType.GOAL } }
-
-    val adjustDatasetsFlow = datasetsFlow
-        .map { getAdjustDatasetUseCase(it) }
-
-    val todayDatasetsFlow = datasetsFlow
-        .map { getTodayDatasetsUseCase(it) }
-
-    val yesterdayDatasetsFlow = datasetsFlow
-        .map { getYesterdayDatasetsUseCase(it) }
-
-    val weeklyDataFlow = combine(datasetsFlow, datesFlow) { datasets, dates ->
-        getWeeklyDataUseCase(datasets, dates)
-    }
-
-    val currentWeekDerivedFlow = currentWeekFlow
-        .map { getCurrentWeekUseCase(it) }
-
-    val currentDateDerivedFlow = currentDateFlow
-        .map { (date, week) ->
-            getCurrentDateUseCase(week, date)
-        }
-
-    val sortedTodayFlow = combine(datasetsFlow, sortingFlow) { datasets, sorting ->
-        sortTodayDataAdjustUseCase(
-            datasets,
-            sorting.time,
-            sorting.category,
-            sorting.payment,
-            sorting.alphabetical,
-            sorting.amount,
-            null
-        )
-    }
-
-    val sortedYesterdayFlow = datasetsFlow
-        .map { getYesterdayDataAdjustUseCase(it) }
-
-    val donutChartDataFlow = todayDatasetsFlow
-        .map { getTodayChartDonutDataUseCase(it, context) }
-
-    val yesterdayChartDataFlow = yesterdayDatasetsFlow
-        .map { getYesterdayChartDataUseCase(it, context) }
-
-    val yesterdayStatsFlow = yesterdayDatasetsFlow
-        .map { getYesterdayStatsUseCase(it) }
-
-    /*******************
-     * UI STATE FLOWS (ONLY what UI collects)
-     *******************/
-    val todayDatasetsState = todayDatasetsFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val yesterdayDatasetsState = yesterdayDatasetsFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val goalDatasetsState = goalDatasetsFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val adjustDatasetsState = adjustDatasetsFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val weeklyDataState = weeklyDataFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val sortedTodayState = sortedTodayFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val sortedYesterdayState = sortedYesterdayFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val donutChartDataState = donutChartDataFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val yesterdayChartDataState = yesterdayChartDataFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val yesterdayStatsState = yesterdayStatsFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), YesterdayStats())
-
-    val currentWeekState = currentWeekDerivedFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
-
-    val currentDateState = currentDateDerivedFlow
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LocalDate.now())
-
-
-    /*******************
-     * OPERATIONS
-     *******************/
     fun addData(dataset: Dataset) = launchWithUid {
         datasetOperationsUseCase.addData(it, dataset)
     }
@@ -261,9 +202,6 @@ class HomeViewModel @Inject constructor(
         routineWorker(uid, dataset.id, dataset.routine.triggerMillis, true)
     }
 
-    /*******************
-     * UI STATE MUTATIONS
-     *******************/
     fun updateTopTitle(nav: TopBarNav) {
         _uiState.update { it.copy(topTitle = nav) }
     }
@@ -272,11 +210,13 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(selectedTabIndex = index) }
     }
 
-    fun updateCurrentWeek(dates: List<LocalDate>) =
-        _uiState.update { it.copy(currentWeek = dates) }
+    fun updateCurrentWeek(dates: List<LocalDate>) {
+        _dataState.update { it.copy(currentWeekDerived = dates) }
+    }
 
-    fun updateWeekDays(dates: List<LocalDate>) =
-        _uiState.update { it.copy(dates = dates) }
+    fun updateWeekDays(dates: List<LocalDate>) {
+        _dataState.update { it.copy(dates = dates) }
+    }
 
     fun updateSorting(
         time: SortType? = null,
@@ -285,7 +225,7 @@ class HomeViewModel @Inject constructor(
         payment: PaymentMethod? = null,
         alpha: SortType? = null
     ) {
-        _uiState.update {
+        _dataState.update {
             it.copy(
                 timeSorting = time ?: it.timeSorting,
                 categorySorting = category ?: it.categorySorting,
@@ -302,20 +242,25 @@ class HomeViewModel @Inject constructor(
     fun updatePaymentSorting(method: PaymentMethod?) = updateSorting(payment = method)
     fun updateAlphabeticalOrder(type: SortType) = updateSorting(alpha = type)
 
-    fun updateOnDatasetModelBottomSheetShow(show: Boolean) =
+    fun updateOnDatasetModelBottomSheetShow(show: Boolean) {
         _uiState.update { it.copy(isDatasetBottomSheetOpen = show) }
+    }
 
-    fun updateOnAdjustModelBottomSheetShow(show: Boolean) =
+    fun updateOnAdjustModelBottomSheetShow(show: Boolean) {
         _uiState.update { it.copy(isAdjustmentBottomSheetOpen = show) }
+    }
 
-    fun updateIsBottomSheetContentLoading(loading: Boolean) =
+    fun updateIsBottomSheetContentLoading(loading: Boolean) {
         _uiState.update { it.copy(isBottomSheetContentLoading = loading) }
+    }
 
-    fun updateOnFilterClick(show: Boolean) =
+    fun updateOnFilterClick(show: Boolean) {
         _uiState.update { it.copy(onFilterClick = show) }
+    }
 
-    fun updateOnActivateShow(show: Boolean) =
+    fun updateOnActivateShow(show: Boolean) {
         _uiState.update { it.copy(onActivateShow = show) }
+    }
 
     fun beginTheWork(dataset: Dataset) = beginWork(dataset)
 
@@ -326,8 +271,6 @@ class HomeViewModel @Inject constructor(
 
     fun removeAdjustmentDataset(datasetId: String, adj: Adjustment) =
         removeAdjustment(datasetId, adj)
-
-    val fetchLiveChangeDataset: Flow<List<Dataset>> = datasetsFlow
 
     fun getLenOfActivates(date: LocalDate): Int =
         getLenOfActivatesUseCase(uiState.value.datasets, date)
