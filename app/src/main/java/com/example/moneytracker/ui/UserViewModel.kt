@@ -31,6 +31,9 @@ class UserViewModel @Inject constructor(
     private val _navigationEvents = MutableSharedFlow<Unit>()
     val navigationEvents = _navigationEvents.asSharedFlow()
 
+    val hasUser: Boolean
+        get() = accountService.hasUser
+
     fun handleLogout() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }

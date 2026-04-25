@@ -1,22 +1,29 @@
 // Bless be the Name of the Lord
 package com.example.moneytracker.ui.homeScreen
 
-import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -25,6 +32,7 @@ import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.ui.UserViewModel
+import com.example.moneytracker.ui.components.LoadingScreen
 import com.example.moneytracker.ui.homeScreen.allScreen.AllScreen
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
@@ -42,6 +50,30 @@ import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
+
+
+@Composable
+fun TopAppBar() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text("G")
+        Row {
+            Text("Goal")
+            Text("Today")
+            Text("Yesterday")
+            Text("All")
+        }
+        IconButton(
+            onClick = { /*TODO*/ }
+        ) {
+            Icons.Default.Search
+        }
+    }
+}
+
 
 @Suppress("UNUSED_PARAMETER")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -81,124 +113,134 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
 
     LaunchedEffect(Unit) {
         userViewModel.navigationEvents.collect {
-            onNavigate?.navigate(StartUpScreenRouter)
+            onNavigate?.navigate(StartUpScreenRouter) {
+                popUpTo(0) { inclusive = true }
+            }
         }
     }
 
-    if (isLoading) {
-        LoadingScreen()
+    if (isLoading || userUiStates.value.isLoading) {
+        LoadingScreen(
+            user = userState.value != null,
+            navController = onNavigate,
+            currentUserId = userId
+        )
     } else {
-        Scaffold(
-            modifier = Modifier
-                .fillMaxSize()
-                .testTag(stringResource(R.string.homeScreenId))
-                .pointerInput(Unit) {
-                    detectTapGestures(
-                        onTap = {
-                            userViewModel.updateIsUserDropdownVisible(false)
-                        }
-                    )
-                }
-                .testTag(stringResource(R.string.homeScreenId)),
-            topBar = {
-                CenterAlignedTopAppBar(
-                    colors = TopAppBarDefaults.topAppBarColors().copy(
-                        titleContentColor = Color.White,
-                    ),
-                    title = {
-                        TopAppTitle(
-                            state = pagerState,
-                            contentColor = customColors.contentColor,
-                            currentPageColor = customColors.currentPage,
-                            backgroundColor = customColors.customBackground,
-                            function = {
+        Box(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Scaffold(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .testTag(stringResource(R.string.homeScreenId))
+                    .testTag(stringResource(R.string.homeScreenId)),
+                topBar = {
+                    CenterAlignedTopAppBar(
+                        colors = TopAppBarDefaults.topAppBarColors().copy(
+                            titleContentColor = Color.White,
+                        ),
+                        title = {
+                            TopAppTitle(
+                                state = pagerState,
+                                contentColor = customColors.contentColor,
+                                currentPageColor = customColors.currentPage,
+                                backgroundColor = customColors.customBackground,
+                                function = {
 
-                                scope.launch {
-                                    pagerState.animateScrollToPage(topBarNavEntries.indexOf(it))
+                                    scope.launch {
+                                        pagerState.animateScrollToPage(topBarNavEntries.indexOf(it))
+                                    }
                                 }
-                            }
-                        )
-                    },
-                    navigationIcon = {
-                        TopAppNav(
-                            userState,
-                            contentColor = customColors.contentColor,
-                            userColor = uiStates.value.info.color,
-                        ) {
-                            userViewModel.updateIsUserDropdownVisible(
-                                !userUiStates.value.isUserDropdownVisible
                             )
+                        },
+                        navigationIcon = {
+                            TopAppNav(
+                                userState,
+                                contentColor = customColors.contentColor,
+                                userColor = uiStates.value.info.color,
+                            ) {
+                                userViewModel.updateIsUserDropdownVisible(
+                                    !userUiStates.value.isUserDropdownVisible
+                                )
+                            }
+                        },
+                        actions = {
+                            TopAppAction()
                         }
-                    },
-                    actions = {
-                        TopAppAction()
-                    }
-                )
-            },
-            floatingActionButton = {
-                DataAdditionFloatingButton(
-                    uiState = uiStates.value,
-                    isLoading = isLoading
-                )
-            },
-            snackbarHost = {
-                SnackbarHost(hostState = snackBarHostState.value)
-            }
-        ) { paddingValues ->
-            val uiState = uiStates.value
-
-
-            HorizontalPager(
-                state = pagerState,
-                beyondViewportPageCount = 1,
-                key = { it }
-            ) { page ->
-                when (page) {
-                    0 -> GoalScreen(
-                        paddingValues,
-                        goalDatasets = goalDatasets,
-                        uiState = uiState,
-                        isGoalDataLoading = uiState.isGoalDataLoading
                     )
-
-                    1 -> TodayScreen(
-                        paddingValues,
-                        todayDatasets = todayDatasets,
-                        donutChartDataCollection = donutChartData,
-                        uiState = uiState,
-                        homeViewModel = homeViewModel,
-                        isTodayDataLoading = uiState.isTodayDataLoading,
-                        isTodayChartDataLoading = uiState.isTodayChartDataLoading,
-                        isSortedTodayLoading = uiState.isSortedTodayLoading,
-                        datasetWithAdjust = datasetWithAdjust
+                },
+                floatingActionButton = {
+                    DataAdditionFloatingButton(
+                        uiState = uiStates.value,
+                        isLoading = isLoading
                     )
-
-                    2 -> YesterdayScreen(
-                        paddingValues,
-                        uiState = uiState,
-                        sortAbleDataAdjust = sortAbleDataAdjust,
-                        yesterdayDatasets = yesterdayDatasets,
-                        yesterdayChartData = yesterdayChartData,
-                        yesterdayStats = yesterdayStats,
-                        isYesterdayDataLoading = uiState.isYesterdayDataLoading,
-                        isYesterdayChartDataLoading = uiState.isYesterdayChartDataLoading,
-                        isYesterdayStatsLoading = uiState.isYesterdayStatsLoading,
-                        isSortedYesterdayLoading = uiState.isSortedYesterdayLoading
-                    )
-
-                    3 -> AllScreen(
-                        paddingValues,
-                        viewModel = homeViewModel,
-                        weeklyData = weeklyData,
-                        uiState = uiState,
-                        isWeeklyDataLoading = uiState.isWeeklyDataLoading
-                    )
+                },
+                snackbarHost = {
+                    SnackbarHost(hostState = snackBarHostState.value)
                 }
+            ) { paddingValues ->
+                val uiState = uiStates.value
+
+
+                HorizontalPager(
+                    state = pagerState,
+                    beyondViewportPageCount = 1,
+                    key = { it }
+                ) { page ->
+                    when (page) {
+                        0 -> GoalScreen(
+                            paddingValues,
+                            goalDatasets = goalDatasets,
+                            uiState = uiState,
+                            isGoalDataLoading = uiState.isGoalDataLoading
+                        )
+
+                        1 -> TodayScreen(
+                            paddingValues,
+                            todayDatasets = todayDatasets,
+                            donutChartDataCollection = donutChartData,
+                            uiState = uiState,
+                            homeViewModel = homeViewModel,
+                            isTodayDataLoading = uiState.isTodayDataLoading,
+                            isTodayChartDataLoading = uiState.isTodayChartDataLoading,
+                            isSortedTodayLoading = uiState.isSortedTodayLoading,
+                            datasetWithAdjust = datasetWithAdjust
+                        )
+
+                        2 -> YesterdayScreen(
+                            paddingValues,
+                            uiState = uiState,
+                            sortAbleDataAdjust = sortAbleDataAdjust,
+                            yesterdayDatasets = yesterdayDatasets,
+                            yesterdayChartData = yesterdayChartData,
+                            yesterdayStats = yesterdayStats,
+                            isYesterdayDataLoading = uiState.isYesterdayDataLoading,
+                            isYesterdayChartDataLoading = uiState.isYesterdayChartDataLoading,
+                            isYesterdayStatsLoading = uiState.isYesterdayStatsLoading,
+                            isSortedYesterdayLoading = uiState.isSortedYesterdayLoading
+                        )
+
+                        3 -> AllScreen(
+                            paddingValues,
+                            viewModel = homeViewModel,
+                            weeklyData = weeklyData,
+                            uiState = uiState,
+                            isWeeklyDataLoading = uiState.isWeeklyDataLoading
+                        )
+                    }
+                }
+                // Modal bottom sheet
+                DataAdditionModelDrawer(
+                    viewModel = homeViewModel,
+                    userViewModel = userViewModel,
+                    uiState = uiStates.value,
+                    datasets = adjustmentDatasets
+                )
             }
 
             // Drop down user profile
             DropDownUserProfile(
-                paddingValues,
+                modifier = Modifier.align(Alignment.TopCenter),
                 contentColor = customColors.contentColor,
                 backgroundColor = customColors.customBackground.copy(alpha = 0.9f),
                 visible = userUiStates.value.isUserDropdownVisible,
@@ -208,17 +250,13 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     onNavigate?.navigate(SettingsScreenRouter)
                     userViewModel.updateIsUserDropdownVisible(false)
                 },
+                onDismiss = {
+                    userViewModel.updateIsUserDropdownVisible(false)
+                }
             ) {
                 userViewModel.handleLogout()
             }
 
-            // Modal bottom sheet
-            DataAdditionModelDrawer(
-                viewModel = homeViewModel,
-                userViewModel = userViewModel,
-                uiState = uiStates.value,
-                datasets = adjustmentDatasets
-            )
         }
     }
 }

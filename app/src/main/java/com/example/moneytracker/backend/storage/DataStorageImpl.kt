@@ -70,10 +70,15 @@ class DataStorageImpl(
             .collection("datasets")
 
         val listenerRegistration = datasetsRef.addSnapshotListener { snapshot, error ->
-            if (error != null && snapshot == null) {
+            if (error != null) {
                 Log.e("DataStorageImpl", "getWholeDatasets listener error", error)
                 onFailure(error)
-                close(error)
+                if (error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                    // During logout, this error is expected. Close gracefully.
+                    close()
+                } else {
+                    close(error)
+                }
                 return@addSnapshotListener
             }
 
@@ -104,9 +109,14 @@ class DataStorageImpl(
             .document(userId)
 
         val listenerRegistration = documentRef.addSnapshotListener { snapshot, error ->
-            if (error != null && snapshot == null) {
+            if (error != null) {
                 Log.e("DataStorageImpl", "getInfo listener error", error)
-                close(error) // Close the flow with an exception
+                if (error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                    // During logout, this error is expected. Close gracefully.
+                    close()
+                } else {
+                    close(error)
+                }
                 return@addSnapshotListener
             }
 
