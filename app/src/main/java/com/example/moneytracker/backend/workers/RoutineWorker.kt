@@ -70,10 +70,11 @@ class RoutineWorker @AssistedInject constructor(
 
 
                 // Complete the current routine: clear adjustment list and add status
+                val now = Timestamp.now()
                 dataStorage.completeRoutine(
                     userId = userId,
                     datasetId = datasetId,
-                    newDateTime = Timestamp.now(),
+                    newDateTime = now,
                     nextDeadline = nextDeadline
                 )
 

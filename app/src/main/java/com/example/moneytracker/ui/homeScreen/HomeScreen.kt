@@ -2,13 +2,10 @@
 package com.example.moneytracker.ui.homeScreen
 
 import androidx.compose.foundation.gestures.detectTapGestures
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
@@ -17,7 +14,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -44,6 +40,8 @@ import com.example.moneytracker.ui.screenManager.SettingsScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
+import network.chaintech.kmp_date_time_picker.utils.now
 
 @Suppress("UNUSED_PARAMETER")
 @OptIn(ExperimentalMaterial3Api::class)
@@ -79,6 +77,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
 
     val customColors = MoneyTrackerTheme.colors
     val isLoading = uiStates.value.datasetState is DatasetState.Loading
+    LocalDateTime.now().year
 
     LaunchedEffect(Unit) {
         userViewModel.navigationEvents.collect {
@@ -86,76 +85,69 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         }
     }
 
-    Scaffold(
-        modifier = Modifier
-            .fillMaxSize()
-            .testTag(stringResource(R.string.homeScreenId))
-            .pointerInput(Unit) {
-                detectTapGestures(
-                    onTap = {
-                        userViewModel.updateIsUserDropdownVisible(false)
-                    }
-                )
-            }
-            .testTag(stringResource(R.string.homeScreenId)),
-        topBar = {
-            CenterAlignedTopAppBar(
-                colors = TopAppBarDefaults.topAppBarColors().copy(
-                    titleContentColor = Color.White,
-                ),
-                title = {
-                    TopAppTitle(
-                        state = pagerState,
-                        contentColor = customColors.contentColor,
-                        currentPageColor = customColors.currentPage,
-                        backgroundColor = customColors.customBackground,
-                        isLoading = isLoading,
-                        function = {
-                            scope.launch {
-                                pagerState.animateScrollToPage(topBarNavEntries.indexOf(it))
-                            }
+    if (isLoading) {
+        LoadingScreen()
+    } else {
+        Scaffold(
+            modifier = Modifier
+                .fillMaxSize()
+                .testTag(stringResource(R.string.homeScreenId))
+                .pointerInput(Unit) {
+                    detectTapGestures(
+                        onTap = {
+                            userViewModel.updateIsUserDropdownVisible(false)
                         }
                     )
-                },
-                navigationIcon = {
-                    TopAppNav(
-                        userState,
-                        contentColor = customColors.contentColor,
-                        userColor = uiStates.value.info.color,
-                        isLoading = isLoading
-                    ) {
-                        userViewModel.updateIsUserDropdownVisible(
-                            !userUiStates.value.isUserDropdownVisible
-                        )
-                    }
-                },
-                actions = {
-                    TopAppAction(isLoading = isLoading)
                 }
-            )
-        },
-        floatingActionButton = {
-            DataAdditionFloatingButton(
-                uiState = uiStates.value,
-                isLoading = isLoading
-            )
-        },
-        snackbarHost = {
-            SnackbarHost(hostState = snackBarHostState.value)
-        }
-    ) { paddingValues ->
-        val uiState = uiStates.value
+                .testTag(stringResource(R.string.homeScreenId)),
+            topBar = {
+                CenterAlignedTopAppBar(
+                    colors = TopAppBarDefaults.topAppBarColors().copy(
+                        titleContentColor = Color.White,
+                    ),
+                    title = {
+                        TopAppTitle(
+                            state = pagerState,
+                            contentColor = customColors.contentColor,
+                            currentPageColor = customColors.currentPage,
+                            backgroundColor = customColors.customBackground,
+                            function = {
 
-        if (uiState.datasetState is DatasetState.Loading) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                CircularProgressIndicator()
+                                scope.launch {
+                                    pagerState.animateScrollToPage(topBarNavEntries.indexOf(it))
+                                }
+                            }
+                        )
+                    },
+                    navigationIcon = {
+                        TopAppNav(
+                            userState,
+                            contentColor = customColors.contentColor,
+                            userColor = uiStates.value.info.color,
+                        ) {
+                            userViewModel.updateIsUserDropdownVisible(
+                                !userUiStates.value.isUserDropdownVisible
+                            )
+                        }
+                    },
+                    actions = {
+                        TopAppAction()
+                    }
+                )
+            },
+            floatingActionButton = {
+                DataAdditionFloatingButton(
+                    uiState = uiStates.value,
+                    isLoading = isLoading
+                )
+            },
+            snackbarHost = {
+                SnackbarHost(hostState = snackBarHostState.value)
             }
-        } else {
+        ) { paddingValues ->
+            val uiState = uiStates.value
+
+
             HorizontalPager(
                 state = pagerState,
                 beyondViewportPageCount = 1,
@@ -203,30 +195,30 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     )
                 }
             }
-        }
 
-        // Drop down user profile
-        DropDownUserProfile(
-            paddingValues,
-            contentColor = customColors.contentColor,
-            backgroundColor = customColors.customBackground.copy(alpha = 0.9f),
-            visible = userUiStates.value.isUserDropdownVisible,
-            userState = userState,
-            isLoading = userUiStates.value.isLoading,
-            settingsClick = {
-                onNavigate?.navigate(SettingsScreenRouter)
-                userViewModel.updateIsUserDropdownVisible(false)
-            },
-        ) {
-            userViewModel.handleLogout()
-        }
+            // Drop down user profile
+            DropDownUserProfile(
+                paddingValues,
+                contentColor = customColors.contentColor,
+                backgroundColor = customColors.customBackground.copy(alpha = 0.9f),
+                visible = userUiStates.value.isUserDropdownVisible,
+                userState = userState,
+                isLoading = userUiStates.value.isLoading,
+                settingsClick = {
+                    onNavigate?.navigate(SettingsScreenRouter)
+                    userViewModel.updateIsUserDropdownVisible(false)
+                },
+            ) {
+                userViewModel.handleLogout()
+            }
 
-        // Modal bottom sheet
-        DataAdditionModelDrawer(
-            viewModel = homeViewModel,
-            userViewModel = userViewModel,
-            uiState = uiStates.value,
-            datasets = adjustmentDatasets
-        )
+            // Modal bottom sheet
+            DataAdditionModelDrawer(
+                viewModel = homeViewModel,
+                userViewModel = userViewModel,
+                uiState = uiStates.value,
+                datasets = adjustmentDatasets
+            )
+        }
     }
 }

@@ -5,8 +5,6 @@ import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
-import com.example.moneytracker.helper.castToMutableMap
-import com.example.moneytracker.helper.routineToMap
 import com.example.moneytracker.helper.statusHistoryToMap
 import com.example.moneytracker.helper.toDataset
 import com.example.moneytracker.helper.toMap
@@ -300,13 +298,10 @@ class DataStorageImpl(
             } catch (e: Exception) {
                 docRef.get(Source.CACHE).await()
             }
-            val dataset = snapshot.data?.toDataset() ?: return
+            snapshot.data?.toDataset() ?: return
 
-            // Update routine field
-            val routineMap = castToMutableMap(mapOf("routine" to dataset.routine))
-            routineMap["stopRoutine"] = true
-
-            docRef.update("routine", routineMap)
+            // Update stopRoutine field in routineData
+            docRef.update("routineData.stopRoutine", true)
             Log.d("DataStorageImpl", "Stopped routine for dataset $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to stop routine", e)
@@ -377,15 +372,11 @@ class DataStorageImpl(
                 .document(statusId)
                 .set(statusHistory.statusHistoryToMap)
 
-            // Update dataset fields
-            val routineMap = dataset.routine.copy(
-                startDateTime = newDateTime,
-                deadlineDateTime = nextDeadline
-            )
-
+            // Update dataset fields and reset adjustments
             docRef.update(
                 mapOf(
-                    "routine" to routineMap.routineToMap,
+                    "routineData.startDateTime" to newDateTime,
+                    "routineData.deadlineDateTime" to nextDeadline,
                     "adjustment" to emptyList<Map<String, Any?>>()
                 )
             )

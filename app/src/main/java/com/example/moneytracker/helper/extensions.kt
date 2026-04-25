@@ -342,7 +342,8 @@ val RoutineData.routineToMap: Map<String, Any>
         "routineCount" to routineCount,
         "stopRoutine" to stopRoutine,
         "startDateTime" to startDateTime,
-        "deadlineDateTime" to deadlineDateTime
+        "deadlineDateTime" to deadlineDateTime,
+        "triggerMillis" to triggerMillis
     )
 
 val StatusHistory.statusHistoryToMap: Map<String, Any>

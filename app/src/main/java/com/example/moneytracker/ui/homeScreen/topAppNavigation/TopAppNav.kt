@@ -20,7 +20,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.helper.shimmerEffect
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
@@ -28,7 +27,6 @@ fun TopAppNav(
     userState: State<FirebaseUser?>,
     userColor: Int,
     contentColor: Color,
-    isLoading: Boolean = false,
     onClick: () -> Unit = {}
 ) {
     val userName = userState.value?.displayName
@@ -39,27 +37,17 @@ fun TopAppNav(
             .width(50.dp)
             .height(50.dp)
             .padding(5.dp)
-            .then(
-                if (isLoading) {
-                    Modifier
-                        .shimmerEffect(shape = RoundedCornerShape(100), size = 40.dp)
-                } else {
-                    Modifier
-                        .border(4.dp, contentColor.copy(0.5f), RoundedCornerShape(100))
-                        .clip(RoundedCornerShape(100))
-                        .background(Color(userColor))
-                        .clickable(onClick = onClick)
-                }
-            ),
+            .border(4.dp, contentColor.copy(0.5f), RoundedCornerShape(100))
+            .clip(RoundedCornerShape(100))
+            .background(Color(userColor))
+            .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        if (!isLoading) {
-            if (!userName.isNullOrEmpty())
-                Text(userName[0].toString(), color = contentColor)
-            else {
-                Text("G", color = contentColor)
-            }
+        if (!userName.isNullOrEmpty())
+            Text(userName[0].toString(), color = contentColor)
+        else {
+            Text("G", color = contentColor)
         }
     }
 }
