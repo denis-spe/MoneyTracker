@@ -51,11 +51,10 @@ fun CalendarViewSection(
     viewModel: HomeViewModel
 ) {
     val uiState = viewModel.uiState.collectAsState()
-    val dataState by viewModel.screenDataState.collectAsStateWithLifecycle()
     val now = kotlinx.datetime.LocalDate.now()
-    val currentWeek = dataState.currentWeekDerived
+    val currentWeek by viewModel.currentWeekDerived.collectAsStateWithLifecycle()
     val fontSizeMonthDay = 13.sp
-    val date = dataState.currentDateDerived
+    val date by viewModel.currentDateDerived.collectAsStateWithLifecycle()
 
     val month = date.month.name.title
     val year = date.year.toString()

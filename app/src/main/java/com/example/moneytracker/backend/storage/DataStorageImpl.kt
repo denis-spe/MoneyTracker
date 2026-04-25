@@ -11,8 +11,10 @@ import com.example.moneytracker.helper.statusHistoryToMap
 import com.example.moneytracker.helper.toDataset
 import com.example.moneytracker.helper.toMap
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -24,6 +26,41 @@ import kotlin.random.Random
 class DataStorageImpl(
     override val db: FirebaseFirestore
 ) : DataStorage {
+
+    override suspend fun filterDatasets(
+        userId: String,
+        filter: Filter,
+        orderBy: String?,
+        orderDirection: Query.Direction?
+    ): List<Dataset> {
+        return try {
+            var query: Query = db.collection(COLLECTION_NAME)
+                .document(userId)
+                .collection("datasets")
+                .where(filter)
+
+            if (orderBy != null && orderDirection != null) {
+                query = query.orderBy(orderBy, orderDirection)
+            }
+
+            val snapshot = query.get().await()
+
+            snapshot.documents.mapNotNull { doc ->
+                runCatching { doc.data?.toDataset() }
+                    .onFailure {
+                        Log.e(
+                            "DataStorageImpl",
+                            "Failed to parse dataset item during filtering",
+                            it
+                        )
+                    }
+                    .getOrNull()
+            }
+        } catch (e: Exception) {
+            Log.e("DataStorageImpl", "Error filtering datasets", e)
+            emptyList()
+        }
+    }
 
     override suspend fun getWholeDatasets(
         userId: String,

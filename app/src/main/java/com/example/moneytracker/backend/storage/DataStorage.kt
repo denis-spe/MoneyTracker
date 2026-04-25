@@ -1,7 +1,9 @@
 package com.example.moneytracker.backend.storage
 
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.flow.Flow
 
 interface DataStorage {
@@ -140,4 +142,19 @@ interface DataStorage {
         newDateTime: Timestamp,
         nextDeadline: Timestamp
     )
+
+    /**
+     * Filter datasets based on the provided filter criteria.
+     * @param userId the user id
+     * @param filter the filter criteria to apply
+     * @param orderBy the field to order the results by (optional)
+     * @param orderDirection the direction to order the results (optional)
+     * @return a list of datasets that match the filter criteria
+     */
+    suspend fun filterDatasets(
+        userId: String,
+        filter: Filter,
+        orderBy: String? = null,
+        orderDirection: Query.Direction? = null
+    ): List<Dataset>
 }

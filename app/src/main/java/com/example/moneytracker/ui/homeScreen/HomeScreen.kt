@@ -52,12 +52,18 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     // Initialize ViewModels
     val homeViewModel: HomeViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
-    val dataState by homeViewModel.screenDataState.collectAsStateWithLifecycle()
-    val todayDatasets = dataState.todayDatasets
-    val datasetWithAdjust = dataState.combinedDataWithAdjust
 
-    val donutChartData = dataState.donutChartData
-    val weeklyData = dataState.weeklyData
+    val todayDatasets by homeViewModel.todayDataset.collectAsStateWithLifecycle()
+    val datasetWithAdjust by homeViewModel.sortedToday.collectAsStateWithLifecycle()
+    val donutChartData by homeViewModel.donutChartData.collectAsStateWithLifecycle()
+    val weeklyData by homeViewModel.weeklyData.collectAsStateWithLifecycle()
+
+    val yesterdayDatasets by homeViewModel.yesterdayDataset.collectAsStateWithLifecycle()
+    val yesterdayChartData by homeViewModel.yesterdayChartData.collectAsStateWithLifecycle()
+    val sortAbleDataAdjust by homeViewModel.sortedYesterday.collectAsStateWithLifecycle()
+    val goalDatasets by homeViewModel.goalDataset.collectAsStateWithLifecycle()
+    val adjustmentDatasets by homeViewModel.adjustDataset.collectAsStateWithLifecycle()
+    val yesterdayStats by homeViewModel.yesterdayStats.collectAsStateWithLifecycle()
 
     // Collect user information from ViewModels
     val uiStates = homeViewModel.uiState.collectAsStateWithLifecycle()
@@ -65,19 +71,11 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val userState = userViewModel.userState.collectAsStateWithLifecycle()
     val snackBarHostState = userViewModel.snackBarHostState.collectAsStateWithLifecycle()
 
-    val yesterdayDatasets = dataState.yesterdayDatasets
-    val yesterdayChartData = dataState.yesterdayChartData
-    val sortAbleDataAdjust = dataState.sortedYesterdayDatasets
-    val goalDatasets = dataState.goalDatasets
-    val adjustmentDatasets = dataState.adjustDatasets
-    val yesterdayStats = dataState.yesterdayStats
     val scope = rememberCoroutineScope()
     val topBarNavEntries = TopBarNav.entries
     val pagerState = rememberPagerState(initialPage = 1) {
         topBarNavEntries.size
     }
-
-
 
     val customColors = MoneyTrackerTheme.colors
     val isLoading = uiStates.value.datasetState is DatasetState.Loading
@@ -147,7 +145,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
         }
     ) { paddingValues ->
         val uiState = uiStates.value
-        val hasLoadedData = uiState.datasetState is DatasetState.Success
 
         if (uiState.datasetState is DatasetState.Loading) {
             Box(
@@ -169,8 +166,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         paddingValues,
                         goalDatasets = goalDatasets,
                         uiState = uiState,
-                        hasLoadedData = hasLoadedData
-
+                        isGoalDataLoading = uiState.isGoalDataLoading
                     )
 
                     1 -> TodayScreen(
@@ -179,7 +175,9 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         donutChartDataCollection = donutChartData,
                         uiState = uiState,
                         homeViewModel = homeViewModel,
-                        hasLoadedData = hasLoadedData,
+                        isTodayDataLoading = uiState.isTodayDataLoading,
+                        isTodayChartDataLoading = uiState.isTodayChartDataLoading,
+                        isSortedTodayLoading = uiState.isSortedTodayLoading,
                         datasetWithAdjust = datasetWithAdjust
                     )
 
@@ -190,7 +188,10 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         yesterdayDatasets = yesterdayDatasets,
                         yesterdayChartData = yesterdayChartData,
                         yesterdayStats = yesterdayStats,
-                        hasLoadedData = hasLoadedData
+                        isYesterdayDataLoading = uiState.isYesterdayDataLoading,
+                        isYesterdayChartDataLoading = uiState.isYesterdayChartDataLoading,
+                        isYesterdayStatsLoading = uiState.isYesterdayStatsLoading,
+                        isSortedYesterdayLoading = uiState.isSortedYesterdayLoading
                     )
 
                     3 -> AllScreen(
@@ -198,7 +199,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         viewModel = homeViewModel,
                         weeklyData = weeklyData,
                         uiState = uiState,
-                        hasLoadedData = hasLoadedData
+                        isWeeklyDataLoading = uiState.isWeeklyDataLoading
                     )
                 }
             }

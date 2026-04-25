@@ -41,8 +41,8 @@ import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.StatusHistory
 import com.example.moneytracker.backend.storage.TagIcon
 import com.google.firebase.Timestamp
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.minus
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
 import net.objecthunter.exp4j.ExpressionBuilder
@@ -309,23 +309,15 @@ val Adjustment.isForToday: Boolean
 /**
  * Check if the dataset is for yesterday.
  */
-val Dataset.isForYesterday: Boolean
-    get() {
-        val yesterday = LocalDateTime.now()
-            .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
-        val dataDate = createdAt.toLocalDateTimeUtc().date
+fun Dataset.isCreatedAtEqualTo(localDate: LocalDate): Boolean {
+    val dataDate = createdAt.toLocalDateTimeUtc().date
+    return dataDate == localDate
+}
 
-        return yesterday == dataDate
-    }
-
-val Adjustment.isForYesterday: Boolean
-    get() {
-        val yesterday = LocalDateTime.now()
-            .date.minus(1, kotlinx.datetime.DateTimeUnit.DAY)
-        val dataDate = dateTime.toLocalDateTimeUtc().date
-
-        return yesterday == dataDate
-    }
+fun Adjustment.isCreatedAtEqualTo(localDate: LocalDate): Boolean {
+    val dataDate = dateTime.toLocalDateTimeUtc().date
+    return dataDate == localDate
+}
 
 
 fun Dataset.toMap(): Map<String, Any> {

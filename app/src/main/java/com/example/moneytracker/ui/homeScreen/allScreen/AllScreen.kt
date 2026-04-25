@@ -21,7 +21,7 @@ fun AllScreen(
     viewModel: HomeViewModel,
     weeklyData: List<DataAdjust>,
     uiState: HomeUiState,
-    hasLoadedData: Boolean
+    isWeeklyDataLoading: Boolean
 ) {
     Column(
         modifier = Modifier
@@ -31,7 +31,7 @@ fun AllScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
 
-        if (hasLoadedData) {
+        if (!isWeeklyDataLoading) {
             CalendarViewSection(
                 updateWeek = viewModel::updateWeekDays,
                 viewModel = viewModel

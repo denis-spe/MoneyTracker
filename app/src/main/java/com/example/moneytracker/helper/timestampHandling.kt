@@ -11,14 +11,14 @@ import kotlin.time.Instant
 
 @OptIn(ExperimentalTime::class)
 fun LocalDateTime.toFirestoreTimestampUtc(): Timestamp {
-    val instant = toInstant(TimeZone.currentSystemDefault())
+    val instant = toInstant(TimeZone.UTC)
     return Timestamp(instant.epochSeconds, instant.nanosecondsOfSecond)
 }
 
 @OptIn(ExperimentalTime::class)
 fun Timestamp.toLocalDateTimeUtc(): LocalDateTime {
     return Instant.fromEpochSeconds(seconds, nanoseconds)
-        .toLocalDateTime(TimeZone.currentSystemDefault())
+        .toLocalDateTime(TimeZone.UTC)
 }
 
 

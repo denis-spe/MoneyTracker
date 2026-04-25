@@ -3,6 +3,8 @@ package com.example.moneytracker.ui.usecase
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Dataset
+import com.google.firebase.firestore.Filter
+import com.google.firebase.firestore.Query
 import javax.inject.Inject
 
 class DatasetOperationsUseCase @Inject constructor(
@@ -11,6 +13,20 @@ class DatasetOperationsUseCase @Inject constructor(
 
     suspend fun addData(userId: String, dataset: Dataset): String {
         return dataStorage.addData(userId, dataset)
+    }
+
+    suspend fun filterDatasets(
+        userId: String,
+        filter: Filter,
+        orderBy: String? = null,
+        orderDirection: Query.Direction? = null
+    ): List<Dataset> {
+        return dataStorage.filterDatasets(
+            userId = userId,
+            filter = filter,
+            orderBy = orderBy,
+            orderDirection = orderDirection
+        )
     }
 
     suspend fun updateData(

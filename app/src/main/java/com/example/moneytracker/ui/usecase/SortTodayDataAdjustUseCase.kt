@@ -18,91 +18,92 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
         amountSorting: SortType,
         take: Int? = null
     ): List<DataAdjust> {
-        var coupledData = coupleDatasetsWithAdjustments(datasets).filter {
-            when (it) {
-                is DataAdjust.Data -> it.dataset.isForToday
-                is DataAdjust.Adjust -> it.adjustment.isForToday
+
+        val comparator = buildComparator(
+            timeSorting,
+            alphabeticalOrder,
+            amountSorting
+        )
+
+        return coupleDatasetsWithAdjustments(datasets)
+            .asSequence() // 🚀 lazy evaluation
+            .filter { it.isForToday() }
+            .filter { it.matchesCategory(categorySorting) }
+            .filter { it.matchesPayment(paymentSorting) }
+            .let { seq ->
+                if (comparator != null) seq.sortedWith(comparator) else seq
             }
-        }
-
-        coupledData = when (timeSorting) {
-            SortType.Ascending -> coupledData.sortedBy {
-                when (it) {
-                    is DataAdjust.Data -> it.dataset.createdAt
-                    is DataAdjust.Adjust -> it.adjustment.dateTime
-                }
+            .let { seq ->
+                if (take != null) seq.take(take) else seq
             }
-
-            SortType.Descending -> coupledData.sortedByDescending {
-                when (it) {
-                    is DataAdjust.Data -> it.dataset.createdAt
-                    is DataAdjust.Adjust -> it.adjustment.dateTime
-                }
-            }
-
-            SortType.Initial -> coupledData
-        }
-
-        coupledData =
-            if (categorySorting.isNullOrBlank() || categorySorting == "Initial") {
-                coupledData
-            } else {
-                coupledData.filter {
-                    when (it) {
-                        is DataAdjust.Data -> it.dataset.dataType.text == categorySorting
-                        is DataAdjust.Adjust -> it.adjustment.adjustmentType.text == categorySorting
-                    }
-                }
-            }
-
-        coupledData =
-            if (paymentSorting == null) {
-                coupledData
-            } else {
-                coupledData.filter {
-                    when (it) {
-                        is DataAdjust.Data -> it.dataset.paymentMethod == paymentSorting
-                        is DataAdjust.Adjust -> it.adjustment.paymentMethod == paymentSorting
-                    }
-                }
-            }
-
-        coupledData = when (alphabeticalOrder) {
-            SortType.Ascending -> coupledData.sortedBy {
-                when (it) {
-                    is DataAdjust.Data -> it.dataset.label
-                    is DataAdjust.Adjust -> it.adjustment.label
-                }
-            }
-
-            SortType.Descending -> coupledData.sortedByDescending {
-                when (it) {
-                    is DataAdjust.Data -> it.dataset.label
-                    is DataAdjust.Adjust -> it.adjustment.label
-                }
-            }
-
-            SortType.Initial -> coupledData
-        }
-
-        coupledData = when (amountSorting) {
-            SortType.Ascending -> coupledData.sortedBy {
-                when (it) {
-                    is DataAdjust.Data -> it.dataset.amount
-                    is DataAdjust.Adjust -> it.adjustment.amount
-                }
-            }
-
-            SortType.Descending -> coupledData.sortedByDescending {
-                when (it) {
-                    is DataAdjust.Data -> it.dataset.amount
-                    is DataAdjust.Adjust -> it.adjustment.amount
-                }
-            }
-
-            SortType.Initial -> coupledData
-        }
-
-        return if (take != null) coupledData.take(take) else coupledData
+            .toList()
     }
+
+    // 🔥 Single comparator instead of multiple sorts
+    private fun buildComparator(
+        timeSorting: SortType,
+        alphabeticalOrder: SortType,
+        amountSorting: SortType
+    ): Comparator<DataAdjust>? {
+
+        val comparators = mutableListOf<Comparator<DataAdjust>>()
+
+        if (timeSorting != SortType.Initial) {
+            comparators += compareBy<DataAdjust> { it.time() }
+                .applySort(timeSorting)
+        }
+
+        if (alphabeticalOrder != SortType.Initial) {
+            comparators += compareBy<DataAdjust> { it.label() }
+                .applySort(alphabeticalOrder)
+        }
+
+        if (amountSorting != SortType.Initial) {
+            comparators += compareBy<DataAdjust> { it.amount() }
+                .applySort(amountSorting)
+        }
+
+        return comparators.reduceOrNull { acc, comp -> acc.then(comp) }
+    }
+
+    // 🔥 Extensions = no repeated `when`
+    private fun DataAdjust.isForToday(): Boolean = when (this) {
+        is DataAdjust.Data -> dataset.isForToday
+        is DataAdjust.Adjust -> adjustment.isForToday
+    }
+
+    private fun DataAdjust.matchesCategory(category: String?): Boolean {
+        if (category.isNullOrBlank() || category == "Initial") return true
+        return when (this) {
+            is DataAdjust.Data -> dataset.dataType.text == category
+            is DataAdjust.Adjust -> adjustment.adjustmentType.text == category
+        }
+    }
+
+    private fun DataAdjust.matchesPayment(payment: PaymentMethod?): Boolean {
+        if (payment == null) return true
+        return when (this) {
+            is DataAdjust.Data -> dataset.paymentMethod == payment
+            is DataAdjust.Adjust -> adjustment.paymentMethod == payment
+        }
+    }
+
+    private fun DataAdjust.time(): Long = when (this) {
+        is DataAdjust.Data -> dataset.createdAt.toDate().time
+        is DataAdjust.Adjust -> adjustment.dateTime.toDate().time
+    }
+
+    private fun DataAdjust.label(): String = when (this) {
+        is DataAdjust.Data -> dataset.label
+        is DataAdjust.Adjust -> adjustment.label
+    }
+
+    private fun DataAdjust.amount(): Double = when (this) {
+        is DataAdjust.Data -> dataset.amount
+        is DataAdjust.Adjust -> adjustment.amount
+    }
+
+    // 🔥 Reusable sort direction
+    private fun <T> Comparator<T>.applySort(sortType: SortType): Comparator<T> =
+        if (sortType == SortType.Descending) this.reversed() else this
 }

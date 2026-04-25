@@ -31,7 +31,10 @@ fun YesterdayScreen(
     yesterdayDatasets: List<Dataset>,
     yesterdayChartData: List<ChartData>,
     yesterdayStats: YesterdayStats,
-    hasLoadedData: Boolean
+    isYesterdayDataLoading: Boolean,
+    isYesterdayChartDataLoading: Boolean,
+    isYesterdayStatsLoading: Boolean,
+    isSortedYesterdayLoading: Boolean
 ) {
     val configuration = LocalConfiguration.current
 
@@ -45,27 +48,27 @@ fun YesterdayScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            if (hasLoadedData) {
+            if (!isYesterdayDataLoading && !isYesterdayChartDataLoading && !isYesterdayStatsLoading) {
                 YesterdayStatArea(
                     modifier = Modifier.weight(0.4f),
                     datasets = yesterdayDatasets,
                     chartData = yesterdayChartData,
                     stats = yesterdayStats
                 )
+            } else {
+                YesterdayStatAreaShimmer(
+                    modifier = Modifier.weight(0.4f)
+                )
+            }
 
-                Spacer(modifier = Modifier.weight(0.05f))
+            Spacer(modifier = Modifier.weight(0.05f))
 
+            if (!isSortedYesterdayLoading) {
                 YesterdayItems(
                     modifier = Modifier.weight(0.6f),
                     dataAdjust = sortAbleDataAdjust
                 )
             } else {
-                YesterdayStatAreaShimmer(
-                    modifier = Modifier.weight(0.4f)
-                )
-
-                Spacer(modifier = Modifier.weight(0.05f))
-
                 YesterdayItemsShimmer(
                     modifier = Modifier.weight(0.6f)
                 )

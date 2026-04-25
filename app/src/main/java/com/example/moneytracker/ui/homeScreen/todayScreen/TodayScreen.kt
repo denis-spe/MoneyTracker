@@ -35,8 +35,10 @@ fun TodayScreen(
     uiState: HomeUiState,
     todayDatasets: List<Dataset>,
     homeViewModel: HomeViewModel,
-    datasetWithAdjust: List<DataAdjust>,
-    hasLoadedData: Boolean
+    isTodayDataLoading: Boolean,
+    isTodayChartDataLoading: Boolean,
+    isSortedTodayLoading: Boolean,
+    datasetWithAdjust: List<DataAdjust>
 ) {
     val isTransactionListExpended = uiState.onActivateShow
     val configuration = LocalConfiguration.current
@@ -50,16 +52,16 @@ fun TodayScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            if (hasLoadedData) {
-                AnimatedVisibility(
-                    visible = !isTransactionListExpended,
-                    exit = shrinkVertically() + fadeOut(
-                        animationSpec = tween(
-                            durationMillis = 1000,
-                            easing = LinearEasing
-                        )
+            AnimatedVisibility(
+                visible = !isTransactionListExpended,
+                exit = shrinkVertically() + fadeOut(
+                    animationSpec = tween(
+                        durationMillis = 1000,
+                        easing = LinearEasing
                     )
-                ) {
+                )
+            ) {
+                if (!isTodayDataLoading && !isTodayChartDataLoading) {
                     StatArea(
                         modifier = Modifier
                             .fillMaxHeight(0.5f)
@@ -70,8 +72,17 @@ fun TodayScreen(
                         ),
                         datasets = todayDatasets
                     )
+                } else {
+                    StatAreaShimmer(
+                        modifier = Modifier
+                            .fillMaxHeight(0.5f)
+                            .fillMaxWidth(0.85f)
+                            .padding(bottom = 10.dp)
+                    )
                 }
+            }
 
+            if (!isSortedTodayLoading) {
                 ItemListArea(
                     modifier = Modifier
                         .fillMaxHeight(1f)
@@ -81,12 +92,6 @@ fun TodayScreen(
                     datasetWithAdjust = datasetWithAdjust
                 )
             } else {
-                StatAreaShimmer(
-                    modifier = Modifier
-                        .fillMaxHeight(0.5f)
-                        .fillMaxWidth(0.85f)
-                        .padding(bottom = 10.dp)
-                )
                 ItemListAreaShimmer(
                     modifier = Modifier
                         .fillMaxHeight(1f)

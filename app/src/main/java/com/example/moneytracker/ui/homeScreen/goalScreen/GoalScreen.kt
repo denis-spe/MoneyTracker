@@ -228,7 +228,7 @@ fun GoalScreen(
     paddingValues: PaddingValues,
     goalDatasets: List<Dataset>,
     uiState: HomeUiState,
-    hasLoadedData: Boolean
+    isGoalDataLoading: Boolean
 ) {
     Column(
         modifier = Modifier
@@ -237,7 +237,7 @@ fun GoalScreen(
             .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (hasLoadedData) {
+        if (!isGoalDataLoading) {
             LazyColumn(
                 modifier = Modifier
                     .clip(RoundedCornerShape(10)),
