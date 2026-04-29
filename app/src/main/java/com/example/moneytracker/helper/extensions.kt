@@ -160,36 +160,39 @@ fun Modifier.shimmerEffect(
         }
 }
 
-fun RoutineData.rescheduleDeadline(timeProvider: TimeProvider = SystemTimeProvider): java.time.LocalDateTime {
-    val now = timeProvider.nowLocalDateTime()
+fun RoutineData.rescheduleDeadline(
+    baseTime: java.time.LocalDateTime? = null,
+    timeProvider: TimeProvider = SystemTimeProvider
+): java.time.LocalDateTime {
+    val startBase = baseTime ?: timeProvider.nowLocalDateTime()
 
     return when (routine) {
         Routine.EveryMinute -> {
-            now.plusMinutes(routineCount.toLong())
+            startBase.plusMinutes(routineCount.toLong())
         }
 
         Routine.EveryHour -> {
-            now.plusHours(routineCount.toLong())
+            startBase.plusHours(routineCount.toLong())
         }
 
         Routine.EveryDay -> {
-            now.plusDays(routineCount.toLong()).toMidnight()
+            startBase.plusDays(routineCount.toLong()).toMidnight()
         }
 
         Routine.Weekly -> {
-            now.plusWeeks(routineCount.toLong()).toMidnight()
+            startBase.plusWeeks(routineCount.toLong()).toMidnight()
         }
 
         Routine.Monthly -> {
-            now.plusMonths(routineCount.toLong()).toMidnight()
+            startBase.plusMonths(routineCount.toLong()).toMidnight()
         }
 
         Routine.Yearly -> {
-            now.plusYears(routineCount.toLong()).toMidnight()
+            startBase.plusYears(routineCount.toLong()).toMidnight()
         }
 
         else -> {
-            now.plusMinutes(1)
+            timeProvider.nowLocalDateTime().plusMinutes(1)
         }
     }
 }

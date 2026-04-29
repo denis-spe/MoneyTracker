@@ -51,8 +51,22 @@ class RoutineFrequencyTest {
         val timeProvider = MockTimeProvider(now)
         val routineData = RoutineData(routine = Routine.EveryDay, routineCount = 1)
 
-        val next = routineData.rescheduleDeadline(timeProvider)
+        val next = routineData.rescheduleDeadline(timeProvider = timeProvider)
         val expected = LocalDateTime.of(2024, 5, 2, 0, 0)
+        assertEquals(expected, next)
+    }
+
+    @Test
+    fun `rescheduleDeadline for EveryHour with baseTime avoids drift`() {
+        // Supposed deadline was 12:10
+        val baseTime = LocalDateTime.of(2024, 5, 1, 12, 10)
+        // Worker actually triggers at 12:12
+        val now = LocalDateTime.of(2024, 5, 1, 12, 12)
+        val timeProvider = MockTimeProvider(now)
+        val routineData = RoutineData(routine = Routine.EveryHour, routineCount = 1)
+
+        val next = routineData.rescheduleDeadline(baseTime = baseTime, timeProvider = timeProvider)
+        val expected = LocalDateTime.of(2024, 5, 1, 13, 10)
         assertEquals(expected, next)
     }
 

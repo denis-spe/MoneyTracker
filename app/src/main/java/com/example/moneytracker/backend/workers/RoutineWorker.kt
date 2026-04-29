@@ -20,6 +20,7 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestoreException
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
+import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
 import java.util.Locale
 
@@ -59,14 +60,17 @@ class RoutineWorker @AssistedInject constructor(
                 Log.d(TAG, "Dataset found: $dataset")
 
                 val nextDeadline = dataset.routine
-                    .rescheduleDeadline()
+                    .rescheduleDeadline(
+                        baseTime = dataset.routine.deadlineDateTime.toLocalDateTimeUtc()
+                            .toJavaLocalDateTime()
+                    )
                     .toKotlinLocalDateTime()
                     .toFirestoreTimestampUtc()
 
                 val progress = dataset.progressPercentage
                 val formatProgress = String.format(
                     Locale.getDefault(),
-                    "%.2f",
+                    "%.1f",
                     progress
                 )
 
@@ -117,12 +121,18 @@ class RoutineWorker @AssistedInject constructor(
                         notifier.showNotification(
                             NotificationItem(
                                 title = dataset.label,
-                                message = if (isSuccessful) "${dataset.label} was completed"
-                                else "${dataset.label} was overdue",
-                                bigMessage = if (isSuccessful) "Perfect, you have completed ${dataset.label} with" +
-                                        " $formatProgress%"
-                                else "Sorry, you failed to complete ${dataset.label} with" +
-                                        " $formatProgress%, please try to complete it in time",
+                                // Short and clear summary
+                                message = if (isSuccessful) "Goal completed!"
+                                else "Deadline missed",
+
+                                // Detailed encouraging message
+                                bigMessage = if (isSuccessful)
+                                    "Perfect! You've completed ${dataset.label} " +
+                                            "with ${formatProgress}%. Great job!"
+                                else
+                                    "Sorry, you didn't finish ${dataset.label} (${formatProgress}%). " +
+                                            "Try to stay on track next time!",
+
                                 icon = dataset.tagIcon.icon,
                                 largeIcon = currentStatus.icon
                             )
