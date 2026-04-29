@@ -57,6 +57,7 @@ import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
+import com.example.moneytracker.helper.toMidnight
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.ActionNotification
 import com.example.moneytracker.ui.homeScreen.HomeUiState
@@ -616,8 +617,8 @@ fun GoalDataInput(
     onDismiss: () -> Unit,
 ) {
     val colorResId = dataType.color
-    val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
-    val endLocalDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
+    val localDateTimeState = remember { mutableStateOf(LocalDateTime.now().toMidnight()) }
+    val endLocalDateTimeState = remember { mutableStateOf(LocalDateTime.now().toMidnight()) }
     val amountState = rememberTextFieldState()
     val amountToDisplay = rememberSaveable { mutableStateOf("") }
     val labelState = rememberTextFieldState()
@@ -812,9 +813,12 @@ fun GoalDataInput(
                             wasSuccess.value != State.ERROR && amountAsDouble != null &&
                             endLocalDateTimeState.value > localDateTimeState.value
                         ) {
+                            val normalizedStart = localDateTimeState.value.toMidnight()
+                            val normalizedEnd = endLocalDateTimeState.value.toMidnight()
+
                             val routine = routineData.value.copy(
-                                deadlineDateTime = endLocalDateTimeState.value
-                                    .toFirestoreTimestampUtc()
+                                startDateTime = normalizedStart.toFirestoreTimestampUtc(),
+                                deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc()
                             )
 
                             val dataset = Dataset(
@@ -823,8 +827,7 @@ fun GoalDataInput(
                                 amount = amountAsDouble,
                                 label = labelState.text.toString(),
                                 description = descriptionState.text.toString(),
-                                createdAt = localDateTimeState.value
-                                    .toFirestoreTimestampUtc(),
+                                createdAt = normalizedStart.toFirestoreTimestampUtc(),
                                 tagIcon = labelIconState.value,
                                 paymentMethod = selectedPaymentMethod.value,
                                 routine = routine

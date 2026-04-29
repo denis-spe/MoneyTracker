@@ -10,9 +10,12 @@ import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.helper.progressPercentage
 import com.example.moneytracker.helper.rescheduleDeadline
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
+import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.helper.toMidnight
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestoreException
 import dagger.assisted.Assisted
@@ -56,25 +59,41 @@ class RoutineWorker @AssistedInject constructor(
                 Log.d(TAG, "Dataset found: $dataset")
 
                 val nextDeadline = dataset.routine
-                    .rescheduleDeadline
+                    .rescheduleDeadline()
                     .toKotlinLocalDateTime()
                     .toFirestoreTimestampUtc()
 
-                val adjustSum = dataset.adjustment.sumOf { it.amount }
-                val precent = ((adjustSum / dataset.amount) * 100)
-                val formatPrecent = String.format(
+                val progress = dataset.progressPercentage
+                val formatProgress = String.format(
                     Locale.getDefault(),
                     "%.2f",
-                    precent
+                    progress
                 )
 
+                val currentStatus = dataset.status
+                Log.d(
+                    TAG,
+                    "Current status for ${dataset.label}: $currentStatus, progress: $formatProgress%"
+                )
 
                 // Complete the current routine: clear adjustment list and add status
                 val now = Timestamp.now()
+                val normalizedNow = if (dataset.routine.routine in listOf(
+                        Routine.EveryDay,
+                        Routine.Weekly,
+                        Routine.Monthly,
+                        Routine.Yearly
+                    )
+                ) {
+                    now.toLocalDateTimeUtc().toMidnight().toFirestoreTimestampUtc()
+                } else {
+                    now
+                }
+
                 dataStorage.completeRoutine(
                     userId = userId,
                     datasetId = datasetId,
-                    newDateTime = now,
+                    newDateTime = normalizedNow,
                     nextDeadline = nextDeadline
                 )
 
@@ -88,23 +107,24 @@ class RoutineWorker @AssistedInject constructor(
                         )
                     )
 
-                    if (dataset.status != Status.ACTIVE) {
+                    if (currentStatus != Status.ACTIVE && currentStatus != Status.INITIAL) {
+                        val isSuccessful = currentStatus in listOf(
+                            Status.COMPLETED,
+                            Status.PAYBACK,
+                            Status.REFUNDED,
+                            Status.SUCCESS
+                        )
                         notifier.showNotification(
                             NotificationItem(
                                 title = dataset.label,
-                                message = when (dataset.status) {
-                                    Status.COMPLETED -> "${dataset.label} was completed"
-                                    else -> "${dataset.label} was overdue"
-                                },
-                                bigMessage = when (dataset.status) {
-                                    Status.COMPLETED -> "Prefect, you have completed ${dataset.label} with" +
-                                            " $formatPrecent%"
-
-                                    else -> "Sorry, you failed to complete ${dataset.label} with" +
-                                            " $formatPrecent%, please try to complete it in time"
-                                },
+                                message = if (isSuccessful) "${dataset.label} was completed"
+                                else "${dataset.label} was overdue",
+                                bigMessage = if (isSuccessful) "Perfect, you have completed ${dataset.label} with" +
+                                        " $formatProgress%"
+                                else "Sorry, you failed to complete ${dataset.label} with" +
+                                        " $formatProgress%, please try to complete it in time",
                                 icon = dataset.tagIcon.icon,
-                                largeIcon = dataset.status.icon
+                                largeIcon = currentStatus.icon
                             )
                         )
                     }

@@ -1,6 +1,7 @@
 package com.example.moneytracker
 
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
@@ -114,6 +115,11 @@ class ScreenManagerTest : TestBase(
         composeTestRule.onNodeWithTag(loginPasswordFieldId)
             .performTextInput("ILoveGod")
         composeTestRule.onNodeWithTag(loginNextScreenButtonId).performClick()
+
+        // Wait for the home screen to be displayed, as there is a delay in LoginViewModel
+        composeTestRule.waitUntil(5000) {
+            composeTestRule.onAllNodesWithTag(homeScreenId).fetchSemanticsNodes().isNotEmpty()
+        }
         composeTestRule.onNodeWithTag(homeScreenId).assertExists()
     }
 

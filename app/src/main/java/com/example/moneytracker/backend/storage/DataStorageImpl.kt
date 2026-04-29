@@ -365,8 +365,8 @@ class DataStorageImpl(
 
             // Calculate status and total adjustment amount
             val totalAdjustmentAmount = dataset.adjustment.sumOf { it.amount }
-            val remainingAmount = dataset.amount - totalAdjustmentAmount
-            val status = if (remainingAmount == 0.0) Status.SUCCESS else Status.OVERDUE
+            val isAchieved = totalAdjustmentAmount >= dataset.amount
+            val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
 
             // Create status history entry with total adjustment amount and timestamps
             val statusHistory = StatusHistory(
@@ -424,8 +424,8 @@ class DataStorageImpl(
             val dataset = snapshot.data?.toDataset() ?: return
 
             val totalAdjustmentAmount = dataset.adjustment.sumOf { it.amount }
-            val remainingAmount = dataset.amount - totalAdjustmentAmount
-            val status = if (remainingAmount == 0.0) Status.SUCCESS else Status.OVERDUE
+            val isAchieved = totalAdjustmentAmount >= dataset.amount
+            val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
 
             // Create status history entry with total adjustment amount and timestamps
             val statusHistory = StatusHistory(

@@ -111,6 +111,7 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.helper.toMidnight
 import com.example.moneytracker.ui.components.CustomAmountKeyBoard
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.awaitCancellation
@@ -992,10 +993,9 @@ fun RepeatableTransaction(
                 Routine.Yearly -> now.plusYears(repeatByState.value.routineCount.toLong())
                 Routine.Monthly -> now.plusMonths(repeatByState.value.routineCount.toLong())
                 Routine.SpecifyDayOfTheWeek -> {
-                    val targetDay = java.time.DayOfWeek.of(
-                        (
-                                repeatByState.value.routineCount % 7) + 1
-                    )
+                    val safeCount = if (repeatByState.value.routineCount <= 0) 1L
+                    else repeatByState.value.routineCount.toLong()
+                    val targetDay = java.time.DayOfWeek.of(((safeCount + 5) % 7 + 1).toInt())
                     val next = if (now.dayOfWeek == targetDay) {
                         now.plusWeeks(1)
                     } else {
@@ -1006,6 +1006,31 @@ fun RepeatableTransaction(
 
                 else -> now
             }.toLocalDateTime().toKotlinLocalDateTime()
+
+            startLocalDateTimeState.value = if (repeatByState.value.routine in listOf(
+                    Routine.EveryDay,
+                    Routine.Weekly,
+                    Routine.Monthly,
+                    Routine.Yearly,
+                    Routine.SpecifyDayOfTheWeek
+                )
+            ) {
+                startLocalDateTimeState.value.toMidnight()
+            } else {
+                startLocalDateTimeState.value
+            }
+            endLocalDateTimeState.value = if (repeatByState.value.routine in listOf(
+                    Routine.EveryDay,
+                    Routine.Weekly,
+                    Routine.Monthly,
+                    Routine.Yearly,
+                    Routine.SpecifyDayOfTheWeek
+                )
+            ) {
+                endLocalDateTimeState.value.toMidnight()
+            } else {
+                endLocalDateTimeState.value
+            }
         }
     }
 

@@ -8,12 +8,9 @@ import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.workers.Workers
 import com.example.moneytracker.backend.workers.WorkersTask
-import com.example.moneytracker.helper.rescheduleDeadline
-import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import kotlinx.datetime.toKotlinLocalDateTime
 import javax.inject.Inject
 
 @HiltAndroidApp
@@ -53,9 +50,7 @@ class MoneyTrackerApplication : Application(), Configuration.Provider {
                                 userId = userId,
                                 datasetId = it.id,
                                 routineData = it.routine,
-                                deadlineDateTime = it.routine.rescheduleDeadline
-                                    .toKotlinLocalDateTime()
-                                    .toFirestoreTimestampUtc()
+                                deadlineDateTime = it.routine.deadlineDateTime
                             )
                         )
                     }

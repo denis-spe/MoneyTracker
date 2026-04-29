@@ -4,8 +4,6 @@
 // you shall love your neighbor as yourself
 package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -69,6 +67,7 @@ import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.helper.toMidnight
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
@@ -94,7 +93,6 @@ import java.time.temporal.ChronoUnit
 
 private val ICON_SIZE = 25.dp
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DatasetReceipt(
     dataset: Dataset,
@@ -807,7 +805,6 @@ fun OnDeleteReceipt(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnUpdate(
@@ -867,9 +864,16 @@ fun OnUpdate(
                     amountState.setTextAndPlaceCursorAtEnd(dataset.amount.toString())
                     labelState.setTextAndPlaceCursorAtEnd(dataset.label)
                     descriptionState.setTextAndPlaceCursorAtEnd(dataset.description)
-                    localDateTimeState.value = dataset.createdAt.toLocalDateTimeUtc()
-                    endLocalDateTimeState.value =
+                    localDateTimeState.value = if (dataset.dataType == DataType.GOAL) {
+                        dataset.createdAt.toLocalDateTimeUtc().toMidnight()
+                    } else {
+                        dataset.createdAt.toLocalDateTimeUtc()
+                    }
+                    endLocalDateTimeState.value = if (dataset.dataType == DataType.GOAL) {
+                        dataset.routine.deadlineDateTime.toLocalDateTimeUtc().toMidnight()
+                    } else {
                         dataset.routine.deadlineDateTime.toLocalDateTimeUtc()
+                    }
                     tagIconState.value = dataset.tagIcon
                     selectedPaymentMethod.value = dataset.paymentMethod
                 }
@@ -1048,17 +1052,22 @@ fun OnUpdate(
                                                 .isNotEmpty()
                                         ) {
                                             val dataset = dataAdjust.dataset
+                                            val normalizedStart =
+                                                localDateTimeState.value.toMidnight()
+                                            val normalizedEnd =
+                                                endLocalDateTimeState.value.toMidnight()
+                                            
                                             val newDataset = dataset.copy(
                                                 amount = amountAsDouble,
                                                 label = labelState.text.toString(),
                                                 description = descriptionState.text.toString(),
-                                                createdAt = localDateTimeState.value.toFirestoreTimestampUtc(),
+                                                createdAt = normalizedStart.toFirestoreTimestampUtc(),
                                                 tagIcon = tagIconState.value,
                                                 paymentMethod = selectedPaymentMethod.value,
                                                 routine = if (dataset.dataType == DataType.GOAL) {
                                                     dataset.routine.copy(
-                                                        startDateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                                        deadlineDateTime = endLocalDateTimeState.value.toFirestoreTimestampUtc()
+                                                        startDateTime = normalizedStart.toFirestoreTimestampUtc(),
+                                                        deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc()
                                                     )
                                                 } else {
                                                     dataset.routine
@@ -1215,7 +1224,6 @@ fun OnUpdate(
 
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Receipt(
     dataAdjust: DataAdjust,

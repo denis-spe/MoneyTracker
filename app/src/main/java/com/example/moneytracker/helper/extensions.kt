@@ -61,6 +61,17 @@ import kotlin.math.pow
 
 private val zone = ZoneId.systemDefault()
 
+fun java.time.LocalDateTime.toMidnight(): java.time.LocalDateTime =
+    this.withHour(0)
+        .withMinute(0)
+        .withSecond(0)
+        .withNano(0)
+
+fun LocalDateTime.toMidnight(): LocalDateTime =
+    this.toJavaLocalDateTime()
+        .toMidnight()
+        .toKotlinLocalDateTime()
+
 fun parseTimestamp(value: Any?): Timestamp = when (value) {
     is Timestamp -> value
     is Map<*, *> -> {
@@ -149,40 +160,39 @@ fun Modifier.shimmerEffect(
         }
 }
 
-val RoutineData.rescheduleDeadline: java.time.LocalDateTime
-    get() {
-        val now = java.time.LocalDateTime.now()
+fun RoutineData.rescheduleDeadline(timeProvider: TimeProvider = SystemTimeProvider): java.time.LocalDateTime {
+    val now = timeProvider.nowLocalDateTime()
 
-        return when (routine) {
-            Routine.EveryMinute -> {
-                now.plusMinutes(routineCount.toLong())
-            }
+    return when (routine) {
+        Routine.EveryMinute -> {
+            now.plusMinutes(routineCount.toLong())
+        }
 
-            Routine.EveryHour -> {
-                now.plusHours(routineCount.toLong())
-            }
+        Routine.EveryHour -> {
+            now.plusHours(routineCount.toLong())
+        }
 
-            Routine.EveryDay -> {
-                now.plusDays(routineCount.toLong())
-            }
+        Routine.EveryDay -> {
+            now.plusDays(routineCount.toLong()).toMidnight()
+        }
 
-            Routine.Weekly -> {
-                now.plusWeeks(routineCount.toLong())
-            }
+        Routine.Weekly -> {
+            now.plusWeeks(routineCount.toLong()).toMidnight()
+        }
 
-            Routine.Monthly -> {
-                now.plusMonths(routineCount.toLong())
-            }
+        Routine.Monthly -> {
+            now.plusMonths(routineCount.toLong()).toMidnight()
+        }
 
-            Routine.Yearly -> {
-                now.plusYears(routineCount.toLong())
-            }
+        Routine.Yearly -> {
+            now.plusYears(routineCount.toLong()).toMidnight()
+        }
 
-            else -> {
-                now.plusMinutes(1)
-            }
+        else -> {
+            now.plusMinutes(1)
         }
     }
+}
 
 /**
  * Calculates the next trigger time based on a [baseMillis].
@@ -198,26 +208,36 @@ fun RoutineData.getTriggerMillisFrom(baseMillis: Long): Long {
         Routine.EveryHour -> base.plusHours(count).toInstant()
             .toEpochMilli()
 
-        Routine.EveryDay -> base.plusDays(count).toInstant()
+        Routine.EveryDay -> base.plusDays(count)
+            .withHour(0).withMinute(0).withSecond(0).withNano(0)
+            .toInstant()
             .toEpochMilli()
 
-        Routine.Weekly -> base.plusWeeks(count).toInstant()
+        Routine.Weekly -> base.plusWeeks(count)
+            .withHour(0).withMinute(0).withSecond(0).withNano(0)
+            .toInstant()
             .toEpochMilli()
 
-        Routine.Monthly -> base.plusMonths(count).toInstant()
+        Routine.Monthly -> base.plusMonths(count)
+            .withHour(0).withMinute(0).withSecond(0).withNano(0)
+            .toInstant()
             .toEpochMilli()
 
-        Routine.Yearly -> base.plusYears(count).toInstant()
+        Routine.Yearly -> base.plusYears(count)
+            .withHour(0).withMinute(0).withSecond(0).withNano(0)
+            .toInstant()
             .toEpochMilli()
 
         Routine.SpecifyDayOfTheWeek -> {
-            val targetDay = DayOfWeek.of(((count - 1) % 7 + 1).toInt())
+            val safeCount = if (count <= 0) 1L else count
+            val targetDay = DayOfWeek.of(((safeCount + 5) % 7 + 1).toInt())
             val next = if (base.dayOfWeek == targetDay) {
                 base.plusWeeks(1)
             } else {
                 base.with(TemporalAdjusters.next(targetDay))
             }
-            next.toInstant().toEpochMilli()
+            next.withHour(0).withMinute(0).withSecond(0).withNano(0)
+                .toInstant().toEpochMilli()
         }
 
         else -> baseMillis + 86_400_000
@@ -578,33 +598,34 @@ fun LocalDateTime.plusDays(days: Int): LocalDateTime {
             )
 }
 
+val Dataset.progressPercentage: Double
+    get() {
+        val totalAdjustment = adjustment.sumOf { it.amount }
+        return if (amount > 0) (totalAdjustment / amount) * 100.0 else 0.0
+    }
+
 val Dataset.status: Status
     get() {
         val currentTime = LocalDateTime.now()
         val deadlineDateTime = routine.deadlineDateTime.toLocalDateTimeUtc()
+        val totalAdjustment = adjustment.sumOf { it.amount }
+        val isAchieved = totalAdjustment >= amount
+
         return when (dataType) {
-            DataType.GOAL if currentTime >= deadlineDateTime
-                    && remainingAmount != 0.0
-                -> {
-                Status.OVERDUE
+            DataType.GOAL, DataType.SAVINGS -> {
+                when {
+                    isAchieved -> Status.COMPLETED
+                    currentTime >= deadlineDateTime -> Status.OVERDUE
+                    else -> Status.ACTIVE
+                }
             }
 
-            DataType.GOAL if remainingAmount == 0.0
-                -> {
-                Status.COMPLETED
+            DataType.DEBT -> {
+                if (remainingAmount <= 0.0) Status.PAYBACK else Status.INITIAL
             }
 
-            DataType.GOAL if currentTime < deadlineDateTime && remainingAmount != 0.0
-                -> {
-                Status.ACTIVE
-            }
-
-            DataType.DEBT if remainingAmount == 0.0 -> {
-                Status.PAYBACK
-            }
-
-            DataType.LENT if remainingAmount == 0.0 -> {
-                Status.REFUNDED
+            DataType.LENT -> {
+                if (remainingAmount <= 0.0) Status.REFUNDED else Status.INITIAL
             }
 
             else -> {

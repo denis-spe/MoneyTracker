@@ -132,7 +132,6 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
             Scaffold(
                 modifier = Modifier
                     .fillMaxSize()
-                    .testTag(stringResource(R.string.homeScreenId))
                     .testTag(stringResource(R.string.homeScreenId)),
                 topBar = {
                     CenterAlignedTopAppBar(
