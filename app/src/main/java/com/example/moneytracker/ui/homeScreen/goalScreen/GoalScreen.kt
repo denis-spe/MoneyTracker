@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Finance
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.status
@@ -40,22 +40,22 @@ import com.example.moneytracker.ui.homeScreen.HomeUiState
 @Composable
 fun GoalCard(
     modifier: Modifier = Modifier,
-    dataset: Dataset
+    financeGoal: Finance.Goal
 ) {
-    val startDateTime = dataset.routine.startDateTime.toLocalDateTimeUtc()
-    val endDateTime = dataset.routine.deadlineDateTime.toLocalDateTimeUtc()
+    val startDateTime = financeGoal.routine.startDateTime.toLocalDateTimeUtc()
+    val endDateTime = financeGoal.routine.deadlineDateTime.toLocalDateTimeUtc()
     "${startDateTime.day}/${startDateTime.month.name.title}/${startDateTime.year}"
     val endDate = "${endDateTime.day}/${endDateTime.month.name.title}/${endDateTime.year}"
-    val status = dataset.status.name.title
+    val status = financeGoal.status.name.title
 
-    val progressAmount = dataset.adjustment.sumOf { it.amount }
-    val remainingAmount = (dataset.amount - progressAmount).coerceAtLeast(0.0)
+    val progressAmount = financeGoal.adjustment.sumOf { it.amount }
+    val remainingAmount = (financeGoal.amount - progressAmount).coerceAtLeast(0.0)
 
     val donutChartDataCollection = DonutChartDataCollection(
         listOf(
             DonutChartData(
                 amount = progressAmount.toFloat(),
-                color = colorResource(dataset.dataType.color),
+                color = colorResource(financeGoal.colorRes),
                 title = "Progress"
             ),
 
@@ -68,7 +68,7 @@ fun GoalCard(
     )
 
 
-    val endState = when (dataset.status) {
+    val endState = when (financeGoal.status) {
         Status.SUCCESS -> {
             "Completed "
         }
@@ -87,7 +87,7 @@ fun GoalCard(
     }
 
 
-    val dateTime = when (dataset.routine.routine) {
+    val dateTime = when (financeGoal.routine.routine) {
         Routine.EveryMinute -> {
             "${endState}end at ${endDateTime.hour}:${endDateTime.minute}"
         }
@@ -121,13 +121,13 @@ fun GoalCard(
         }
     }
 
-    val routineName = if (dataset.routine.routine == Routine.Nothing) {
+    val routineName = if (financeGoal.routine.routine == Routine.Nothing) {
         "Not repeatable"
     } else {
-        dataset.routine.routine.text
+        financeGoal.routine.routine.text
     }
 
-    val createdAt = dataset.createdAt.toLocalDateTimeUtc()
+    val createdAt = financeGoal.createdAt.toLocalDateTimeUtc()
     val createdAtDateTime = "Created at ${createdAt.day} ${createdAt.month.name.title} " +
             "${createdAt.year} ${createdAt.hour}:${createdAt.minute}"
 
@@ -143,7 +143,7 @@ fun GoalCard(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = dataset.label,
+                        text = financeGoal.label,
                         style = typography.titleMedium
                     )
                 }
@@ -153,7 +153,7 @@ fun GoalCard(
             },
             supportingContent = {
                 Text(
-                    text = dataset.amount.toString(),
+                    text = financeGoal.amount.toString(),
                     style = typography.titleLarge
                 )
             },
@@ -171,8 +171,8 @@ fun GoalCard(
                         gapPercentage = 0.06f,
                         strokeCap = StrokeCap.Round,
                         selectionView = {
-                            val percentage = if (dataset.amount > 0)
-                                ((progressAmount / dataset.amount) * 100).toInt()
+                            val percentage = if (financeGoal.amount > 0)
+                                ((progressAmount / financeGoal.amount) * 100).toInt()
                             else 0
                             Text(
                                 text = "$percentage%",
@@ -226,7 +226,7 @@ fun GoalCard(
 @Composable
 fun GoalScreen(
     paddingValues: PaddingValues,
-    goalDatasets: List<Dataset>,
+    goalFinanceList: List<Finance.Goal>,
     uiState: HomeUiState,
     isGoalDataLoading: Boolean
 ) {
@@ -244,14 +244,14 @@ fun GoalScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item { Spacer(modifier = Modifier.size(10.dp)) }
-                items(goalDatasets) { dataset ->
+                items(goalFinanceList) { goal ->
                     GoalCard(
-                        dataset = dataset,
+                        financeGoal = goal,
                         modifier = Modifier
                             .padding(top = 10.dp, start = 10.dp, end = 10.dp)
                             .clip(RoundedCornerShape(10))
                             .background(
-                                colorResource(id = dataset.dataType.color)
+                                colorResource(id = goal.colorRes)
                                     .copy(alpha = 0.1f)
                             )
                     )

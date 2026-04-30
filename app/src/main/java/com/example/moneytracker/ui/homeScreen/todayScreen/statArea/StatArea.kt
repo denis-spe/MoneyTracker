@@ -32,9 +32,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.AdjustmentType
-import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Finance
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.mean
 import com.example.moneytracker.helper.median
@@ -44,28 +42,28 @@ import com.example.moneytracker.ui.components.charts.collections.DonutChartDataC
 
 @Composable
 fun Stat(
-    datasets: List<Dataset>
+    financeList: List<Finance>
 ) {
-    if (datasets.isEmpty()) return
+    if (financeList.isEmpty()) return
 
-    val mean = datasets.groupBy { data -> data.dataType }.map { dataset ->
-        dataset.key.text to dataset.value.mean { it.amount }
+    val mean = financeList.groupBy { data -> data.categoryText }.map { entry ->
+        entry.key to entry.value.mean { it.amount }
     }
 
-    val median = datasets.groupBy { data -> data.dataType }.map { dataset ->
-        dataset.key.text to dataset.value.median
+    val median = financeList.groupBy { data -> data.categoryText }.map { entry ->
+        entry.key to entry.value.median
     }
 
-    val min = datasets.groupBy { data -> data.dataType }.map { dataset ->
-        dataset.key.text to dataset.value.minOf { it.amount }
+    val min = financeList.groupBy { data -> data.categoryText }.map { entry ->
+        entry.key to entry.value.minOf { it.amount }
     }
 
-    val max = datasets.groupBy { data -> data.dataType }.map { dataset ->
-        dataset.key.text to dataset.value.maxOf { it.amount }
+    val max = financeList.groupBy { data -> data.categoryText }.map { entry ->
+        entry.key to entry.value.maxOf { it.amount }
     }
 
-    val std = datasets.groupBy { data -> data.dataType }.map { dataset ->
-        dataset.key.text to dataset.value.std
+    val std = financeList.groupBy { data -> data.categoryText }.map { entry ->
+        entry.key to entry.value.std
     }
 
     LazyColumn(
@@ -155,14 +153,14 @@ fun DonutChartPager(
             } ?: run {
                 val (flowIn, flowOut) = donutChartDataCollection.items.fold(0f to 0f) { (incoming, outgoing), item ->
                     when (item.title) {
-                        DataType.EARNINGS.text,
-                        DataType.DEBT.text,
-                        AdjustmentType.LENT_REPAY.text -> (incoming + item.amount) to outgoing
+                        "Earnings",
+                        "Debt",
+                        "Loan Refund" -> (incoming + item.amount) to outgoing
 
-                        DataType.EXPENSE.text,
-                        DataType.LENT.text,
-                        DataType.SAVINGS.text,
-                        AdjustmentType.DEBT_REPAY.text -> incoming to (outgoing + item.amount)
+                        "Expense",
+                        "Lent",
+                        "Savings",
+                        "Debt Payback" -> incoming to (outgoing + item.amount)
 
                         else -> incoming to outgoing
                     }
@@ -200,7 +198,7 @@ fun DonutChartPager(
 fun StatArea(
     modifier: Modifier = Modifier,
     donutChartDataCollection: DonutChartDataCollection,
-    datasets: List<Dataset>,
+    financeList: List<Finance>,
 ) {
     val items = listOf(
         PagerItem(
@@ -277,7 +275,7 @@ fun StatArea(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                GoalInsightPager(datasets)
+                GoalInsightPager(financeList)
             }
         }
 

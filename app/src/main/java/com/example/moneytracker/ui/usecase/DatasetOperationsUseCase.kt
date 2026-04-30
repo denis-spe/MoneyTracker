@@ -2,25 +2,25 @@ package com.example.moneytracker.ui.usecase
 
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataStorage
-import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Finance
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.Query
 import javax.inject.Inject
 
-class DatasetOperationsUseCase @Inject constructor(
+class FinanceOperationsUseCase @Inject constructor(
     private val dataStorage: DataStorage
 ) {
 
-    suspend fun addData(userId: String, dataset: Dataset): String {
-        return dataStorage.addData(userId, dataset)
+    suspend fun addData(userId: String, finance: Finance): String {
+        return dataStorage.addData(userId, finance)
     }
 
-    suspend fun filterDatasets(
+    suspend fun filterFinances(
         userId: String,
         filter: Filter,
         orderBy: String? = null,
         orderDirection: Query.Direction? = null
-    ): List<Dataset> {
+    ): List<Finance> {
         return dataStorage.filterDatasets(
             userId = userId,
             filter = filter,
@@ -31,41 +31,41 @@ class DatasetOperationsUseCase @Inject constructor(
 
     suspend fun updateData(
         userId: String,
-        oldDataset: Dataset,
-        newDataset: Dataset
+        oldFinance: Finance,
+        newFinance: Finance
     ) {
         dataStorage.updateDataset(
             userId = userId,
-            oldDataset = oldDataset,
-            newDataset = newDataset
+            oldFinance = oldFinance,
+            newFinance = newFinance
         )
     }
 
-    suspend fun removeData(userId: String, dataset: Dataset) {
-        dataStorage.removeDataset(userId, dataset)
+    suspend fun removeData(userId: String, finance: Finance) {
+        dataStorage.removeDataset(userId, finance)
     }
 
     suspend fun addAdjustment(
         userId: String,
-        datasetId: String,
+        financeId: String,
         adjustment: Adjustment
     ) {
         dataStorage.addAdjustmentDataset(
             userId = userId,
-            datasetId = datasetId,
+            datasetId = financeId,
             adjustment = adjustment
         )
     }
 
     suspend fun updateAdjustment(
         userId: String,
-        datasetId: String,
+        financeId: String,
         oldAdjustment: Adjustment,
         newAdjustment: Adjustment
     ) {
         dataStorage.updateAdjustmentDataset(
             userId = userId,
-            datasetId = datasetId,
+            datasetId = financeId,
             oldAdjustment = oldAdjustment,
             newAdjustment = newAdjustment
         )
@@ -73,12 +73,12 @@ class DatasetOperationsUseCase @Inject constructor(
 
     suspend fun removeAdjustment(
         userId: String,
-        datasetId: String,
+        financeId: String,
         adjustment: Adjustment
     ) {
         dataStorage.removeAdjustmentDataset(
             userId = userId,
-            datasetId = datasetId,
+            datasetId = financeId,
             adjustment = adjustment
         )
     }

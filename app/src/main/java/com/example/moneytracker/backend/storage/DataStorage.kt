@@ -19,69 +19,69 @@ interface DataStorage {
     suspend fun createUserWithId(id: String)
 
     /**
-     * Add a dataset to the storage
+     * Add a finance record to the storage
      * @param userId the user id
-     * @param dataset the dataset to add
-     * @return the id of the added dataset
+     * @param finance the finance record to add
+     * @return the id of the added record
      */
-    fun addData(userId: String, dataset: Dataset): String
+    fun addData(userId: String, finance: Finance): String
 
     /**
-     * Get all datasets
+     * Get all finance records
      * @param userId the user id
      */
     suspend fun getWholeDatasets(
         userId: String,
         onSuccess: (isSuccess: Boolean) -> Unit,
         onFailure: (error: Throwable?) -> Unit
-    ): Flow<List<Dataset>>
+    ): Flow<List<Finance>>
 
 
     suspend fun getInfo(userId: String): Flow<Info>
 
     /**
-     * Add a repay entry into a dataset (identified by its id) for the given user.
+     * Add a repay entry into a finance record (identified by its id) for the given user.
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      */
     suspend fun addAdjustmentDataset(userId: String, datasetId: String, adjustment: Adjustment)
 
     /**
-     * Ensure every dataset stored for the user has a non-null id; assign UUIDs to missing ones.
-     * This is a migration helper to avoid dataset.id being null for older documents.
+     * Ensure every record stored for the user has a non-null id; assign UUIDs to missing ones.
+     * This is a migration helper to avoid finance.id being null for older documents.
      */
     suspend fun ensureDatasetIds(userId: String)
 
     /**
-     * Remove a dataset from the storage
+     * Remove a finance record from the storage
      * @param userId the user id
-     * @param dataset the dataset to remove
+     * @param finance the finance record to remove
      */
-    suspend fun removeDataset(userId: String, dataset: Dataset)
+    suspend fun removeDataset(userId: String, finance: Finance)
 
     /**
-     * Remove adjusted dataset from the storage
+     * Remove adjusted finance record from the storage
      * @param userId the user id
-     * @param datasetId the dataset id
+     * @param datasetId the record id
      * @param adjustment the adjustment
      */
     suspend fun removeAdjustmentDataset(userId: String, datasetId: String, adjustment: Adjustment)
 
     /**
-     * Update a dataset to the storage
+     * Update a finance record to the storage
      * @param userId the user id
-     * @param oldDataset the dataset to update
-     * @param newDataset the dataset to update the old one
+     * @param oldFinance the record to update
+     * @param newFinance the record to update the old one
      */
     suspend fun updateDataset(
         userId: String,
-        oldDataset: Dataset,
-        newDataset: Dataset
+        oldFinance: Finance,
+        newFinance: Finance
     )
 
     /**
-     * Update a dataset to the storage
+     * Update a finance record to the storage
      * @param userId the user id
-     * @param datasetId of the dataset
+     * @param datasetId of the record
      * @param oldAdjustment to update with the new one
      * @param newAdjustment to update the old one
      */
@@ -93,10 +93,10 @@ interface DataStorage {
     )
 
     /**
-     * Add a status into a list in dataset (identified by its id) for the given user.
+     * Add a status into a list in record (identified by its id) for the given user.
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      * @param userId the user id
-     * @param datasetId the dataset id
+     * @param datasetId the record id
      */
     suspend fun addStatus(
         userId: String,
@@ -106,17 +106,17 @@ interface DataStorage {
     )
 
     /**
-     * Clear a list in dataset (identified by its id) for the given user.
+     * Clear a list in record (identified by its id) for the given user.
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      * @param userId the user id
-     * @param datasetId the dataset id
+     * @param datasetId the record id
      */
     suspend fun clearAdjustmentList(userId: String, datasetId: String)
 
     /**
-     * Get a dataset from the storage
+     * Get a record from the storage
      * @param userId the user id
-     * @param datasetId the dataset id
+     * @param datasetId the record id
      */
     suspend fun stopRoutine(
         userId: String,
@@ -124,17 +124,17 @@ interface DataStorage {
     )
 
     /**
-     * Get a dataset from the storage
+     * Get a record from the storage
      * @param userId the user id
-     * @param datasetId the dataset id
+     * @param datasetId the record id
      */
-    suspend fun getDataset(userId: String, datasetId: String): Dataset?
+    suspend fun getDataset(userId: String, datasetId: String): Finance?
 
     /**
      * At the end of a routine, add a status into a list in
-     * dataset and clear the adjustment list (identified by its id) for the given user.
+     * record and clear the adjustment list (identified by its id) for the given user.
      * @param userId the user id
-     * @param datasetId the dataset id
+     * @param datasetId the record id
      */
     suspend fun completeRoutine(
         userId: String,
@@ -144,17 +144,17 @@ interface DataStorage {
     )
 
     /**
-     * Filter datasets based on the provided filter criteria.
+     * Filter records based on the provided filter criteria.
      * @param userId the user id
      * @param filter the filter criteria to apply
      * @param orderBy the field to order the results by (optional)
      * @param orderDirection the direction to order the results (optional)
-     * @return a list of datasets that match the filter criteria
+     * @return a list of records that match the filter criteria
      */
     suspend fun filterDatasets(
         userId: String,
         filter: Filter,
         orderBy: String? = null,
         orderDirection: Query.Direction? = null
-    ): List<Dataset>
+    ): List<Finance>
 }

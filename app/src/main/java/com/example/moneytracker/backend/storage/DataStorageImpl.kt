@@ -6,7 +6,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.adjustmentToMap
 import com.example.moneytracker.helper.statusHistoryToMap
-import com.example.moneytracker.helper.toDataset
+import com.example.moneytracker.helper.toFinance
 import com.example.moneytracker.helper.toMap
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Filter
@@ -30,7 +30,7 @@ class DataStorageImpl(
         filter: Filter,
         orderBy: String?,
         orderDirection: Query.Direction?
-    ): List<Dataset> {
+    ): List<Finance> {
         return try {
             var query: Query = db.collection(COLLECTION_NAME)
                 .document(userId)
@@ -44,7 +44,7 @@ class DataStorageImpl(
             val snapshot = query.get().await()
 
             snapshot.documents.mapNotNull { doc ->
-                runCatching { doc.data?.toDataset() }
+                runCatching { doc.data?.toFinance() }
                     .onFailure {
                         Log.e(
                             "DataStorageImpl",
@@ -64,7 +64,7 @@ class DataStorageImpl(
         userId: String,
         onSuccess: (isSuccess: Boolean) -> Unit,
         onFailure: (error: Throwable?) -> Unit
-    ): Flow<List<Dataset>> = callbackFlow {
+    ): Flow<List<Finance>> = callbackFlow {
         val datasetsRef = db.collection(COLLECTION_NAME)
             .document(userId)
             .collection("datasets")
@@ -85,7 +85,7 @@ class DataStorageImpl(
             try {
                 val data = snapshot?.documents?.mapNotNull { doc ->
                     try {
-                        doc.data?.toDataset()
+                        doc.data?.toFinance()
                     } catch (e: Exception) {
                         Log.e("DataStorageImpl", "Failed to parse dataset item", e)
                         null
@@ -187,63 +187,84 @@ class DataStorageImpl(
 
 
     /**
-     * Add a dataset to the storage
+     * Add a finance record to the storage
      */
-    override fun addData(userId: String, dataset: Dataset): String {
+    override fun addData(userId: String, finance: Finance): String {
         Log.d(
             "DataStorageImpl",
-            "addData user=$userId dataset.id=${dataset.id} label=${dataset.label}"
+            "addData user=$userId finance.id=${finance.id} label=${finance.label}"
         )
 
-        val datasetId = dataset.id.ifEmpty { UUID.randomUUID().toString() }
-        val updatedDataset = if (dataset.id.isEmpty()) dataset.copy(id = datasetId) else dataset
+        val financeId = finance.id.ifEmpty { UUID.randomUUID().toString() }
+        val updatedFinance = when (finance) {
+            is Finance.Transaction -> if (finance.id.isEmpty()) finance.copy(id = financeId) else finance
+            is Finance.Goal -> if (finance.id.isEmpty()) finance.copy(id = financeId) else finance
+            is Finance.Liability -> if (finance.id.isEmpty()) finance.copy(id = financeId) else finance
+        }
 
         db.collection(COLLECTION_NAME)
             .document(userId)
             .collection("datasets")
-            .document(datasetId)
-            .set(updatedDataset.toMap())
+            .document(financeId)
+            .set(updatedFinance.toMap())
             .addOnSuccessListener {
-                Log.d("Firestore", "Successfully wrote dataset $datasetId for user $userId")
+                Log.d("Firestore", "Successfully wrote finance record $financeId for user $userId")
             }
             .addOnFailureListener {
-                Log.e("Firestore", "Failed to write dataset for $userId", it)
+                Log.e("Firestore", "Failed to write finance record for $userId", it)
             }
 
-        return datasetId
+        return financeId
     }
 
     override suspend fun updateDataset(
         userId: String,
-        oldDataset: Dataset,
-        newDataset: Dataset
+        oldFinance: Finance,
+        newFinance: Finance
     ) {
         Log.d(
             "DataStorageImpl",
-            "Update user=$userId dataset.id=${oldDataset.id} label=${oldDataset.label}"
+            "Update user=$userId finance.id=${oldFinance.id} label=${oldFinance.label}"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
             .collection("datasets")
-            .document(oldDataset.id)
+            .document(oldFinance.id)
 
         try {
-            // Modify new dataset
-            val modifyNewDataset = newDataset.copy(
-                adjustment = newDataset.adjustment.map { adjustment ->
-                    adjustment.copy(
-                        tagIcon = newDataset.tagIcon,
-                        label = adjustment.label,
+            // Modify new finance record
+            val modifiedFinance = when (newFinance) {
+                is Finance.Goal -> {
+                    newFinance.copy(
+                        adjustment = newFinance.adjustment.map { adjustment ->
+                            adjustment.copy(
+                                tagIcon = newFinance.tagIcon,
+                                label = adjustment.label,
+                            )
+                        }
                     )
                 }
-            )
+
+                is Finance.Liability -> {
+                    newFinance.copy(
+                        adjustment = newFinance.adjustment.map { adjustment ->
+                            adjustment.copy(
+                                tagIcon = newFinance.tagIcon,
+                                label = adjustment.label,
+                            )
+                        }
+                    )
+                }
+
+                is Finance.Transaction -> newFinance
+            }
 
             // Simply update the document
-            docRef.set(modifyNewDataset.toMap())
-            Log.d("Dataset update", "Updated dataset ${oldDataset.id}")
+            docRef.set(modifiedFinance.toMap())
+            Log.d("Finance update", "Updated finance record ${oldFinance.id}")
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to update dataset", e)
+            Log.e("DataStorageImpl", "Failed to update finance record", e)
         }
     }
 
@@ -268,10 +289,14 @@ class DataStorageImpl(
             } catch (e: Exception) {
                 docRef.get(Source.CACHE).await()
             }
-            val dataset = snapshot.data?.toDataset() ?: return
+            val finance = snapshot.data?.toFinance() ?: return
 
             // Add new adjustment to list
-            val updatedAdjustments = dataset.adjustment.toMutableList()
+            val updatedAdjustments = when (finance) {
+                is Finance.Goal -> finance.adjustment.toMutableList()
+                is Finance.Liability -> finance.adjustment.toMutableList()
+                is Finance.Transaction -> mutableListOf()
+            }
             updatedAdjustments.add(
                 adjustment.copy(
                     adjustmentId = adjustment.adjustmentId.ifEmpty { UUID.randomUUID().toString() }
@@ -280,7 +305,7 @@ class DataStorageImpl(
 
             // Update only the adjustment array
             docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
-            Log.d("DataStorageImpl", "Added adjustment to dataset $datasetId")
+            Log.d("DataStorageImpl", "Added adjustment to finance record $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to add adjustment", e)
             throw e
@@ -308,32 +333,32 @@ class DataStorageImpl(
             } catch (e: Exception) {
                 docRef.get(Source.CACHE).await()
             }
-            snapshot.data?.toDataset() ?: return
+            snapshot.data?.toFinance() ?: return
 
             // Update stopRoutine field in routineData
             docRef.update("routineData.stopRoutine", true)
-            Log.d("DataStorageImpl", "Stopped routine for dataset $datasetId")
+            Log.d("DataStorageImpl", "Stopped routine for record $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to stop routine", e)
         }
     }
 
     /**
-     * Get a dataset from the storage
+     * Get a finance record from the storage
      * @param userId the user id
-     * @param datasetId the dataset id
+     * @param datasetId the record id
      */
-    override suspend fun getDataset(userId: String, datasetId: String): Dataset? {
+    override suspend fun getDataset(userId: String, datasetId: String): Finance? {
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
             .collection("datasets")
             .document(datasetId)
 
         return try {
-            docRef.get().await().data?.toDataset()
+            docRef.get().await().data?.toFinance()
         } catch (e: Exception) {
             try {
-                docRef.get(Source.CACHE).await().data?.toDataset()
+                docRef.get(Source.CACHE).await().data?.toFinance()
             } catch (cacheException: Exception) {
                 if (e is FirebaseFirestoreException) throw e
                 null
@@ -360,12 +385,16 @@ class DataStorageImpl(
             } catch (e: Exception) {
                 docRef.get(Source.CACHE).await()
             }
-            val dataset = snapshot.data?.toDataset() ?: return
+            val finance = snapshot.data?.toFinance() ?: return
 
 
             // Calculate status and total adjustment amount
-            val totalAdjustmentAmount = dataset.adjustment.sumOf { it.amount }
-            val isAchieved = totalAdjustmentAmount >= dataset.amount
+            val totalAdjustmentAmount = when (finance) {
+                is Finance.Goal -> finance.adjustment.sumOf { it.amount }
+                is Finance.Liability -> finance.adjustment.sumOf { it.amount }
+                is Finance.Transaction -> 0.0
+            }
+            val isAchieved = totalAdjustmentAmount >= finance.amount
             val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
 
             // Create status history entry with total adjustment amount and timestamps
@@ -382,7 +411,7 @@ class DataStorageImpl(
                 .document(statusId)
                 .set(statusHistory.statusHistoryToMap)
 
-            // Update dataset fields and reset adjustments
+            // Update finance fields and reset adjustments
             docRef.update(
                 mapOf(
                     "routineData.startDateTime" to newDateTime,
@@ -421,10 +450,14 @@ class DataStorageImpl(
             } catch (e: Exception) {
                 datasetDocRef.get(Source.CACHE).await()
             }
-            val dataset = snapshot.data?.toDataset() ?: return
+            val finance = snapshot.data?.toFinance() ?: return
 
-            val totalAdjustmentAmount = dataset.adjustment.sumOf { it.amount }
-            val isAchieved = totalAdjustmentAmount >= dataset.amount
+            val totalAdjustmentAmount = when (finance) {
+                is Finance.Goal -> finance.adjustment.sumOf { it.amount }
+                is Finance.Liability -> finance.adjustment.sumOf { it.amount }
+                is Finance.Transaction -> 0.0
+            }
+            val isAchieved = totalAdjustmentAmount >= finance.amount
             val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
 
             // Create status history entry with total adjustment amount and timestamps
@@ -449,7 +482,7 @@ class DataStorageImpl(
                 )
             )
 
-            Log.d("addStatus", "Status added and dataset updated for $datasetId")
+            Log.d("addStatus", "Status added and record updated for $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to add status", e)
         }
@@ -505,8 +538,8 @@ class DataStorageImpl(
         }
     }
 
-    override suspend fun removeDataset(userId: String, dataset: Dataset) {
-        val id = dataset.id
+    override suspend fun removeDataset(userId: String, finance: Finance) {
+        val id = finance.id
         val docRef = db.collection(COLLECTION_NAME).document(userId)
             .collection("datasets").document(id)
 
@@ -533,9 +566,9 @@ class DataStorageImpl(
             // Remove .await() if you want it to finish instantly while offline
             batch.commit()
 
-            Log.d("DataStorageImpl", "Dataset and history deleted via batch")
+            Log.d("DataStorageImpl", "Finance record and history deleted via batch")
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to remove dataset", e)
+            Log.e("DataStorageImpl", "Failed to remove finance record", e)
             throw e
         }
     }
@@ -561,15 +594,20 @@ class DataStorageImpl(
             } catch (e: Exception) {
                 docRef.get(Source.CACHE).await()
             }
-            val dataset = snapshot.data?.toDataset() ?: return
+            val finance = snapshot.data?.toFinance() ?: return
 
             // Remove adjustment from list
-            val updatedAdjustments = dataset.adjustment.filter {
+            val currentAdjustments = when (finance) {
+                is Finance.Goal -> finance.adjustment
+                is Finance.Liability -> finance.adjustment
+                is Finance.Transaction -> emptyList()
+            }
+            val updatedAdjustments = currentAdjustments.filter {
                 it.adjustmentId != adjustment.adjustmentId
             }
 
             docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
-            Log.d("DataStorageImpl", "Removed adjustment from dataset $datasetId")
+            Log.d("DataStorageImpl", "Removed adjustment from finance record $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to remove adjustment", e)
             throw e
@@ -598,10 +636,15 @@ class DataStorageImpl(
             } catch (e: Exception) {
                 docRef.get(Source.CACHE).await()
             }
-            val dataset = snapshot.data?.toDataset() ?: return
+            val finance = snapshot.data?.toFinance() ?: return
 
             // Remove old adjustment and add new one
-            val updatedAdjustments = dataset.adjustment.filter {
+            val currentAdjustments = when (finance) {
+                is Finance.Goal -> finance.adjustment
+                is Finance.Liability -> finance.adjustment
+                is Finance.Transaction -> emptyList()
+            }
+            val updatedAdjustments = currentAdjustments.filter {
                 it.adjustmentId != oldAdjustment.adjustmentId
             }.toMutableList()
 

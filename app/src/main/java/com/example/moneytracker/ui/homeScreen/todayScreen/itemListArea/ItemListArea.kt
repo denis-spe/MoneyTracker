@@ -779,61 +779,61 @@ fun ItemCard(
 
     val colorResId = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
-        is DataAdjust.Data -> dataAdjust.dataset.dataType.color
+        is DataAdjust.Data -> dataAdjust.finance.colorRes
     }
 
     val labelIcon = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon.icon
-        is DataAdjust.Data -> dataAdjust.dataset.tagIcon.icon
+        is DataAdjust.Data -> dataAdjust.finance.tagIcon.icon
     }.let {
         painterResource(id = it)
     }
 
     val label = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.label
-        is DataAdjust.Data -> dataAdjust.dataset.label
+        is DataAdjust.Data -> dataAdjust.finance.label
     }
 
     val description = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.description
-        is DataAdjust.Data -> dataAdjust.dataset.description
+        is DataAdjust.Data -> dataAdjust.finance.description
     }.let {
         if (it.length > 20) it.take(20) + "..." else it
     }
 
     val dateTime = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime
-        is DataAdjust.Data -> dataAdjust.dataset.createdAt
+        is DataAdjust.Data -> dataAdjust.finance.createdAt
     }.formatToDateTime
 
     val paymentMethod = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.paymentMethod.icon
-        is DataAdjust.Data -> dataAdjust.dataset.paymentMethod.icon
+        is DataAdjust.Data -> dataAdjust.finance.paymentMethod.icon
     }.let {
         painterResource(id = it)
     }
 
     val amount = when (dataAdjust) {
         is DataAdjust.Adjust -> dataAdjust.adjustment.amount
-        is DataAdjust.Data -> dataAdjust.dataset.amount
+        is DataAdjust.Data -> dataAdjust.finance.amount
     }.formatToAmount()
 
     when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.dataset.dataType
+        is DataAdjust.Data -> dataAdjust.finance.categoryText
         else -> null
     }
 
     val adjustment = if (dataAdjust is DataAdjust.Adjust)
-        dataAdjust.adjustment.dataset?.label
+        dataAdjust.adjustment.finance?.label
     else null
 
     val isAmountEqualWithAdjustAmount = when (dataAdjust) {
         is DataAdjust.Data -> {
-            dataAdjust.dataset.isAmountEqualToAdjustAmount()
+            dataAdjust.finance.isAmountEqualToAdjustAmount()
         }
 
         is DataAdjust.Adjust -> {
-            dataAdjust.adjustment.dataset?.isAmountEqualToAdjustAmount()
+            dataAdjust.adjustment.finance?.isAmountEqualToAdjustAmount()
         }
     }
 

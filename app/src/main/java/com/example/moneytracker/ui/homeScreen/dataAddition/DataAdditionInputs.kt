@@ -97,7 +97,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Finance
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
@@ -566,9 +566,9 @@ fun AdjustmentField(
     sheetVisible: Boolean,
     datatype: DataType,
     amountState: TextFieldState,
-    datasets: List<Dataset>,
+    financeList: List<Finance>,
     colorResId: Int,
-    selectedDataset: MutableState<Dataset?>,
+    selectedFinance: MutableState<Finance?>,
     modifier: Modifier = Modifier,
     wasRepaySuccess: MutableState<State>
 ) {
@@ -580,41 +580,41 @@ fun AdjustmentField(
     /* ----------------------------------------------------------
      * 1) React to Firestore datasets ONLY when sheet is visible
      * ---------------------------------------------------------- */
-    LaunchedEffect(sheetVisible, datasets) {
+    LaunchedEffect(sheetVisible, financeList) {
         if (!sheetVisible) return@LaunchedEffect
 
-        val current = selectedDataset.value ?: return@LaunchedEffect
+        val current = selectedFinance.value ?: return@LaunchedEffect
 
-        val matched = datasets.firstOrNull {
+        val matched = financeList.firstOrNull {
             it.label == current.label && it.createdAt == current.createdAt
         }
 
         if (matched != null && matched !== current) {
-            selectedDataset.value = matched
+            selectedFinance.value = matched
         }
     }
 
-    val filteredDataset = when (datatype) {
+    val filteredFinance = when (datatype) {
         DataType.LENT -> remember {
             derivedStateOf {
-                datasets.filter { it.dataType == DataType.LENT }
+                financeList.filter { it.categoryText == "Lent" }
             }
         }
 
         DataType.DEBT -> remember {
             derivedStateOf {
-                datasets.filter { it.dataType == DataType.DEBT }
+                financeList.filter { it.categoryText == "Debt" }
             }
         }
 
         // Else it's a goal
         else -> remember {
             derivedStateOf {
-                datasets.filter {
+                financeList.filter {
                     val now = LocalDateTime.now()
-                    val deadlineDateTime = it.routine.deadlineDateTime
-                        .toLocalDateTimeUtc()
-                    it.dataType == DataType.GOAL && now <= deadlineDateTime
+                    val deadlineDateTime = if (it is Finance.Goal) it.routine.deadlineDateTime
+                        .toLocalDateTimeUtc() else LocalDateTime.now()
+                    it is Finance.Goal && now <= deadlineDateTime
                 }
             }
         }
@@ -628,7 +628,7 @@ fun AdjustmentField(
     val symbol = numberFormat.currency?.symbol ?: "$"
     val onDialogShow = remember { mutableStateOf(false) }
     var amountToDisplay by remember { mutableStateOf("${symbol}0.0") }
-    var datasetToDisplay by remember { mutableStateOf<Dataset?>(null) }
+    var financeToDisplay by remember { mutableStateOf<Finance?>(null) }
     val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -640,8 +640,8 @@ fun AdjustmentField(
         Dialog(
             onDismissRequest = {
                 amountState.setTextAndPlaceCursorAtEnd("")
-                selectedDataset.value = null
-                datasetToDisplay = null
+                selectedFinance.value = null
+                financeToDisplay = null
                 amountToDisplay = "${symbol}0.0"
                 onDialogShow.value = false
             },
@@ -693,21 +693,21 @@ fun AdjustmentField(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        filteredDataset.value.forEach { dataset ->
+                        filteredFinance.value.forEach { finance ->
 
                             DropdownMenuItem(
                                 text = {
-                                    Text(dataset.label, fontSize = fontSize)
+                                    Text(finance.label, fontSize = fontSize)
                                 },
                                 onClick = {
                                     expanded = false
                                     focusRequester.requestFocus()
-                                    selectedDataset.value = dataset
+                                    selectedFinance.value = finance
                                 },
                                 leadingIcon = {
                                     Image(
-                                        painter = painterResource(dataset.tagIcon.icon),
-                                        contentDescription = dataset.label,
+                                        painter = painterResource(finance.tagIcon.icon),
+                                        contentDescription = finance.label,
                                         modifier = Modifier.size(ICON_SIZE)
                                     )
                                 }
@@ -727,7 +727,7 @@ fun AdjustmentField(
                             )
                         ) {
                             Text(
-                                selectedDataset.value?.label ?: "Select ${datatype.text}",
+                                selectedFinance.value?.label ?: "Select ${datatype.text}",
                                 fontSize = fontSize,
                             )
                         }
@@ -849,9 +849,9 @@ fun AdjustmentField(
             Text(dataTypeText, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
         },
         supportingContent = {
-            if (datasetToDisplay != null) {
+            if (financeToDisplay != null) {
                 Text(
-                    datasetToDisplay?.label ?: "Select your ${datatype.text}",
+                    financeToDisplay?.label ?: "Select your ${datatype.text}",
                     color = color, fontSize = fontSize
                 )
             }
@@ -876,7 +876,7 @@ fun AdjustmentField(
     /* ----------------------------------------------------------
      * 3) Update amount AFTER selection (deferred, safe)
      * ---------------------------------------------------------- */
-    val selected = selectedDataset.value
+    val selected = selectedFinance.value
     LaunchedEffect(sheetVisible, selected) {
         if (!sheetVisible || selected == null) return@LaunchedEffect
 

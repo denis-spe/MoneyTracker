@@ -8,6 +8,7 @@ import androidx.work.WorkerParameters
 import com.example.moneytracker.backend.notification.AndroidNotification
 import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.storage.DataStorage
+import com.example.moneytracker.backend.storage.Finance
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.progressPercentage
@@ -52,92 +53,92 @@ class RoutineWorker @AssistedInject constructor(
             // Get the dataset from the database
             val dataset = dataStorage.getDataset(userId, datasetId)
 
-            // If the dataset is not found, return failure
-            if (dataset == null) {
-                Log.e(TAG, "Dataset not found")
+            if (dataset !is Finance.Goal) {
+                Log.e(TAG, "Dataset is not a Goal")
                 return Result.failure()
+            }
+
+            // If the dataset is not found, return failure
+            Log.d(TAG, "Dataset found: $dataset")
+
+            val nextDeadline = dataset.routine
+                .rescheduleDeadline(
+                    baseTime = dataset.routine.deadlineDateTime.toLocalDateTimeUtc()
+                        .toJavaLocalDateTime()
+                )
+                .toKotlinLocalDateTime()
+                .toFirestoreTimestampUtc()
+
+            val progress = dataset.progressPercentage
+            val formatProgress = String.format(
+                Locale.getDefault(),
+                "%.1f",
+                progress
+            )
+
+            val currentStatus = dataset.status
+            Log.d(
+                TAG,
+                "Current status for ${dataset.label}: $currentStatus, progress: $formatProgress%"
+            )
+
+            // Complete the current routine: clear adjustment list and add status
+            val now = Timestamp.now()
+            val normalizedNow = if (dataset.routine.routine in listOf(
+                    Routine.EveryDay,
+                    Routine.Weekly,
+                    Routine.Monthly,
+                    Routine.Yearly
+                )
+            ) {
+                now.toLocalDateTimeUtc().toMidnight().toFirestoreTimestampUtc()
             } else {
-                Log.d(TAG, "Dataset found: $dataset")
+                now
+            }
 
-                val nextDeadline = dataset.routine
-                    .rescheduleDeadline(
-                        baseTime = dataset.routine.deadlineDateTime.toLocalDateTimeUtc()
-                            .toJavaLocalDateTime()
+            dataStorage.completeRoutine(
+                userId = userId,
+                datasetId = datasetId,
+                newDateTime = normalizedNow,
+                nextDeadline = nextDeadline
+            )
+
+            if (dataset.routine.routine != Routine.Nothing) {
+                workers.startRoutineWorker(
+                    WorkersTask(
+                        userId = userId,
+                        datasetId = datasetId,
+                        deadlineDateTime = nextDeadline,
+                        routineData = dataset.routine
                     )
-                    .toKotlinLocalDateTime()
-                    .toFirestoreTimestampUtc()
-
-                val progress = dataset.progressPercentage
-                val formatProgress = String.format(
-                    Locale.getDefault(),
-                    "%.1f",
-                    progress
                 )
 
-                val currentStatus = dataset.status
-                Log.d(
-                    TAG,
-                    "Current status for ${dataset.label}: $currentStatus, progress: $formatProgress%"
-                )
-
-                // Complete the current routine: clear adjustment list and add status
-                val now = Timestamp.now()
-                val normalizedNow = if (dataset.routine.routine in listOf(
-                        Routine.EveryDay,
-                        Routine.Weekly,
-                        Routine.Monthly,
-                        Routine.Yearly
+                if (currentStatus != Status.ACTIVE && currentStatus != Status.INITIAL) {
+                    val isSuccessful = currentStatus in listOf(
+                        Status.COMPLETED,
+                        Status.PAYBACK,
+                        Status.REFUNDED,
+                        Status.SUCCESS
                     )
-                ) {
-                    now.toLocalDateTimeUtc().toMidnight().toFirestoreTimestampUtc()
-                } else {
-                    now
-                }
+                    notifier.showNotification(
+                        NotificationItem(
+                            title = dataset.label,
+                            // Short and clear summary
+                            message = if (isSuccessful) "Goal completed!"
+                            else "Deadline missed",
 
-                dataStorage.completeRoutine(
-                    userId = userId,
-                    datasetId = datasetId,
-                    newDateTime = normalizedNow,
-                    nextDeadline = nextDeadline
-                )
+                            // Detailed encouraging message
+                            bigMessage = if (isSuccessful)
+                                "Perfect! You've completed ${dataset.label} " +
+                                        "with ${formatProgress}%. Great job!"
+                            else
+                                "Sorry, you didn't finish ${dataset.label} (${formatProgress}%). " +
+                                        "Try to stay on track next time!",
 
-                if (dataset.routine.routine != Routine.Nothing) {
-                    workers.startRoutineWorker(
-                        WorkersTask(
-                            userId = userId,
-                            datasetId = datasetId,
-                            deadlineDateTime = nextDeadline,
-                            routineData = dataset.routine
+                            icon = dataset.tagIcon.icon,
+                            largeIcon = currentStatus.icon
                         )
                     )
-
-                    if (currentStatus != Status.ACTIVE && currentStatus != Status.INITIAL) {
-                        val isSuccessful = currentStatus in listOf(
-                            Status.COMPLETED,
-                            Status.PAYBACK,
-                            Status.REFUNDED,
-                            Status.SUCCESS
-                        )
-                        notifier.showNotification(
-                            NotificationItem(
-                                title = dataset.label,
-                                // Short and clear summary
-                                message = if (isSuccessful) "Goal completed!"
-                                else "Deadline missed",
-
-                                // Detailed encouraging message
-                                bigMessage = if (isSuccessful)
-                                    "Perfect! You've completed ${dataset.label} " +
-                                            "with ${formatProgress}%. Great job!"
-                                else
-                                    "Sorry, you didn't finish ${dataset.label} (${formatProgress}%). " +
-                                            "Try to stay on track next time!",
-
-                                icon = dataset.tagIcon.icon,
-                                largeIcon = currentStatus.icon
-                            )
-                        )
-                    }
                 }
             }
 

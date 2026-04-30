@@ -48,10 +48,12 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.LiabilityType
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.TagIcon
+import com.example.moneytracker.backend.storage.TransactionType
 import com.example.moneytracker.helper.GoalWarning
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
@@ -77,7 +79,7 @@ const val MAX_LABEL_LENGTH = 15
 fun DataAdditionModelDrawer(
     viewModel: HomeViewModel,
     userViewModel: UserViewModel,
-    datasets: List<Dataset>,
+    financeList: List<Finance>,
     uiState: HomeUiState,
 ) {
 
@@ -99,7 +101,7 @@ fun DataAdditionModelDrawer(
                 viewModel = viewModel,
                 userViewModel = userViewModel,
                 entries = DataType.entries,
-                datasets = datasets
+                financeList = financeList
             )
         }
     }
@@ -122,7 +124,7 @@ fun DataAdditionModelDrawer(
                 viewModel = viewModel,
                 userViewModel = userViewModel,
                 entries = AdjustmentType.entries.filter { it != AdjustmentType.INITIAL },
-                datasets = datasets
+                financeList = financeList
             )
         }
     }
@@ -135,7 +137,7 @@ fun DataAdditionModelDrawer(
 fun <T> DataAdditionModelDrawerContent(
     viewModel: HomeViewModel,
     userViewModel: UserViewModel,
-    datasets: List<Dataset>,
+    financeList: List<Finance>,
     entries: List<T>,
 ) {
 
@@ -296,7 +298,7 @@ fun <T> DataAdditionModelDrawerContent(
                     AdjustmentDataInputs(
                         DataType.LENT,
                         AdjustmentType.LENT_REPAY,
-                        datasets = datasets
+                        financeList = financeList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -307,7 +309,7 @@ fun <T> DataAdditionModelDrawerContent(
                     AdjustmentDataInputs(
                         DataType.GOAL,
                         AdjustmentType.GOAL_ATTAIN,
-                        datasets = datasets
+                        financeList = financeList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -318,7 +320,7 @@ fun <T> DataAdditionModelDrawerContent(
                     AdjustmentDataInputs(
                         DataType.DEBT,
                         AdjustmentType.DEBT_REPAY,
-                        datasets = datasets
+                        financeList = financeList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -552,18 +554,73 @@ fun FinancialDataInput(
                             amountAsDouble != null
                             && label.isNotEmpty()
                         ) {
-                            val dataset = Dataset(
-                                id = UUID.randomUUID().toString(),
-                                dataType = dataType,
-                                amount = amountAsDouble,
-                                label = label,
-                                description = descriptionState.text.toString(),
-                                createdAt = creationDateTime.value
-                                    .toFirestoreTimestampUtc(),
-                                tagIcon = labelIconState.value,
-                                paymentMethod = selectedPaymentMethod.value,
-                            )
-                            viewModel.addData(dataset)
+                            val finance = when (dataType) {
+                                DataType.EARNINGS -> Finance.Transaction(
+                                    id = UUID.randomUUID().toString(),
+                                    transactionType = TransactionType.EARNINGS,
+                                    amount = amountAsDouble,
+                                    label = label,
+                                    description = descriptionState.text.toString(),
+                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
+                                    tagIcon = labelIconState.value,
+                                    paymentMethod = selectedPaymentMethod.value
+                                )
+
+                                DataType.EXPENSE -> Finance.Transaction(
+                                    id = UUID.randomUUID().toString(),
+                                    transactionType = TransactionType.EXPENSES,
+                                    amount = amountAsDouble,
+                                    label = label,
+                                    description = descriptionState.text.toString(),
+                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
+                                    tagIcon = labelIconState.value,
+                                    paymentMethod = selectedPaymentMethod.value
+                                )
+
+                                DataType.SAVINGS -> Finance.Transaction(
+                                    id = UUID.randomUUID().toString(),
+                                    transactionType = TransactionType.SAVINGS,
+                                    amount = amountAsDouble,
+                                    label = label,
+                                    description = descriptionState.text.toString(),
+                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
+                                    tagIcon = labelIconState.value,
+                                    paymentMethod = selectedPaymentMethod.value
+                                )
+
+                                DataType.DEBT -> Finance.Liability(
+                                    id = UUID.randomUUID().toString(),
+                                    liabilityType = LiabilityType.DEBT,
+                                    amount = amountAsDouble,
+                                    label = label,
+                                    description = descriptionState.text.toString(),
+                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
+                                    tagIcon = labelIconState.value,
+                                    paymentMethod = selectedPaymentMethod.value
+                                )
+
+                                DataType.LENT -> Finance.Liability(
+                                    id = UUID.randomUUID().toString(),
+                                    liabilityType = LiabilityType.LOAN,
+                                    amount = amountAsDouble,
+                                    label = label,
+                                    description = descriptionState.text.toString(),
+                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
+                                    tagIcon = labelIconState.value,
+                                    paymentMethod = selectedPaymentMethod.value
+                                )
+
+                                else -> Finance.Transaction(
+                                    id = UUID.randomUUID().toString(),
+                                    amount = amountAsDouble,
+                                    label = label,
+                                    description = descriptionState.text.toString(),
+                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
+                                    tagIcon = labelIconState.value,
+                                    paymentMethod = selectedPaymentMethod.value
+                                )
+                            }
+                            viewModel.addData(finance)
                             wasSuccess.value = State.SUCCESS
 
                             // Reset all state
@@ -821,9 +878,8 @@ fun GoalDataInput(
                                 deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc()
                             )
 
-                            val dataset = Dataset(
+                            val finance = Finance.Goal(
                                 id = UUID.randomUUID().toString(),
-                                dataType = dataType,
                                 amount = amountAsDouble,
                                 label = labelState.text.toString(),
                                 description = descriptionState.text.toString(),
@@ -833,8 +889,8 @@ fun GoalDataInput(
                                 routine = routine
                             )
 
-                            viewModel.addData(dataset)
-                            viewModel.beginTheWork(dataset)
+                            viewModel.addData(finance)
+                            viewModel.beginTheWork(finance)
 
                             wasSuccess.value = State.SUCCESS
 
@@ -889,7 +945,7 @@ fun GoalDataInput(
 fun AdjustmentDataInputs(
     dataType: DataType,
     adjustmentType: AdjustmentType,
-    datasets: List<Dataset>,
+    financeList: List<Finance>,
     onDismiss: () -> Unit
 ) {
     val lazyState = rememberLazyListState()
@@ -898,7 +954,7 @@ fun AdjustmentDataInputs(
     val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
     val descriptionState = rememberTextFieldState()
     val wasRepaySuccess = remember { mutableStateOf(State.INITIAL) }
-    val selectedDataset = remember { mutableStateOf<Dataset?>(null) }
+    val selectedFinance = remember { mutableStateOf<Finance?>(null) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val adjustAmountState = rememberTextFieldState()
     val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
@@ -950,9 +1006,9 @@ fun AdjustmentDataInputs(
                     isBottomSheetOpen,
                     datatype = dataType,
                     amountState = adjustAmountState,
-                    datasets = datasets,
+                    financeList = financeList,
                     wasRepaySuccess = wasRepaySuccess,
-                    selectedDataset = selectedDataset,
+                    selectedFinance = selectedFinance,
                     colorResId = adjustmentType.color
                 )
             }
@@ -1008,7 +1064,7 @@ fun AdjustmentDataInputs(
                         colorResId = adjustmentType.color,
                         filledColor = Color.Transparent
                     ) {
-                        selectedDataset.value?.let {
+                        selectedFinance.value?.let {
                             if (adjustAsDouble != null) {
 
                                 if (
@@ -1028,10 +1084,10 @@ fun AdjustmentDataInputs(
                                     paymentMethod = selectedPaymentMethod.value,
                                     adjustmentType = AdjustmentType.GOAL_ATTAIN,
                                 )
-                                adjustment.dataset = it
+                                adjustment.finance = it
 
                                 viewModel.addAdjustmentData(
-                                    it,
+                                    it.id,
                                     adjustment
                                 )
 

@@ -30,7 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
-import com.example.moneytracker.backend.storage.DataType
+import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.LiabilityType
+import com.example.moneytracker.backend.storage.TransactionType
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
@@ -73,14 +75,16 @@ fun DataCard(
     dataAdjust: DataAdjust
 ) {
     val label = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.dataset.label
+        is DataAdjust.Data -> dataAdjust.finance.label
         is DataAdjust.Adjust -> dataAdjust.adjustment.label
     }
 
     val amount = when (dataAdjust) {
         is DataAdjust.Data -> {
-            val amount = dataAdjust.dataset.amount
-            if (dataAdjust.dataset.dataType in listOf(DataType.LENT, DataType.EXPENSE)) {
+            val amount = dataAdjust.finance.amount
+            if ((dataAdjust.finance is Finance.Liability && dataAdjust.finance.liabilityType == LiabilityType.LOAN) ||
+                (dataAdjust.finance is Finance.Transaction && dataAdjust.finance.transactionType == TransactionType.EXPENSES)
+            ) {
                 "-${amount.formatToAmount()}"
             } else {
                 amount.formatToAmount()
@@ -98,7 +102,7 @@ fun DataCard(
     }
 
     val description = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.dataset.description
+        is DataAdjust.Data -> dataAdjust.finance.description
         is DataAdjust.Adjust -> dataAdjust.adjustment.description
     }.let {
         if (it.length > 16) it.take(20) + "..." else it
@@ -106,7 +110,7 @@ fun DataCard(
 
     val dateTime = when (dataAdjust) {
         is DataAdjust.Data -> {
-            val dateTime = dataAdjust.dataset.createdAt
+            val dateTime = dataAdjust.finance.createdAt
             val date = dateTime.toLocalDateTimeUtc()
             val time = dateTime.toLocalDateTimeUtc()
             val hour = time.hour.addZeroIfLessThenTen
@@ -129,30 +133,30 @@ fun DataCard(
     }
 
     val tagIcon = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.dataset.tagIcon.icon
+        is DataAdjust.Data -> dataAdjust.finance.tagIcon.icon
         is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon.icon
     }.let {
         painterResource(id = it)
     }
 
     val color = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.dataset.dataType.color
+        is DataAdjust.Data -> dataAdjust.finance.colorRes
         is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
     }.let {
         colorResource(id = it)
     }
 
     val adjustment = if (dataAdjust is DataAdjust.Adjust)
-        dataAdjust.adjustment.dataset?.label
+        dataAdjust.adjustment.finance?.label
     else null
 
     val isAmountEqualWithAdjustAmount = when (dataAdjust) {
         is DataAdjust.Data -> {
-            dataAdjust.dataset.isAmountEqualToAdjustAmount()
+            dataAdjust.finance.isAmountEqualToAdjustAmount()
         }
 
         is DataAdjust.Adjust -> {
-            dataAdjust.adjustment.dataset?.isAmountEqualToAdjustAmount()
+            dataAdjust.adjustment.finance?.isAmountEqualToAdjustAmount()
         }
     }
 

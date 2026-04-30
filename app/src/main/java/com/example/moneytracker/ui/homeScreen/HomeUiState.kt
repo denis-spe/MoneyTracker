@@ -3,8 +3,8 @@ package com.example.moneytracker.ui.homeScreen
 import androidx.compose.ui.graphics.Color
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataAdjust
-import com.example.moneytracker.backend.storage.Dataset
 import com.example.moneytracker.backend.storage.DatasetState
+import com.example.moneytracker.backend.storage.Finance
 import com.example.moneytracker.backend.storage.Info
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
@@ -14,7 +14,7 @@ import network.chaintech.kmp_date_time_picker.utils.now
 
 
 data class HomeUiState(
-    val datasets: List<Dataset> = emptyList(),
+    val datasets: List<Finance> = emptyList(),
     val adjustment: List<Adjustment> = emptyList(),
     val info: Info = Info(),
     var isLoading: Boolean = false,
@@ -31,7 +31,7 @@ data class HomeUiState(
 
     val date: LocalDate = LocalDate.now(),
     val localDateList: List<List<LocalDate>> = emptyList(),
-    val consecutiveGoal: List<Dataset> = emptyList(),
+    val consecutiveGoal: List<Finance> = emptyList(),
     val isActionNotificationVisible: Boolean = false,
     val actionNotificationMessage: String = "",
     val actionNotificationColor: Color = Color.Gray,

@@ -20,7 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataAdjust
-import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Finance
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.HomeUiState
@@ -33,7 +33,7 @@ fun TodayScreen(
     paddingValues: PaddingValues,
     donutChartDataCollection: List<DonutChartData>,
     uiState: HomeUiState,
-    todayDatasets: List<Dataset>,
+    todayFinanceList: List<Finance>,
     homeViewModel: HomeViewModel,
     isTodayDataLoading: Boolean,
     isTodayChartDataLoading: Boolean,
@@ -70,7 +70,7 @@ fun TodayScreen(
                         donutChartDataCollection = DonutChartDataCollection(
                             donutChartDataCollection
                         ),
-                        datasets = todayDatasets
+                        financeList = todayFinanceList
                     )
                 } else {
                     StatAreaShimmer(

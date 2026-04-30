@@ -55,8 +55,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Finance
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.components.charts.InsightBar
 import kotlinx.coroutines.launch
@@ -260,28 +259,32 @@ fun CurrentPagerIndicator(
 }
 
 @Composable
-fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<PagerItem>) {
+fun InsightsPager(financeList: List<Finance>, pagerState: PagerState, items: List<PagerItem>) {
     // Single pass calculation for better performance
-    val totals = remember(datasets) {
-        val map = mutableMapOf<DataType, Double>()
-        val adjMap = mutableMapOf<DataType, Double>()
-        datasets.forEach { dataset ->
-            map[dataset.dataType] = (map[dataset.dataType] ?: 0.0) + dataset.amount
-            if (dataset.dataType == DataType.DEBT || dataset.dataType == DataType.LENT || dataset.dataType == DataType.GOAL) {
-                adjMap[dataset.dataType] =
-                    (adjMap[dataset.dataType] ?: 0.0) + dataset.adjustment.sumOf { it.amount }
+    val totals = remember(financeList) {
+        val map = mutableMapOf<String, Double>()
+        val adjMap = mutableMapOf<String, Double>()
+        financeList.forEach { finance ->
+            val typeText = finance.categoryText
+            map[typeText] = (map[typeText] ?: 0.0) + finance.amount
+
+            val adjustments = when (finance) {
+                is Finance.Goal -> finance.adjustment
+                is Finance.Liability -> finance.adjustment
+                is Finance.Transaction -> emptyList()
             }
+            adjMap[typeText] = (adjMap[typeText] ?: 0.0) + adjustments.sumOf { it.amount }
         }
         object {
-            val earnings = map[DataType.EARNINGS] ?: 0.0
-            val expense = map[DataType.EXPENSE] ?: 0.0
-            val debt = map[DataType.DEBT] ?: 0.0
-            val lent = map[DataType.LENT] ?: 0.0
-            val savings = map[DataType.SAVINGS] ?: 0.0
-            val goal = map[DataType.GOAL] ?: 0.0
-            val debtRepay = adjMap[DataType.DEBT] ?: 0.0
-            val lentRepay = adjMap[DataType.LENT] ?: 0.0
-            val score = adjMap[DataType.GOAL] ?: 0.0
+            val earnings = map["Earnings"] ?: 0.0
+            val expense = map["Expense"] ?: 0.0
+            val debt = map["Debt"] ?: 0.0
+            val lent = map["Lent"] ?: 0.0
+            val savings = map["Savings"] ?: 0.0
+            val goal = map["Goal"] ?: 0.0
+            val debtRepay = adjMap["Debt"] ?: 0.0
+            val lentRepay = adjMap["Lent"] ?: 0.0
+            val score = adjMap["Goal"] ?: 0.0
         }
     }
 
@@ -475,9 +478,9 @@ fun InsightsPager(datasets: List<Dataset>, pagerState: PagerState, items: List<P
 
 
 @Composable
-fun GoalInsightPager(datasets: List<Dataset>) {
-    val goals = remember(datasets) {
-        datasets.filter { it.dataType == DataType.GOAL }
+fun GoalInsightPager(financeList: List<Finance>) {
+    val goals = remember(financeList) {
+        financeList.filterIsInstance<Finance.Goal>()
     }
 
     if (goals.isEmpty()) {

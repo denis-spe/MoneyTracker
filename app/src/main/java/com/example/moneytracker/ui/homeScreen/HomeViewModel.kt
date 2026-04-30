@@ -5,30 +5,25 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.DataStorage
-import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Dataset
+import com.example.moneytracker.backend.storage.Finance
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
-import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
-import com.example.moneytracker.ui.usecase.DatasetOperationsUseCase
-import com.example.moneytracker.ui.usecase.GetAdjustDatasetUseCase
+import com.example.moneytracker.ui.usecase.FinanceOperationsUseCase
+import com.example.moneytracker.ui.usecase.GetAdjustFinanceUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentDateUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentWeekUseCase
 import com.example.moneytracker.ui.usecase.GetLenOfActivatesUseCase
 import com.example.moneytracker.ui.usecase.GetTodayChartDonutDataUseCase
-import com.example.moneytracker.ui.usecase.GetTodayDatasetsUseCase
 import com.example.moneytracker.ui.usecase.GetWeeklyDataUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayChartDataUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayDataAdjustUseCase
-import com.example.moneytracker.ui.usecase.GetYesterdayDatasetsUseCase
+import com.example.moneytracker.ui.usecase.GetYesterdayFinanceUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayStatsUseCase
 import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
 import com.example.moneytracker.ui.usecase.RoutineWorkerUseCase
-import com.example.moneytracker.ui.usecase.ScheduleAlarmUseCase
 import com.example.moneytracker.ui.usecase.SortTodayDataAdjustUseCase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Filter
@@ -60,25 +55,22 @@ import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
-    private val dataStorage: DataStorage,
     private val accountService: AccountServices,
-    private val datasetOperationsUseCase: DatasetOperationsUseCase,
+    private val financeOperationsUseCase: FinanceOperationsUseCase,
     private val observeUserDataUseCase: ObserveUserDataUseCase,
-    private val scheduleAlarmUseCase: ScheduleAlarmUseCase,
     private val sortTodayDataAdjustUseCase: SortTodayDataAdjustUseCase,
     private val getYesterdayDataAdjustUseCase: GetYesterdayDataAdjustUseCase,
     private val getWeeklyDataUseCase: GetWeeklyDataUseCase,
     private val getCurrentWeekUseCase: GetCurrentWeekUseCase,
     private val getCurrentDateUseCase: GetCurrentDateUseCase,
-    private val getTodayDatasetsUseCase: GetTodayDatasetsUseCase,
-    private val getYesterdayDatasetsUseCase: GetYesterdayDatasetsUseCase,
+    private val getYesterdayFinanceUseCase: GetYesterdayFinanceUseCase,
     private val getLenOfActivatesUseCase: GetLenOfActivatesUseCase,
-    private val getAdjustDatasetUseCase: GetAdjustDatasetUseCase,
+    private val getAdjustFinanceUseCase: GetAdjustFinanceUseCase,
     private val getTodayChartDonutDataUseCase: GetTodayChartDonutDataUseCase,
     private val getYesterdayChartDataUseCase: GetYesterdayChartDataUseCase,
     private val getYesterdayStatsUseCase: GetYesterdayStatsUseCase,
     private val routineWorker: RoutineWorkerUseCase,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
     private companion object {
@@ -123,32 +115,28 @@ class HomeViewModel @Inject constructor(
      * LIVE UI STATE FLOWS
      *******************/
 
-    val todayDataset = datasetsFlow
+    val todayFinance = datasetsFlow
         .map { all -> all.filter { it.isForToday } }
         .onStart { loadTodayDatasets() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
-    val yesterdayDataset = datasetsFlow
-        .map { getYesterdayDatasetsUseCase(it) }
+    val yesterdayFinance = datasetsFlow
+        .map { getYesterdayFinanceUseCase(it) }
         .onStart { loadYesterdayDatasets() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
-    val goalDataset = datasetsFlow
-        .map { it.filter { d -> d.dataType == DataType.GOAL } }
+    val goalFinance = datasetsFlow
+        .map { it.filterIsInstance<Finance.Goal>() }
         .onStart { loadGoalData() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
-    val adjustDataset = datasetsFlow
-        .map { getAdjustDatasetUseCase(it) }
+    val adjustFinance = datasetsFlow
+        .map { getAdjustFinanceUseCase(it) }
         .onStart { loadAdjustData() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
-    val allDataset = datasetsFlow
-        .onStart { loadAllData() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
-
     @OptIn(ExperimentalCoroutinesApi::class)
-    val donutChartData = todayDataset
+    val donutChartData = todayFinance
         .mapLatest {
             withContext(Dispatchers.Default) {
                 getTodayChartDonutDataUseCase(
@@ -160,7 +148,7 @@ class HomeViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val yesterdayChartData = yesterdayDataset
+    val yesterdayChartData = yesterdayFinance
         .mapLatest {
             withContext(Dispatchers.Default) {
                 getYesterdayChartDataUseCase(
@@ -172,20 +160,19 @@ class HomeViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    val yesterdayStats = yesterdayDataset
+    val yesterdayStats = yesterdayFinance
         .mapLatest { withContext(Dispatchers.Default) { getYesterdayStatsUseCase(it) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), YesterdayStats())
 
     val sortedToday = combine(datasetsFlow, sortingFlow) { datasets, sorting ->
         withContext(Dispatchers.Default) {
             sortTodayDataAdjustUseCase(
-                datasets = datasets,
                 timeSorting = sorting.time,
                 categorySorting = sorting.category,
                 paymentSorting = sorting.payment,
                 alphabeticalOrder = sorting.alphabetical,
                 amountSorting = sorting.amount,
-                take = null
+                financeList = datasets
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
@@ -243,7 +230,7 @@ class HomeViewModel @Inject constructor(
         val uid = accountService.userState.value?.uid ?: return@launch
         _uiState.update { it.copy(isTodayDataLoading = true) }
         val (start, end) = getDayRange(java.time.LocalDate.now())
-        datasetOperationsUseCase.filterDatasets(
+        financeOperationsUseCase.filterFinances(
             userId = uid,
             filter = Filter.and(
                 Filter.greaterThanOrEqualTo("createdAt", start),
@@ -257,7 +244,7 @@ class HomeViewModel @Inject constructor(
         val uid = accountService.userState.value?.uid ?: return@launch
         _uiState.update { it.copy(isYesterdayDataLoading = true) }
         val (start, end) = getDayRange(java.time.LocalDate.now().minusDays(1))
-        datasetOperationsUseCase.filterDatasets(
+        financeOperationsUseCase.filterFinances(
             userId = uid,
             filter = Filter.and(
                 Filter.greaterThanOrEqualTo("createdAt", start),
@@ -270,9 +257,9 @@ class HomeViewModel @Inject constructor(
     fun loadGoalData() = viewModelScope.launch {
         val uid = accountService.userState.value?.uid ?: return@launch
         _uiState.update { it.copy(isGoalDataLoading = true) }
-        datasetOperationsUseCase.filterDatasets(
+        financeOperationsUseCase.filterFinances(
             userId = uid,
-            filter = Filter.equalTo("dataType", DataType.GOAL.name)
+            filter = Filter.equalTo("financeType", "GOAL")
         )
         _uiState.update { it.copy(isGoalDataLoading = false) }
     }
@@ -281,42 +268,36 @@ class HomeViewModel @Inject constructor(
         val uid = accountService.userState.value?.uid ?: return@launch
         _uiState.update { it.copy(isAdjustDataLoading = true) }
         // Fetch a broad set to ensure adjustments are loaded
-        datasetOperationsUseCase.filterDatasets(
+        financeOperationsUseCase.filterFinances(
             userId = uid,
             filter = Filter.greaterThan("amount", -1)
         )
         _uiState.update { it.copy(isAdjustDataLoading = false) }
     }
 
-    fun loadAllData() = viewModelScope.launch {
-        accountService.userState.value?.uid ?: return@launch
-        _uiState.update { it.copy(isAllDataLoading = true) }
-        // The datasetsFlow is already real-time, this just triggers initial load state
-        _uiState.update { it.copy(isAllDataLoading = false) }
+
+    fun addData(finance: Finance) = launchWithUid {
+        financeOperationsUseCase.addData(it, finance)
     }
 
-    fun addData(dataset: Dataset) = launchWithUid {
-        datasetOperationsUseCase.addData(it, dataset)
+    fun updateData(old: Finance, new: Finance) = launchWithUid {
+        financeOperationsUseCase.updateData(it, old, new)
     }
 
-    fun updateData(old: Dataset, new: Dataset) = launchWithUid {
-        datasetOperationsUseCase.updateData(it, old, new)
+    fun removeData(finance: Finance) = launchWithUid {
+        financeOperationsUseCase.removeData(it, finance)
     }
 
-    fun removeData(dataset: Dataset) = launchWithUid {
-        datasetOperationsUseCase.removeData(it, dataset)
+    fun addAdjustment(financeId: String, adj: Adjustment) = launchWithUid {
+        financeOperationsUseCase.addAdjustment(it, financeId, adj)
     }
 
-    fun addAdjustment(dataset: Dataset, adj: Adjustment) = launchWithUid {
-        datasetOperationsUseCase.addAdjustment(it, dataset.id, adj)
+    fun updateAdjustment(financeId: String, old: Adjustment, new: Adjustment) = launchWithUid {
+        financeOperationsUseCase.updateAdjustment(it, financeId, old, new)
     }
 
-    fun updateAdjustment(dataset: Dataset, old: Adjustment, new: Adjustment) = launchWithUid {
-        datasetOperationsUseCase.updateAdjustment(it, dataset.id, old, new)
-    }
-
-    fun removeAdjustment(datasetId: String, adj: Adjustment) = launchWithUid {
-        datasetOperationsUseCase.removeAdjustment(it, datasetId, adj)
+    fun removeAdjustment(financeId: String, adj: Adjustment) = launchWithUid {
+        financeOperationsUseCase.removeAdjustment(it, financeId, adj)
     }
 
     private fun launchWithUid(block: suspend (String) -> Unit) {
@@ -326,16 +307,14 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun beginWork(dataset: Dataset) {
+    fun beginWork(finance: Finance) {
         val uid = accountService.userState.value?.uid ?: return
-        if (dataset.routine.routine == Routine.Nothing) return
-
-        routineWorker(uid, dataset.id, dataset.routine.triggerMillis, true)
+        if (finance is Finance.Goal) {
+            if (finance.routine.routine == Routine.Nothing) return
+            routineWorker(uid, finance.id, finance.routine.triggerMillis, true)
+        }
     }
 
-    fun updateTopTitle(nav: TopBarNav) {
-        _uiState.update { it.copy(topTitle = nav) }
-    }
 
     fun updateSelectedTabIndex(index: Int) {
         _uiState.update { it.copy(selectedTabIndex = index) }
@@ -393,15 +372,15 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(onActivateShow = show) }
     }
 
-    fun beginTheWork(dataset: Dataset) = beginWork(dataset)
+    fun beginTheWork(finance: Finance) = beginWork(finance)
 
-    fun addAdjustmentData(dataset: Dataset, adj: Adjustment) = addAdjustment(dataset, adj)
+    fun addAdjustmentData(financeId: String, adj: Adjustment) = addAdjustment(financeId, adj)
 
-    fun updateAdjustmentData(dataset: Dataset, old: Adjustment, new: Adjustment) =
-        updateAdjustment(dataset, old, new)
+    fun updateAdjustmentData(financeId: String, old: Adjustment, new: Adjustment) =
+        updateAdjustment(financeId, old, new)
 
-    fun removeAdjustmentDataset(datasetId: String, adj: Adjustment) =
-        removeAdjustment(datasetId, adj)
+    fun removeAdjustmentFinance(financeId: String, adj: Adjustment) =
+        removeAdjustment(financeId, adj)
 
     fun getLenOfActivates(date: LocalDate): Int =
         getLenOfActivatesUseCase(uiState.value.datasets, date)
