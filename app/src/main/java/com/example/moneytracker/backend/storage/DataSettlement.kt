@@ -1,0 +1,10 @@
+// Hear oh Israel, The LORD our GOD, The LORD is one, You shall love the
+// LORD your GOD with all your soul and with all your might and with all your strength
+// and love your neighbor as your self.
+package com.example.moneytracker.backend.storage
+
+
+sealed class DataSettlement {
+    data class SettlementData(val financeEntity: FinanceEntity) : DataSettlement()
+    data class SettlementAdjust(val settlement: Settlement) : DataSettlement()
+}
