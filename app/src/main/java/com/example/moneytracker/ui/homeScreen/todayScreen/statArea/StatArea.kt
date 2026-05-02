@@ -32,7 +32,7 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.mean
 import com.example.moneytracker.helper.median
@@ -42,27 +42,27 @@ import com.example.moneytracker.ui.components.charts.collections.DonutChartDataC
 
 @Composable
 fun Stat(
-    financeList: List<Finance>
+    financeEntityList: List<FinanceEntity>
 ) {
-    if (financeList.isEmpty()) return
+    if (financeEntityList.isEmpty()) return
 
-    val mean = financeList.groupBy { data -> data.categoryText }.map { entry ->
+    val mean = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
         entry.key to entry.value.mean { it.amount }
     }
 
-    val median = financeList.groupBy { data -> data.categoryText }.map { entry ->
+    val median = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
         entry.key to entry.value.median
     }
 
-    val min = financeList.groupBy { data -> data.categoryText }.map { entry ->
+    val min = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
         entry.key to entry.value.minOf { it.amount }
     }
 
-    val max = financeList.groupBy { data -> data.categoryText }.map { entry ->
+    val max = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
         entry.key to entry.value.maxOf { it.amount }
     }
 
-    val std = financeList.groupBy { data -> data.categoryText }.map { entry ->
+    val std = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
         entry.key to entry.value.std
     }
 
@@ -198,7 +198,7 @@ fun DonutChartPager(
 fun StatArea(
     modifier: Modifier = Modifier,
     donutChartDataCollection: DonutChartDataCollection,
-    financeList: List<Finance>,
+    financeEntityList: List<FinanceEntity>,
 ) {
     val items = listOf(
         PagerItem(
@@ -275,7 +275,7 @@ fun StatArea(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                GoalInsightPager(financeList)
+                GoalInsightPager(financeEntityList)
             }
         }
 

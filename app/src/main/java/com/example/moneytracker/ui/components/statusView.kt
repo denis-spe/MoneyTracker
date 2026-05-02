@@ -53,18 +53,18 @@ fun StatusView(
         is DataAdjust.Adjust ->
             LaunchedEffect(
                 dataAdjust.adjustment,
-                dataAdjust.adjustment.finance,
+                dataAdjust.adjustment.financeEntity,
                 now.value
             ) {
                 status.value = when (dataAdjust) {
-                    is DataAdjust.Adjust -> dataAdjust.adjustment.finance?.status!!
+                    is DataAdjust.Adjust -> dataAdjust.adjustment.financeEntity?.status!!
                 }
             }
 
         is DataAdjust.Data -> {
-            LaunchedEffect(dataAdjust.finance, now.value) {
+            LaunchedEffect(dataAdjust.financeEntity, now.value) {
                 status.value = when (dataAdjust) {
-                    is DataAdjust.Data -> dataAdjust.finance.status
+                    is DataAdjust.Data -> dataAdjust.financeEntity.status
                 }
             }
         }
@@ -73,8 +73,8 @@ fun StatusView(
 
 
     when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.isAmountEqualToAdjustAmount()
-        is DataAdjust.Adjust -> dataAdjust.adjustment.finance?.isAmountEqualToAdjustAmount()
+        is DataAdjust.Data -> dataAdjust.financeEntity.isAmountEqualToAdjustAmount()
+        is DataAdjust.Adjust -> dataAdjust.adjustment.financeEntity?.isAmountEqualToAdjustAmount()
     }
 
     if (status.value == Status.INITIAL) {

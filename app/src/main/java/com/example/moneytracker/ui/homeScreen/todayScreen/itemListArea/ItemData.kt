@@ -2,9 +2,9 @@
 package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
 import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 
 data class ItemData(
-    val itemFinance: Finance? = null,
+    val itemFinanceEntity: FinanceEntity? = null,
     val itemAdjustment: Adjustment? = null
 )

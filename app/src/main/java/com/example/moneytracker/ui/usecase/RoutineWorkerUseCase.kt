@@ -13,6 +13,7 @@ class RoutineWorkerUseCase @Inject constructor(
     operator fun invoke(
         userId: String,
         datasetId: String,
+        financeType: String,
         triggerMillis: Long,
         isRoutine: Boolean
     ) {
@@ -20,6 +21,7 @@ class RoutineWorkerUseCase @Inject constructor(
             WorkersTask(
                 userId = userId,
                 datasetId = datasetId,
+                financeType = financeType,
                 deadlineDateTime = Timestamp(
                     triggerMillis / 1000,
                     ((triggerMillis % 1000) * 1000000).toInt()

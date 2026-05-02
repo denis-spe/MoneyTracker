@@ -5,6 +5,6 @@ package com.example.moneytracker.backend.storage
 
 
 sealed class DataAdjust {
-    data class Data(val finance: Finance) : DataAdjust()
+    data class Data(val financeEntity: FinanceEntity) : DataAdjust()
     data class Adjust(val adjustment: Adjustment) : DataAdjust()
 }

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.helper.isForToday
@@ -125,8 +125,8 @@ class HomeViewModel @Inject constructor(
         .onStart { loadYesterdayDatasets() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
-    val goalFinance = datasetsFlow
-        .map { it.filterIsInstance<Finance.Goal>() }
+    val goalFinanceEntity = datasetsFlow
+        .map { it.filterIsInstance<FinanceEntity.Goal>() }
         .onStart { loadGoalData() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
@@ -172,7 +172,7 @@ class HomeViewModel @Inject constructor(
                 paymentSorting = sorting.payment,
                 alphabeticalOrder = sorting.alphabetical,
                 amountSorting = sorting.amount,
-                financeList = datasets
+                financeEntityList = datasets
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
@@ -276,28 +276,33 @@ class HomeViewModel @Inject constructor(
     }
 
 
-    fun addData(finance: Finance) = launchWithUid {
-        financeOperationsUseCase.addData(it, finance)
+    fun addData(financeEntity: FinanceEntity) = launchWithUid {
+        financeOperationsUseCase.addData(it, financeEntity)
     }
 
-    fun updateData(old: Finance, new: Finance) = launchWithUid {
+    fun updateData(old: FinanceEntity, new: FinanceEntity) = launchWithUid {
         financeOperationsUseCase.updateData(it, old, new)
     }
 
-    fun removeData(finance: Finance) = launchWithUid {
-        financeOperationsUseCase.removeData(it, finance)
+    fun removeData(financeEntity: FinanceEntity) = launchWithUid {
+        financeOperationsUseCase.removeData(it, financeEntity)
     }
 
-    fun addAdjustment(financeId: String, adj: Adjustment) = launchWithUid {
-        financeOperationsUseCase.addAdjustment(it, financeId, adj)
+    fun addAdjustment(financeId: String, financeType: String, adj: Adjustment) = launchWithUid {
+        financeOperationsUseCase.addAdjustment(it, financeId, financeType, adj)
     }
 
-    fun updateAdjustment(financeId: String, old: Adjustment, new: Adjustment) = launchWithUid {
-        financeOperationsUseCase.updateAdjustment(it, financeId, old, new)
+    fun updateAdjustment(
+        financeId: String,
+        financeType: String,
+        old: Adjustment,
+        new: Adjustment
+    ) = launchWithUid {
+        financeOperationsUseCase.updateAdjustment(it, financeId, financeType, old, new)
     }
 
-    fun removeAdjustment(financeId: String, adj: Adjustment) = launchWithUid {
-        financeOperationsUseCase.removeAdjustment(it, financeId, adj)
+    fun removeAdjustment(financeId: String, financeType: String, adj: Adjustment) = launchWithUid {
+        financeOperationsUseCase.removeAdjustment(it, financeId, financeType, adj)
     }
 
     private fun launchWithUid(block: suspend (String) -> Unit) {
@@ -307,11 +312,18 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    fun beginWork(finance: Finance) {
+    fun beginWork(financeEntity: FinanceEntity) {
         val uid = accountService.userState.value?.uid ?: return
-        if (finance is Finance.Goal) {
-            if (finance.routine.routine == Routine.Nothing) return
-            routineWorker(uid, finance.id, finance.routine.triggerMillis, true)
+        if (financeEntity is FinanceEntity.Goal) {
+            if (financeEntity.routine.routine == Routine.Nothing) return
+            val financeEntityType = "GOAL"
+            routineWorker(
+                uid,
+                financeEntity.id,
+                financeEntityType,
+                financeEntity.routine.triggerMillis,
+                true
+            )
         }
     }
 
@@ -372,15 +384,20 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(onActivateShow = show) }
     }
 
-    fun beginTheWork(finance: Finance) = beginWork(finance)
+    fun beginTheWork(financeEntity: FinanceEntity) = beginWork(financeEntity)
 
-    fun addAdjustmentData(financeId: String, adj: Adjustment) = addAdjustment(financeId, adj)
+    fun addAdjustmentData(financeId: String, financeType: String, adj: Adjustment) =
+        addAdjustment(financeId, financeType, adj)
 
-    fun updateAdjustmentData(financeId: String, old: Adjustment, new: Adjustment) =
-        updateAdjustment(financeId, old, new)
+    fun updateAdjustmentData(
+        financeId: String,
+        financeType: String,
+        old: Adjustment,
+        new: Adjustment
+    ) = updateAdjustment(financeId, financeType, old, new)
 
-    fun removeAdjustmentFinance(financeId: String, adj: Adjustment) =
-        removeAdjustment(financeId, adj)
+    fun removeAdjustmentFinance(financeId: String, financeType: String, adj: Adjustment) =
+        removeAdjustment(financeId, financeType, adj)
 
     fun getLenOfActivates(date: LocalDate): Int =
         getLenOfActivatesUseCase(uiState.value.datasets, date)

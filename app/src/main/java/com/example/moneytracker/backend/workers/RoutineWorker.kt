@@ -8,7 +8,7 @@ import androidx.work.WorkerParameters
 import com.example.moneytracker.backend.notification.AndroidNotification
 import com.example.moneytracker.backend.notification.NotificationItem
 import com.example.moneytracker.backend.storage.DataStorage
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.progressPercentage
@@ -42,18 +42,19 @@ class RoutineWorker @AssistedInject constructor(
 
             val userId = inputData.getString("userId") ?: ""
             val datasetId = inputData.getString("datasetId") ?: ""
+            val financeType = inputData.getString("financeType") ?: ""
 
-            if (userId.isEmpty() || datasetId.isEmpty()) {
+            if (userId.isEmpty() || datasetId.isEmpty() || financeType.isEmpty()) {
                 Log.e(TAG, "Invalid input data")
                 return Result.failure()
             }
 
-            Log.d(TAG, "Processing for user: $userId, dataset: $datasetId")
+            Log.d(TAG, "Processing for user: $userId, dataset: $datasetId type: $financeType")
 
             // Get the dataset from the database
-            val dataset = dataStorage.getDataset(userId, datasetId)
+            val dataset = dataStorage.getDataset(userId, datasetId, financeType)
 
-            if (dataset !is Finance.Goal) {
+            if (dataset !is FinanceEntity.Goal) {
                 Log.e(TAG, "Dataset is not a Goal")
                 return Result.failure()
             }
@@ -88,7 +89,8 @@ class RoutineWorker @AssistedInject constructor(
                     Routine.EveryDay,
                     Routine.Weekly,
                     Routine.Monthly,
-                    Routine.Yearly
+                    Routine.Yearly,
+                    Routine.SpecifyDayOfTheWeek
                 )
             ) {
                 now.toLocalDateTimeUtc().toMidnight().toFirestoreTimestampUtc()
@@ -99,6 +101,7 @@ class RoutineWorker @AssistedInject constructor(
             dataStorage.completeRoutine(
                 userId = userId,
                 datasetId = datasetId,
+                financeType = financeType,
                 newDateTime = normalizedNow,
                 nextDeadline = nextDeadline
             )
@@ -108,6 +111,7 @@ class RoutineWorker @AssistedInject constructor(
                     WorkersTask(
                         userId = userId,
                         datasetId = datasetId,
+                        financeType = financeType,
                         deadlineDateTime = nextDeadline,
                         routineData = dataset.routine
                     )

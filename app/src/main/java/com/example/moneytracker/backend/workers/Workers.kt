@@ -16,6 +16,7 @@ class Workers @Inject constructor(
         val data = Data.Builder()
             .putString("userId", workersTask.userId)
             .putString("datasetId", workersTask.datasetId)
+            .putString("financeType", workersTask.financeType)
             .build()
 
         val oneTimeWorkRequest = OneTimeWorkRequestBuilder<RoutineWorker>()

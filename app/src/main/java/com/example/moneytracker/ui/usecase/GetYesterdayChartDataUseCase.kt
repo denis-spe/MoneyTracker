@@ -3,15 +3,15 @@ package com.example.moneytracker.ui.usecase
 import android.content.Context
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import javax.inject.Inject
 
 class GetYesterdayChartDataUseCase @Inject constructor() {
 
-    operator fun invoke(financeList: List<Finance>, context: Context): List<ChartData> {
-        if (financeList.isEmpty()) return emptyList()
+    operator fun invoke(financeEntityList: List<FinanceEntity>, context: Context): List<ChartData> {
+        if (financeEntityList.isEmpty()) return emptyList()
 
         // 🔥 Precompute X once
         val xAxis = DoubleArray(24) { it * 3600.0 }
@@ -20,7 +20,7 @@ class GetYesterdayChartDataUseCase @Inject constructor() {
         val resultMap = mutableMapOf<String, IntArray>()
         val colorMap = mutableMapOf<String, Int>()
 
-        for (finance in financeList) {
+        for (finance in financeEntityList) {
             val type = finance.categoryText
             colorMap[type] = finance.colorRes
 

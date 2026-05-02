@@ -1,7 +1,7 @@
 package com.example.moneytracker.ui.usecase
 
 import com.example.moneytracker.backend.storage.DataAdjust
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.isCreatedAtEqualTo
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
@@ -11,15 +11,15 @@ import javax.inject.Inject
 
 class GetYesterdayDataAdjustUseCase @Inject constructor() {
 
-    operator fun invoke(financeList: List<Finance>): List<DataAdjust> {
+    operator fun invoke(financeEntityList: List<FinanceEntity>): List<DataAdjust> {
         val yesterday = LocalDateTime.now()
             .date
             .minus(1, DateTimeUnit.DAY)
 
 
-        return coupleDatasetsWithAdjustments(financeList).filter {
+        return coupleDatasetsWithAdjustments(financeEntityList).filter {
             when (it) {
-                is DataAdjust.Data -> it.finance.isCreatedAtEqualTo(yesterday)
+                is DataAdjust.Data -> it.financeEntity.isCreatedAtEqualTo(yesterday)
                 is DataAdjust.Adjust -> it.adjustment.isCreatedAtEqualTo(yesterday)
             }
         }

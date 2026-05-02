@@ -97,7 +97,7 @@ import androidx.compose.ui.window.DialogProperties
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
@@ -566,9 +566,9 @@ fun AdjustmentField(
     sheetVisible: Boolean,
     datatype: DataType,
     amountState: TextFieldState,
-    financeList: List<Finance>,
+    financeEntityList: List<FinanceEntity>,
     colorResId: Int,
-    selectedFinance: MutableState<Finance?>,
+    selectedFinanceEntity: MutableState<FinanceEntity?>,
     modifier: Modifier = Modifier,
     wasRepaySuccess: MutableState<State>
 ) {
@@ -580,41 +580,41 @@ fun AdjustmentField(
     /* ----------------------------------------------------------
      * 1) React to Firestore datasets ONLY when sheet is visible
      * ---------------------------------------------------------- */
-    LaunchedEffect(sheetVisible, financeList) {
+    LaunchedEffect(sheetVisible, financeEntityList) {
         if (!sheetVisible) return@LaunchedEffect
 
-        val current = selectedFinance.value ?: return@LaunchedEffect
+        val current = selectedFinanceEntity.value ?: return@LaunchedEffect
 
-        val matched = financeList.firstOrNull {
+        val matched = financeEntityList.firstOrNull {
             it.label == current.label && it.createdAt == current.createdAt
         }
 
         if (matched != null && matched !== current) {
-            selectedFinance.value = matched
+            selectedFinanceEntity.value = matched
         }
     }
 
-    val filteredFinance = when (datatype) {
+    val filteredFinanceEntity = when (datatype) {
         DataType.LENT -> remember {
             derivedStateOf {
-                financeList.filter { it.categoryText == "Lent" }
+                financeEntityList.filter { it.categoryText == "Lent" }
             }
         }
 
         DataType.DEBT -> remember {
             derivedStateOf {
-                financeList.filter { it.categoryText == "Debt" }
+                financeEntityList.filter { it.categoryText == "Debt" }
             }
         }
 
         // Else it's a goal
         else -> remember {
             derivedStateOf {
-                financeList.filter {
+                financeEntityList.filter {
                     val now = LocalDateTime.now()
-                    val deadlineDateTime = if (it is Finance.Goal) it.routine.deadlineDateTime
+                    val deadlineDateTime = if (it is FinanceEntity.Goal) it.routine.deadlineDateTime
                         .toLocalDateTimeUtc() else LocalDateTime.now()
-                    it is Finance.Goal && now <= deadlineDateTime
+                    it is FinanceEntity.Goal && now <= deadlineDateTime
                 }
             }
         }
@@ -628,7 +628,7 @@ fun AdjustmentField(
     val symbol = numberFormat.currency?.symbol ?: "$"
     val onDialogShow = remember { mutableStateOf(false) }
     var amountToDisplay by remember { mutableStateOf("${symbol}0.0") }
-    var financeToDisplay by remember { mutableStateOf<Finance?>(null) }
+    var financeEntityToDisplay by remember { mutableStateOf<FinanceEntity?>(null) }
     val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
     val keyboardController = LocalSoftwareKeyboardController.current
@@ -640,8 +640,8 @@ fun AdjustmentField(
         Dialog(
             onDismissRequest = {
                 amountState.setTextAndPlaceCursorAtEnd("")
-                selectedFinance.value = null
-                financeToDisplay = null
+                selectedFinanceEntity.value = null
+                financeEntityToDisplay = null
                 amountToDisplay = "${symbol}0.0"
                 onDialogShow.value = false
             },
@@ -693,7 +693,7 @@ fun AdjustmentField(
                         expanded = expanded,
                         onDismissRequest = { expanded = false }
                     ) {
-                        filteredFinance.value.forEach { finance ->
+                        filteredFinanceEntity.value.forEach { finance ->
 
                             DropdownMenuItem(
                                 text = {
@@ -702,7 +702,7 @@ fun AdjustmentField(
                                 onClick = {
                                     expanded = false
                                     focusRequester.requestFocus()
-                                    selectedFinance.value = finance
+                                    selectedFinanceEntity.value = finance
                                 },
                                 leadingIcon = {
                                     Image(
@@ -727,7 +727,7 @@ fun AdjustmentField(
                             )
                         ) {
                             Text(
-                                selectedFinance.value?.label ?: "Select ${datatype.text}",
+                                selectedFinanceEntity.value?.label ?: "Select ${datatype.text}",
                                 fontSize = fontSize,
                             )
                         }
@@ -849,9 +849,9 @@ fun AdjustmentField(
             Text(dataTypeText, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
         },
         supportingContent = {
-            if (financeToDisplay != null) {
+            if (financeEntityToDisplay != null) {
                 Text(
-                    financeToDisplay?.label ?: "Select your ${datatype.text}",
+                    financeEntityToDisplay?.label ?: "Select your ${datatype.text}",
                     color = color, fontSize = fontSize
                 )
             }
@@ -876,7 +876,7 @@ fun AdjustmentField(
     /* ----------------------------------------------------------
      * 3) Update amount AFTER selection (deferred, safe)
      * ---------------------------------------------------------- */
-    val selected = selectedFinance.value
+    val selected = selectedFinanceEntity.value
     LaunchedEffect(sheetVisible, selected) {
         if (!sheetVisible || selected == null) return@LaunchedEffect
 
@@ -898,11 +898,13 @@ fun RepeatableInputComponent(
 ) {
     val state = rememberTextFieldState(initialText = "1")
 
-    LaunchedEffect(state.text.toString()) {
-        repeatByState.value = RoutineData(
-            routine = routine,
-            routineCount = state.text.toString().toIntOrNull() ?: 0
-        )
+    LaunchedEffect(state.text.toString(), repeatByState.value.routine) {
+        if (repeatByState.value.routine == routine) {
+            repeatByState.value = repeatByState.value.copy(
+                routine = routine,
+                routineCount = state.text.toString().toIntOrNull() ?: 0
+            )
+        }
     }
 
     Row(
@@ -980,14 +982,16 @@ fun RepeatableTransaction(
             endLocalDateTimeState.value = when (repeatByState.value.routine) {
                 Routine.EveryMinute -> now
                     .plusMinutes(repeatByState.value.routineCount.toLong())
+                    .withSecond(0)
+                    .withNano(0)
 
                 Routine.EveryHour -> now
                     .plusHours(repeatByState.value.routineCount.toLong())
+                    .withSecond(0)
+                    .withNano(0)
 
                 Routine.EveryDay -> now
                     .plusDays(repeatByState.value.routineCount.toLong())
-                    .plusHours(0)
-                    .plusMinutes(0)
 
                 Routine.Weekly -> now.plusWeeks(repeatByState.value.routineCount.toLong())
                 Routine.Yearly -> now.plusYears(repeatByState.value.routineCount.toLong())

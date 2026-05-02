@@ -3,6 +3,7 @@ package com.example.moneytracker.ui.usecase
 import android.util.Log
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.DatasetState
+import com.example.moneytracker.backend.storage.FirestoreMigration
 import com.example.moneytracker.backend.storage.Info
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -28,9 +29,11 @@ class ObserveUserDataUseCase @Inject constructor(
                 )
             } else {
                 try {
+                    // Trigger migration and ensure IDs
+                    FirestoreMigration.migrateUserDatasets(dataStorage.db, uid)
                     dataStorage.ensureDatasetIds(uid)
                 } catch (e: Exception) {
-                    Log.e("ObserveUserDataUseCase", "ensureDatasetIds failed", e)
+                    Log.e("ObserveUserDataUseCase", "Migration or ensureDatasetIds failed", e)
                 }
 
                 combine(

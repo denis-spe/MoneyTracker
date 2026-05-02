@@ -17,6 +17,6 @@ data class Adjustment(
     val paymentMethod: PaymentMethod
 ) {
     @Exclude
-    var finance: Finance? = null
+    var financeEntity: FinanceEntity? = null
 }
 

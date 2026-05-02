@@ -25,35 +25,59 @@ class DataStorageImpl(
     override val db: FirebaseFirestore
 ) : DataStorage {
 
+    private fun getCollectionName(financeEntity: FinanceEntity): String {
+        return when (financeEntity) {
+            is FinanceEntity.Transaction -> TRANSACTION_COLLECTION
+            is FinanceEntity.Goal -> GOAL_COLLECTION
+            is FinanceEntity.Liability -> LIABILITY_COLLECTION
+        }
+    }
+
+    private fun getCollectionNameFromType(type: String): String {
+        return when (type.uppercase()) {
+            "TRANSACTION" -> TRANSACTION_COLLECTION
+            "GOAL" -> GOAL_COLLECTION
+            "LIABILITY" -> LIABILITY_COLLECTION
+            else -> TRANSACTION_COLLECTION
+        }
+    }
+
     override suspend fun filterDatasets(
         userId: String,
         filter: Filter,
         orderBy: String?,
         orderDirection: Query.Direction?
-    ): List<Finance> {
+    ): List<FinanceEntity> {
         return try {
-            var query: Query = db.collection(COLLECTION_NAME)
-                .document(userId)
-                .collection("datasets")
-                .where(filter)
+            val collections = listOf(TRANSACTION_COLLECTION, GOAL_COLLECTION, LIABILITY_COLLECTION)
+            val results = mutableListOf<FinanceEntity>()
 
-            if (orderBy != null && orderDirection != null) {
-                query = query.orderBy(orderBy, orderDirection)
+            for (collection in collections) {
+                var query: Query = db.collection(COLLECTION_NAME)
+                    .document(userId)
+                    .collection(collection)
+                    .where(filter)
+
+                if (orderBy != null && orderDirection != null) {
+                    query = query.orderBy(orderBy, orderDirection)
+                }
+
+                val snapshot = query.get().await()
+
+                val finances = snapshot.documents.mapNotNull { doc ->
+                    runCatching { doc.data?.toFinance() }
+                        .onFailure {
+                            Log.e(
+                                "DataStorageImpl",
+                                "Failed to parse item during filtering in $collection",
+                                it
+                            )
+                        }
+                        .getOrNull()
+                }
+                results.addAll(finances)
             }
-
-            val snapshot = query.get().await()
-
-            snapshot.documents.mapNotNull { doc ->
-                runCatching { doc.data?.toFinance() }
-                    .onFailure {
-                        Log.e(
-                            "DataStorageImpl",
-                            "Failed to parse dataset item during filtering",
-                            it
-                        )
-                    }
-                    .getOrNull()
-            }
+            results
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Error filtering datasets", e)
             emptyList()
@@ -64,44 +88,54 @@ class DataStorageImpl(
         userId: String,
         onSuccess: (isSuccess: Boolean) -> Unit,
         onFailure: (error: Throwable?) -> Unit
-    ): Flow<List<Finance>> = callbackFlow {
-        val datasetsRef = db.collection(COLLECTION_NAME)
-            .document(userId)
-            .collection("datasets")
+    ): Flow<List<FinanceEntity>> = callbackFlow {
+        val collections = listOf(TRANSACTION_COLLECTION, GOAL_COLLECTION, LIABILITY_COLLECTION)
+        val listeners = mutableListOf<com.google.firebase.firestore.ListenerRegistration>()
+        val latestData = mutableMapOf<String, List<FinanceEntity>>()
 
-        val listenerRegistration = datasetsRef.addSnapshotListener { snapshot, error ->
-            if (error != null) {
-                Log.e("DataStorageImpl", "getWholeDatasets listener error", error)
-                onFailure(error)
-                if (error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                    // During logout, this error is expected. Close gracefully.
-                    close()
-                } else {
-                    close(error)
+        fun emitCombined() {
+            val combined = latestData.values.flatten()
+            Log.d("DataStorageImpl", "parsed total count: ${combined.size}")
+            trySend(combined)
+            onSuccess(true)
+        }
+
+        collections.forEach { collectionName ->
+            val ref = db.collection(COLLECTION_NAME)
+                .document(userId)
+                .collection(collectionName)
+
+            val listener = ref.addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e(
+                        "DataStorageImpl",
+                        "getWholeDatasets listener error in $collectionName",
+                        error
+                    )
+                    if (error.code != FirebaseFirestoreException.Code.PERMISSION_DENIED) {
+                        onFailure(error)
+                    }
+                    return@addSnapshotListener
                 }
-                return@addSnapshotListener
-            }
 
-            try {
                 val data = snapshot?.documents?.mapNotNull { doc ->
                     try {
                         doc.data?.toFinance()
                     } catch (e: Exception) {
-                        Log.e("DataStorageImpl", "Failed to parse dataset item", e)
+                        Log.e("DataStorageImpl", "Failed to parse item in $collectionName", e)
                         null
                     }
                 } ?: emptyList()
 
-                Log.d("DataStorageImpl", "parsed datasets count: ${data.size}")
-                trySend(data)
-                onSuccess(true)
-            } catch (e: Exception) {
-                Log.e("DataStorageImpl", "Unhandled error while reading datasets", e)
-                trySend(emptyList())
-                onFailure(e)
+                latestData[collectionName] = data
+                emitCombined()
             }
+            listeners.add(listener)
         }
-        awaitClose { listenerRegistration.remove() }
+
+        awaitClose {
+            listeners.forEach { it.remove() }
+        }
     }
 
     override suspend fun getInfo(userId: String): Flow<Info> = callbackFlow {
@@ -187,31 +221,34 @@ class DataStorageImpl(
 
 
     /**
-     * Add a finance record to the storage
+     * Add a financeEntity record to the storage
      */
-    override fun addData(userId: String, finance: Finance): String {
+    override fun addData(userId: String, financeEntity: FinanceEntity): String {
         Log.d(
             "DataStorageImpl",
-            "addData user=$userId finance.id=${finance.id} label=${finance.label}"
+            "addData user=$userId financeEntity.id=${financeEntity.id} label=${financeEntity.label}"
         )
 
-        val financeId = finance.id.ifEmpty { UUID.randomUUID().toString() }
-        val updatedFinance = when (finance) {
-            is Finance.Transaction -> if (finance.id.isEmpty()) finance.copy(id = financeId) else finance
-            is Finance.Goal -> if (finance.id.isEmpty()) finance.copy(id = financeId) else finance
-            is Finance.Liability -> if (finance.id.isEmpty()) finance.copy(id = financeId) else finance
+        val financeId = financeEntity.id.ifEmpty { UUID.randomUUID().toString() }
+        val updatedFinanceEntity = when (financeEntity) {
+            is FinanceEntity.Transaction -> if (financeEntity.id.isEmpty()) financeEntity.copy(id = financeId) else financeEntity
+            is FinanceEntity.Goal -> if (financeEntity.id.isEmpty()) financeEntity.copy(id = financeId) else financeEntity
+            is FinanceEntity.Liability -> if (financeEntity.id.isEmpty()) financeEntity.copy(id = financeId) else financeEntity
         }
 
         db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionName(updatedFinanceEntity))
             .document(financeId)
-            .set(updatedFinance.toMap())
+            .set(updatedFinanceEntity.toMap())
             .addOnSuccessListener {
-                Log.d("Firestore", "Successfully wrote finance record $financeId for user $userId")
+                Log.d(
+                    "Firestore",
+                    "Successfully wrote financeEntity record $financeId for user $userId"
+                )
             }
             .addOnFailureListener {
-                Log.e("Firestore", "Failed to write finance record for $userId", it)
+                Log.e("Firestore", "Failed to write financeEntity record for $userId", it)
             }
 
         return financeId
@@ -219,68 +256,69 @@ class DataStorageImpl(
 
     override suspend fun updateDataset(
         userId: String,
-        oldFinance: Finance,
-        newFinance: Finance
+        oldFinanceEntity: FinanceEntity,
+        newFinanceEntity: FinanceEntity
     ) {
         Log.d(
             "DataStorageImpl",
-            "Update user=$userId finance.id=${oldFinance.id} label=${oldFinance.label}"
+            "Update user=$userId financeEntity.id=${oldFinanceEntity.id} label=${oldFinanceEntity.label}"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
-            .document(oldFinance.id)
+            .collection(getCollectionName(oldFinanceEntity))
+            .document(oldFinanceEntity.id)
 
         try {
-            // Modify new finance record
-            val modifiedFinance = when (newFinance) {
-                is Finance.Goal -> {
-                    newFinance.copy(
-                        adjustment = newFinance.adjustment.map { adjustment ->
+            // Modify new financeEntity record
+            val modifiedFinanceEntity = when (newFinanceEntity) {
+                is FinanceEntity.Goal -> {
+                    newFinanceEntity.copy(
+                        adjustment = newFinanceEntity.adjustment.map { adjustment ->
                             adjustment.copy(
-                                tagIcon = newFinance.tagIcon,
+                                tagIcon = newFinanceEntity.tagIcon,
                                 label = adjustment.label,
                             )
                         }
                     )
                 }
 
-                is Finance.Liability -> {
-                    newFinance.copy(
-                        adjustment = newFinance.adjustment.map { adjustment ->
+                is FinanceEntity.Liability -> {
+                    newFinanceEntity.copy(
+                        adjustment = newFinanceEntity.adjustment.map { adjustment ->
                             adjustment.copy(
-                                tagIcon = newFinance.tagIcon,
+                                tagIcon = newFinanceEntity.tagIcon,
                                 label = adjustment.label,
                             )
                         }
                     )
                 }
 
-                is Finance.Transaction -> newFinance
+                is FinanceEntity.Transaction -> newFinanceEntity
             }
 
             // Simply update the document
-            docRef.set(modifiedFinance.toMap())
-            Log.d("Finance update", "Updated finance record ${oldFinance.id}")
+            docRef.set(modifiedFinanceEntity.toMap())
+            Log.d("FinanceEntity update", "Updated financeEntity record ${oldFinanceEntity.id}")
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to update finance record", e)
+            Log.e("DataStorageImpl", "Failed to update financeEntity record", e)
         }
     }
 
     override suspend fun addAdjustmentDataset(
         userId: String,
         datasetId: String,
+        financeType: String,
         adjustment: Adjustment
     ) {
         Log.d(
             "DataStorageImpl",
-            "addAdjustmentDataset called: $adjustment for datasetId=$datasetId userId=$userId"
+            "addAdjustmentDataset called: $adjustment for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
 
         try {
@@ -293,9 +331,9 @@ class DataStorageImpl(
 
             // Add new adjustment to list
             val updatedAdjustments = when (finance) {
-                is Finance.Goal -> finance.adjustment.toMutableList()
-                is Finance.Liability -> finance.adjustment.toMutableList()
-                is Finance.Transaction -> mutableListOf()
+                is FinanceEntity.Goal -> finance.adjustment.toMutableList()
+                is FinanceEntity.Liability -> finance.adjustment.toMutableList()
+                is FinanceEntity.Transaction -> mutableListOf()
             }
             updatedAdjustments.add(
                 adjustment.copy(
@@ -305,7 +343,7 @@ class DataStorageImpl(
 
             // Update only the adjustment array
             docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
-            Log.d("DataStorageImpl", "Added adjustment to finance record $datasetId")
+            Log.d("DataStorageImpl", "Added adjustment to financeEntity record $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to add adjustment", e)
             throw e
@@ -316,15 +354,16 @@ class DataStorageImpl(
     override suspend fun stopRoutine(
         userId: String,
         datasetId: String,
+        financeType: String
     ) {
         Log.d(
             "DataStorageImpl",
-            "stopRoutine called for datasetId=$datasetId userId=$userId"
+            "stopRoutine called for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
 
         try {
@@ -344,14 +383,18 @@ class DataStorageImpl(
     }
 
     /**
-     * Get a finance record from the storage
+     * Get a financeEntity record from the storage
      * @param userId the user id
      * @param datasetId the record id
      */
-    override suspend fun getDataset(userId: String, datasetId: String): Finance? {
+    override suspend fun getDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String
+    ): FinanceEntity? {
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
 
         return try {
@@ -369,14 +412,15 @@ class DataStorageImpl(
     override suspend fun completeRoutine(
         userId: String,
         datasetId: String,
+        financeType: String,
         newDateTime: Timestamp,
         nextDeadline: Timestamp
     ) {
-        Log.d("DataStorageImpl", "completeRoutine (Offline-Safe) for $datasetId")
+        Log.d("DataStorageImpl", "completeRoutine (Offline-Safe) for $datasetId type=$financeType")
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
 
         try {
@@ -390,9 +434,9 @@ class DataStorageImpl(
 
             // Calculate status and total adjustment amount
             val totalAdjustmentAmount = when (finance) {
-                is Finance.Goal -> finance.adjustment.sumOf { it.amount }
-                is Finance.Liability -> finance.adjustment.sumOf { it.amount }
-                is Finance.Transaction -> 0.0
+                is FinanceEntity.Goal -> finance.adjustment.sumOf { it.amount }
+                is FinanceEntity.Liability -> finance.adjustment.sumOf { it.amount }
+                is FinanceEntity.Transaction -> 0.0
             }
             val isAchieved = totalAdjustmentAmount >= finance.amount
             val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
@@ -411,7 +455,7 @@ class DataStorageImpl(
                 .document(statusId)
                 .set(statusHistory.statusHistoryToMap)
 
-            // Update finance fields and reset adjustments
+            // Update financeEntity fields and reset adjustments
             docRef.update(
                 mapOf(
                     "routineData.startDateTime" to newDateTime,
@@ -431,17 +475,18 @@ class DataStorageImpl(
     override suspend fun addStatus(
         userId: String,
         datasetId: String,
+        financeType: String,
         newDateTime: Timestamp,
         newDeadlineDateTime: Timestamp
     ) {
         Log.d(
             "DataStorageImpl",
-            "addStatus called for datasetId=$datasetId userId=$userId"
+            "addStatus called for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val datasetDocRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
 
         try {
@@ -453,9 +498,9 @@ class DataStorageImpl(
             val finance = snapshot.data?.toFinance() ?: return
 
             val totalAdjustmentAmount = when (finance) {
-                is Finance.Goal -> finance.adjustment.sumOf { it.amount }
-                is Finance.Liability -> finance.adjustment.sumOf { it.amount }
-                is Finance.Transaction -> 0.0
+                is FinanceEntity.Goal -> finance.adjustment.sumOf { it.amount }
+                is FinanceEntity.Liability -> finance.adjustment.sumOf { it.amount }
+                is FinanceEntity.Transaction -> 0.0
             }
             val isAchieved = totalAdjustmentAmount >= finance.amount
             val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
@@ -488,15 +533,19 @@ class DataStorageImpl(
         }
     }
 
-    override suspend fun clearAdjustmentList(userId: String, datasetId: String) {
+    override suspend fun clearAdjustmentList(
+        userId: String,
+        datasetId: String,
+        financeType: String
+    ) {
         Log.d(
             "clearAdjustmentList",
-            "clearAdjustmentList called: clear adjustment for datasetId=$datasetId userId=$userId"
+            "clearAdjustmentList called: clear adjustment for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
 
         try {
@@ -511,19 +560,23 @@ class DataStorageImpl(
         Log.d("DataStorageImpl", "ensureDatasetIds called for user=$userId")
 
         try {
-            val datasetsRef = db.collection(COLLECTION_NAME)
-                .document(userId)
-                .collection("datasets")
-
-            val snapshot = datasetsRef.get().await()
+            val collections = listOf(TRANSACTION_COLLECTION, GOAL_COLLECTION, LIABILITY_COLLECTION)
             var updated = 0
 
-            for (doc in snapshot.documents) {
-                val id = doc.get("id") as? String
-                if (id == null || id.isEmpty()) {
-                    val newId = UUID.randomUUID().toString()
-                    doc.reference.update("id", newId).await()
-                    updated++
+            for (collection in collections) {
+                val ref = db.collection(COLLECTION_NAME)
+                    .document(userId)
+                    .collection(collection)
+
+                val snapshot = ref.get().await()
+
+                for (doc in snapshot.documents) {
+                    val id = doc.get("id") as? String
+                    if (id == null || id.isEmpty()) {
+                        val newId = UUID.randomUUID().toString()
+                        doc.reference.update("id", newId).await()
+                        updated++
+                    }
                 }
             }
 
@@ -538,10 +591,10 @@ class DataStorageImpl(
         }
     }
 
-    override suspend fun removeDataset(userId: String, finance: Finance) {
-        val id = finance.id
+    override suspend fun removeDataset(userId: String, financeEntity: FinanceEntity) {
+        val id = financeEntity.id
         val docRef = db.collection(COLLECTION_NAME).document(userId)
-            .collection("datasets").document(id)
+            .collection(getCollectionName(financeEntity)).document(id)
 
         try {
             // 1. Get the snapshots (Try to use cache if offline)
@@ -566,9 +619,9 @@ class DataStorageImpl(
             // Remove .await() if you want it to finish instantly while offline
             batch.commit()
 
-            Log.d("DataStorageImpl", "Finance record and history deleted via batch")
+            Log.d("DataStorageImpl", "FinanceEntity record and history deleted via batch")
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to remove finance record", e)
+            Log.e("DataStorageImpl", "Failed to remove financeEntity record", e)
             throw e
         }
     }
@@ -576,16 +629,17 @@ class DataStorageImpl(
     override suspend fun removeAdjustmentDataset(
         userId: String,
         datasetId: String,
+        financeType: String,
         adjustment: Adjustment
     ) {
         Log.d(
             "DataStorageImpl",
-            "removeAdjustmentDataset called: $adjustment for datasetId=$datasetId userId=$userId"
+            "removeAdjustmentDataset called: $adjustment for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
 
         try {
@@ -598,16 +652,16 @@ class DataStorageImpl(
 
             // Remove adjustment from list
             val currentAdjustments = when (finance) {
-                is Finance.Goal -> finance.adjustment
-                is Finance.Liability -> finance.adjustment
-                is Finance.Transaction -> emptyList()
+                is FinanceEntity.Goal -> finance.adjustment
+                is FinanceEntity.Liability -> finance.adjustment
+                is FinanceEntity.Transaction -> emptyList()
             }
             val updatedAdjustments = currentAdjustments.filter {
                 it.adjustmentId != adjustment.adjustmentId
             }
 
             docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
-            Log.d("DataStorageImpl", "Removed adjustment from finance record $datasetId")
+            Log.d("DataStorageImpl", "Removed adjustment from financeEntity record $datasetId")
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to remove adjustment", e)
             throw e
@@ -617,17 +671,18 @@ class DataStorageImpl(
     override suspend fun updateAdjustmentDataset(
         userId: String,
         datasetId: String,
+        financeType: String,
         oldAdjustment: Adjustment,
         newAdjustment: Adjustment
     ) {
         Log.d(
             "DataStorageImpl",
-            "updateAdjustmentDataset called: $oldAdjustment for datasetId=$datasetId userId=$userId"
+            "updateAdjustmentDataset called: $oldAdjustment for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
 
         try {
@@ -640,9 +695,9 @@ class DataStorageImpl(
 
             // Remove old adjustment and add new one
             val currentAdjustments = when (finance) {
-                is Finance.Goal -> finance.adjustment
-                is Finance.Liability -> finance.adjustment
-                is Finance.Transaction -> emptyList()
+                is FinanceEntity.Goal -> finance.adjustment
+                is FinanceEntity.Liability -> finance.adjustment
+                is FinanceEntity.Transaction -> emptyList()
             }
             val updatedAdjustments = currentAdjustments.filter {
                 it.adjustmentId != oldAdjustment.adjustmentId
@@ -660,5 +715,8 @@ class DataStorageImpl(
 
     companion object {
         const val COLLECTION_NAME = "database"
+        const val TRANSACTION_COLLECTION = "Transaction"
+        const val GOAL_COLLECTION = "Goal"
+        const val LIABILITY_COLLECTION = "Liability"
     }
 }

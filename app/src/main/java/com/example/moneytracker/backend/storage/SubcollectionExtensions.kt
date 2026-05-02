@@ -14,22 +14,33 @@ import kotlinx.coroutines.tasks.await
  * These methods are optional helpers for advanced use cases
  */
 
+private fun getCollectionNameFromType(type: String): String {
+    return when (type.uppercase()) {
+        "TRANSACTION" -> "Transaction"
+        "GOAL" -> "Goal"
+        "LIABILITY" -> "Liability"
+        else -> "Transaction"
+    }
+}
+
 /**
  * Load status history for a specific dataset from the statusHistory subcollection
  * @param db FirebaseFirestore instance
  * @param userId the user id
  * @param datasetId the dataset id
+ * @param financeType the record type
  * @return List of StatusHistory ordered by dateTime (newest first)
  */
 suspend fun loadStatusHistoryForDataset(
     db: FirebaseFirestore,
     userId: String,
-    datasetId: String
+    datasetId: String,
+    financeType: String
 ): List<StatusHistory> {
     return try {
         val snapshot = db.collection("database")
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
             .collection("statusHistory")
             .orderBy("startDateTime", com.google.firebase.firestore.Query.Direction.DESCENDING)
@@ -62,16 +73,18 @@ suspend fun loadStatusHistoryForDataset(
  * @param db FirebaseFirestore instance
  * @param userId the user id
  * @param datasetId the dataset id
+ * @param financeType the record type
  * @return Flow of status history lists (automatically updated when changes occur)
  */
 fun listenToStatusHistory(
     db: FirebaseFirestore,
     userId: String,
-    datasetId: String
+    datasetId: String,
+    financeType: String
 ): Flow<List<StatusHistory>> = callbackFlow {
     val registration = db.collection("database")
         .document(userId)
-        .collection("datasets")
+        .collection(getCollectionNameFromType(financeType))
         .document(datasetId)
         .collection("statusHistory")
         .orderBy("startDateTime", com.google.firebase.firestore.Query.Direction.DESCENDING)
@@ -115,17 +128,19 @@ fun listenToStatusHistory(
  * @param db FirebaseFirestore instance
  * @param userId the user id
  * @param datasetId the dataset id
+ * @param financeType the record type
  * @return The most recent StatusHistory or null if none exist
  */
 suspend fun getLatestStatusForDataset(
     db: FirebaseFirestore,
     userId: String,
-    datasetId: String
+    datasetId: String,
+    financeType: String
 ): StatusHistory? {
     return try {
         val snapshot = db.collection("database")
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
             .collection("statusHistory")
             .orderBy("startDateTime", com.google.firebase.firestore.Query.Direction.DESCENDING)
@@ -159,12 +174,13 @@ suspend fun getLatestStatusForDataset(
 suspend fun countStatusHistoryForDataset(
     db: FirebaseFirestore,
     userId: String,
-    datasetId: String
+    datasetId: String,
+    financeType: String
 ): Long {
     return try {
         val snapshot = db.collection("database")
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
             .collection("statusHistory")
             .count()
@@ -186,12 +202,13 @@ suspend fun deleteOldStatusHistory(
     db: FirebaseFirestore,
     userId: String,
     datasetId: String,
+    financeType: String,
     beforeTimestamp: Timestamp
 ) {
     try {
         val snapshot = db.collection("database")
             .document(userId)
-            .collection("datasets")
+            .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
             .collection("statusHistory")
             .whereLessThan("startDateTime", beforeTimestamp)

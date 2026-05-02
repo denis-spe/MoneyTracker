@@ -29,9 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.DataAdjust
 import com.example.moneytracker.helper.addZeroIfLessThenTen
-import com.example.moneytracker.helper.dataType
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.helper.outlinedIcon
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
@@ -46,65 +46,65 @@ private val AMOUNT_FONT_SIZE = 18.sp
 @Composable
 fun YesterdayItem(dataAdjust: DataAdjust) {
     val amount = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.amount.formatToAmount()
+        is DataAdjust.Data -> dataAdjust.financeEntity.amount.formatToAmount()
         is DataAdjust.Adjust -> dataAdjust.adjustment.amount.formatToAmount()
     }
     val label = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.label
+        is DataAdjust.Data -> dataAdjust.financeEntity.label
         is DataAdjust.Adjust -> dataAdjust.adjustment.label
     }
 
     val description = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.description
+        is DataAdjust.Data -> dataAdjust.financeEntity.description
         is DataAdjust.Adjust -> dataAdjust.adjustment.description
     }.let {
         if (it.length > 16) it.take(20) + "..." else it
     }
 
     val dateTime = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.createdAt.toLocalDateTimeUtc()
+        is DataAdjust.Data -> dataAdjust.financeEntity.createdAt.toLocalDateTimeUtc()
         is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime.toLocalDateTimeUtc()
     }
 
     val color = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.colorRes
+        is DataAdjust.Data -> dataAdjust.financeEntity.colorRes
         is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
     }.let {
         colorResource(id = it)
     }
 
     val dataTypeIcon = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.dataType.outlinedIcon
+        is DataAdjust.Data -> dataAdjust.financeEntity.outlinedIcon
         is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.icon
     }.let {
         painterResource(id = it)
     }
 
     val tagIcon = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.tagIcon.icon
+        is DataAdjust.Data -> dataAdjust.financeEntity.tagIcon.icon
         is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon.icon
     }.let {
         painterResource(id = it)
     }
 
     val paymentMethod = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.paymentMethod.icon
+        is DataAdjust.Data -> dataAdjust.financeEntity.paymentMethod.icon
         is DataAdjust.Adjust -> dataAdjust.adjustment.paymentMethod.icon
     }.let {
         painterResource(id = it)
     }
 
     val adjustment = if (dataAdjust is DataAdjust.Adjust)
-        dataAdjust.adjustment.finance?.label
+        dataAdjust.adjustment.financeEntity?.label
     else null
 
     val textDecoration = when (dataAdjust) {
         is DataAdjust.Data -> {
-            dataAdjust.finance.isAmountEqualToAdjustAmount()
+            dataAdjust.financeEntity.isAmountEqualToAdjustAmount()
         }
 
         is DataAdjust.Adjust -> {
-            dataAdjust.adjustment.finance?.isAmountEqualToAdjustAmount()
+            dataAdjust.adjustment.financeEntity?.isAmountEqualToAdjustAmount()
         }
     }.let {
         if (it == true) {

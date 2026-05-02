@@ -1,29 +1,29 @@
 package com.example.moneytracker.ui.usecase
 
-import com.example.moneytracker.backend.storage.Finance
-import com.example.moneytracker.backend.storage.LiabilityType
-import com.example.moneytracker.backend.storage.TransactionType
+import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.types.LiabilityType
+import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
 import javax.inject.Inject
 
 class GetYesterdayStatsUseCase @Inject constructor() {
-    operator fun invoke(financeList: List<Finance>): YesterdayStats {
+    operator fun invoke(financeEntityList: List<FinanceEntity>): YesterdayStats {
         val earnings =
-            financeList.filter { it is Finance.Transaction && it.transactionType == TransactionType.EARNINGS }
+            financeEntityList.filter { it is FinanceEntity.Transaction && it.transactionType == TransactionType.EARNINGS }
                 .sumOf { it.amount }
         val expenses =
-            financeList.filter { it is Finance.Transaction && it.transactionType == TransactionType.EXPENSES }
+            financeEntityList.filter { it is FinanceEntity.Transaction && it.transactionType == TransactionType.EXPENSES }
                 .sumOf { it.amount }
         val debts =
-            financeList.filter { it is Finance.Liability && it.liabilityType == LiabilityType.DEBT }
+            financeEntityList.filter { it is FinanceEntity.Liability && it.liabilityType == LiabilityType.DEBT }
                 .sumOf { it.amount }
         val lent =
-            financeList.filter { it is Finance.Liability && it.liabilityType == LiabilityType.LOAN }
+            financeEntityList.filter { it is FinanceEntity.Liability && it.liabilityType == LiabilityType.LOAN }
                 .sumOf { it.amount }
         val savings =
-            financeList.filter { it is Finance.Transaction && it.transactionType == TransactionType.SAVINGS }
+            financeEntityList.filter { it is FinanceEntity.Transaction && it.transactionType == TransactionType.SAVINGS }
                 .sumOf { it.amount }
-        val attained = financeList.filterIsInstance<Finance.Goal>()
+        val attained = financeEntityList.filterIsInstance<FinanceEntity.Goal>()
             .flatMap { it.adjustment }
             .sumOf { it.amount }
 

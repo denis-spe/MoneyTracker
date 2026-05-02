@@ -26,7 +26,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.helper.status
@@ -40,22 +40,22 @@ import com.example.moneytracker.ui.homeScreen.HomeUiState
 @Composable
 fun GoalCard(
     modifier: Modifier = Modifier,
-    financeGoal: Finance.Goal
+    financeEntityGoal: FinanceEntity.Goal
 ) {
-    val startDateTime = financeGoal.routine.startDateTime.toLocalDateTimeUtc()
-    val endDateTime = financeGoal.routine.deadlineDateTime.toLocalDateTimeUtc()
+    val startDateTime = financeEntityGoal.routine.startDateTime.toLocalDateTimeUtc()
+    val endDateTime = financeEntityGoal.routine.deadlineDateTime.toLocalDateTimeUtc()
     "${startDateTime.day}/${startDateTime.month.name.title}/${startDateTime.year}"
     val endDate = "${endDateTime.day}/${endDateTime.month.name.title}/${endDateTime.year}"
-    val status = financeGoal.status.name.title
+    val status = financeEntityGoal.status.name.title
 
-    val progressAmount = financeGoal.adjustment.sumOf { it.amount }
-    val remainingAmount = (financeGoal.amount - progressAmount).coerceAtLeast(0.0)
+    val progressAmount = financeEntityGoal.adjustment.sumOf { it.amount }
+    val remainingAmount = (financeEntityGoal.amount - progressAmount).coerceAtLeast(0.0)
 
     val donutChartDataCollection = DonutChartDataCollection(
         listOf(
             DonutChartData(
                 amount = progressAmount.toFloat(),
-                color = colorResource(financeGoal.colorRes),
+                color = colorResource(financeEntityGoal.colorRes),
                 title = "Progress"
             ),
 
@@ -68,7 +68,7 @@ fun GoalCard(
     )
 
 
-    val endState = when (financeGoal.status) {
+    val endState = when (financeEntityGoal.status) {
         Status.SUCCESS -> {
             "Completed "
         }
@@ -87,7 +87,7 @@ fun GoalCard(
     }
 
 
-    val dateTime = when (financeGoal.routine.routine) {
+    val dateTime = when (financeEntityGoal.routine.routine) {
         Routine.EveryMinute -> {
             "${endState}end at ${endDateTime.hour}:${endDateTime.minute}"
         }
@@ -121,13 +121,13 @@ fun GoalCard(
         }
     }
 
-    val routineName = if (financeGoal.routine.routine == Routine.Nothing) {
+    val routineName = if (financeEntityGoal.routine.routine == Routine.Nothing) {
         "Not repeatable"
     } else {
-        financeGoal.routine.routine.text
+        financeEntityGoal.routine.routine.text
     }
 
-    val createdAt = financeGoal.createdAt.toLocalDateTimeUtc()
+    val createdAt = financeEntityGoal.createdAt.toLocalDateTimeUtc()
     val createdAtDateTime = "Created at ${createdAt.day} ${createdAt.month.name.title} " +
             "${createdAt.year} ${createdAt.hour}:${createdAt.minute}"
 
@@ -143,7 +143,7 @@ fun GoalCard(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = financeGoal.label,
+                        text = financeEntityGoal.label,
                         style = typography.titleMedium
                     )
                 }
@@ -153,7 +153,7 @@ fun GoalCard(
             },
             supportingContent = {
                 Text(
-                    text = financeGoal.amount.toString(),
+                    text = financeEntityGoal.amount.toString(),
                     style = typography.titleLarge
                 )
             },
@@ -171,8 +171,8 @@ fun GoalCard(
                         gapPercentage = 0.06f,
                         strokeCap = StrokeCap.Round,
                         selectionView = {
-                            val percentage = if (financeGoal.amount > 0)
-                                ((progressAmount / financeGoal.amount) * 100).toInt()
+                            val percentage = if (financeEntityGoal.amount > 0)
+                                ((progressAmount / financeEntityGoal.amount) * 100).toInt()
                             else 0
                             Text(
                                 text = "$percentage%",
@@ -226,7 +226,7 @@ fun GoalCard(
 @Composable
 fun GoalScreen(
     paddingValues: PaddingValues,
-    goalFinanceList: List<Finance.Goal>,
+    goalFinanceEntityList: List<FinanceEntity.Goal>,
     uiState: HomeUiState,
     isGoalDataLoading: Boolean
 ) {
@@ -244,9 +244,9 @@ fun GoalScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item { Spacer(modifier = Modifier.size(10.dp)) }
-                items(goalFinanceList) { goal ->
+                items(goalFinanceEntityList) { goal ->
                     GoalCard(
-                        financeGoal = goal,
+                        financeEntityGoal = goal,
                         modifier = Modifier
                             .padding(top = 10.dp, start = 10.dp, end = 10.dp)
                             .clip(RoundedCornerShape(10))

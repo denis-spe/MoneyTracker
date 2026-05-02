@@ -11,6 +11,7 @@ import java.time.Duration
 data class WorkersTask(
     val userId: String,
     val datasetId: String,
+    val financeType: String,
     val deadlineDateTime: Timestamp,
     val routineData: RoutineData,
     val timeProvider: TimeProvider = SystemTimeProvider

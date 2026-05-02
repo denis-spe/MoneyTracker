@@ -1,7 +1,7 @@
 package com.example.moneytracker.ui.usecase
 
 import com.example.moneytracker.backend.storage.DataAdjust
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
@@ -10,7 +10,7 @@ import javax.inject.Inject
 class SortTodayDataAdjustUseCase @Inject constructor() {
 
     operator fun invoke(
-        financeList: List<Finance>,
+        financeEntityList: List<FinanceEntity>,
         timeSorting: SortType,
         categorySorting: String?,
         paymentSorting: PaymentMethod?,
@@ -25,7 +25,7 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
             amountSorting
         )
 
-        return coupleDatasetsWithAdjustments(financeList)
+        return coupleDatasetsWithAdjustments(financeEntityList)
             .asSequence() // 🚀 lazy evaluation
             .filter { it.isForToday() }
             .filter { it.matchesCategory(categorySorting) }
@@ -68,14 +68,14 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
 
     // 🔥 Extensions = no repeated `when`
     private fun DataAdjust.isForToday(): Boolean = when (this) {
-        is DataAdjust.Data -> finance.isForToday
+        is DataAdjust.Data -> financeEntity.isForToday
         is DataAdjust.Adjust -> adjustment.isForToday
     }
 
     private fun DataAdjust.matchesCategory(category: String?): Boolean {
         if (category.isNullOrBlank() || category == "Initial") return true
         return when (this) {
-            is DataAdjust.Data -> finance.categoryText == category
+            is DataAdjust.Data -> financeEntity.categoryText == category
             is DataAdjust.Adjust -> adjustment.adjustmentType.text == category
         }
     }
@@ -83,23 +83,23 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
     private fun DataAdjust.matchesPayment(payment: PaymentMethod?): Boolean {
         if (payment == null) return true
         return when (this) {
-            is DataAdjust.Data -> finance.paymentMethod == payment
+            is DataAdjust.Data -> financeEntity.paymentMethod == payment
             is DataAdjust.Adjust -> adjustment.paymentMethod == payment
         }
     }
 
     private fun DataAdjust.time(): Long = when (this) {
-        is DataAdjust.Data -> finance.createdAt.toDate().time
+        is DataAdjust.Data -> financeEntity.createdAt.toDate().time
         is DataAdjust.Adjust -> adjustment.dateTime.toDate().time
     }
 
     private fun DataAdjust.label(): String = when (this) {
-        is DataAdjust.Data -> finance.label
+        is DataAdjust.Data -> financeEntity.label
         is DataAdjust.Adjust -> adjustment.label
     }
 
     private fun DataAdjust.amount(): Double = when (this) {
-        is DataAdjust.Data -> finance.amount
+        is DataAdjust.Data -> financeEntity.amount
         is DataAdjust.Adjust -> adjustment.amount
     }
 

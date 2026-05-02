@@ -5,7 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataStorage
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.CoroutineScope
@@ -38,12 +38,13 @@ class RoutineBootReceiver : BroadcastReceiver() {
                 val datasets = dataStorage.getWholeDatasets(userId, {}, {})
                 datasets.collect { datasetList ->
                     datasetList.forEach {
-                        if (it is Finance.Goal) {
+                        if (it is FinanceEntity.Goal) {
                             if (it.routine.routine != Routine.Nothing) {
                                 workers.startRoutineWorker(
                                     WorkersTask(
                                         userId = userId,
                                         datasetId = it.id,
+                                        financeType = "GOAL",
                                         routineData = it.routine,
                                         deadlineDateTime = it.routine.deadlineDateTime
                                     )

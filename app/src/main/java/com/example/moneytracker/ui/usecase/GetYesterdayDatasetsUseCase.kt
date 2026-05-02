@@ -1,6 +1,6 @@
 package com.example.moneytracker.ui.usecase
 
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.isCreatedAtEqualTo
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
@@ -9,11 +9,11 @@ import network.chaintech.kmp_date_time_picker.utils.now
 import javax.inject.Inject
 
 class GetYesterdayFinanceUseCase @Inject constructor() {
-    operator fun invoke(financeList: List<Finance>): List<Finance> {
+    operator fun invoke(financeEntityList: List<FinanceEntity>): List<FinanceEntity> {
         val yesterday = LocalDateTime.now()
             .date
             .minus(1, DateTimeUnit.DAY)
 
-        return financeList.filter { it.isCreatedAtEqualTo(yesterday) }
+        return financeEntityList.filter { it.isCreatedAtEqualTo(yesterday) }
     }
 }

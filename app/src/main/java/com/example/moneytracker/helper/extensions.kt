@@ -32,16 +32,15 @@ import androidx.compose.ui.unit.IntSize
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentType
-import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Finance
-import com.example.moneytracker.backend.storage.LiabilityType
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.StatusHistory
 import com.example.moneytracker.backend.storage.TagIcon
-import com.example.moneytracker.backend.storage.TransactionType
+import com.example.moneytracker.backend.storage.types.LiabilityType
+import com.example.moneytracker.backend.storage.types.TransactionType
 import com.google.firebase.Timestamp
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
@@ -167,30 +166,35 @@ fun RoutineData.rescheduleDeadline(
     timeProvider: TimeProvider = SystemTimeProvider
 ): java.time.LocalDateTime {
     val startBase = baseTime ?: timeProvider.nowLocalDateTime()
+    val count = if (routineCount <= 0) 1L else routineCount.toLong()
 
     return when (routine) {
         Routine.EveryMinute -> {
-            startBase.plusMinutes(routineCount.toLong())
+            startBase.plusMinutes(count)
+                .withSecond(0)
+                .withNano(0)
         }
 
         Routine.EveryHour -> {
-            startBase.plusHours(routineCount.toLong())
+            startBase.plusHours(count)
+                .withSecond(0)
+                .withNano(0)
         }
 
         Routine.EveryDay -> {
-            startBase.plusDays(routineCount.toLong()).toMidnight()
+            startBase.plusDays(count).toMidnight()
         }
 
         Routine.Weekly -> {
-            startBase.plusWeeks(routineCount.toLong()).toMidnight()
+            startBase.plusWeeks(count).toMidnight()
         }
 
         Routine.Monthly -> {
-            startBase.plusMonths(routineCount.toLong()).toMidnight()
+            startBase.plusMonths(count).toMidnight()
         }
 
         Routine.Yearly -> {
-            startBase.plusYears(routineCount.toLong()).toMidnight()
+            startBase.plusYears(count).toMidnight()
         }
 
         else -> {
@@ -207,10 +211,14 @@ fun RoutineData.getTriggerMillisFrom(baseMillis: Long): Long {
     val count = if (this.routineCount <= 0) 1L else this.routineCount.toLong()
 
     return when (this.routine) {
-        Routine.EveryMinute -> base.plusMinutes(count).toInstant()
+        Routine.EveryMinute -> base.plusMinutes(count)
+            .withSecond(0).withNano(0)
+            .toInstant()
             .toEpochMilli()
 
-        Routine.EveryHour -> base.plusHours(count).toInstant()
+        Routine.EveryHour -> base.plusHours(count)
+            .withSecond(0).withNano(0)
+            .toInstant()
             .toEpochMilli()
 
         Routine.EveryDay -> base.plusDays(count)
@@ -274,7 +282,7 @@ fun <T> List<T>.mean(selector: (T) -> Double): Double {
 /**
  * Calculates the Median: The middle value in a sorted list of numbers.
  */
-val List<Finance>.median: Double
+val List<FinanceEntity>.median: Double
     get() {
         if (isEmpty()) return 0.0
 
@@ -294,7 +302,7 @@ val List<Finance>.median: Double
 /**
  * Calculates the Variance: The average of the squared differences from the Mean.
  */
-val List<Finance>.variance: Double
+val List<FinanceEntity>.variance: Double
     get() {
         if (isEmpty()) return 0.0
         val avg = mean { it.amount }
@@ -305,17 +313,17 @@ val List<Finance>.variance: Double
 /**
  * Calculates the Standard Deviation: The square root of the Variance.
  */
-val List<Finance>.std: Double
+val List<FinanceEntity>.std: Double
     get() = kotlin.math.sqrt(variance)
 
-val Finance.isStartDateTimeNotEqualToDeadlineDateTime: Boolean
-    get() = if (this is Finance.Goal) routine.startDateTime != routine.deadlineDateTime else false
+val FinanceEntity.isStartDateTimeNotEqualToDeadlineDateTime: Boolean
+    get() = if (this is FinanceEntity.Goal) routine.startDateTime != routine.deadlineDateTime else false
 
 
 /**
- * Check if the finance record is for today.
+ * Check if the financeEntity record is for today.
  */
-val Finance.isForToday: Boolean
+val FinanceEntity.isForToday: Boolean
     get() {
         val today = LocalDateTime.now().date
         val dataDate = createdAt.toLocalDateTimeUtc().date
@@ -332,7 +340,7 @@ val Adjustment.isForToday: Boolean
 /**
  * Check if the dataset is for yesterday.
  */
-fun Finance.isCreatedAtEqualTo(localDate: LocalDate): Boolean {
+fun FinanceEntity.isCreatedAtEqualTo(localDate: LocalDate): Boolean {
     val dataDate = createdAt.toLocalDateTimeUtc().date
     return dataDate == localDate
 }
@@ -343,7 +351,7 @@ fun Adjustment.isCreatedAtEqualTo(localDate: LocalDate): Boolean {
 }
 
 
-fun Finance.toMap(): Map<String, Any> {
+fun FinanceEntity.toMap(): Map<String, Any> {
     val baseMap = mutableMapOf(
         "id" to id,
         "amount" to amount,
@@ -355,18 +363,18 @@ fun Finance.toMap(): Map<String, Any> {
     )
 
     when (this) {
-        is Finance.Transaction -> {
+        is FinanceEntity.Transaction -> {
             baseMap["financeType"] = "TRANSACTION"
             baseMap["transactionType"] = transactionType.name
         }
 
-        is Finance.Goal -> {
+        is FinanceEntity.Goal -> {
             baseMap["financeType"] = "GOAL"
             baseMap["adjustment"] = adjustment.map { it.adjustmentToMap }
             baseMap["routineData"] = routine.routineToMap
         }
 
-        is Finance.Liability -> {
+        is FinanceEntity.Liability -> {
             baseMap["financeType"] = "LIABILITY"
             baseMap["liabilityType"] = liabilityType.name
             baseMap["adjustment"] = adjustment.map { it.adjustmentToMap }
@@ -617,43 +625,40 @@ fun LocalDateTime.plusDays(days: Int): LocalDateTime {
             )
 }
 
-val Finance.dataType: DataType
-    get() = when (this) {
-        is Finance.Transaction -> when (transactionType) {
-            TransactionType.EARNINGS -> DataType.EARNINGS
-            TransactionType.SAVINGS -> DataType.SAVINGS
-            TransactionType.EXPENSES -> DataType.EXPENSE
-        }
+val FinanceEntity.text: String
+    get() = financeType.text
 
-        is Finance.Goal -> DataType.GOAL
-        is Finance.Liability -> when (liabilityType) {
-            LiabilityType.DEBT -> DataType.DEBT
-            LiabilityType.LOAN -> DataType.LENT
-        }
-    }
+val FinanceEntity.outlinedIcon: Int
+    get() = financeType.outlinedIcon
 
-val Finance.progressPercentage: Double
+val FinanceEntity.filledIcon: Int
+    get() = financeType.filledIcon
+
+val FinanceEntity.typeDescription: String
+    get() = financeType.typeDescription
+
+val FinanceEntity.progressPercentage: Double
     get() {
         val totalAdjustment = when (this) {
-            is Finance.Goal -> adjustment.sumOf { it.amount }
-            is Finance.Liability -> adjustment.sumOf { it.amount }
-            is Finance.Transaction -> 0.0
+            is FinanceEntity.Goal -> adjustment.sumOf { it.amount }
+            is FinanceEntity.Liability -> adjustment.sumOf { it.amount }
+            is FinanceEntity.Transaction -> 0.0
         }
         return if (amount > 0) (totalAdjustment / amount) * 100.0 else 0.0
     }
 
-val Finance.status: Status
+val FinanceEntity.status: Status
     get() {
         val currentTime = LocalDateTime.now()
         val totalAdjustment = when (this) {
-            is Finance.Goal -> adjustment.sumOf { it.amount }
-            is Finance.Liability -> adjustment.sumOf { it.amount }
-            is Finance.Transaction -> 0.0
+            is FinanceEntity.Goal -> adjustment.sumOf { it.amount }
+            is FinanceEntity.Liability -> adjustment.sumOf { it.amount }
+            is FinanceEntity.Transaction -> 0.0
         }
         val isAchieved = totalAdjustment >= amount
 
         return when (this) {
-            is Finance.Goal -> {
+            is FinanceEntity.Goal -> {
                 val deadlineDateTime = routine.deadlineDateTime.toLocalDateTimeUtc()
                 when {
                     isAchieved -> Status.COMPLETED
@@ -662,13 +667,13 @@ val Finance.status: Status
                 }
             }
 
-            is Finance.Liability -> {
+            is FinanceEntity.Liability -> {
                 if (remainingAmount <= 0.0) {
                     if (liabilityType == LiabilityType.DEBT) Status.PAYBACK else Status.REFUNDED
                 } else Status.INITIAL
             }
 
-            is Finance.Transaction -> Status.INITIAL
+            is FinanceEntity.Transaction -> Status.INITIAL
         }
     }
 
@@ -678,7 +683,7 @@ fun Map<*, *>.toAmount(): Double {
         ?: 0.0
 }
 
-fun Map<*, *>.toFinance(): Finance {
+fun Map<*, *>.toFinance(): FinanceEntity {
 
     fun <T : Enum<T>> parseEnum(
         value: Any?,
@@ -728,7 +733,7 @@ fun Map<*, *>.toFinance(): Finance {
                     else -> TransactionType.EARNINGS
                 }
             }
-            Finance.Transaction(
+            FinanceEntity.Transaction(
                 id = id,
                 transactionType = transactionType,
                 amount = amount,
@@ -741,7 +746,7 @@ fun Map<*, *>.toFinance(): Finance {
         }
 
         financeTypeStr == "GOAL" || dataTypeStr == "GOAL" -> {
-            Finance.Goal(
+            FinanceEntity.Goal(
                 id = id,
                 amount = amount,
                 label = label,
@@ -764,7 +769,7 @@ fun Map<*, *>.toFinance(): Finance {
             } else {
                 if (dataTypeStr == "DEBT") LiabilityType.DEBT else LiabilityType.LOAN
             }
-            Finance.Liability(
+            FinanceEntity.Liability(
                 id = id,
                 liabilityType = liabilityType,
                 amount = amount,
@@ -777,7 +782,7 @@ fun Map<*, *>.toFinance(): Finance {
             )
         }
 
-        else -> Finance.Transaction(
+        else -> FinanceEntity.Transaction(
             id = id,
             amount = amount,
             label = label,
@@ -856,21 +861,21 @@ fun Timestamp.toEpochMillis(): Long =
     this.seconds * 1000L + (this.nanoseconds / 1_000_000L)
 
 
-fun Finance.isAmountEqualToAdjustAmount(): Boolean {
+fun FinanceEntity.isAmountEqualToAdjustAmount(): Boolean {
     val totalAdjustment = when (this) {
-        is Finance.Goal -> adjustment.sumOf { it.amount }
-        is Finance.Liability -> adjustment.sumOf { it.amount }
-        is Finance.Transaction -> 0.0
+        is FinanceEntity.Goal -> adjustment.sumOf { it.amount }
+        is FinanceEntity.Liability -> adjustment.sumOf { it.amount }
+        is FinanceEntity.Transaction -> 0.0
     }
     return totalAdjustment == amount
 }
 
-val Finance.remainingAmount: Double
+val FinanceEntity.remainingAmount: Double
     get() {
         val totalAdjustment = when (this) {
-            is Finance.Goal -> adjustment.sumOf { it.amount }
-            is Finance.Liability -> adjustment.sumOf { it.amount }
-            is Finance.Transaction -> 0.0
+            is FinanceEntity.Goal -> adjustment.sumOf { it.amount }
+            is FinanceEntity.Liability -> adjustment.sumOf { it.amount }
+            is FinanceEntity.Transaction -> 0.0
         }
         return amount - totalAdjustment
     }

@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.components.charts.VicoBarChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
@@ -142,7 +142,7 @@ fun YesterdayChart(chartData: List<ChartData>) {
 @Composable
 fun YesterdayStatArea(
     modifier: Modifier = Modifier,
-    financeList: List<Finance>,
+    financeEntityList: List<FinanceEntity>,
     chartData: List<ChartData>,
     stats: YesterdayStats
 ) {

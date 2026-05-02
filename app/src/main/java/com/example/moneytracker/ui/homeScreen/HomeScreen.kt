@@ -91,7 +91,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val yesterdayFinance by homeViewModel.yesterdayFinance.collectAsStateWithLifecycle()
     val yesterdayChartData by homeViewModel.yesterdayChartData.collectAsStateWithLifecycle()
     val sortAbleDataAdjust by homeViewModel.sortedYesterday.collectAsStateWithLifecycle()
-    val goalFinance by homeViewModel.goalFinance.collectAsStateWithLifecycle()
+    val goalFinance by homeViewModel.goalFinanceEntity.collectAsStateWithLifecycle()
     val adjustmentFinance by homeViewModel.adjustFinance.collectAsStateWithLifecycle()
     val yesterdayStats by homeViewModel.yesterdayStats.collectAsStateWithLifecycle()
 
@@ -189,7 +189,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     when (page) {
                         0 -> GoalScreen(
                             paddingValues,
-                            goalFinanceList = goalFinance,
+                            goalFinanceEntityList = goalFinance,
                             uiState = uiState,
                             isGoalDataLoading = uiState.isGoalDataLoading
                         )
@@ -198,7 +198,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                             paddingValues,
                             donutChartDataCollection = donutChartData,
                             uiState = uiState,
-                            todayFinanceList = todayFinance,
+                            todayFinanceEntityList = todayFinance,
                             homeViewModel = homeViewModel,
                             isTodayDataLoading = uiState.isTodayDataLoading,
                             isTodayChartDataLoading = uiState.isTodayChartDataLoading,
@@ -210,7 +210,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                             paddingValues,
                             uiState = uiState,
                             sortAbleDataAdjust = sortAbleDataAdjust,
-                            yesterdayFinanceList = yesterdayFinance,
+                            yesterdayFinanceEntityList = yesterdayFinance,
                             yesterdayChartData = yesterdayChartData,
                             yesterdayStats = yesterdayStats,
                             isYesterdayDataLoading = uiState.isYesterdayDataLoading,
@@ -232,7 +232,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 DataAdditionModelDrawer(
                     viewModel = homeViewModel,
                     userViewModel = userViewModel,
-                    financeList = adjustmentFinance,
+                    financeEntityList = adjustmentFinance,
                     uiState = uiStates.value
                 )
             }

@@ -1,8 +1,6 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -48,12 +46,15 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.Finance
-import com.example.moneytracker.backend.storage.LiabilityType
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.TagIcon
-import com.example.moneytracker.backend.storage.TransactionType
+import com.example.moneytracker.backend.storage.types.FinanceCategory
+import com.example.moneytracker.backend.storage.types.GoalType
+import com.example.moneytracker.backend.storage.types.LiabilityType
+import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.GoalWarning
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
@@ -72,14 +73,12 @@ val MODEL_DRAWER_ICON_SIZE = 25.dp
 val FONT_WEIGHT = FontWeight.Bold
 const val MAX_LABEL_LENGTH = 15
 
-
-@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawer(
     viewModel: HomeViewModel,
     userViewModel: UserViewModel,
-    financeList: List<Finance>,
+    financeEntityList: List<FinanceEntity>,
     uiState: HomeUiState,
 ) {
 
@@ -96,12 +95,13 @@ fun DataAdditionModelDrawer(
 
             ) {
 
-            /*... Text field and button ...*/
+            // Combine enums and Goal for selection
+            val entries = TransactionType.entries + LiabilityType.entries + listOf(GoalType)
             DataAdditionModelDrawerContent(
                 viewModel = viewModel,
                 userViewModel = userViewModel,
-                entries = DataType.entries,
-                financeList = financeList
+                entries = entries,
+                financeEntityList = financeEntityList
             )
         }
     }
@@ -124,7 +124,7 @@ fun DataAdditionModelDrawer(
                 viewModel = viewModel,
                 userViewModel = userViewModel,
                 entries = AdjustmentType.entries.filter { it != AdjustmentType.INITIAL },
-                financeList = financeList
+                financeEntityList = financeEntityList
             )
         }
     }
@@ -137,7 +137,7 @@ fun DataAdditionModelDrawer(
 fun <T> DataAdditionModelDrawerContent(
     viewModel: HomeViewModel,
     userViewModel: UserViewModel,
-    financeList: List<Finance>,
+    financeEntityList: List<FinanceEntity>,
     entries: List<T>,
 ) {
 
@@ -152,19 +152,19 @@ fun <T> DataAdditionModelDrawerContent(
     ) {
         items(items = entries) {
             val text = when (it) {
-                is DataType -> it.text
+                is FinanceCategory -> it.text
                 is AdjustmentType -> it.text
                 else -> ""
             }
 
             val typeDescription = when (it) {
-                is DataType -> it.typeDescription
+                is FinanceCategory -> it.typeDescription
                 is AdjustmentType -> it.typeDescription
                 else -> ""
             }
 
             val color = when (it) {
-                is DataType -> it.color
+                is FinanceCategory -> it.color
                 is AdjustmentType -> it.color
                 else -> R.color.error_color
             }
@@ -221,12 +221,22 @@ fun <T> DataAdditionModelDrawerContent(
             ),
         ) {
 
-            when (clickedDataType.value) {
-                DataType.EARNINGS -> {
+            when (val clicked = clickedDataType.value) {
+                is TransactionType -> {
+                    val placeholder = when (clicked) {
+                        TransactionType.EARNINGS -> "Earned from"
+                        TransactionType.SAVINGS -> "Savings from"
+                        TransactionType.EXPENSES -> "Spent on"
+                    }
+                    val buttonText = when (clicked) {
+                        TransactionType.EARNINGS -> "Received"
+                        TransactionType.SAVINGS -> "Saved"
+                        TransactionType.EXPENSES -> "Spent"
+                    }
                     FinancialDataInput(
-                        placeholder = "Earned from",
-                        dataType = DataType.EARNINGS,
-                        buttonText = "Received",
+                        placeholder = placeholder,
+                        type = clicked,
+                        buttonText = buttonText,
                         userViewModel = userViewModel
                     ) {
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
@@ -234,11 +244,19 @@ fun <T> DataAdditionModelDrawerContent(
                     }
                 }
 
-                DataType.EXPENSE -> {
+                is LiabilityType -> {
+                    val placeholder = when (clicked) {
+                        LiabilityType.DEBT -> "Borrowed from"
+                        LiabilityType.LOAN -> "Lent to"
+                    }
+                    val buttonText = when (clicked) {
+                        LiabilityType.DEBT -> "Set Debt"
+                        LiabilityType.LOAN -> "Lent"
+                    }
                     FinancialDataInput(
-                        placeholder = "Spent on",
-                        dataType = DataType.EXPENSE,
-                        buttonText = "Spent",
+                        placeholder = placeholder,
+                        type = clicked,
+                        buttonText = buttonText,
                         userViewModel = userViewModel
                     ) {
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
@@ -246,46 +264,9 @@ fun <T> DataAdditionModelDrawerContent(
                     }
                 }
 
-                DataType.DEBT -> {
-                    FinancialDataInput(
-                        placeholder = "Borrowed from",
-                        dataType = DataType.DEBT,
-                        buttonText = "Set Debt",
-                        userViewModel = userViewModel
-                    ) {
-                        viewModel.updateOnDatasetModelBottomSheetShow(false)
-                        viewModel.updateIsBottomSheetContentLoading(true)
-                    }
-                }
-
-                DataType.LENT -> {
-                    FinancialDataInput(
-                        placeholder = "Lent to",
-                        dataType = DataType.LENT,
-                        buttonText = "Lent",
-                        userViewModel = userViewModel
-                    ) {
-                        viewModel.updateOnDatasetModelBottomSheetShow(false)
-                        viewModel.updateIsBottomSheetContentLoading(true)
-                    }
-                }
-
-                DataType.SAVINGS -> {
-                    FinancialDataInput(
-                        placeholder = "Savings from",
-                        dataType = DataType.SAVINGS,
-                        buttonText = "Saved",
-                        userViewModel = userViewModel
-                    ) {
-                        viewModel.updateOnDatasetModelBottomSheetShow(false)
-                        viewModel.updateIsBottomSheetContentLoading(true)
-                    }
-                }
-
-                DataType.GOAL -> {
+                is GoalType -> {
                     GoalDataInput(
                         placeholder = "Goal for",
-                        dataType = DataType.GOAL,
                         buttonText = "Start Goal",
                         userViewModel = userViewModel
                     ) {
@@ -296,9 +277,9 @@ fun <T> DataAdditionModelDrawerContent(
 
                 AdjustmentType.LENT_REPAY -> {
                     AdjustmentDataInputs(
-                        DataType.LENT,
+                        LiabilityType.LOAN,
                         AdjustmentType.LENT_REPAY,
-                        financeList = financeList
+                        financeEntityList = financeEntityList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -307,9 +288,9 @@ fun <T> DataAdditionModelDrawerContent(
 
                 AdjustmentType.GOAL_ATTAIN -> {
                     AdjustmentDataInputs(
-                        DataType.GOAL,
+                        GoalType,
                         AdjustmentType.GOAL_ATTAIN,
-                        financeList = financeList
+                        financeEntityList = financeEntityList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -318,9 +299,9 @@ fun <T> DataAdditionModelDrawerContent(
 
                 AdjustmentType.DEBT_REPAY -> {
                     AdjustmentDataInputs(
-                        DataType.DEBT,
+                        LiabilityType.DEBT,
                         AdjustmentType.DEBT_REPAY,
-                        financeList = financeList
+                        financeEntityList = financeEntityList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -353,31 +334,27 @@ fun <T> DataAdditionModelDrawerContent(
 @Composable
 fun FinancialDataInput(
     placeholder: String,
-    dataType: DataType,
+    type: FinanceCategory,
     buttonText: String,
     userViewModel: UserViewModel,
     onDismiss: () -> Unit,
 ) {
-    val colorResId = dataType.color
+    val text = type.text
+    val colorResId = type.color
+    val filledIcon = type.filledIcon
+    val typeDescription = type.typeDescription
+
     val showDate = remember { mutableStateOf(false) }
     val showTime = remember { mutableStateOf(false) }
     val creationDateTime = remember { mutableStateOf(LocalDateTime.now()) }
-    remember { mutableStateOf(LocalDateTime.now()) }
     val amountState = rememberTextFieldState()
     val amountToDisplay = rememberSaveable { mutableStateOf("") }
     val labelState = rememberTextFieldState()
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
     val tag = TagIcon(
-        dataType.text.lowercase(),
-        icon = when (dataType) {
-            DataType.DEBT -> R.drawable.debt
-            DataType.LENT -> R.drawable.lent
-            DataType.SAVINGS -> R.drawable.savings
-            DataType.EXPENSE -> R.drawable.expense
-            DataType.EARNINGS -> R.drawable.earnings
-            else -> R.drawable.description
-        }
+        text.lowercase(),
+        icon = type.tagIconRes
     )
     val labelIconState = remember {
         mutableStateOf(tag)
@@ -386,10 +363,10 @@ fun FinancialDataInput(
     val lazyState = rememberLazyListState()
     val amountAsDouble = amountState.text.toString().toDoubleOrNull()
     val viewModel: HomeViewModel = hiltViewModel()
-    val iconImage = painterResource(dataType.filledIcon)
-    val description = dataType.typeDescription
+    val iconImage = painterResource(filledIcon)
+    val description = typeDescription
     val color = (if (wasSuccess.value == State.ERROR) colorResource(R.color.error_color)
-    else colorResource(dataType.color))
+    else colorResource(colorResId))
 
 
 
@@ -427,7 +404,7 @@ fun FinancialDataInput(
                     .size(MODEL_DRAWER_ICON_SIZE)
                     .padding(bottom = 5.dp),
                 painter = iconImage,
-                contentDescription = dataType.text,
+                contentDescription = text,
                 tint = color
             )
 
@@ -554,10 +531,10 @@ fun FinancialDataInput(
                             amountAsDouble != null
                             && label.isNotEmpty()
                         ) {
-                            val finance = when (dataType) {
-                                DataType.EARNINGS -> Finance.Transaction(
+                            val financeEntity = when (type) {
+                                is TransactionType -> FinanceEntity.Transaction(
                                     id = UUID.randomUUID().toString(),
-                                    transactionType = TransactionType.EARNINGS,
+                                    transactionType = type,
                                     amount = amountAsDouble,
                                     label = label,
                                     description = descriptionState.text.toString(),
@@ -566,9 +543,9 @@ fun FinancialDataInput(
                                     paymentMethod = selectedPaymentMethod.value
                                 )
 
-                                DataType.EXPENSE -> Finance.Transaction(
+                                is LiabilityType -> FinanceEntity.Liability(
                                     id = UUID.randomUUID().toString(),
-                                    transactionType = TransactionType.EXPENSES,
+                                    liabilityType = type,
                                     amount = amountAsDouble,
                                     label = label,
                                     description = descriptionState.text.toString(),
@@ -577,40 +554,7 @@ fun FinancialDataInput(
                                     paymentMethod = selectedPaymentMethod.value
                                 )
 
-                                DataType.SAVINGS -> Finance.Transaction(
-                                    id = UUID.randomUUID().toString(),
-                                    transactionType = TransactionType.SAVINGS,
-                                    amount = amountAsDouble,
-                                    label = label,
-                                    description = descriptionState.text.toString(),
-                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
-                                    tagIcon = labelIconState.value,
-                                    paymentMethod = selectedPaymentMethod.value
-                                )
-
-                                DataType.DEBT -> Finance.Liability(
-                                    id = UUID.randomUUID().toString(),
-                                    liabilityType = LiabilityType.DEBT,
-                                    amount = amountAsDouble,
-                                    label = label,
-                                    description = descriptionState.text.toString(),
-                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
-                                    tagIcon = labelIconState.value,
-                                    paymentMethod = selectedPaymentMethod.value
-                                )
-
-                                DataType.LENT -> Finance.Liability(
-                                    id = UUID.randomUUID().toString(),
-                                    liabilityType = LiabilityType.LOAN,
-                                    amount = amountAsDouble,
-                                    label = label,
-                                    description = descriptionState.text.toString(),
-                                    createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
-                                    tagIcon = labelIconState.value,
-                                    paymentMethod = selectedPaymentMethod.value
-                                )
-
-                                else -> Finance.Transaction(
+                                else -> FinanceEntity.Transaction(
                                     id = UUID.randomUUID().toString(),
                                     amount = amountAsDouble,
                                     label = label,
@@ -620,7 +564,7 @@ fun FinancialDataInput(
                                     paymentMethod = selectedPaymentMethod.value
                                 )
                             }
-                            viewModel.addData(finance)
+                            viewModel.addData(financeEntity)
                             wasSuccess.value = State.SUCCESS
 
                             // Reset all state
@@ -668,12 +612,11 @@ fun FinancialDataInput(
 @Composable
 fun GoalDataInput(
     placeholder: String,
-    dataType: DataType,
     buttonText: String,
     userViewModel: UserViewModel,
     onDismiss: () -> Unit,
 ) {
-    val colorResId = dataType.color
+    val colorResId = GoalType.color
     val localDateTimeState = remember { mutableStateOf(LocalDateTime.now().toMidnight()) }
     val endLocalDateTimeState = remember { mutableStateOf(LocalDateTime.now().toMidnight()) }
     val amountState = rememberTextFieldState()
@@ -681,7 +624,7 @@ fun GoalDataInput(
     val labelState = rememberTextFieldState()
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
-    val tagIcon = TagIcon("goal", R.drawable.tag_goal)
+    val tagIcon = TagIcon("goal", GoalType.tagIconRes)
     val labelIconState = remember {
         mutableStateOf(
             tagIcon
@@ -693,9 +636,9 @@ fun GoalDataInput(
     val goalDateTimeWarningState = remember { mutableStateOf(GoalWarning.INITIAL) }
     val viewModel: HomeViewModel = hiltViewModel()
     val routineData = remember { mutableStateOf(RoutineData()) }
-    val iconImage = painterResource(dataType.filledIcon)
-    val color = colorResource(dataType.color)
-    val description = dataType.typeDescription
+    val iconImage = painterResource(GoalType.filledIcon)
+    val color = colorResource(GoalType.color)
+    val description = GoalType.typeDescription
 
     Column(
         modifier = Modifier
@@ -715,7 +658,7 @@ fun GoalDataInput(
                     .size(MODEL_DRAWER_ICON_SIZE)
                     .padding(bottom = 5.dp),
                 painter = iconImage,
-                contentDescription = dataType.text,
+                contentDescription = GoalType.text,
                 tint = color
             )
 
@@ -809,15 +752,13 @@ fun GoalDataInput(
 
             // Repeatable transaction
             item(key = 120) {
-                if (dataType == DataType.GOAL) {
-                    RepeatableTransaction(
-                        routineData,
-                        startLocalDateTimeState = localDateTimeState,
-                        endLocalDateTimeState = endLocalDateTimeState,
-                        dataType = DataType.GOAL,
-                        goalDateTimeWarningState = goalDateTimeWarningState,
-                    )
-                }
+                RepeatableTransaction(
+                    routineData,
+                    dataType = DataType.GOAL,
+                    startLocalDateTimeState = localDateTimeState,
+                    endLocalDateTimeState = endLocalDateTimeState,
+                    goalDateTimeWarningState = goalDateTimeWarningState,
+                )
             }
 
             // Payment method
@@ -858,7 +799,6 @@ fun GoalDataInput(
                         }
 
                         if (
-                            dataType == DataType.GOAL &&
                             goalDateTimeWarningState.value == GoalWarning.INITIAL
                         ) {
                             goalDateTimeWarningState.value = GoalWarning.ERROR
@@ -870,15 +810,27 @@ fun GoalDataInput(
                             wasSuccess.value != State.ERROR && amountAsDouble != null &&
                             endLocalDateTimeState.value > localDateTimeState.value
                         ) {
-                            val normalizedStart = localDateTimeState.value.toMidnight()
-                            val normalizedEnd = endLocalDateTimeState.value.toMidnight()
+                            val isLongRoutine = routineData.value.routine in listOf<Routine>(
+                                Routine.EveryDay,
+                                Routine.Weekly,
+                                Routine.Monthly,
+                                Routine.Yearly,
+                                Routine.SpecifyDayOfTheWeek
+                            )
+                            val normalizedStart =
+                                if (isLongRoutine) localDateTimeState.value.toMidnight()
+                                else localDateTimeState.value
+
+                            val normalizedEnd =
+                                if (isLongRoutine) endLocalDateTimeState.value.toMidnight()
+                                else endLocalDateTimeState.value
 
                             val routine = routineData.value.copy(
                                 startDateTime = normalizedStart.toFirestoreTimestampUtc(),
                                 deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc()
                             )
 
-                            val finance = Finance.Goal(
+                            val financeEntity = FinanceEntity.Goal(
                                 id = UUID.randomUUID().toString(),
                                 amount = amountAsDouble,
                                 label = labelState.text.toString(),
@@ -889,8 +841,8 @@ fun GoalDataInput(
                                 routine = routine
                             )
 
-                            viewModel.addData(finance)
-                            viewModel.beginTheWork(finance)
+                            viewModel.addData(financeEntity)
+                            viewModel.beginTheWork(financeEntity)
 
                             wasSuccess.value = State.SUCCESS
 
@@ -943,9 +895,9 @@ fun GoalDataInput(
 
 @Composable
 fun AdjustmentDataInputs(
-    dataType: DataType,
+    type: Any, // FinanceCategory or AdjustmentType
     adjustmentType: AdjustmentType,
-    financeList: List<Finance>,
+    financeEntityList: List<FinanceEntity>,
     onDismiss: () -> Unit
 ) {
     val lazyState = rememberLazyListState()
@@ -954,7 +906,7 @@ fun AdjustmentDataInputs(
     val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
     val descriptionState = rememberTextFieldState()
     val wasRepaySuccess = remember { mutableStateOf(State.INITIAL) }
-    val selectedFinance = remember { mutableStateOf<Finance?>(null) }
+    val selectedFinanceEntity = remember { mutableStateOf<FinanceEntity?>(null) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val adjustAmountState = rememberTextFieldState()
     val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
@@ -963,6 +915,26 @@ fun AdjustmentDataInputs(
     val iconImage = painterResource(adjustmentType.icon)
     val color = colorResource(adjustmentType.color)
     val description = adjustmentType.typeDescription
+    val text = when (type) {
+        is FinanceCategory -> type.text
+        else -> ""
+    }
+
+    val dataType = when (type) {
+        is TransactionType -> when (type) {
+            TransactionType.EARNINGS -> DataType.EARNINGS
+            TransactionType.EXPENSES -> DataType.EXPENSE
+            TransactionType.SAVINGS -> DataType.SAVINGS
+        }
+
+        is LiabilityType -> when (type) {
+            LiabilityType.LOAN -> DataType.LENT
+            LiabilityType.DEBT -> DataType.DEBT
+        }
+
+        GoalType -> DataType.GOAL
+        else -> DataType.EXPENSE
+    }
 
     Column(
         modifier = Modifier
@@ -982,7 +954,7 @@ fun AdjustmentDataInputs(
                     .size(MODEL_DRAWER_ICON_SIZE)
                     .padding(bottom = 5.dp),
                 painter = iconImage,
-                contentDescription = dataType.text,
+                contentDescription = text,
                 tint = color
             )
 
@@ -1003,13 +975,13 @@ fun AdjustmentDataInputs(
         ) {
             item(key = 921) {
                 AdjustmentField(
-                    isBottomSheetOpen,
+                    sheetVisible = isBottomSheetOpen,
                     datatype = dataType,
                     amountState = adjustAmountState,
-                    financeList = financeList,
-                    wasRepaySuccess = wasRepaySuccess,
-                    selectedFinance = selectedFinance,
-                    colorResId = adjustmentType.color
+                    financeEntityList = financeEntityList,
+                    colorResId = adjustmentType.color,
+                    selectedFinanceEntity = selectedFinanceEntity,
+                    wasRepaySuccess = wasRepaySuccess
                 )
             }
 
@@ -1064,7 +1036,7 @@ fun AdjustmentDataInputs(
                         colorResId = adjustmentType.color,
                         filledColor = Color.Transparent
                     ) {
-                        selectedFinance.value?.let {
+                        selectedFinanceEntity.value?.let {
                             if (adjustAsDouble != null) {
 
                                 if (
@@ -1082,12 +1054,19 @@ fun AdjustmentDataInputs(
                                     description = descriptionState.text.toString(),
                                     tagIcon = it.tagIcon,
                                     paymentMethod = selectedPaymentMethod.value,
-                                    adjustmentType = AdjustmentType.GOAL_ATTAIN,
+                                    adjustmentType = adjustmentType,
                                 )
-                                adjustment.finance = it
+                                adjustment.financeEntity = it
+
+                                val financeEntityType = when (it) {
+                                    is FinanceEntity.Transaction -> "TRANSACTION"
+                                    is FinanceEntity.Goal -> "GOAL"
+                                    is FinanceEntity.Liability -> "LIABILITY"
+                                }
 
                                 viewModel.addAdjustmentData(
                                     it.id,
+                                    financeEntityType,
                                     adjustment
                                 )
 
@@ -1106,5 +1085,3 @@ fun AdjustmentDataInputs(
         }
     }
 }
-
-

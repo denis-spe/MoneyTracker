@@ -1,15 +1,15 @@
 package com.example.moneytracker.ui.usecase
 
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.isForToday
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 class GetTodayFinanceUseCase @Inject constructor() {
-    suspend operator fun invoke(financeList: List<Finance>): List<Finance> {
-        var todayFinance = financeList
+    suspend operator fun invoke(financeEntityList: List<FinanceEntity>): List<FinanceEntity> {
+        var todayFinance = financeEntityList
         withContext(kotlinx.coroutines.Dispatchers.Default) {
-            todayFinance = financeList.filter { it.isForToday }
+            todayFinance = financeEntityList.filter { it.isForToday }
         }
         return todayFinance
     }

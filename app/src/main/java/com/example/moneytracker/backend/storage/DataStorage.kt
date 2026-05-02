@@ -19,75 +19,88 @@ interface DataStorage {
     suspend fun createUserWithId(id: String)
 
     /**
-     * Add a finance record to the storage
+     * Add a financeEntity record to the storage
      * @param userId the user id
-     * @param finance the finance record to add
+     * @param financeEntity the financeEntity record to add
      * @return the id of the added record
      */
-    fun addData(userId: String, finance: Finance): String
+    fun addData(userId: String, financeEntity: FinanceEntity): String
 
     /**
-     * Get all finance records
+     * Get all financeEntity records
      * @param userId the user id
      */
     suspend fun getWholeDatasets(
         userId: String,
         onSuccess: (isSuccess: Boolean) -> Unit,
         onFailure: (error: Throwable?) -> Unit
-    ): Flow<List<Finance>>
+    ): Flow<List<FinanceEntity>>
 
 
     suspend fun getInfo(userId: String): Flow<Info>
 
     /**
-     * Add a repay entry into a finance record (identified by its id) for the given user.
+     * Add a repay entry into a financeEntity record (identified by its id) for the given user.
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      */
-    suspend fun addAdjustmentDataset(userId: String, datasetId: String, adjustment: Adjustment)
+    suspend fun addAdjustmentDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        adjustment: Adjustment
+    )
 
     /**
      * Ensure every record stored for the user has a non-null id; assign UUIDs to missing ones.
-     * This is a migration helper to avoid finance.id being null for older documents.
+     * This is a migration helper to avoid financeEntity.id being null for older documents.
      */
     suspend fun ensureDatasetIds(userId: String)
 
     /**
-     * Remove a finance record from the storage
+     * Remove a financeEntity record from the storage
      * @param userId the user id
-     * @param finance the finance record to remove
+     * @param financeEntity the financeEntity record to remove
      */
-    suspend fun removeDataset(userId: String, finance: Finance)
+    suspend fun removeDataset(userId: String, financeEntity: FinanceEntity)
 
     /**
-     * Remove adjusted finance record from the storage
+     * Remove adjusted financeEntity record from the storage
      * @param userId the user id
      * @param datasetId the record id
+     * @param financeType the record type
      * @param adjustment the adjustment
      */
-    suspend fun removeAdjustmentDataset(userId: String, datasetId: String, adjustment: Adjustment)
-
-    /**
-     * Update a finance record to the storage
-     * @param userId the user id
-     * @param oldFinance the record to update
-     * @param newFinance the record to update the old one
-     */
-    suspend fun updateDataset(
+    suspend fun removeAdjustmentDataset(
         userId: String,
-        oldFinance: Finance,
-        newFinance: Finance
+        datasetId: String,
+        financeType: String,
+        adjustment: Adjustment
     )
 
     /**
-     * Update a finance record to the storage
+     * Update a financeEntity record to the storage
+     * @param userId the user id
+     * @param oldFinanceEntity the record to update
+     * @param newFinanceEntity the record to update the old one
+     */
+    suspend fun updateDataset(
+        userId: String,
+        oldFinanceEntity: FinanceEntity,
+        newFinanceEntity: FinanceEntity
+    )
+
+    /**
+     * Update a financeEntity record to the storage
      * @param userId the user id
      * @param datasetId of the record
+     * @param financeType the record type
      * @param oldAdjustment to update with the new one
      * @param newAdjustment to update the old one
      */
     suspend fun updateAdjustmentDataset(
         userId: String,
         datasetId: String,
+        financeType: String,
         oldAdjustment: Adjustment,
         newAdjustment: Adjustment
     )
@@ -97,10 +110,12 @@ interface DataStorage {
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      * @param userId the user id
      * @param datasetId the record id
+     * @param financeType the record type
      */
     suspend fun addStatus(
         userId: String,
         datasetId: String,
+        financeType: String,
         newDateTime: Timestamp,
         newDeadlineDateTime: Timestamp
     )
@@ -110,35 +125,41 @@ interface DataStorage {
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      * @param userId the user id
      * @param datasetId the record id
+     * @param financeType the record type
      */
-    suspend fun clearAdjustmentList(userId: String, datasetId: String)
+    suspend fun clearAdjustmentList(userId: String, datasetId: String, financeType: String)
 
     /**
      * Get a record from the storage
      * @param userId the user id
      * @param datasetId the record id
+     * @param financeType the record type
      */
     suspend fun stopRoutine(
         userId: String,
         datasetId: String,
+        financeType: String
     )
 
     /**
      * Get a record from the storage
      * @param userId the user id
      * @param datasetId the record id
+     * @param financeType the record type
      */
-    suspend fun getDataset(userId: String, datasetId: String): Finance?
+    suspend fun getDataset(userId: String, datasetId: String, financeType: String): FinanceEntity?
 
     /**
      * At the end of a routine, add a status into a list in
      * record and clear the adjustment list (identified by its id) for the given user.
      * @param userId the user id
      * @param datasetId the record id
+     * @param financeType the record type
      */
     suspend fun completeRoutine(
         userId: String,
         datasetId: String,
+        financeType: String,
         newDateTime: Timestamp,
         nextDeadline: Timestamp
     )
@@ -156,5 +177,5 @@ interface DataStorage {
         filter: Filter,
         orderBy: String? = null,
         orderDirection: Query.Direction? = null
-    ): List<Finance>
+    ): List<FinanceEntity>
 }

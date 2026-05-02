@@ -55,7 +55,7 @@ import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.Finance
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.components.charts.InsightBar
 import kotlinx.coroutines.launch
@@ -259,19 +259,23 @@ fun CurrentPagerIndicator(
 }
 
 @Composable
-fun InsightsPager(financeList: List<Finance>, pagerState: PagerState, items: List<PagerItem>) {
+fun InsightsPager(
+    financeEntityList: List<FinanceEntity>,
+    pagerState: PagerState,
+    items: List<PagerItem>
+) {
     // Single pass calculation for better performance
-    val totals = remember(financeList) {
+    val totals = remember(financeEntityList) {
         val map = mutableMapOf<String, Double>()
         val adjMap = mutableMapOf<String, Double>()
-        financeList.forEach { finance ->
+        financeEntityList.forEach { finance ->
             val typeText = finance.categoryText
             map[typeText] = (map[typeText] ?: 0.0) + finance.amount
 
             val adjustments = when (finance) {
-                is Finance.Goal -> finance.adjustment
-                is Finance.Liability -> finance.adjustment
-                is Finance.Transaction -> emptyList()
+                is FinanceEntity.Goal -> finance.adjustment
+                is FinanceEntity.Liability -> finance.adjustment
+                is FinanceEntity.Transaction -> emptyList()
             }
             adjMap[typeText] = (adjMap[typeText] ?: 0.0) + adjustments.sumOf { it.amount }
         }
@@ -478,9 +482,9 @@ fun InsightsPager(financeList: List<Finance>, pagerState: PagerState, items: Lis
 
 
 @Composable
-fun GoalInsightPager(financeList: List<Finance>) {
-    val goals = remember(financeList) {
-        financeList.filterIsInstance<Finance.Goal>()
+fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
+    val goals = remember(financeEntityList) {
+        financeEntityList.filterIsInstance<FinanceEntity.Goal>()
     }
 
     if (goals.isEmpty()) {

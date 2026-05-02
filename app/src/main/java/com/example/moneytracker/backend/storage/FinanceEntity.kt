@@ -2,20 +2,13 @@
 package com.example.moneytracker.backend.storage
 
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.types.FinanceCategory
+import com.example.moneytracker.backend.storage.types.GoalType
+import com.example.moneytracker.backend.storage.types.LiabilityType
+import com.example.moneytracker.backend.storage.types.TransactionType
 import com.google.firebase.Timestamp
 
-enum class TransactionType {
-    EARNINGS,
-    SAVINGS,
-    EXPENSES
-}
-
-enum class LiabilityType {
-    DEBT,
-    LOAN
-}
-
-sealed class Finance {
+sealed class FinanceEntity {
     abstract val id: String
     abstract val amount: Double
     abstract val label: String
@@ -23,36 +16,13 @@ sealed class Finance {
     abstract val createdAt: Timestamp
     abstract val tagIcon: TagIcon
     abstract val paymentMethod: PaymentMethod
+    abstract val financeType: FinanceCategory
 
     val categoryText: String
-        get() = when (this) {
-            is Transaction -> when (transactionType) {
-                TransactionType.EARNINGS -> "Earnings"
-                TransactionType.SAVINGS -> "Savings"
-                TransactionType.EXPENSES -> "Expense"
-            }
-
-            is Goal -> "Goal"
-            is Liability -> when (liabilityType) {
-                LiabilityType.DEBT -> "Debt"
-                LiabilityType.LOAN -> "Lent"
-            }
-        }
+        get() = financeType.text
 
     val colorRes: Int
-        get() = when (this) {
-            is Transaction -> when (transactionType) {
-                TransactionType.EARNINGS -> R.color.Earnings
-                TransactionType.SAVINGS -> R.color.Savings
-                TransactionType.EXPENSES -> R.color.Expense
-            }
-
-            is Goal -> R.color.Goal
-            is Liability -> when (liabilityType) {
-                LiabilityType.DEBT -> R.color.Debt
-                LiabilityType.LOAN -> R.color.Lent
-            }
-        }
+        get() = financeType.color
 
     data class Transaction(
         override val id: String = "",
@@ -63,7 +33,9 @@ sealed class Finance {
         override val createdAt: Timestamp = Timestamp.now(),
         override val tagIcon: TagIcon = TagIcon(),
         override val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-    ) : Finance()
+    ) : FinanceEntity() {
+        override val financeType: FinanceCategory get() = transactionType
+    }
 
     data class Goal(
         override val id: String = "",
@@ -76,7 +48,9 @@ sealed class Finance {
         val adjustment: List<Adjustment> = emptyList(),
         val statusHistory: List<StatusHistory> = emptyList(),
         val routine: RoutineData = RoutineData()
-    ) : Finance()
+    ) : FinanceEntity() {
+        override val financeType: FinanceCategory get() = GoalType
+    }
 
     data class Liability(
         override val id: String = "",
@@ -88,5 +62,15 @@ sealed class Finance {
         override val tagIcon: TagIcon = TagIcon(),
         override val paymentMethod: PaymentMethod = PaymentMethod.CASH,
         val adjustment: List<Adjustment> = emptyList(),
-    ) : Finance()
+    ) : FinanceEntity() {
+        override val financeType: FinanceCategory get() = liabilityType
+    }
+
+    companion object {
+        const val GOAL_TEXT = "Goal"
+        val GOAL_COLOR = R.color.Goal
+        val GOAL_OUTLINED_ICON = R.drawable.outlined_goal
+        val GOAL_FILLED_ICON = R.drawable.filled_goal
+        const val GOAL_DESCRIPTION = "Set your financial goals and track your progress"
+    }
 }

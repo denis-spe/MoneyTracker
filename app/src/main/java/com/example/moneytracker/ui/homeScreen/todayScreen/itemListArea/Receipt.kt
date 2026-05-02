@@ -54,12 +54,12 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataAdjust
-import com.example.moneytracker.backend.storage.Finance
-import com.example.moneytracker.backend.storage.LiabilityType
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
-import com.example.moneytracker.backend.storage.TransactionType
+import com.example.moneytracker.backend.storage.types.LiabilityType
+import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
@@ -96,12 +96,12 @@ private val ICON_SIZE = 25.dp
 
 @Composable
 fun FinanceReceipt(
-    finance: Finance,
+    financeEntity: FinanceEntity,
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
     onClose: () -> Unit = {}
 ) {
-    val datetime = finance.createdAt.toLocalDateTimeUtc()
+    val datetime = financeEntity.createdAt.toLocalDateTimeUtc()
     val day = datetime.day.addZeroIfLessThenTen
     val month = datetime.month.name.title
     val year = datetime.year.addZeroIfLessThenTen
@@ -113,13 +113,13 @@ fun FinanceReceipt(
     val date = "$day $month $year"
 
     val fontSize = 13.sp
-    val color = colorResource(finance.colorRes)
+    val color = colorResource(financeEntity.colorRes)
     val textDecoration = if (
-        (finance is Finance.Liability && finance.remainingAmount == 0.0) || finance.status == Status.OVERDUE
+        (financeEntity is FinanceEntity.Liability && financeEntity.remainingAmount == 0.0) || financeEntity.status == Status.OVERDUE
     )
         TextDecoration.LineThrough else
         TextDecoration.None
-    val dataAdjust = DataAdjust.Data(finance)
+    val dataAdjust = DataAdjust.Data(financeEntity)
 
     Column(
         modifier = Modifier
@@ -129,7 +129,7 @@ fun FinanceReceipt(
         verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = finance.categoryText,
+            text = financeEntity.categoryText,
             fontSize = 25.sp,
             fontWeight = FONT_WEIGHT,
             color = color
@@ -145,15 +145,15 @@ fun FinanceReceipt(
             verticalAlignment = Alignment.CenterVertically
         ) {
 
-            val label = when (finance) {
-                is Finance.Transaction -> when (finance.transactionType) {
+            val label = when (financeEntity) {
+                is FinanceEntity.Transaction -> when (financeEntity.transactionType) {
                     TransactionType.EARNINGS -> "Received from:"
                     TransactionType.EXPENSES -> "Spent on:"
                     TransactionType.SAVINGS -> "Savings for:"
                 }
 
-                is Finance.Goal -> "Your goal:"
-                is Finance.Liability -> when (finance.liabilityType) {
+                is FinanceEntity.Goal -> "Your goal:"
+                is FinanceEntity.Liability -> when (financeEntity.liabilityType) {
                     LiabilityType.DEBT -> "Debt from:"
                     LiabilityType.LOAN -> "Lent to:"
                 }
@@ -161,7 +161,7 @@ fun FinanceReceipt(
 
             Text(text = label, fontSize = fontSize, fontWeight = FONT_WEIGHT)
             Text(
-                text = finance.label,
+                text = financeEntity.label,
                 textDecoration = textDecoration,
                 fontSize = fontSize
             )
@@ -174,7 +174,7 @@ fun FinanceReceipt(
         ) {
             Text(text = "Amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
             Text(
-                text = finance.amount.formatToAmount(),
+                text = financeEntity.amount.formatToAmount(),
                 textDecoration = textDecoration,
                 fontSize = fontSize
             )
@@ -186,13 +186,13 @@ fun FinanceReceipt(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "Payment method:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
-            Text(text = finance.paymentMethod.text, fontSize = fontSize)
+            Text(text = financeEntity.paymentMethod.text, fontSize = fontSize)
         }
 
-        val adjustments = when (finance) {
-            is Finance.Goal -> finance.adjustment
-            is Finance.Liability -> finance.adjustment
-            is Finance.Transaction -> emptyList()
+        val adjustments = when (financeEntity) {
+            is FinanceEntity.Goal -> financeEntity.adjustment
+            is FinanceEntity.Liability -> financeEntity.adjustment
+            is FinanceEntity.Transaction -> emptyList()
         }
 
         if (adjustments.isNotEmpty()) {
@@ -215,7 +215,7 @@ fun FinanceReceipt(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Remaining Amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
-                Text(text = finance.remainingAmount.formatToAmount(), fontSize = fontSize)
+                Text(text = financeEntity.remainingAmount.formatToAmount(), fontSize = fontSize)
             }
 
             Row(
@@ -246,8 +246,8 @@ fun FinanceReceipt(
             }
         }
 
-        if (finance is Finance.Goal) {
-            val deadlineDateTime = finance.routine.deadlineDateTime.toLocalDateTimeUtc()
+        if (financeEntity is FinanceEntity.Goal) {
+            val deadlineDateTime = financeEntity.routine.deadlineDateTime.toLocalDateTimeUtc()
             val deadlineDay = deadlineDateTime.day.addZeroIfLessThenTen
             val deadlineMonth = deadlineDateTime.month.name.title.take(3)
             val deadlineYear = deadlineDateTime.year
@@ -257,7 +257,7 @@ fun FinanceReceipt(
             val deadlineDate = "$deadlineDay $deadlineMonth $deadlineYear"
             val deadlineTime = "$deadlineHour:$deadlineMinute"
 
-            val adjustStatue = remember { mutableStateOf(finance.status) }
+            val adjustStatue = remember { mutableStateOf(financeEntity.status) }
 
             LaunchedEffect(deadlineDateTime) {
                 val now = LocalDateTime.now()
@@ -268,9 +268,9 @@ fun FinanceReceipt(
 
                 if (delayMillis > 0) {
                     delay(delayMillis)
-                    adjustStatue.value = finance.status
+                    adjustStatue.value = financeEntity.status
                 } else {
-                    adjustStatue.value = finance.status
+                    adjustStatue.value = financeEntity.status
                 }
             }
 
@@ -309,7 +309,7 @@ fun FinanceReceipt(
             }
         }
 
-        if (finance.description.isNotBlank()) {
+        if (financeEntity.description.isNotBlank()) {
             DottedDivider(color = color, modifier = Modifier.padding(vertical = 10.dp))
 
             Column(
@@ -328,7 +328,7 @@ fun FinanceReceipt(
                 ) {
                     item {
                         Text(
-                            text = finance.description,
+                            text = financeEntity.description,
                             fontSize = fontSize,
                             textAlign = TextAlign.Center
                         )
@@ -337,7 +337,7 @@ fun FinanceReceipt(
             }
         }
 
-        if (finance is Finance.Goal || finance is Finance.Liability) {
+        if (financeEntity is FinanceEntity.Goal || financeEntity is FinanceEntity.Liability) {
 
             Row(
                 modifier = Modifier
@@ -406,22 +406,22 @@ fun FinanceReceipt(
                     containerColor = color.copy(alpha = 0.1f)
                 )
             ) {
-                val icon = when (finance) {
-                    is Finance.Transaction -> when (finance.transactionType) {
+                val icon = when (financeEntity) {
+                    is FinanceEntity.Transaction -> when (financeEntity.transactionType) {
                         TransactionType.EARNINGS -> R.drawable.outline_earnings
                         TransactionType.EXPENSES -> R.drawable.filled_expenditure
                         TransactionType.SAVINGS -> R.drawable.outline_savings
                     }
 
-                    is Finance.Goal -> R.drawable.outlined_goal
-                    is Finance.Liability -> when (finance.liabilityType) {
+                    is FinanceEntity.Goal -> R.drawable.outlined_goal
+                    is FinanceEntity.Liability -> when (financeEntity.liabilityType) {
                         LiabilityType.DEBT -> R.drawable.filled_debt
                         LiabilityType.LOAN -> R.drawable.outline_lent
                     }
                 }
                 Icon(
                     painter = painterResource(icon),
-                    contentDescription = finance.categoryText,
+                    contentDescription = financeEntity.categoryText,
                     tint = color,
                     modifier = Modifier
                         .size(ICON_SIZE)
@@ -435,8 +435,8 @@ fun FinanceReceipt(
                 )
             ) {
                 Image(
-                    painter = painterResource(finance.tagIcon.icon),
-                    contentDescription = finance.categoryText,
+                    painter = painterResource(financeEntity.tagIcon.icon),
+                    contentDescription = financeEntity.categoryText,
                     modifier = Modifier
                         .size(ICON_SIZE)
                 )
@@ -449,8 +449,8 @@ fun FinanceReceipt(
                 )
             ) {
                 Image(
-                    painter = painterResource(finance.paymentMethod.icon),
-                    contentDescription = finance.categoryText,
+                    painter = painterResource(financeEntity.paymentMethod.icon),
+                    contentDescription = financeEntity.categoryText,
                     modifier = Modifier
                         .size(ICON_SIZE)
                 )
@@ -462,7 +462,7 @@ fun FinanceReceipt(
 @Composable
 fun AdjustmentReceipt(
     adjustment: Adjustment,
-    finance: Finance,
+    financeEntity: FinanceEntity,
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
     onClose: () -> Unit = {}
@@ -483,13 +483,13 @@ fun AdjustmentReceipt(
     val color = colorResource(adjustment.adjustmentType.color)
 
     val textDecoration = if (
-        finance.remainingAmount == 0.0
+        financeEntity.remainingAmount == 0.0
     )
         TextDecoration.LineThrough else
         TextDecoration.None
-    val title = when (finance) {
-        is Finance.Liability -> if (finance.liabilityType == LiabilityType.DEBT) "Repaid Debt" else "Repaid Loan"
-        is Finance.Goal -> "Attained Goal"
+    val title = when (financeEntity) {
+        is FinanceEntity.Liability -> if (financeEntity.liabilityType == LiabilityType.DEBT) "Repaid Debt" else "Repaid Loan"
+        is FinanceEntity.Goal -> "Attained Goal"
         else -> "Adjustment"
     }
     val dataAdjust = DataAdjust.Adjust(adjustment)
@@ -527,7 +527,7 @@ fun AdjustmentReceipt(
 
             Text(text = label, fontSize = fontSize, fontWeight = FONT_WEIGHT)
             val labelState = remember { mutableStateOf("") }
-            labelState.value = finance.label
+            labelState.value = financeEntity.label
             Text(
                 text = labelState.value,
                 textDecoration = textDecoration,
@@ -556,10 +556,10 @@ fun AdjustmentReceipt(
             Text(text = adjustment.paymentMethod.text, fontSize = fontSize)
         }
 
-        val adjustments = when (finance) {
-            is Finance.Goal -> finance.adjustment
-            is Finance.Liability -> finance.adjustment
-            is Finance.Transaction -> emptyList()
+        val adjustments = when (financeEntity) {
+            is FinanceEntity.Goal -> financeEntity.adjustment
+            is FinanceEntity.Liability -> financeEntity.adjustment
+            is FinanceEntity.Transaction -> emptyList()
         }
 
         if (adjustments.isNotEmpty()) {
@@ -582,7 +582,7 @@ fun AdjustmentReceipt(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(text = "Remaining Amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
-                Text(text = finance.remainingAmount.formatToAmount(), fontSize = fontSize)
+                Text(text = financeEntity.remainingAmount.formatToAmount(), fontSize = fontSize)
             }
 
             Row(
@@ -641,8 +641,8 @@ fun AdjustmentReceipt(
             }
         }
 
-        if (finance is Finance.Goal || finance is Finance.Liability) {
-            if (finance.remainingAmount == 0.0) {
+        if (financeEntity is FinanceEntity.Goal || financeEntity is FinanceEntity.Liability) {
+            if (financeEntity.remainingAmount == 0.0) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -758,7 +758,7 @@ fun OnDeleteReceipt(
     onConfirm: () -> Unit
 ) {
     val item = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.categoryText
+        is DataAdjust.Data -> dataAdjust.financeEntity.categoryText
         is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.text
     }
 
@@ -848,25 +848,25 @@ fun OnUpdate(
     val lazyState = rememberLazyListState()
 
     val dataTypeText = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.categoryText
+        is DataAdjust.Data -> dataAdjust.financeEntity.categoryText
         is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.text
     }
 
     val colorResId = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.finance.colorRes
+        is DataAdjust.Data -> dataAdjust.financeEntity.colorRes
         is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
     }
 
     val icon = when (dataAdjust) {
-        is DataAdjust.Data -> when (val f = dataAdjust.finance) {
-            is Finance.Transaction -> when (f.transactionType) {
+        is DataAdjust.Data -> when (val f = dataAdjust.financeEntity) {
+            is FinanceEntity.Transaction -> when (f.transactionType) {
                 TransactionType.EARNINGS -> R.drawable.filled_earnings
                 TransactionType.EXPENSES -> R.drawable.filled_expenditure
                 TransactionType.SAVINGS -> R.drawable.filled_savings
             }
 
-            is Finance.Goal -> R.drawable.filled_goal
-            is Finance.Liability -> when (f.liabilityType) {
+            is FinanceEntity.Goal -> R.drawable.filled_goal
+            is FinanceEntity.Liability -> when (f.liabilityType) {
                 LiabilityType.DEBT -> R.drawable.filled_debt
                 LiabilityType.LOAN -> R.drawable.filled_lent
             }
@@ -876,10 +876,10 @@ fun OnUpdate(
     }
 
     val description = when (dataAdjust) {
-        is DataAdjust.Data -> "Updating ${dataAdjust.finance.label} " +
-                dataAdjust.finance.categoryText
+        is DataAdjust.Data -> "Updating ${dataAdjust.financeEntity.label} " +
+                dataAdjust.financeEntity.categoryText
 
-        is DataAdjust.Adjust -> "Updating ${dataAdjust.adjustment.finance?.label} " +
+        is DataAdjust.Adjust -> "Updating ${dataAdjust.adjustment.financeEntity?.label} " +
                 dataAdjust.adjustment.adjustmentType.text
     }
 
@@ -889,16 +889,16 @@ fun OnUpdate(
         if (isUpdateModelBottonOpen.value) {
             when (dataAdjust) {
                 is DataAdjust.Data -> {
-                    val finance = dataAdjust.finance
+                    val finance = dataAdjust.financeEntity
                     amountState.setTextAndPlaceCursorAtEnd(finance.amount.toString())
                     labelState.setTextAndPlaceCursorAtEnd(finance.label)
                     descriptionState.setTextAndPlaceCursorAtEnd(finance.description)
-                    localDateTimeState.value = if (finance is Finance.Goal) {
+                    localDateTimeState.value = if (finance is FinanceEntity.Goal) {
                         finance.createdAt.toLocalDateTimeUtc().toMidnight()
                     } else {
                         finance.createdAt.toLocalDateTimeUtc()
                     }
-                    endLocalDateTimeState.value = if (finance is Finance.Goal) {
+                    endLocalDateTimeState.value = if (finance is FinanceEntity.Goal) {
                         finance.routine.deadlineDateTime.toLocalDateTimeUtc().toMidnight()
                     } else {
                         finance.createdAt.toLocalDateTimeUtc()
@@ -986,7 +986,7 @@ fun OnUpdate(
                                     state = labelState,
                                     title = "Label",
                                     description = "Add a label for the given amount",
-                                    placeholder = dataAdjust.finance.label,
+                                    placeholder = dataAdjust.financeEntity.label,
                                     colorResId = colorResId,
                                     wasSuccess = wasSuccess,
                                     textLength = MAX_LABEL_LENGTH,
@@ -1034,7 +1034,7 @@ fun OnUpdate(
                         ) {
                             if (
                                 dataAdjust is DataAdjust.Data &&
-                                dataAdjust.finance is Finance.Goal
+                                dataAdjust.financeEntity is FinanceEntity.Goal
                             ) {
                                 DateTimeRange(
                                     startLocalDateTimeState = localDateTimeState,
@@ -1076,14 +1076,14 @@ fun OnUpdate(
                                         if (amountAsDouble != null && labelState.text.toString()
                                                 .isNotEmpty()
                                         ) {
-                                            val finance = dataAdjust.finance
+                                            val finance = dataAdjust.financeEntity
                                             val normalizedStart =
                                                 localDateTimeState.value.toMidnight()
                                             val normalizedEnd =
                                                 endLocalDateTimeState.value.toMidnight()
 
-                                            val newFinance = when (finance) {
-                                                is Finance.Transaction -> finance.copy(
+                                            val newFinanceEntity = when (finance) {
+                                                is FinanceEntity.Transaction -> finance.copy(
                                                     amount = amountAsDouble,
                                                     label = labelState.text.toString(),
                                                     description = descriptionState.text.toString(),
@@ -1092,7 +1092,7 @@ fun OnUpdate(
                                                     paymentMethod = selectedPaymentMethod.value
                                                 )
 
-                                                is Finance.Goal -> finance.copy(
+                                                is FinanceEntity.Goal -> finance.copy(
                                                     amount = amountAsDouble,
                                                     label = labelState.text.toString(),
                                                     description = descriptionState.text.toString(),
@@ -1105,7 +1105,7 @@ fun OnUpdate(
                                                     )
                                                 )
 
-                                                is Finance.Liability -> finance.copy(
+                                                is FinanceEntity.Liability -> finance.copy(
                                                     amount = amountAsDouble,
                                                     label = labelState.text.toString(),
                                                     description = descriptionState.text.toString(),
@@ -1117,11 +1117,11 @@ fun OnUpdate(
 
                                             viewModel.updateData(
                                                 finance,
-                                                newFinance
+                                                newFinanceEntity
                                             )
 
-                                            if (newFinance is Finance.Goal) {
-                                                viewModel.beginTheWork(newFinance)
+                                            if (newFinanceEntity is FinanceEntity.Goal) {
+                                                viewModel.beginTheWork(newFinanceEntity)
                                             }
 
 
@@ -1165,11 +1165,18 @@ fun OnUpdate(
                                         ) {
                                             if (amountAsDouble != null
                                                 && amountAsDouble
-                                                <= dataAdjust.adjustment.finance!!.remainingAmount
+                                                <= dataAdjust.adjustment.financeEntity!!.remainingAmount
                                             ) {
                                                 val adjustment = dataAdjust.adjustment
+                                                val financeEntityType =
+                                                    when (adjustment.financeEntity!!) {
+                                                        is FinanceEntity.Transaction -> "TRANSACTION"
+                                                        is FinanceEntity.Goal -> "GOAL"
+                                                        is FinanceEntity.Liability -> "LIABILITY"
+                                                    }
                                                 viewModel.updateAdjustmentData(
-                                                    adjustment.finance!!.id,
+                                                    adjustment.financeEntity!!.id,
+                                                    financeEntityType,
                                                     adjustment,
                                                     Adjustment(
                                                         adjustmentId = adjustment.adjustmentId,
@@ -1227,25 +1234,25 @@ fun OnUpdate(
         awaitFrame()
 
         val amount = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.finance.amount
+            is DataAdjust.Data -> dataAdjust.financeEntity.amount
             is DataAdjust.Adjust -> dataAdjust.adjustment.amount
         }
         val label = if (dataAdjust is DataAdjust.Data) {
-            dataAdjust.finance.label
+            dataAdjust.financeEntity.label
         } else ""
 
         val description = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.finance.description
+            is DataAdjust.Data -> dataAdjust.financeEntity.description
             is DataAdjust.Adjust -> dataAdjust.adjustment.description
         }
 
         val dateTime = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.finance.createdAt
+            is DataAdjust.Data -> dataAdjust.financeEntity.createdAt
             is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime
         }
 
         val tagIcon = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.finance.tagIcon
+            is DataAdjust.Data -> dataAdjust.financeEntity.tagIcon
             is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon
         }
 
@@ -1290,7 +1297,7 @@ fun Receipt(
                 when (dataAdjust) {
                     is DataAdjust.Data ->
                         FinanceReceipt(
-                            finance = dataAdjust.finance,
+                            financeEntity = dataAdjust.financeEntity,
                             onEdit = {
                                 isUpdateModelBottonOpen.value = true
                             },
@@ -1304,7 +1311,7 @@ fun Receipt(
                     is DataAdjust.Adjust -> {
                         AdjustmentReceipt(
                             adjustment = dataAdjust.adjustment,
-                            finance = dataAdjust.adjustment.finance!!,
+                            financeEntity = dataAdjust.adjustment.financeEntity!!,
                             onEdit = {
                                 isUpdateModelBottonOpen.value = true
                             },
@@ -1327,13 +1334,19 @@ fun Receipt(
     ) {
         when (dataAdjust) {
             is DataAdjust.Data -> {
-                viewModel.removeData(dataAdjust.finance)
+                viewModel.removeData(dataAdjust.financeEntity)
                 userViewModel.showActionNotification("Data deleted successfully", Color.Red)
             }
 
             is DataAdjust.Adjust -> {
+                val financeEntityType = when (dataAdjust.adjustment.financeEntity!!) {
+                    is FinanceEntity.Transaction -> "TRANSACTION"
+                    is FinanceEntity.Goal -> "GOAL"
+                    is FinanceEntity.Liability -> "LIABILITY"
+                }
                 viewModel.removeAdjustmentFinance(
-                    dataAdjust.adjustment.finance!!.id,
+                    dataAdjust.adjustment.financeEntity!!.id,
+                    financeEntityType,
                     dataAdjust.adjustment
                 )
                 userViewModel.showActionNotification("Adjustment deleted successfully", Color.Red)
