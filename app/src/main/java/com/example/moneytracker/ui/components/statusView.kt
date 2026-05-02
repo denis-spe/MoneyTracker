@@ -17,9 +17,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.Status
-import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.status
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
@@ -27,7 +27,7 @@ import network.chaintech.kmp_date_time_picker.utils.now
 
 @Composable
 fun StatusView(
-    dataAdjust: DataAdjust,
+    dataSettlement: DataSettlement,
     showImageStatus: Boolean = false,
     imageSize: Dp = 16.dp,
     fontSize: TextUnit = TextUnit.Unspecified
@@ -49,22 +49,22 @@ fun StatusView(
         }
     }
 
-    when (dataAdjust) {
-        is DataAdjust.Adjust ->
+    when (dataSettlement) {
+        is DataSettlement.SettlementAdjust ->
             LaunchedEffect(
-                dataAdjust.adjustment,
-                dataAdjust.adjustment.financeEntity,
+                dataSettlement.settlement,
+                dataSettlement.settlement.financeEntity,
                 now.value
             ) {
-                status.value = when (dataAdjust) {
-                    is DataAdjust.Adjust -> dataAdjust.adjustment.financeEntity?.status!!
+                status.value = when (dataSettlement) {
+                    is DataSettlement.SettlementAdjust -> dataSettlement.settlement.financeEntity?.status!!
                 }
             }
 
-        is DataAdjust.Data -> {
-            LaunchedEffect(dataAdjust.financeEntity, now.value) {
-                status.value = when (dataAdjust) {
-                    is DataAdjust.Data -> dataAdjust.financeEntity.status
+        is DataSettlement.SettlementData -> {
+            LaunchedEffect(dataSettlement.financeEntity, now.value) {
+                status.value = when (dataSettlement) {
+                    is DataSettlement.SettlementData -> dataSettlement.financeEntity.status
                 }
             }
         }
@@ -72,9 +72,9 @@ fun StatusView(
 
 
 
-    when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.isAmountEqualToAdjustAmount()
-        is DataAdjust.Adjust -> dataAdjust.adjustment.financeEntity?.isAmountEqualToAdjustAmount()
+    when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.isAmountEqualToSettleAmount()
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.financeEntity?.isAmountEqualToSettleAmount()
     }
 
     if (status.value == Status.INITIAL) {

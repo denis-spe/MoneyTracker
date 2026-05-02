@@ -1,8 +1,8 @@
 package com.example.moneytracker.ui.usecase
 
-import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.Settlement
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.Query
 import javax.inject.Inject
@@ -45,47 +45,47 @@ class FinanceOperationsUseCase @Inject constructor(
         dataStorage.removeDataset(userId, financeEntity)
     }
 
-    suspend fun addAdjustment(
+    suspend fun addSettlement(
         userId: String,
         financeId: String,
         financeType: String,
-        adjustment: Adjustment
+        settlement: Settlement
     ) {
-        dataStorage.addAdjustmentDataset(
+        dataStorage.addSettlementDataset(
             userId = userId,
             datasetId = financeId,
             financeType = financeType,
-            adjustment = adjustment
+            settlement = settlement
         )
     }
 
-    suspend fun updateAdjustment(
+    suspend fun updateSettlement(
         userId: String,
         financeId: String,
         financeType: String,
-        oldAdjustment: Adjustment,
-        newAdjustment: Adjustment
+        oldSettlement: Settlement,
+        newSettlement: Settlement
     ) {
-        dataStorage.updateAdjustmentDataset(
+        dataStorage.updateSettlementDataset(
             userId = userId,
             datasetId = financeId,
             financeType = financeType,
-            oldAdjustment = oldAdjustment,
-            newAdjustment = newAdjustment
+            oldSettlement = oldSettlement,
+            newSettlement = newSettlement
         )
     }
 
-    suspend fun removeAdjustment(
+    suspend fun removeSettlement(
         userId: String,
         financeId: String,
         financeType: String,
-        adjustment: Adjustment
+        settlement: Settlement
     ) {
-        dataStorage.removeAdjustmentDataset(
+        dataStorage.removeSettlementDataset(
             userId = userId,
             datasetId = financeId,
             financeType = financeType,
-            adjustment = adjustment
+            settlement = settlement
         )
     }
 }

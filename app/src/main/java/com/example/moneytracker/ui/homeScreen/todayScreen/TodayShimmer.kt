@@ -116,7 +116,11 @@ fun ItemCardShimmer() {
             Box(
                 modifier = Modifier
                     .fillMaxWidth(0.5f)
-                    .shimmerEffect(shape = RoundedCornerShape(4.dp), width = 150.dp, height = 18.dp)
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(10.dp),
+                        width = 150.dp,
+                        height = 18.dp
+                    )
             )
             Spacer(modifier = Modifier.height(8.dp))
             Box(

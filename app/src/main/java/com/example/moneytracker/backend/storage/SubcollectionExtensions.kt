@@ -24,25 +24,25 @@ private fun getCollectionNameFromType(type: String): String {
 }
 
 /**
- * Load status history for a specific dataset from the statusHistory subcollection
+ * Load status history for a specific dataset from the achievement subcollection
  * @param db FirebaseFirestore instance
  * @param userId the user id
  * @param datasetId the dataset id
  * @param financeType the record type
- * @return List of StatusHistory ordered by dateTime (newest first)
+ * @return List of Achievement ordered by dateTime (newest first)
  */
-suspend fun loadStatusHistoryForDataset(
+suspend fun loadAchievementForDataset(
     db: FirebaseFirestore,
     userId: String,
     datasetId: String,
     financeType: String
-): List<StatusHistory> {
+): List<Achievement> {
     return try {
         val snapshot = db.collection("database")
             .document(userId)
             .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
-            .collection("statusHistory")
+            .collection("achievement")
             .orderBy("startDateTime", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .get()
             .await()
@@ -50,20 +50,20 @@ suspend fun loadStatusHistoryForDataset(
         snapshot.documents.mapNotNull { doc ->
             try {
                 val data = doc.data ?: return@mapNotNull null
-                StatusHistory(
+                Achievement(
                     status = (data["status"] as? String) ?: "",
-                    totalAdjustmentAmount = (data["totalAdjustmentAmount"] as? Number)?.toDouble()
+                    totalSettlementAmount = (data["totalSettlementAmount"] as? Number)?.toDouble()
                         ?: 0.0,
                     startDateTime = (data["startDateTime"] as? Timestamp) ?: Timestamp.now(),
                     deadlineDateTime = (data["deadlineDateTime"] as? Timestamp) ?: Timestamp.now()
                 )
             } catch (e: Exception) {
-                Log.e("StatusHistoryLoad", "Failed to parse status history entry", e)
+                Log.e("AchievementLoad", "Failed to parse status history entry", e)
                 null
             }
         }
     } catch (e: Exception) {
-        Log.e("StatusHistoryLoad", "Failed to load status history", e)
+        Log.e("AchievementLoad", "Failed to load status history", e)
         emptyList()
     }
 }
@@ -76,21 +76,21 @@ suspend fun loadStatusHistoryForDataset(
  * @param financeType the record type
  * @return Flow of status history lists (automatically updated when changes occur)
  */
-fun listenToStatusHistory(
+fun listenToAchievement(
     db: FirebaseFirestore,
     userId: String,
     datasetId: String,
     financeType: String
-): Flow<List<StatusHistory>> = callbackFlow {
+): Flow<List<Achievement>> = callbackFlow {
     val registration = db.collection("database")
         .document(userId)
         .collection(getCollectionNameFromType(financeType))
         .document(datasetId)
-        .collection("statusHistory")
+        .collection("achievement")
         .orderBy("startDateTime", com.google.firebase.firestore.Query.Direction.DESCENDING)
         .addSnapshotListener { snapshot, error ->
             if (error != null) {
-                Log.e("StatusHistoryListener", "Status history listener error", error)
+                Log.e("AchievementListener", "Status history listener error", error)
                 close(error)
                 return@addSnapshotListener
             }
@@ -99,9 +99,9 @@ fun listenToStatusHistory(
                 val statusList = snapshot?.documents?.mapNotNull { doc ->
                     val data = doc.data ?: return@mapNotNull null
                     try {
-                        StatusHistory(
+                        Achievement(
                             status = (data["status"] as? String) ?: "",
-                            totalAdjustmentAmount = (data["totalAdjustmentAmount"] as? Number)?.toDouble()
+                            totalSettlementAmount = (data["totalSettlementAmount"] as? Number)?.toDouble()
                                 ?: 0.0,
                             startDateTime = (data["startDateTime"] as? Timestamp)
                                 ?: Timestamp.now(),
@@ -109,14 +109,14 @@ fun listenToStatusHistory(
                                 ?: Timestamp.now()
                         )
                     } catch (e: Exception) {
-                        Log.e("StatusHistoryListener", "Failed to parse status entry", e)
+                        Log.e("AchievementListener", "Failed to parse status entry", e)
                         null
                     }
                 } ?: emptyList()
 
                 trySend(statusList)
             } catch (e: Exception) {
-                Log.e("StatusHistoryListener", "Error processing status history", e)
+                Log.e("AchievementListener", "Error processing status history", e)
             }
         }
 
@@ -129,20 +129,20 @@ fun listenToStatusHistory(
  * @param userId the user id
  * @param datasetId the dataset id
  * @param financeType the record type
- * @return The most recent StatusHistory or null if none exist
+ * @return The most recent Achievement or null if none exist
  */
-suspend fun getLatestStatusForDataset(
+suspend fun getLatestAchievementForDataset(
     db: FirebaseFirestore,
     userId: String,
     datasetId: String,
     financeType: String
-): StatusHistory? {
+): Achievement? {
     return try {
         val snapshot = db.collection("database")
             .document(userId)
             .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
-            .collection("statusHistory")
+            .collection("achievement")
             .orderBy("startDateTime", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .limit(1)
             .get()
@@ -155,9 +155,9 @@ suspend fun getLatestStatusForDataset(
         val doc = snapshot.documents.first()
         val data = doc.data ?: return null
 
-        StatusHistory(
+        Achievement(
             status = (data["status"] as? String) ?: "",
-            totalAdjustmentAmount = (data["totalAdjustmentAmount"] as? Number)?.toDouble() ?: 0.0,
+            totalSettlementAmount = (data["totalSettlementAmount"] as? Number)?.toDouble() ?: 0.0,
             startDateTime = (data["startDateTime"] as? Timestamp) ?: Timestamp.now(),
             deadlineDateTime = (data["deadlineDateTime"] as? Timestamp) ?: Timestamp.now()
         )
@@ -171,7 +171,7 @@ suspend fun getLatestStatusForDataset(
  * Count the number of status history entries for a dataset
  * Useful for analytics or pagination
  */
-suspend fun countStatusHistoryForDataset(
+suspend fun countAchievementForDataset(
     db: FirebaseFirestore,
     userId: String,
     datasetId: String,
@@ -182,14 +182,14 @@ suspend fun countStatusHistoryForDataset(
             .document(userId)
             .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
-            .collection("statusHistory")
+            .collection("achievement")
             .count()
             .get(com.google.firebase.firestore.AggregateSource.SERVER)
             .await()
 
         snapshot.count
     } catch (e: Exception) {
-        Log.e("StatusHistoryCount", "Failed to count status history", e)
+        Log.e("AchievementCount", "Failed to count status history", e)
         0L
     }
 }
@@ -198,7 +198,7 @@ suspend fun countStatusHistoryForDataset(
  * Delete old status history entries (older than specified timestamp)
  * Useful for cleanup and reducing Firestore storage
  */
-suspend fun deleteOldStatusHistory(
+suspend fun deleteOldAchievement(
     db: FirebaseFirestore,
     userId: String,
     datasetId: String,
@@ -210,7 +210,7 @@ suspend fun deleteOldStatusHistory(
             .document(userId)
             .collection(getCollectionNameFromType(financeType))
             .document(datasetId)
-            .collection("statusHistory")
+            .collection("achievement")
             .whereLessThan("startDateTime", beforeTimestamp)
             .get()
             .await()
@@ -219,9 +219,9 @@ suspend fun deleteOldStatusHistory(
             doc.reference.delete().await()
         }
 
-        Log.d("StatusHistoryCleanup", "Deleted ${snapshot.documents.size} old status entries")
+        Log.d("AchievementCleanup", "Deleted ${snapshot.documents.size} old status entries")
     } catch (e: Exception) {
-        Log.e("StatusHistoryCleanup", "Failed to delete old status history", e)
+        Log.e("AchievementCleanup", "Failed to delete old status history", e)
     }
 }
 

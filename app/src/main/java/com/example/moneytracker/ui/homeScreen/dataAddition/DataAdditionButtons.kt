@@ -54,7 +54,7 @@ fun DataAdditionFloatingButton(
     isLoading: Boolean = false
 ) {
     val isDatasetBottomSheetOpen = uiState.isDatasetBottomSheetOpen
-    val isAdjustmentBottomSheetOpen = uiState.isAdjustmentBottomSheetOpen
+    val isSettlementBottomSheetOpen = uiState.isSettlementBottomSheetOpen
 
 
     Column(
@@ -103,9 +103,9 @@ fun DataAdditionFloatingButton(
                 containerColor = MoneyTrackerTheme.colors.autoBackground
             ) {
                 Icon(
-                    imageVector = if (isAdjustmentBottomSheetOpen) Icons.Outlined.DoDisturbOn
+                    imageVector = if (isSettlementBottomSheetOpen) Icons.Outlined.DoDisturbOn
                     else Icons.Default.Adjust,
-                    contentDescription = "Add adjustment",
+                    contentDescription = "Add settlement",
                     tint = MoneyTrackerTheme.colors.autoText,
                     modifier = Modifier.size(20.dp)
                 )

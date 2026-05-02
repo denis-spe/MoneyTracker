@@ -272,12 +272,12 @@ fun InsightsPager(
             val typeText = finance.categoryText
             map[typeText] = (map[typeText] ?: 0.0) + finance.amount
 
-            val adjustments = when (finance) {
-                is FinanceEntity.Goal -> finance.adjustment
-                is FinanceEntity.Liability -> finance.adjustment
+            val settlements = when (finance) {
+                is FinanceEntity.Goal -> finance.settlement
+                is FinanceEntity.Liability -> finance.settlement
                 is FinanceEntity.Transaction -> emptyList()
             }
-            adjMap[typeText] = (adjMap[typeText] ?: 0.0) + adjustments.sumOf { it.amount }
+            adjMap[typeText] = (adjMap[typeText] ?: 0.0) + settlements.sumOf { it.amount }
         }
         object {
             val earnings = map["Earnings"] ?: 0.0
@@ -525,7 +525,7 @@ fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
             key = { goals[it].id }
         ) { pageIndex ->
             val goal = goals[pageIndex]
-            val score = goal.adjustment.sumOf { it.amount }
+            val score = goal.settlement.sumOf { it.amount }
 
             Column(
                 modifier = Modifier.fillMaxSize(),

@@ -2,7 +2,7 @@
 package com.example.moneytracker.ui.usecase
 
 import com.example.moneytracker.backend.storage.FinanceEntity
-import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import javax.inject.Inject
 
 class GetAdjustFinanceUseCase @Inject constructor() {
@@ -10,6 +10,6 @@ class GetAdjustFinanceUseCase @Inject constructor() {
         financeEntityList: List<FinanceEntity>,
     ): List<FinanceEntity> {
         return financeEntityList
-            .filterNot { it.isAmountEqualToAdjustAmount() }
+            .filterNot { it.isAmountEqualToSettleAmount() }
     }
 }

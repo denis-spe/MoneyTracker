@@ -45,8 +45,8 @@ sealed class FinanceEntity {
         override val createdAt: Timestamp = Timestamp.now(),
         override val tagIcon: TagIcon = TagIcon(),
         override val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val adjustment: List<Adjustment> = emptyList(),
-        val statusHistory: List<StatusHistory> = emptyList(),
+        val settlement: List<Settlement> = emptyList(),
+        val achievement: List<Achievement> = emptyList(),
         val routine: RoutineData = RoutineData()
     ) : FinanceEntity() {
         override val financeType: FinanceCategory get() = GoalType
@@ -61,7 +61,7 @@ sealed class FinanceEntity {
         override val createdAt: Timestamp = Timestamp.now(),
         override val tagIcon: TagIcon = TagIcon(),
         override val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val adjustment: List<Adjustment> = emptyList(),
+        val settlement: List<Settlement> = emptyList(),
     ) : FinanceEntity() {
         override val financeType: FinanceCategory get() = liabilityType
     }

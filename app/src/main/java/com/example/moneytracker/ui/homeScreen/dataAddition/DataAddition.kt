@@ -43,13 +43,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.AdjustmentType
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
+import com.example.moneytracker.backend.storage.Settlement
+import com.example.moneytracker.backend.storage.SettlementType
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.backend.storage.types.FinanceCategory
 import com.example.moneytracker.backend.storage.types.GoalType
@@ -106,7 +106,7 @@ fun DataAdditionModelDrawer(
         }
     }
 
-    if (uiState.isAdjustmentBottomSheetOpen) {
+    if (uiState.isSettlementBottomSheetOpen) {
         ModalBottomSheet(
             onDismissRequest = {
                 viewModel.updateOnAdjustModelBottomSheetShow(false)
@@ -123,7 +123,7 @@ fun DataAdditionModelDrawer(
             DataAdditionModelDrawerContent(
                 viewModel = viewModel,
                 userViewModel = userViewModel,
-                entries = AdjustmentType.entries.filter { it != AdjustmentType.INITIAL },
+                entries = SettlementType.entries.filter { it != SettlementType.INITIAL },
                 financeEntityList = financeEntityList
             )
         }
@@ -153,19 +153,19 @@ fun <T> DataAdditionModelDrawerContent(
         items(items = entries) {
             val text = when (it) {
                 is FinanceCategory -> it.text
-                is AdjustmentType -> it.text
+                is SettlementType -> it.text
                 else -> ""
             }
 
             val typeDescription = when (it) {
                 is FinanceCategory -> it.typeDescription
-                is AdjustmentType -> it.typeDescription
+                is SettlementType -> it.typeDescription
                 else -> ""
             }
 
             val color = when (it) {
                 is FinanceCategory -> it.color
-                is AdjustmentType -> it.color
+                is SettlementType -> it.color
                 else -> R.color.error_color
             }
             Column(
@@ -275,10 +275,10 @@ fun <T> DataAdditionModelDrawerContent(
                     }
                 }
 
-                AdjustmentType.LENT_REPAY -> {
-                    AdjustmentDataInputs(
+                SettlementType.LENT_REPAY -> {
+                    SettlementDataInputs(
                         LiabilityType.LOAN,
-                        AdjustmentType.LENT_REPAY,
+                        SettlementType.LENT_REPAY,
                         financeEntityList = financeEntityList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
@@ -286,10 +286,10 @@ fun <T> DataAdditionModelDrawerContent(
                     }
                 }
 
-                AdjustmentType.GOAL_ATTAIN -> {
-                    AdjustmentDataInputs(
+                SettlementType.GOAL_ATTAIN -> {
+                    SettlementDataInputs(
                         GoalType,
-                        AdjustmentType.GOAL_ATTAIN,
+                        SettlementType.GOAL_ATTAIN,
                         financeEntityList = financeEntityList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
@@ -297,10 +297,10 @@ fun <T> DataAdditionModelDrawerContent(
                     }
                 }
 
-                AdjustmentType.DEBT_REPAY -> {
-                    AdjustmentDataInputs(
+                SettlementType.DEBT_REPAY -> {
+                    SettlementDataInputs(
                         LiabilityType.DEBT,
-                        AdjustmentType.DEBT_REPAY,
+                        SettlementType.DEBT_REPAY,
                         financeEntityList = financeEntityList
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
@@ -890,13 +890,13 @@ fun GoalDataInput(
 
 
 /*
- * Adjustment Inputs
+ * Settlement Inputs
  */
 
 @Composable
-fun AdjustmentDataInputs(
-    type: Any, // FinanceCategory or AdjustmentType
-    adjustmentType: AdjustmentType,
+fun SettlementDataInputs(
+    type: Any, // FinanceCategory or SettlementType
+    settlementType: SettlementType,
     financeEntityList: List<FinanceEntity>,
     onDismiss: () -> Unit
 ) {
@@ -909,12 +909,12 @@ fun AdjustmentDataInputs(
     val selectedFinanceEntity = remember { mutableStateOf<FinanceEntity?>(null) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val adjustAmountState = rememberTextFieldState()
-    val adjustAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
+    val settleAsDouble = adjustAmountState.text.toString().toDoubleOrNull()
     val isBottomSheetOpen by remember { mutableStateOf(true) }
     val viewModel = hiltViewModel<HomeViewModel>()
-    val iconImage = painterResource(adjustmentType.icon)
-    val color = colorResource(adjustmentType.color)
-    val description = adjustmentType.typeDescription
+    val iconImage = painterResource(settlementType.icon)
+    val color = colorResource(settlementType.color)
+    val description = settlementType.typeDescription
     val text = when (type) {
         is FinanceCategory -> type.text
         else -> ""
@@ -974,12 +974,12 @@ fun AdjustmentDataInputs(
             verticalArrangement = Arrangement.Center,
         ) {
             item(key = 921) {
-                AdjustmentField(
+                SettlementField(
                     sheetVisible = isBottomSheetOpen,
                     datatype = dataType,
                     amountState = adjustAmountState,
                     financeEntityList = financeEntityList,
-                    colorResId = adjustmentType.color,
+                    colorResId = settlementType.color,
                     selectedFinanceEntity = selectedFinanceEntity,
                     wasRepaySuccess = wasRepaySuccess
                 )
@@ -996,7 +996,7 @@ fun AdjustmentDataInputs(
                         placeholder = "Note (Optional)",
                         title = "Note",
                         description = "Take a note for the given amount",
-                        colorResId = adjustmentType.color,
+                        colorResId = settlementType.color,
                         wasSuccess = null,
                         displayText = rememberSaveable { mutableStateOf("") }
                     )
@@ -1014,7 +1014,7 @@ fun AdjustmentDataInputs(
                         showTime = showTime,
                         showDate = showDate,
                         localDateTimeState = localDateTimeState,
-                        colorResId = adjustmentType.color
+                        colorResId = settlementType.color
                     )
                 }
             }
@@ -1033,30 +1033,30 @@ fun AdjustmentDataInputs(
                     ModelDrawerButton(
                         text = "Add",
                         wasSuccess = wasRepaySuccess,
-                        colorResId = adjustmentType.color,
+                        colorResId = settlementType.color,
                         filledColor = Color.Transparent
                     ) {
                         selectedFinanceEntity.value?.let {
-                            if (adjustAsDouble != null) {
+                            if (settleAsDouble != null) {
 
                                 if (
-                                    adjustAsDouble > it.remainingAmount &&
+                                    settleAsDouble > it.remainingAmount &&
                                     !it.isStartDateTimeNotEqualToDeadlineDateTime
                                 ) {
                                     wasRepaySuccess.value = State.ERROR
                                     return@ModelDrawerButton
                                 }
-                                val adjustment = Adjustment(
-                                    adjustmentId = UUID.randomUUID().toString(),
-                                    amount = adjustAsDouble,
+                                val settlement = Settlement(
+                                    settlementId = UUID.randomUUID().toString(),
+                                    amount = settleAsDouble,
                                     dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                                    label = adjustmentType.text,
+                                    label = settlementType.text,
                                     description = descriptionState.text.toString(),
                                     tagIcon = it.tagIcon,
                                     paymentMethod = selectedPaymentMethod.value,
-                                    adjustmentType = adjustmentType,
+                                    settlementType = settlementType,
                                 )
-                                adjustment.financeEntity = it
+                                settlement.financeEntity = it
 
                                 val financeEntityType = when (it) {
                                     is FinanceEntity.Transaction -> "TRANSACTION"
@@ -1064,10 +1064,10 @@ fun AdjustmentDataInputs(
                                     is FinanceEntity.Liability -> "LIABILITY"
                                 }
 
-                                viewModel.addAdjustmentData(
+                                viewModel.addSettlementData(
                                     it.id,
                                     financeEntityType,
-                                    adjustment
+                                    settlement
                                 )
 
                                 adjustAmountState.clearText()

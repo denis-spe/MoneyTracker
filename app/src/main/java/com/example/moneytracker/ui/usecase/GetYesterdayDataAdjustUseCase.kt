@@ -1,6 +1,6 @@
 package com.example.moneytracker.ui.usecase
 
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.isCreatedAtEqualTo
 import kotlinx.datetime.DateTimeUnit
@@ -9,18 +9,18 @@ import kotlinx.datetime.minus
 import network.chaintech.kmp_date_time_picker.utils.now
 import javax.inject.Inject
 
-class GetYesterdayDataAdjustUseCase @Inject constructor() {
+class GetYesterdayDataSettlementUseCase @Inject constructor() {
 
-    operator fun invoke(financeEntityList: List<FinanceEntity>): List<DataAdjust> {
+    operator fun invoke(financeEntityList: List<FinanceEntity>): List<DataSettlement> {
         val yesterday = LocalDateTime.now()
             .date
             .minus(1, DateTimeUnit.DAY)
 
 
-        return coupleDatasetsWithAdjustments(financeEntityList).filter {
+        return coupleDatasetsWithSettlements(financeEntityList).filter {
             when (it) {
-                is DataAdjust.Data -> it.financeEntity.isCreatedAtEqualTo(yesterday)
-                is DataAdjust.Adjust -> it.adjustment.isCreatedAtEqualTo(yesterday)
+                is DataSettlement.SettlementData -> it.financeEntity.isCreatedAtEqualTo(yesterday)
+                is DataSettlement.SettlementAdjust -> it.settlement.isCreatedAtEqualTo(yesterday)
             }
         }
     }

@@ -562,7 +562,7 @@ fun ModelDrawerAmountField(
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun AdjustmentField(
+fun SettlementField(
     sheetVisible: Boolean,
     datatype: DataType,
     amountState: TextFieldState,

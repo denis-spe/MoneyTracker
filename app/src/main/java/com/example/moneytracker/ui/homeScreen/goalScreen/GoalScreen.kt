@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.FinanceEntity
@@ -48,7 +49,7 @@ fun GoalCard(
     val endDate = "${endDateTime.day}/${endDateTime.month.name.title}/${endDateTime.year}"
     val status = financeEntityGoal.status.name.title
 
-    val progressAmount = financeEntityGoal.adjustment.sumOf { it.amount }
+    val progressAmount = financeEntityGoal.settlement.sumOf { it.amount }
     val remainingAmount = (financeEntityGoal.amount - progressAmount).coerceAtLeast(0.0)
 
     val donutChartDataCollection = DonutChartDataCollection(
@@ -189,7 +190,9 @@ fun GoalCard(
                 ) {
                     Text(
                         text = status,
-                        style = typography.bodySmall
+                        style = typography.bodySmall,
+                        fontWeight = FontWeight.Bold,
+                        color = colorResource(financeEntityGoal.status.color)
                     )
                     Text(
                         text = routineName,
@@ -244,23 +247,34 @@ fun GoalScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
                 item { Spacer(modifier = Modifier.size(10.dp)) }
-                items(goalFinanceEntityList) { goal ->
-                    GoalCard(
-                        financeEntityGoal = goal,
-                        modifier = Modifier
-                            .padding(top = 10.dp, start = 10.dp, end = 10.dp)
-                            .clip(RoundedCornerShape(10))
-                            .background(
-                                colorResource(id = goal.colorRes)
-                                    .copy(alpha = 0.1f)
-                            )
-                    )
+
+                goalFinanceEntityList.groupBy { it.status }.forEach { statusGroup ->
+                    stickyHeader {
+                        Text(
+                            text = statusGroup.key.name.title,
+                            style = typography.titleMedium,
+                        )
+                    }
+
+                    items(statusGroup.value) { goal ->
+                        GoalCard(
+                            financeEntityGoal = goal,
+                            modifier = Modifier
+                                .padding(top = 10.dp, start = 10.dp, end = 10.dp)
+                                .clip(RoundedCornerShape(10))
+                                .background(
+                                    colorResource(id = goal.colorRes)
+                                        .copy(alpha = 0.1f)
+                                )
+                        )
+                    }
                 }
                 item { Spacer(modifier = Modifier.size(10.dp)) }
             }
         } else {
             GoalScreenShimmer()
         }
+
     }
 }
 

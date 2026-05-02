@@ -31,6 +31,7 @@ class ObserveUserDataUseCase @Inject constructor(
                 try {
                     // Trigger migration and ensure IDs
                     FirestoreMigration.migrateUserDatasets(dataStorage.db, uid)
+                    FirestoreMigration.migrateSettlementsOnly(dataStorage.db, uid)
                     dataStorage.ensureDatasetIds(uid)
                 } catch (e: Exception) {
                     Log.e("ObserveUserDataUseCase", "Migration or ensureDatasetIds failed", e)

@@ -15,7 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.homeScreen.HomeUiState
@@ -27,7 +27,7 @@ import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.Yesterday
 fun YesterdayScreen(
     paddingValues: PaddingValues,
     uiState: HomeUiState,
-    sortAbleDataAdjust: List<DataAdjust>,
+    sortAbleDataSettlement: List<DataSettlement>,
     yesterdayFinanceEntityList: List<FinanceEntity>,
     yesterdayChartData: List<ChartData>,
     yesterdayStats: YesterdayStats,
@@ -66,7 +66,7 @@ fun YesterdayScreen(
             if (!isSortedYesterdayLoading) {
                 YesterdayItems(
                     modifier = Modifier.weight(0.6f),
-                    dataAdjust = sortAbleDataAdjust
+                    dataSettlement = sortAbleDataSettlement
                 )
             } else {
                 YesterdayItemsShimmer(

@@ -24,7 +24,7 @@ class GetYesterdayStatsUseCase @Inject constructor() {
             financeEntityList.filter { it is FinanceEntity.Transaction && it.transactionType == TransactionType.SAVINGS }
                 .sumOf { it.amount }
         val attained = financeEntityList.filterIsInstance<FinanceEntity.Goal>()
-            .flatMap { it.adjustment }
+            .flatMap { it.settlement }
             .sumOf { it.amount }
 
         val reminder = (earnings - expenses) - (debts + lent + savings + attained)

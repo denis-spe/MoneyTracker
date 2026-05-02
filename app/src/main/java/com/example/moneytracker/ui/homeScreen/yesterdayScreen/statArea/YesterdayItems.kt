@@ -27,10 +27,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
-import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.outlinedIcon
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.StatusView
@@ -44,67 +44,67 @@ private val AMOUNT_FONT_SIZE = 18.sp
 
 
 @Composable
-fun YesterdayItem(dataAdjust: DataAdjust) {
-    val amount = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.amount.formatToAmount()
-        is DataAdjust.Adjust -> dataAdjust.adjustment.amount.formatToAmount()
+fun YesterdayItem(dataSettlement: DataSettlement) {
+    val amount = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.amount.formatToAmount()
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.amount.formatToAmount()
     }
-    val label = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.label
-        is DataAdjust.Adjust -> dataAdjust.adjustment.label
+    val label = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.label
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.label
     }
 
-    val description = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.description
-        is DataAdjust.Adjust -> dataAdjust.adjustment.description
+    val description = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.description
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.description
     }.let {
         if (it.length > 16) it.take(20) + "..." else it
     }
 
-    val dateTime = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.createdAt.toLocalDateTimeUtc()
-        is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime.toLocalDateTimeUtc()
+    val dateTime = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.createdAt.toLocalDateTimeUtc()
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.dateTime.toLocalDateTimeUtc()
     }
 
-    val color = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.colorRes
-        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
+    val color = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.colorRes
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.color
     }.let {
         colorResource(id = it)
     }
 
-    val dataTypeIcon = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.outlinedIcon
-        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.icon
+    val dataTypeIcon = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.outlinedIcon
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.icon
     }.let {
         painterResource(id = it)
     }
 
-    val tagIcon = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.tagIcon.icon
-        is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon.icon
+    val tagIcon = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.tagIcon.icon
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.tagIcon.icon
     }.let {
         painterResource(id = it)
     }
 
-    val paymentMethod = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.paymentMethod.icon
-        is DataAdjust.Adjust -> dataAdjust.adjustment.paymentMethod.icon
+    val paymentMethod = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.paymentMethod.icon
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.paymentMethod.icon
     }.let {
         painterResource(id = it)
     }
 
-    val adjustment = if (dataAdjust is DataAdjust.Adjust)
-        dataAdjust.adjustment.financeEntity?.label
+    val settlement = if (dataSettlement is DataSettlement.SettlementAdjust)
+        dataSettlement.settlement.financeEntity?.label
     else null
 
-    val textDecoration = when (dataAdjust) {
-        is DataAdjust.Data -> {
-            dataAdjust.financeEntity.isAmountEqualToAdjustAmount()
+    val textDecoration = when (dataSettlement) {
+        is DataSettlement.SettlementData -> {
+            dataSettlement.financeEntity.isAmountEqualToSettleAmount()
         }
 
-        is DataAdjust.Adjust -> {
-            dataAdjust.adjustment.financeEntity?.isAmountEqualToAdjustAmount()
+        is DataSettlement.SettlementAdjust -> {
+            dataSettlement.settlement.financeEntity?.isAmountEqualToSettleAmount()
         }
     }.let {
         if (it == true) {
@@ -123,7 +123,7 @@ fun YesterdayItem(dataAdjust: DataAdjust) {
             .padding(bottom = 5.dp)
             .shadow(2.dp, spotColor = color),
         headlineContent = {
-            adjustment?.let {
+            settlement?.let {
                 Text(
                     it,
                     fontSize = LABEL_FONT_SIZE,
@@ -197,7 +197,7 @@ fun YesterdayItem(dataAdjust: DataAdjust) {
                     )
                 }
 
-                StatusView(dataAdjust)
+                StatusView(dataSettlement)
 
 
                 // Time
@@ -215,7 +215,7 @@ fun YesterdayItem(dataAdjust: DataAdjust) {
 @Composable
 fun YesterdayItems(
     modifier: Modifier = Modifier,
-    dataAdjust: List<DataAdjust>
+    dataSettlement: List<DataSettlement>
 ) {
     Column(
         modifier = modifier
@@ -242,8 +242,8 @@ fun YesterdayItems(
             item {
                 Spacer(modifier = Modifier.heightIn(10.dp))
             }
-            items(dataAdjust.size) {
-                val dataItem = dataAdjust[it]
+            items(dataSettlement.size) {
+                val dataItem = dataSettlement[it]
                 YesterdayItem(dataItem)
             }
         }

@@ -30,14 +30,14 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.AdjustmentType
+import com.example.moneytracker.backend.storage.Achievement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
+import com.example.moneytracker.backend.storage.Settlement
+import com.example.moneytracker.backend.storage.SettlementType
 import com.example.moneytracker.backend.storage.Status
-import com.example.moneytracker.backend.storage.StatusHistory
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.TransactionType
@@ -330,7 +330,7 @@ val FinanceEntity.isForToday: Boolean
         return today == dataDate
     }
 
-val Adjustment.isForToday: Boolean
+val Settlement.isForToday: Boolean
     get() {
         val today = LocalDateTime.now().date
         val dataDate = dateTime.toLocalDateTimeUtc().date
@@ -345,7 +345,7 @@ fun FinanceEntity.isCreatedAtEqualTo(localDate: LocalDate): Boolean {
     return dataDate == localDate
 }
 
-fun Adjustment.isCreatedAtEqualTo(localDate: LocalDate): Boolean {
+fun Settlement.isCreatedAtEqualTo(localDate: LocalDate): Boolean {
     val dataDate = dateTime.toLocalDateTimeUtc().date
     return dataDate == localDate
 }
@@ -370,14 +370,12 @@ fun FinanceEntity.toMap(): Map<String, Any> {
 
         is FinanceEntity.Goal -> {
             baseMap["financeType"] = "GOAL"
-            baseMap["adjustment"] = adjustment.map { it.adjustmentToMap }
             baseMap["routineData"] = routine.routineToMap
         }
 
         is FinanceEntity.Liability -> {
             baseMap["financeType"] = "LIABILITY"
             baseMap["liabilityType"] = liabilityType.name
-            baseMap["adjustment"] = adjustment.map { it.adjustmentToMap }
         }
     }
     return baseMap
@@ -393,24 +391,26 @@ val RoutineData.routineToMap: Map<String, Any>
         "triggerMillis" to triggerMillis
     )
 
-val StatusHistory.statusHistoryToMap: Map<String, Any>
+val Achievement.achievementToMap: Map<String, Any>
     get() = mapOf(
         "status" to status,
-        "totalAdjustmentAmount" to totalAdjustmentAmount,
+        "totalSettlementAmount" to totalSettlementAmount,
         "startDateTime" to startDateTime,
         "deadlineDateTime" to deadlineDateTime
     )
 
-val Adjustment.adjustmentToMap: Map<String, Any>
+val Settlement.settlementToMap: Map<String, Any>
     get() = mapOf(
-        "adjustmentId" to adjustmentId,
+        "settlementId" to settlementId,
         "amount" to amount,
         "label" to label,
         "description" to description,
         "dateTime" to dateTime,
         "tagIcon" to tagIcon.tagIconToMap,
-        "paymentMethod" to paymentMethod,
-        "adjustmentType" to adjustmentType
+        "paymentMethod" to paymentMethod.name,
+        "settlementType" to settlementType.name,
+        "userId" to userId,
+        "datasetId" to datasetId
     )
 
 val Status.statusToMap: Map<String, Any>
@@ -427,13 +427,13 @@ val TagIcon.tagIconToMap: Map<String, Any>
         "icon" to icon
     )
 
-fun Map<*, *>.asStatusHistory(): StatusHistory {
+fun Map<*, *>.asAchievement(): Achievement {
     val status = try {
         Status.valueOf(this["status"] as String)
     } catch (_: Exception) {
         Status.INITIAL
     }
-    val totalAdjustmentAmount = (this["totalAdjustmentAmount"] as? Number)?.toDouble() ?: 0.0
+    val totalSettlementAmount = (this["totalSettlementAmount"] as? Number)?.toDouble() ?: 0.0
 
     val startDateTime = when (val dt = this["startDateTime"]) {
         is Timestamp -> dt
@@ -467,9 +467,9 @@ fun Map<*, *>.asStatusHistory(): StatusHistory {
         else -> Timestamp(0, 0)
     }
 
-    return StatusHistory(
+    return Achievement(
         status = status.name,
-        totalAdjustmentAmount = totalAdjustmentAmount,
+        totalSettlementAmount = totalSettlementAmount,
         startDateTime = startDateTime,
         deadlineDateTime = deadlineDateTime
     )
@@ -520,7 +520,7 @@ fun Map<*, *>.asRoutineData(): RoutineData {
     )
 }
 
-fun Map<*, *>.asAdjustment(): Adjustment {
+fun Map<*, *>.asSettlement(): Settlement {
     val amount = (this["amount"] as? Number)?.toDouble()
         ?: (this["amount"] as? String)?.toDoubleOrNull()
         ?: 0.0
@@ -562,41 +562,45 @@ fun Map<*, *>.asAdjustment(): Adjustment {
         else -> PaymentMethod.CASH
     }
 
-    val adjustmentType = when (val dt = this["adjustmentType"]) {
+    val settlementType = when (val dt = this["settlementType"]) {
         is String -> try {
-            AdjustmentType.valueOf(dt)
+            SettlementType.valueOf(dt)
         } catch (_: Exception) {
-            AdjustmentType.INITIAL
+            SettlementType.INITIAL
         }
 
-        is Number -> AdjustmentType.entries.getOrNull(dt.toInt()) ?: AdjustmentType.INITIAL
+        is Number -> SettlementType.entries.getOrNull(dt.toInt()) ?: SettlementType.INITIAL
         is Map<*, *> -> {
             val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
             if (name != null) try {
-                AdjustmentType.valueOf(name)
+                SettlementType.valueOf(name)
             } catch (_: Exception) {
-                AdjustmentType.INITIAL
-            } else AdjustmentType.INITIAL
+                SettlementType.INITIAL
+            } else SettlementType.INITIAL
         }
 
-        else -> AdjustmentType.INITIAL
+        else -> SettlementType.INITIAL
     }
 
     val tagIcon = (this["tagIcon"] as? Map<*, *>)?.asTagIcon() ?: TagIcon(
         name = "",
         icon = R.drawable.circle_error
     )
-    val adjustmentId = this["adjustmentId"] as String
+    val settlementId = this["settlementId"] as? String ?: ""
+    val userId = this["userId"] as? String ?: ""
+    val datasetId = this["datasetId"] as? String ?: ""
 
-    return Adjustment(
+    return Settlement(
         amount = amount,
         label = label,
         description = description,
         dateTime = dateTime,
         tagIcon = tagIcon,
         paymentMethod = paymentMethod,
-        adjustmentType = adjustmentType,
-        adjustmentId = adjustmentId
+        settlementType = settlementType,
+        settlementId = settlementId,
+        userId = userId,
+        datasetId = datasetId
     )
 }
 
@@ -639,23 +643,23 @@ val FinanceEntity.typeDescription: String
 
 val FinanceEntity.progressPercentage: Double
     get() {
-        val totalAdjustment = when (this) {
-            is FinanceEntity.Goal -> adjustment.sumOf { it.amount }
-            is FinanceEntity.Liability -> adjustment.sumOf { it.amount }
+        val totalSettlement = when (this) {
+            is FinanceEntity.Goal -> settlement.sumOf { it.amount }
+            is FinanceEntity.Liability -> settlement.sumOf { it.amount }
             is FinanceEntity.Transaction -> 0.0
         }
-        return if (amount > 0) (totalAdjustment / amount) * 100.0 else 0.0
+        return if (amount > 0) (totalSettlement / amount) * 100.0 else 0.0
     }
 
 val FinanceEntity.status: Status
     get() {
         val currentTime = LocalDateTime.now()
-        val totalAdjustment = when (this) {
-            is FinanceEntity.Goal -> adjustment.sumOf { it.amount }
-            is FinanceEntity.Liability -> adjustment.sumOf { it.amount }
+        val totalSettlement = when (this) {
+            is FinanceEntity.Goal -> settlement.sumOf { it.amount }
+            is FinanceEntity.Liability -> settlement.sumOf { it.amount }
             is FinanceEntity.Transaction -> 0.0
         }
-        val isAchieved = totalAdjustment >= amount
+        val isAchieved = totalSettlement >= amount
 
         return when (this) {
             is FinanceEntity.Goal -> {
@@ -754,7 +758,7 @@ fun Map<*, *>.toFinance(): FinanceEntity {
                 createdAt = createdAt,
                 tagIcon = tagIcon,
                 paymentMethod = paymentMethod,
-                adjustment = this.toAdjustment(),
+                settlement = this.toSettlement(),
                 routine = (this["routineData"] as? Map<*, *>)?.asRoutineData() ?: RoutineData()
             )
         }
@@ -778,7 +782,7 @@ fun Map<*, *>.toFinance(): FinanceEntity {
                 createdAt = createdAt,
                 tagIcon = tagIcon,
                 paymentMethod = paymentMethod,
-                adjustment = this.toAdjustment()
+                settlement = this.toSettlement()
             )
         }
 
@@ -819,16 +823,16 @@ val CharSequence.eval: Double
         }
     }
 
-fun Map<*, *>.toAdjustment(): List<Adjustment> {
-    return (this["adjustment"] as? List<*>)
-        ?.mapNotNull { (it as? Map<*, *>)?.asAdjustment() }
+fun Map<*, *>.toSettlement(): List<Settlement> {
+    return (this["settlement"] as? List<*>)
+        ?.mapNotNull { (it as? Map<*, *>)?.asSettlement() }
         ?: emptyList()
 }
 
-fun Map<*, *>.toStatusHistory(): List<StatusHistory> {
-    val statusList = this["statusHistory"] as? List<*>
+fun Map<*, *>.toAchievement(): List<Achievement> {
+    val statusList = this["achievement"] as? List<*>
     return statusList?.mapNotNull {
-        (it as? Map<*, *>)?.asStatusHistory()
+        (it as? Map<*, *>)?.asAchievement()
     } ?: emptyList()
 }
 
@@ -861,23 +865,23 @@ fun Timestamp.toEpochMillis(): Long =
     this.seconds * 1000L + (this.nanoseconds / 1_000_000L)
 
 
-fun FinanceEntity.isAmountEqualToAdjustAmount(): Boolean {
-    val totalAdjustment = when (this) {
-        is FinanceEntity.Goal -> adjustment.sumOf { it.amount }
-        is FinanceEntity.Liability -> adjustment.sumOf { it.amount }
+fun FinanceEntity.isAmountEqualToSettleAmount(): Boolean {
+    val totalSettlement = when (this) {
+        is FinanceEntity.Goal -> settlement.sumOf { it.amount }
+        is FinanceEntity.Liability -> settlement.sumOf { it.amount }
         is FinanceEntity.Transaction -> 0.0
     }
-    return totalAdjustment == amount
+    return totalSettlement == amount
 }
 
 val FinanceEntity.remainingAmount: Double
     get() {
-        val totalAdjustment = when (this) {
-            is FinanceEntity.Goal -> adjustment.sumOf { it.amount }
-            is FinanceEntity.Liability -> adjustment.sumOf { it.amount }
+        val totalSettlement = when (this) {
+            is FinanceEntity.Goal -> settlement.sumOf { it.amount }
+            is FinanceEntity.Liability -> settlement.sumOf { it.amount }
             is FinanceEntity.Transaction -> 0.0
         }
-        return amount - totalAdjustment
+        return amount - totalSettlement
     }
 
 val Timestamp.formatToDateTime: String

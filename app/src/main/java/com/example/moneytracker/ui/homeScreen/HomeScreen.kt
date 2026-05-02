@@ -90,9 +90,9 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
 
     val yesterdayFinance by homeViewModel.yesterdayFinance.collectAsStateWithLifecycle()
     val yesterdayChartData by homeViewModel.yesterdayChartData.collectAsStateWithLifecycle()
-    val sortAbleDataAdjust by homeViewModel.sortedYesterday.collectAsStateWithLifecycle()
+    val sortAbleDataSettlement by homeViewModel.sortedYesterday.collectAsStateWithLifecycle()
     val goalFinance by homeViewModel.goalFinanceEntity.collectAsStateWithLifecycle()
-    val adjustmentFinance by homeViewModel.adjustFinance.collectAsStateWithLifecycle()
+    val settlementFinance by homeViewModel.adjustFinance.collectAsStateWithLifecycle()
     val yesterdayStats by homeViewModel.yesterdayStats.collectAsStateWithLifecycle()
 
     // Collect user information from ViewModels
@@ -209,7 +209,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                         2 -> YesterdayScreen(
                             paddingValues,
                             uiState = uiState,
-                            sortAbleDataAdjust = sortAbleDataAdjust,
+                            sortAbleDataSettlement = sortAbleDataSettlement,
                             yesterdayFinanceEntityList = yesterdayFinance,
                             yesterdayChartData = yesterdayChartData,
                             yesterdayStats = yesterdayStats,
@@ -232,7 +232,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 DataAdditionModelDrawer(
                     viewModel = homeViewModel,
                     userViewModel = userViewModel,
-                    financeEntityList = adjustmentFinance,
+                    financeEntityList = settlementFinance,
                     uiState = uiStates.value
                 )
             }

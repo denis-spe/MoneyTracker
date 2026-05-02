@@ -11,8 +11,8 @@ class GetLenOfActivatesUseCase @Inject constructor() {
             financeEntityList.filter { it.createdAt.toLocalDateTimeUtc().date == date }.size
         val adjustLen = financeEntityList.flatMap { finance ->
             when (finance) {
-                is FinanceEntity.Goal -> finance.adjustment
-                is FinanceEntity.Liability -> finance.adjustment
+                is FinanceEntity.Goal -> finance.settlement
+                is FinanceEntity.Liability -> finance.settlement
                 is FinanceEntity.Transaction -> emptyList()
             }
         }.filter { it.dateTime.toLocalDateTimeUtc().date == date }.size

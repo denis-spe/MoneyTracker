@@ -1,12 +1,12 @@
 package com.example.moneytracker.ui.homeScreen
 
 import androidx.compose.ui.graphics.Color
-import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Info
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import kotlinx.datetime.LocalDate
@@ -15,7 +15,7 @@ import network.chaintech.kmp_date_time_picker.utils.now
 
 data class HomeUiState(
     val datasets: List<FinanceEntity> = emptyList(),
-    val adjustment: List<Adjustment> = emptyList(),
+    val settlement: List<Settlement> = emptyList(),
     val info: Info = Info(),
     var isLoading: Boolean = false,
     val error: String? = null,
@@ -23,8 +23,8 @@ data class HomeUiState(
     val isUserDropdownVisible: Boolean = false,
     val isLogOutLoading: Boolean = false,
     val isDatasetBottomSheetOpen: Boolean = false,
-    val isAdjustmentBottomSheetOpen: Boolean = false,
-    val combinedDataWithAdjust: List<DataAdjust> = emptyList(),
+    val isSettlementBottomSheetOpen: Boolean = false,
+    val combinedDataWithAdjust: List<DataSettlement> = emptyList(),
     val dates: List<LocalDate> = emptyList(),
     val currentWeek: List<LocalDate> = emptyList(),
     val selectedTabIndex: Int = 1,
@@ -49,7 +49,7 @@ data class HomeUiState(
     val isTodayDataLoading: Boolean = false,
     val isYesterdayDataLoading: Boolean = false,
     val isGoalDataLoading: Boolean = false,
-    val isAdjustDataLoading: Boolean = false,
+    val isSettleDataLoading: Boolean = false,
     val isAllDataLoading: Boolean = false,
     val isTodayChartDataLoading: Boolean = false,
     val isYesterdayChartDataLoading: Boolean = false,

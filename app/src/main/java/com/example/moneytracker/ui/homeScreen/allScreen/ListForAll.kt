@@ -28,20 +28,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.backend.storage.AdjustmentType
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.SettlementType
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
-import com.example.moneytracker.helper.isAmountEqualToAdjustAmount
+import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.StatusView
 
 @Composable
-fun ListForAll(dataAdjusts: List<DataAdjust>) {
+fun ListForAll(dataSettlements: List<DataSettlement>) {
     Modifier
         .offset(y = (-4).dp)
         .shadow(
@@ -57,12 +57,12 @@ fun ListForAll(dataAdjusts: List<DataAdjust>) {
 
     LazyColumn {
         item { Spacer(modifier = Modifier.size(10.dp)) }
-        items(dataAdjusts.size) {
-            val dataItem = dataAdjusts[it]
+        items(dataSettlements.size) {
+            val dataItem = dataSettlements[it]
 
             DataCard(
                 modifier = Modifier.animateItem(),
-                dataAdjust = dataItem
+                dataSettlement = dataItem
             )
         }
         item { Spacer(modifier = Modifier.size(10.dp)) }
@@ -72,18 +72,18 @@ fun ListForAll(dataAdjusts: List<DataAdjust>) {
 @Composable
 fun DataCard(
     modifier: Modifier = Modifier,
-    dataAdjust: DataAdjust
+    dataSettlement: DataSettlement
 ) {
-    val label = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.label
-        is DataAdjust.Adjust -> dataAdjust.adjustment.label
+    val label = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.label
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.label
     }
 
-    val amount = when (dataAdjust) {
-        is DataAdjust.Data -> {
-            val amount = dataAdjust.financeEntity.amount
-            if ((dataAdjust.financeEntity is FinanceEntity.Liability && dataAdjust.financeEntity.liabilityType == LiabilityType.LOAN) ||
-                (dataAdjust.financeEntity is FinanceEntity.Transaction && dataAdjust.financeEntity.transactionType == TransactionType.EXPENSES)
+    val amount = when (dataSettlement) {
+        is DataSettlement.SettlementData -> {
+            val amount = dataSettlement.financeEntity.amount
+            if ((dataSettlement.financeEntity is FinanceEntity.Liability && dataSettlement.financeEntity.liabilityType == LiabilityType.LOAN) ||
+                (dataSettlement.financeEntity is FinanceEntity.Transaction && dataSettlement.financeEntity.transactionType == TransactionType.EXPENSES)
             ) {
                 "-${amount.formatToAmount()}"
             } else {
@@ -91,9 +91,9 @@ fun DataCard(
             }
         }
 
-        is DataAdjust.Adjust -> {
-            val amount = dataAdjust.adjustment.amount
-            if (dataAdjust.adjustment.adjustmentType == AdjustmentType.DEBT_REPAY) {
+        is DataSettlement.SettlementAdjust -> {
+            val amount = dataSettlement.settlement.amount
+            if (dataSettlement.settlement.settlementType == SettlementType.DEBT_REPAY) {
                 "-${amount.formatToAmount()}"
             } else {
                 amount.formatToAmount()
@@ -101,16 +101,16 @@ fun DataCard(
         }
     }
 
-    val description = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.description
-        is DataAdjust.Adjust -> dataAdjust.adjustment.description
+    val description = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.description
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.description
     }.let {
         if (it.length > 16) it.take(20) + "..." else it
     }
 
-    val dateTime = when (dataAdjust) {
-        is DataAdjust.Data -> {
-            val dateTime = dataAdjust.financeEntity.createdAt
+    val dateTime = when (dataSettlement) {
+        is DataSettlement.SettlementData -> {
+            val dateTime = dataSettlement.financeEntity.createdAt
             val date = dateTime.toLocalDateTimeUtc()
             val time = dateTime.toLocalDateTimeUtc()
             val hour = time.hour.addZeroIfLessThenTen
@@ -120,8 +120,8 @@ fun DataCard(
             "On $weekDay at $hour:$minute"
         }
 
-        is DataAdjust.Adjust -> {
-            val dateTime = dataAdjust.adjustment.dateTime
+        is DataSettlement.SettlementAdjust -> {
+            val dateTime = dataSettlement.settlement.dateTime
             val date = dateTime.toLocalDateTimeUtc()
             val time = dateTime.toLocalDateTimeUtc()
             val hour = time.hour.addZeroIfLessThenTen
@@ -132,31 +132,31 @@ fun DataCard(
         }
     }
 
-    val tagIcon = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.tagIcon.icon
-        is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon.icon
+    val tagIcon = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.tagIcon.icon
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.tagIcon.icon
     }.let {
         painterResource(id = it)
     }
 
-    val color = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.colorRes
-        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
+    val color = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.colorRes
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.color
     }.let {
         colorResource(id = it)
     }
 
-    val adjustment = if (dataAdjust is DataAdjust.Adjust)
-        dataAdjust.adjustment.financeEntity?.label
+    val settlement = if (dataSettlement is DataSettlement.SettlementAdjust)
+        dataSettlement.settlement.financeEntity?.label
     else null
 
-    val isAmountEqualWithAdjustAmount = when (dataAdjust) {
-        is DataAdjust.Data -> {
-            dataAdjust.financeEntity.isAmountEqualToAdjustAmount()
+    val isAmountEqualWithAdjustAmount = when (dataSettlement) {
+        is DataSettlement.SettlementData -> {
+            dataSettlement.financeEntity.isAmountEqualToSettleAmount()
         }
 
-        is DataAdjust.Adjust -> {
-            dataAdjust.adjustment.financeEntity?.isAmountEqualToAdjustAmount()
+        is DataSettlement.SettlementAdjust -> {
+            dataSettlement.settlement.financeEntity?.isAmountEqualToSettleAmount()
         }
     }
 
@@ -169,7 +169,7 @@ fun DataCard(
     }
 
     val labelTextDecoration = if (
-        isAmountEqualWithAdjustAmount == true && dataAdjust !is DataAdjust.Adjust
+        isAmountEqualWithAdjustAmount == true && dataSettlement !is DataSettlement.SettlementAdjust
     ) {
         TextDecoration.LineThrough
     } else {
@@ -195,7 +195,7 @@ fun DataCard(
                         fontWeight = FontWeight.Bold,
                         textDecoration = labelTextDecoration
                     )
-                    StatusView(dataAdjust, fontSize = 12.sp)
+                    StatusView(dataSettlement, fontSize = 12.sp)
                 }
             },
             supportingContent = {
@@ -240,7 +240,7 @@ fun DataCard(
             shadowElevation = 0.dp,
 
             overlineContent = {
-                adjustment?.let {
+                settlement?.let {
                     Text(
                         it,
                         fontSize = 12.sp,

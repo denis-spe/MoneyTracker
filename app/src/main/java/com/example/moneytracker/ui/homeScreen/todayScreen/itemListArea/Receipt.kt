@@ -51,11 +51,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.Adjustment
-import com.example.moneytracker.backend.storage.AdjustmentType
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Settlement
+import com.example.moneytracker.backend.storage.SettlementType
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.backend.storage.types.LiabilityType
@@ -119,7 +119,7 @@ fun FinanceReceipt(
     )
         TextDecoration.LineThrough else
         TextDecoration.None
-    val dataAdjust = DataAdjust.Data(financeEntity)
+    val dataSettlement = DataSettlement.SettlementData(financeEntity)
 
     Column(
         modifier = Modifier
@@ -189,14 +189,14 @@ fun FinanceReceipt(
             Text(text = financeEntity.paymentMethod.text, fontSize = fontSize)
         }
 
-        val adjustments = when (financeEntity) {
-            is FinanceEntity.Goal -> financeEntity.adjustment
-            is FinanceEntity.Liability -> financeEntity.adjustment
+        val settlements = when (financeEntity) {
+            is FinanceEntity.Goal -> financeEntity.settlement
+            is FinanceEntity.Liability -> financeEntity.settlement
             is FinanceEntity.Transaction -> emptyList()
         }
 
-        if (adjustments.isNotEmpty()) {
-            val lastPayment = adjustments[adjustments.size - 1]
+        if (settlements.isNotEmpty()) {
+            val lastPayment = settlements[settlements.size - 1]
             val date = lastPayment.dateTime.toLocalDateTimeUtc()
             val day = date.day.addZeroIfLessThenTen
             val month = date.month.number.addZeroIfLessThenTen
@@ -284,7 +284,7 @@ fun FinanceReceipt(
             ) {
                 Text(text = "Status:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
                 StatusView(
-                    dataAdjust = dataAdjust,
+                    dataSettlement = dataSettlement,
                     showImageStatus = false,
                     fontSize = fontSize,
                 )
@@ -347,7 +347,7 @@ fun FinanceReceipt(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 StatusView(
-                    dataAdjust,
+                    dataSettlement,
                     showImageStatus = true,
                     imageSize = ICON_SIZE
                 )
@@ -460,14 +460,14 @@ fun FinanceReceipt(
 }
 
 @Composable
-fun AdjustmentReceipt(
-    adjustment: Adjustment,
+fun SettlementReceipt(
+    settlement: Settlement,
     financeEntity: FinanceEntity,
     onEdit: () -> Unit = {},
     onDelete: () -> Unit = {},
     onClose: () -> Unit = {}
 ) {
-    val datetime = adjustment.dateTime.toLocalDateTimeUtc()
+    val datetime = settlement.dateTime.toLocalDateTimeUtc()
     val day = datetime.day.addZeroIfLessThenTen
     val month = datetime.month.name.title
     val year = datetime.year.addZeroIfLessThenTen
@@ -480,7 +480,7 @@ fun AdjustmentReceipt(
 
     val fontSize = 13.sp
 
-    val color = colorResource(adjustment.adjustmentType.color)
+    val color = colorResource(settlement.settlementType.color)
 
     val textDecoration = if (
         financeEntity.remainingAmount == 0.0
@@ -490,9 +490,9 @@ fun AdjustmentReceipt(
     val title = when (financeEntity) {
         is FinanceEntity.Liability -> if (financeEntity.liabilityType == LiabilityType.DEBT) "Repaid Debt" else "Repaid Loan"
         is FinanceEntity.Goal -> "Attained Goal"
-        else -> "Adjustment"
+        else -> "Settlement"
     }
-    val dataAdjust = DataAdjust.Adjust(adjustment)
+    val dataSettlement = DataSettlement.SettlementAdjust(settlement)
 
 
     Column(
@@ -518,10 +518,10 @@ fun AdjustmentReceipt(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val label = when (adjustment.adjustmentType) {
-                AdjustmentType.LENT_REPAY -> "Lent Repayment:"
-                AdjustmentType.DEBT_REPAY -> "Debt Repayment:"
-                AdjustmentType.GOAL_ATTAIN -> "Attained:"
+            val label = when (settlement.settlementType) {
+                SettlementType.LENT_REPAY -> "Lent Repayment:"
+                SettlementType.DEBT_REPAY -> "Debt Repayment:"
+                SettlementType.GOAL_ATTAIN -> "Attained:"
                 else -> "Repayment:"
             }
 
@@ -542,7 +542,7 @@ fun AdjustmentReceipt(
         ) {
             Text(text = "Amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
             Text(
-                text = adjustment.amount.formatToAmount(),
+                text = settlement.amount.formatToAmount(),
                 fontSize = fontSize
             )
         }
@@ -553,17 +553,17 @@ fun AdjustmentReceipt(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(text = "Payment method:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
-            Text(text = adjustment.paymentMethod.text, fontSize = fontSize)
+            Text(text = settlement.paymentMethod.text, fontSize = fontSize)
         }
 
-        val adjustments = when (financeEntity) {
-            is FinanceEntity.Goal -> financeEntity.adjustment
-            is FinanceEntity.Liability -> financeEntity.adjustment
+        val settlements = when (financeEntity) {
+            is FinanceEntity.Goal -> financeEntity.settlement
+            is FinanceEntity.Liability -> financeEntity.settlement
             is FinanceEntity.Transaction -> emptyList()
         }
 
-        if (adjustments.isNotEmpty()) {
-            val lastPayment = adjustments[adjustments.size - 1]
+        if (settlements.isNotEmpty()) {
+            val lastPayment = settlements[settlements.size - 1]
             val date = lastPayment.dateTime.toLocalDateTimeUtc()
             val day = date.day.addZeroIfLessThenTen
             val month = date.month.number.addZeroIfLessThenTen
@@ -613,7 +613,7 @@ fun AdjustmentReceipt(
             }
         }
 
-        if (adjustment.description.isNotBlank()) {
+        if (settlement.description.isNotBlank()) {
             DottedDivider(color = color, modifier = Modifier.padding(vertical = 10.dp))
 
             Column(
@@ -632,7 +632,7 @@ fun AdjustmentReceipt(
                 ) {
                     item {
                         Text(
-                            text = adjustment.description,
+                            text = settlement.description,
                             fontSize = fontSize,
                             textAlign = TextAlign.Center
                         )
@@ -651,7 +651,7 @@ fun AdjustmentReceipt(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     StatusView(
-                        dataAdjust,
+                        dataSettlement,
                         showImageStatus = true,
                         imageSize = ICON_SIZE
                     )
@@ -712,8 +712,8 @@ fun AdjustmentReceipt(
                 )
             ) {
                 Icon(
-                    painter = painterResource(adjustment.adjustmentType.icon),
-                    contentDescription = adjustment.adjustmentType.text,
+                    painter = painterResource(settlement.settlementType.icon),
+                    contentDescription = settlement.settlementType.text,
                     tint = color,
                     modifier = Modifier
                         .size(ICON_SIZE)
@@ -727,8 +727,8 @@ fun AdjustmentReceipt(
                 )
             ) {
                 Image(
-                    painter = painterResource(adjustment.tagIcon.icon),
-                    contentDescription = adjustment.adjustmentType.text,
+                    painter = painterResource(settlement.tagIcon.icon),
+                    contentDescription = settlement.settlementType.text,
                     modifier = Modifier
                         .size(ICON_SIZE)
                 )
@@ -741,8 +741,8 @@ fun AdjustmentReceipt(
                 )
             ) {
                 Image(
-                    painter = painterResource(adjustment.paymentMethod.icon),
-                    contentDescription = adjustment.paymentMethod.text,
+                    painter = painterResource(settlement.paymentMethod.icon),
+                    contentDescription = settlement.paymentMethod.text,
                     modifier = Modifier
                         .size(ICON_SIZE)
                 )
@@ -753,13 +753,13 @@ fun AdjustmentReceipt(
 
 @Composable
 fun OnDeleteReceipt(
-    dataAdjust: DataAdjust,
+    dataSettlement: DataSettlement,
     onShowDeleteDialog: MutableState<Boolean>,
     onConfirm: () -> Unit
 ) {
-    val item = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.categoryText
-        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.text
+    val item = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.categoryText
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.text
     }
 
     if (onShowDeleteDialog.value) {
@@ -826,7 +826,7 @@ fun OnDeleteReceipt(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnUpdate(
-    dataAdjust: DataAdjust,
+    dataSettlement: DataSettlement,
     viewModel: HomeViewModel,
     userViewModel: UserViewModel,
     isUpdateModelBottonOpen: MutableState<Boolean>,
@@ -842,23 +842,23 @@ fun OnUpdate(
     val displayLabel = rememberSaveable { mutableStateOf("") }
     val descriptionState = rememberTextFieldState()
     val wasSuccess = remember { mutableStateOf(State.INITIAL) }
-    val wasAdjustmentSuccess = remember { mutableStateOf(State.INITIAL) }
+    val wasSettlementSuccess = remember { mutableStateOf(State.INITIAL) }
     val tagIconState = remember { mutableStateOf(TagIcon("description", R.drawable.description)) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val lazyState = rememberLazyListState()
 
-    val dataTypeText = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.categoryText
-        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.text
+    val dataTypeText = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.categoryText
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.text
     }
 
-    val colorResId = when (dataAdjust) {
-        is DataAdjust.Data -> dataAdjust.financeEntity.colorRes
-        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.color
+    val colorResId = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.colorRes
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.color
     }
 
-    val icon = when (dataAdjust) {
-        is DataAdjust.Data -> when (val f = dataAdjust.financeEntity) {
+    val icon = when (dataSettlement) {
+        is DataSettlement.SettlementData -> when (val f = dataSettlement.financeEntity) {
             is FinanceEntity.Transaction -> when (f.transactionType) {
                 TransactionType.EARNINGS -> R.drawable.filled_earnings
                 TransactionType.EXPENSES -> R.drawable.filled_expenditure
@@ -872,24 +872,24 @@ fun OnUpdate(
             }
         }
 
-        is DataAdjust.Adjust -> dataAdjust.adjustment.adjustmentType.icon
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.icon
     }
 
-    val description = when (dataAdjust) {
-        is DataAdjust.Data -> "Updating ${dataAdjust.financeEntity.label} " +
-                dataAdjust.financeEntity.categoryText
+    val description = when (dataSettlement) {
+        is DataSettlement.SettlementData -> "Updating ${dataSettlement.financeEntity.label} " +
+                dataSettlement.financeEntity.categoryText
 
-        is DataAdjust.Adjust -> "Updating ${dataAdjust.adjustment.financeEntity?.label} " +
-                dataAdjust.adjustment.adjustmentType.text
+        is DataSettlement.SettlementAdjust -> "Updating ${dataSettlement.settlement.financeEntity?.label} " +
+                dataSettlement.settlement.settlementType.text
     }
 
     val color = colorResource(colorResId)
 
-    LaunchedEffect(dataAdjust, isUpdateModelBottonOpen.value) {
+    LaunchedEffect(dataSettlement, isUpdateModelBottonOpen.value) {
         if (isUpdateModelBottonOpen.value) {
-            when (dataAdjust) {
-                is DataAdjust.Data -> {
-                    val finance = dataAdjust.financeEntity
+            when (dataSettlement) {
+                is DataSettlement.SettlementData -> {
+                    val finance = dataSettlement.financeEntity
                     amountState.setTextAndPlaceCursorAtEnd(finance.amount.toString())
                     labelState.setTextAndPlaceCursorAtEnd(finance.label)
                     descriptionState.setTextAndPlaceCursorAtEnd(finance.description)
@@ -907,14 +907,14 @@ fun OnUpdate(
                     selectedPaymentMethod.value = finance.paymentMethod
                 }
 
-                is DataAdjust.Adjust -> {
-                    val adjustment = dataAdjust.adjustment
-                    amountState.setTextAndPlaceCursorAtEnd(adjustment.amount.toString())
-                    labelState.setTextAndPlaceCursorAtEnd(adjustment.label)
-                    descriptionState.setTextAndPlaceCursorAtEnd(adjustment.description)
-                    localDateTimeState.value = adjustment.dateTime.toLocalDateTimeUtc()
-                    tagIconState.value = adjustment.tagIcon
-                    selectedPaymentMethod.value = adjustment.paymentMethod
+                is DataSettlement.SettlementAdjust -> {
+                    val settlement = dataSettlement.settlement
+                    amountState.setTextAndPlaceCursorAtEnd(settlement.amount.toString())
+                    labelState.setTextAndPlaceCursorAtEnd(settlement.label)
+                    descriptionState.setTextAndPlaceCursorAtEnd(settlement.description)
+                    localDateTimeState.value = settlement.dateTime.toLocalDateTimeUtc()
+                    tagIconState.value = settlement.tagIcon
+                    selectedPaymentMethod.value = settlement.paymentMethod
                 }
             }
         }
@@ -978,7 +978,7 @@ fun OnUpdate(
 
                     // Label
                     item(key = 171) {
-                        if (dataAdjust is DataAdjust.Data) {
+                        if (dataSettlement is DataSettlement.SettlementData) {
                             Row(
                                 modifier = Modifier.animateItem()
                             ) {
@@ -986,7 +986,7 @@ fun OnUpdate(
                                     state = labelState,
                                     title = "Label",
                                     description = "Add a label for the given amount",
-                                    placeholder = dataAdjust.financeEntity.label,
+                                    placeholder = dataSettlement.financeEntity.label,
                                     colorResId = colorResId,
                                     wasSuccess = wasSuccess,
                                     textLength = MAX_LABEL_LENGTH,
@@ -1033,8 +1033,8 @@ fun OnUpdate(
                             modifier = Modifier.animateItem()
                         ) {
                             if (
-                                dataAdjust is DataAdjust.Data &&
-                                dataAdjust.financeEntity is FinanceEntity.Goal
+                                dataSettlement is DataSettlement.SettlementData &&
+                                dataSettlement.financeEntity is FinanceEntity.Goal
                             ) {
                                 DateTimeRange(
                                     startLocalDateTimeState = localDateTimeState,
@@ -1064,8 +1064,8 @@ fun OnUpdate(
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            when (dataAdjust) {
-                                is DataAdjust.Data -> {
+                            when (dataSettlement) {
+                                is DataSettlement.SettlementData -> {
                                     ModelDrawerButton(
                                         text = "Apply changes",
                                         wasSuccess = wasSuccess,
@@ -1076,7 +1076,7 @@ fun OnUpdate(
                                         if (amountAsDouble != null && labelState.text.toString()
                                                 .isNotEmpty()
                                         ) {
-                                            val finance = dataAdjust.financeEntity
+                                            val finance = dataSettlement.financeEntity
                                             val normalizedStart =
                                                 localDateTimeState.value.toMidnight()
                                             val normalizedEnd =
@@ -1149,7 +1149,7 @@ fun OnUpdate(
                                     }
                                 }
 
-                                is DataAdjust.Adjust -> {
+                                is DataSettlement.SettlementAdjust -> {
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -1159,42 +1159,42 @@ fun OnUpdate(
                                     ) {
                                         ModelDrawerButton(
                                             text = "Apply changes",
-                                            wasSuccess = wasAdjustmentSuccess,
+                                            wasSuccess = wasSettlementSuccess,
                                             colorResId = colorResId,
                                             filledColor = Color.Transparent
                                         ) {
                                             if (amountAsDouble != null
                                                 && amountAsDouble
-                                                <= dataAdjust.adjustment.financeEntity!!.remainingAmount
+                                                <= dataSettlement.settlement.financeEntity!!.remainingAmount
                                             ) {
-                                                val adjustment = dataAdjust.adjustment
+                                                val settlement = dataSettlement.settlement
                                                 val financeEntityType =
-                                                    when (adjustment.financeEntity!!) {
+                                                    when (settlement.financeEntity!!) {
                                                         is FinanceEntity.Transaction -> "TRANSACTION"
                                                         is FinanceEntity.Goal -> "GOAL"
                                                         is FinanceEntity.Liability -> "LIABILITY"
                                                     }
-                                                viewModel.updateAdjustmentData(
-                                                    adjustment.financeEntity!!.id,
+                                                viewModel.updateSettlementData(
+                                                    settlement.financeEntity!!.id,
                                                     financeEntityType,
-                                                    adjustment,
-                                                    Adjustment(
-                                                        adjustmentId = adjustment.adjustmentId,
+                                                    settlement,
+                                                    Settlement(
+                                                        settlementId = settlement.settlementId,
                                                         amount = amountAsDouble,
-                                                        label = adjustment.label,
+                                                        label = settlement.label,
                                                         description = descriptionState.text.toString(),
                                                         dateTime = localDateTimeState
                                                             .value.toFirestoreTimestampUtc(),
                                                         tagIcon = tagIconState.value,
-                                                        adjustmentType = adjustment.adjustmentType,
-                                                        paymentMethod = adjustment.paymentMethod
+                                                        settlementType = settlement.settlementType,
+                                                        paymentMethod = settlement.paymentMethod
                                                     )
                                                 )
 
 
                                                 wasSuccess.value = State.SUCCESS
                                                 userViewModel.showActionNotification(
-                                                    "Adjustment updated successfully",
+                                                    "Settlement updated successfully",
                                                     color
                                                 )
 
@@ -1233,27 +1233,27 @@ fun OnUpdate(
         // wait for BottomSheet to render first frame
         awaitFrame()
 
-        val amount = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.financeEntity.amount
-            is DataAdjust.Adjust -> dataAdjust.adjustment.amount
+        val amount = when (dataSettlement) {
+            is DataSettlement.SettlementData -> dataSettlement.financeEntity.amount
+            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.amount
         }
-        val label = if (dataAdjust is DataAdjust.Data) {
-            dataAdjust.financeEntity.label
+        val label = if (dataSettlement is DataSettlement.SettlementData) {
+            dataSettlement.financeEntity.label
         } else ""
 
-        val description = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.financeEntity.description
-            is DataAdjust.Adjust -> dataAdjust.adjustment.description
+        val description = when (dataSettlement) {
+            is DataSettlement.SettlementData -> dataSettlement.financeEntity.description
+            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.description
         }
 
-        val dateTime = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.financeEntity.createdAt
-            is DataAdjust.Adjust -> dataAdjust.adjustment.dateTime
+        val dateTime = when (dataSettlement) {
+            is DataSettlement.SettlementData -> dataSettlement.financeEntity.createdAt
+            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.dateTime
         }
 
-        val tagIcon = when (dataAdjust) {
-            is DataAdjust.Data -> dataAdjust.financeEntity.tagIcon
-            is DataAdjust.Adjust -> dataAdjust.adjustment.tagIcon
+        val tagIcon = when (dataSettlement) {
+            is DataSettlement.SettlementData -> dataSettlement.financeEntity.tagIcon
+            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.tagIcon
         }
 
         if (amountState.text.toString() != amount.toString()) {
@@ -1275,7 +1275,7 @@ fun OnUpdate(
 
 @Composable
 fun Receipt(
-    dataAdjust: DataAdjust,
+    dataSettlement: DataSettlement,
     onShowDialog: MutableState<Boolean>
 ) {
     val onShowDeleteDialog = remember { mutableStateOf(false) }
@@ -1294,10 +1294,10 @@ fun Receipt(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                when (dataAdjust) {
-                    is DataAdjust.Data ->
+                when (dataSettlement) {
+                    is DataSettlement.SettlementData ->
                         FinanceReceipt(
-                            financeEntity = dataAdjust.financeEntity,
+                            financeEntity = dataSettlement.financeEntity,
                             onEdit = {
                                 isUpdateModelBottonOpen.value = true
                             },
@@ -1308,10 +1308,10 @@ fun Receipt(
                             onShowDialog.value = false
                         }
 
-                    is DataAdjust.Adjust -> {
-                        AdjustmentReceipt(
-                            adjustment = dataAdjust.adjustment,
-                            financeEntity = dataAdjust.adjustment.financeEntity!!,
+                    is DataSettlement.SettlementAdjust -> {
+                        SettlementReceipt(
+                            settlement = dataSettlement.settlement,
+                            financeEntity = dataSettlement.settlement.financeEntity!!,
                             onEdit = {
                                 isUpdateModelBottonOpen.value = true
                             },
@@ -1329,34 +1329,34 @@ fun Receipt(
     }
 
     OnDeleteReceipt(
-        dataAdjust = dataAdjust,
+        dataSettlement = dataSettlement,
         onShowDeleteDialog = onShowDeleteDialog,
     ) {
-        when (dataAdjust) {
-            is DataAdjust.Data -> {
-                viewModel.removeData(dataAdjust.financeEntity)
+        when (dataSettlement) {
+            is DataSettlement.SettlementData -> {
+                viewModel.removeData(dataSettlement.financeEntity)
                 userViewModel.showActionNotification("Data deleted successfully", Color.Red)
             }
 
-            is DataAdjust.Adjust -> {
-                val financeEntityType = when (dataAdjust.adjustment.financeEntity!!) {
+            is DataSettlement.SettlementAdjust -> {
+                val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
                     is FinanceEntity.Transaction -> "TRANSACTION"
                     is FinanceEntity.Goal -> "GOAL"
                     is FinanceEntity.Liability -> "LIABILITY"
                 }
-                viewModel.removeAdjustmentFinance(
-                    dataAdjust.adjustment.financeEntity!!.id,
+                viewModel.removeSettlementFinance(
+                    dataSettlement.settlement.financeEntity!!.id,
                     financeEntityType,
-                    dataAdjust.adjustment
+                    dataSettlement.settlement
                 )
-                userViewModel.showActionNotification("Adjustment deleted successfully", Color.Red)
+                userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
             }
         }
         onShowDialog.value = false
     }
 
     OnUpdate(
-        dataAdjust = dataAdjust,
+        dataSettlement = dataSettlement,
         viewModel = viewModel,
         userViewModel = userViewModel,
         isUpdateModelBottonOpen = isUpdateModelBottonOpen,

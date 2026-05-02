@@ -19,7 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
@@ -38,7 +38,7 @@ fun TodayScreen(
     isTodayDataLoading: Boolean,
     isTodayChartDataLoading: Boolean,
     isSortedTodayLoading: Boolean,
-    datasetWithAdjust: List<DataAdjust>
+    datasetWithAdjust: List<DataSettlement>
 ) {
     val isTransactionListExpended = uiState.onActivateShow
     val configuration = LocalConfiguration.current

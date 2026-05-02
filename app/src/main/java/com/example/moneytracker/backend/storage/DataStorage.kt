@@ -43,11 +43,11 @@ interface DataStorage {
      * Add a repay entry into a financeEntity record (identified by its id) for the given user.
      * Implementations should perform this atomically (transaction) to avoid lost updates.
      */
-    suspend fun addAdjustmentDataset(
+    suspend fun addSettlementDataset(
         userId: String,
         datasetId: String,
         financeType: String,
-        adjustment: Adjustment
+        settlement: Settlement
     )
 
     /**
@@ -68,13 +68,13 @@ interface DataStorage {
      * @param userId the user id
      * @param datasetId the record id
      * @param financeType the record type
-     * @param adjustment the adjustment
+     * @param settlement the settlement
      */
-    suspend fun removeAdjustmentDataset(
+    suspend fun removeSettlementDataset(
         userId: String,
         datasetId: String,
         financeType: String,
-        adjustment: Adjustment
+        settlement: Settlement
     )
 
     /**
@@ -94,15 +94,15 @@ interface DataStorage {
      * @param userId the user id
      * @param datasetId of the record
      * @param financeType the record type
-     * @param oldAdjustment to update with the new one
-     * @param newAdjustment to update the old one
+     * @param oldSettlement to update with the new one
+     * @param newSettlement to update the old one
      */
-    suspend fun updateAdjustmentDataset(
+    suspend fun updateSettlementDataset(
         userId: String,
         datasetId: String,
         financeType: String,
-        oldAdjustment: Adjustment,
-        newAdjustment: Adjustment
+        oldSettlement: Settlement,
+        newSettlement: Settlement
     )
 
     /**
@@ -127,7 +127,7 @@ interface DataStorage {
      * @param datasetId the record id
      * @param financeType the record type
      */
-    suspend fun clearAdjustmentList(userId: String, datasetId: String, financeType: String)
+    suspend fun clearSettlementList(userId: String, datasetId: String, financeType: String)
 
     /**
      * Get a record from the storage
@@ -151,7 +151,7 @@ interface DataStorage {
 
     /**
      * At the end of a routine, add a status into a list in
-     * record and clear the adjustment list (identified by its id) for the given user.
+     * record and clear the settlement list (identified by its id) for the given user.
      * @param userId the user id
      * @param datasetId the record id
      * @param financeType the record type

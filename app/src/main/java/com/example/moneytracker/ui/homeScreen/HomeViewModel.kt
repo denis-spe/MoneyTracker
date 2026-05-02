@@ -4,10 +4,10 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
-import com.example.moneytracker.backend.storage.Adjustment
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
+import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
@@ -19,12 +19,12 @@ import com.example.moneytracker.ui.usecase.GetLenOfActivatesUseCase
 import com.example.moneytracker.ui.usecase.GetTodayChartDonutDataUseCase
 import com.example.moneytracker.ui.usecase.GetWeeklyDataUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayChartDataUseCase
-import com.example.moneytracker.ui.usecase.GetYesterdayDataAdjustUseCase
+import com.example.moneytracker.ui.usecase.GetYesterdayDataSettlementUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayFinanceUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayStatsUseCase
 import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
 import com.example.moneytracker.ui.usecase.RoutineWorkerUseCase
-import com.example.moneytracker.ui.usecase.SortTodayDataAdjustUseCase
+import com.example.moneytracker.ui.usecase.SortTodayDataSettlementUseCase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Filter
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -58,8 +58,8 @@ class HomeViewModel @Inject constructor(
     private val accountService: AccountServices,
     private val financeOperationsUseCase: FinanceOperationsUseCase,
     private val observeUserDataUseCase: ObserveUserDataUseCase,
-    private val sortTodayDataAdjustUseCase: SortTodayDataAdjustUseCase,
-    private val getYesterdayDataAdjustUseCase: GetYesterdayDataAdjustUseCase,
+    private val sortTodayDataSettlementUseCase: SortTodayDataSettlementUseCase,
+    private val getYesterdayDataSettlementUseCase: GetYesterdayDataSettlementUseCase,
     private val getWeeklyDataUseCase: GetWeeklyDataUseCase,
     private val getCurrentWeekUseCase: GetCurrentWeekUseCase,
     private val getCurrentDateUseCase: GetCurrentDateUseCase,
@@ -166,7 +166,7 @@ class HomeViewModel @Inject constructor(
 
     val sortedToday = combine(datasetsFlow, sortingFlow) { datasets, sorting ->
         withContext(Dispatchers.Default) {
-            sortTodayDataAdjustUseCase(
+            sortTodayDataSettlementUseCase(
                 timeSorting = sorting.time,
                 categorySorting = sorting.category,
                 paymentSorting = sorting.payment,
@@ -179,7 +179,7 @@ class HomeViewModel @Inject constructor(
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val sortedYesterday = datasetsFlow
-        .mapLatest { withContext(Dispatchers.Default) { getYesterdayDataAdjustUseCase(it) } }
+        .mapLatest { withContext(Dispatchers.Default) { getYesterdayDataSettlementUseCase(it) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
     val weeklyData = combine(datasetsFlow, datesFlow) { datasets, dates ->
@@ -266,13 +266,13 @@ class HomeViewModel @Inject constructor(
 
     fun loadAdjustData() = viewModelScope.launch {
         val uid = accountService.userState.value?.uid ?: return@launch
-        _uiState.update { it.copy(isAdjustDataLoading = true) }
-        // Fetch a broad set to ensure adjustments are loaded
+        _uiState.update { it.copy(isSettleDataLoading = true) }
+        // Fetch a broad set to ensure settlements are loaded
         financeOperationsUseCase.filterFinances(
             userId = uid,
             filter = Filter.greaterThan("amount", -1)
         )
-        _uiState.update { it.copy(isAdjustDataLoading = false) }
+        _uiState.update { it.copy(isSettleDataLoading = false) }
     }
 
 
@@ -288,21 +288,21 @@ class HomeViewModel @Inject constructor(
         financeOperationsUseCase.removeData(it, financeEntity)
     }
 
-    fun addAdjustment(financeId: String, financeType: String, adj: Adjustment) = launchWithUid {
-        financeOperationsUseCase.addAdjustment(it, financeId, financeType, adj)
+    fun addSettlement(financeId: String, financeType: String, adj: Settlement) = launchWithUid {
+        financeOperationsUseCase.addSettlement(it, financeId, financeType, adj)
     }
 
-    fun updateAdjustment(
+    fun updateSettlement(
         financeId: String,
         financeType: String,
-        old: Adjustment,
-        new: Adjustment
+        old: Settlement,
+        new: Settlement
     ) = launchWithUid {
-        financeOperationsUseCase.updateAdjustment(it, financeId, financeType, old, new)
+        financeOperationsUseCase.updateSettlement(it, financeId, financeType, old, new)
     }
 
-    fun removeAdjustment(financeId: String, financeType: String, adj: Adjustment) = launchWithUid {
-        financeOperationsUseCase.removeAdjustment(it, financeId, financeType, adj)
+    fun removeSettlement(financeId: String, financeType: String, adj: Settlement) = launchWithUid {
+        financeOperationsUseCase.removeSettlement(it, financeId, financeType, adj)
     }
 
     private fun launchWithUid(block: suspend (String) -> Unit) {
@@ -369,7 +369,7 @@ class HomeViewModel @Inject constructor(
     }
 
     fun updateOnAdjustModelBottomSheetShow(show: Boolean) {
-        _uiState.update { it.copy(isAdjustmentBottomSheetOpen = show) }
+        _uiState.update { it.copy(isSettlementBottomSheetOpen = show) }
     }
 
     fun updateIsBottomSheetContentLoading(loading: Boolean) {
@@ -386,18 +386,18 @@ class HomeViewModel @Inject constructor(
 
     fun beginTheWork(financeEntity: FinanceEntity) = beginWork(financeEntity)
 
-    fun addAdjustmentData(financeId: String, financeType: String, adj: Adjustment) =
-        addAdjustment(financeId, financeType, adj)
+    fun addSettlementData(financeId: String, financeType: String, adj: Settlement) =
+        addSettlement(financeId, financeType, adj)
 
-    fun updateAdjustmentData(
+    fun updateSettlementData(
         financeId: String,
         financeType: String,
-        old: Adjustment,
-        new: Adjustment
-    ) = updateAdjustment(financeId, financeType, old, new)
+        old: Settlement,
+        new: Settlement
+    ) = updateSettlement(financeId, financeType, old, new)
 
-    fun removeAdjustmentFinance(financeId: String, financeType: String, adj: Adjustment) =
-        removeAdjustment(financeId, financeType, adj)
+    fun removeSettlementFinance(financeId: String, financeType: String, adj: Settlement) =
+        removeSettlement(financeId, financeType, adj)
 
     fun getLenOfActivates(date: LocalDate): Int =
         getLenOfActivatesUseCase(uiState.value.datasets, date)

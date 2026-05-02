@@ -1,13 +1,13 @@
 package com.example.moneytracker.ui.usecase
 
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import javax.inject.Inject
 
-class SortTodayDataAdjustUseCase @Inject constructor() {
+class SortTodayDataSettlementUseCase @Inject constructor() {
 
     operator fun invoke(
         financeEntityList: List<FinanceEntity>,
@@ -17,7 +17,7 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
         alphabeticalOrder: SortType,
         amountSorting: SortType,
         take: Int? = null
-    ): List<DataAdjust> {
+    ): List<DataSettlement> {
 
         val comparator = buildComparator(
             timeSorting,
@@ -25,7 +25,7 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
             amountSorting
         )
 
-        return coupleDatasetsWithAdjustments(financeEntityList)
+        return coupleDatasetsWithSettlements(financeEntityList)
             .asSequence() // 🚀 lazy evaluation
             .filter { it.isForToday() }
             .filter { it.matchesCategory(categorySorting) }
@@ -44,22 +44,22 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
         timeSorting: SortType,
         alphabeticalOrder: SortType,
         amountSorting: SortType
-    ): Comparator<DataAdjust>? {
+    ): Comparator<DataSettlement>? {
 
-        val comparators = mutableListOf<Comparator<DataAdjust>>()
+        val comparators = mutableListOf<Comparator<DataSettlement>>()
 
         if (timeSorting != SortType.Initial) {
-            comparators += compareBy<DataAdjust> { it.time() }
+            comparators += compareBy<DataSettlement> { it.time() }
                 .applySort(timeSorting)
         }
 
         if (alphabeticalOrder != SortType.Initial) {
-            comparators += compareBy<DataAdjust> { it.label() }
+            comparators += compareBy<DataSettlement> { it.label() }
                 .applySort(alphabeticalOrder)
         }
 
         if (amountSorting != SortType.Initial) {
-            comparators += compareBy<DataAdjust> { it.amount() }
+            comparators += compareBy<DataSettlement> { it.amount() }
                 .applySort(amountSorting)
         }
 
@@ -67,40 +67,40 @@ class SortTodayDataAdjustUseCase @Inject constructor() {
     }
 
     // 🔥 Extensions = no repeated `when`
-    private fun DataAdjust.isForToday(): Boolean = when (this) {
-        is DataAdjust.Data -> financeEntity.isForToday
-        is DataAdjust.Adjust -> adjustment.isForToday
+    private fun DataSettlement.isForToday(): Boolean = when (this) {
+        is DataSettlement.SettlementData -> financeEntity.isForToday
+        is DataSettlement.SettlementAdjust -> settlement.isForToday
     }
 
-    private fun DataAdjust.matchesCategory(category: String?): Boolean {
+    private fun DataSettlement.matchesCategory(category: String?): Boolean {
         if (category.isNullOrBlank() || category == "Initial") return true
         return when (this) {
-            is DataAdjust.Data -> financeEntity.categoryText == category
-            is DataAdjust.Adjust -> adjustment.adjustmentType.text == category
+            is DataSettlement.SettlementData -> financeEntity.categoryText == category
+            is DataSettlement.SettlementAdjust -> settlement.settlementType.text == category
         }
     }
 
-    private fun DataAdjust.matchesPayment(payment: PaymentMethod?): Boolean {
+    private fun DataSettlement.matchesPayment(payment: PaymentMethod?): Boolean {
         if (payment == null) return true
         return when (this) {
-            is DataAdjust.Data -> financeEntity.paymentMethod == payment
-            is DataAdjust.Adjust -> adjustment.paymentMethod == payment
+            is DataSettlement.SettlementData -> financeEntity.paymentMethod == payment
+            is DataSettlement.SettlementAdjust -> settlement.paymentMethod == payment
         }
     }
 
-    private fun DataAdjust.time(): Long = when (this) {
-        is DataAdjust.Data -> financeEntity.createdAt.toDate().time
-        is DataAdjust.Adjust -> adjustment.dateTime.toDate().time
+    private fun DataSettlement.time(): Long = when (this) {
+        is DataSettlement.SettlementData -> financeEntity.createdAt.toDate().time
+        is DataSettlement.SettlementAdjust -> settlement.dateTime.toDate().time
     }
 
-    private fun DataAdjust.label(): String = when (this) {
-        is DataAdjust.Data -> financeEntity.label
-        is DataAdjust.Adjust -> adjustment.label
+    private fun DataSettlement.label(): String = when (this) {
+        is DataSettlement.SettlementData -> financeEntity.label
+        is DataSettlement.SettlementAdjust -> settlement.label
     }
 
-    private fun DataAdjust.amount(): Double = when (this) {
-        is DataAdjust.Data -> financeEntity.amount
-        is DataAdjust.Adjust -> adjustment.amount
+    private fun DataSettlement.amount(): Double = when (this) {
+        is DataSettlement.SettlementData -> financeEntity.amount
+        is DataSettlement.SettlementAdjust -> settlement.amount
     }
 
     // 🔥 Reusable sort direction

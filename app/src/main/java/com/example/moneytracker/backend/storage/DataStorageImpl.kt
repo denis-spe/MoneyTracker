@@ -4,8 +4,9 @@ package com.example.moneytracker.backend.storage
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
-import com.example.moneytracker.helper.adjustmentToMap
-import com.example.moneytracker.helper.statusHistoryToMap
+import com.example.moneytracker.helper.achievementToMap
+import com.example.moneytracker.helper.asSettlement
+import com.example.moneytracker.helper.settlementToMap
 import com.example.moneytracker.helper.toFinance
 import com.example.moneytracker.helper.toMap
 import com.google.firebase.Timestamp
@@ -92,9 +93,16 @@ class DataStorageImpl(
         val collections = listOf(TRANSACTION_COLLECTION, GOAL_COLLECTION, LIABILITY_COLLECTION)
         val listeners = mutableListOf<com.google.firebase.firestore.ListenerRegistration>()
         val latestData = mutableMapOf<String, List<FinanceEntity>>()
+        var latestSettlements = emptyList<Settlement>()
 
         fun emitCombined() {
-            val combined = latestData.values.flatten()
+            val combined = latestData.values.flatten().map { entity ->
+                when (entity) {
+                    is FinanceEntity.Goal -> entity.copy(settlement = latestSettlements.filter { it.datasetId == entity.id })
+                    is FinanceEntity.Liability -> entity.copy(settlement = latestSettlements.filter { it.datasetId == entity.id })
+                    else -> entity
+                }
+            }
             Log.d("DataStorageImpl", "parsed total count: ${combined.size}")
             trySend(combined)
             onSuccess(true)
@@ -132,6 +140,29 @@ class DataStorageImpl(
             }
             listeners.add(listener)
         }
+
+        // Listen to settlements via collection group
+        val settlementListener = db.collectionGroup("settlement")
+            .whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("DataStorageImpl", "settlement collectionGroup listener error", error)
+                    return@addSnapshotListener
+                }
+
+                val settlements = snapshot?.documents?.mapNotNull { doc ->
+                    try {
+                        doc.data?.asSettlement()
+                    } catch (e: Exception) {
+                        Log.e("DataStorageImpl", "Failed to parse settlement", e)
+                        null
+                    }
+                } ?: emptyList()
+
+                latestSettlements = settlements
+                emitCombined()
+            }
+        listeners.add(settlementListener)
 
         awaitClose {
             listeners.forEach { it.remove() }
@@ -274,10 +305,10 @@ class DataStorageImpl(
             val modifiedFinanceEntity = when (newFinanceEntity) {
                 is FinanceEntity.Goal -> {
                     newFinanceEntity.copy(
-                        adjustment = newFinanceEntity.adjustment.map { adjustment ->
-                            adjustment.copy(
+                        settlement = newFinanceEntity.settlement.map { settlement ->
+                            settlement.copy(
                                 tagIcon = newFinanceEntity.tagIcon,
-                                label = adjustment.label,
+                                label = settlement.label,
                             )
                         }
                     )
@@ -285,10 +316,10 @@ class DataStorageImpl(
 
                 is FinanceEntity.Liability -> {
                     newFinanceEntity.copy(
-                        adjustment = newFinanceEntity.adjustment.map { adjustment ->
-                            adjustment.copy(
+                        settlement = newFinanceEntity.settlement.map { settlement ->
+                            settlement.copy(
                                 tagIcon = newFinanceEntity.tagIcon,
-                                label = adjustment.label,
+                                label = settlement.label,
                             )
                         }
                     )
@@ -305,15 +336,15 @@ class DataStorageImpl(
         }
     }
 
-    override suspend fun addAdjustmentDataset(
+    override suspend fun addSettlementDataset(
         userId: String,
         datasetId: String,
         financeType: String,
-        adjustment: Adjustment
+        settlement: Settlement
     ) {
         Log.d(
             "DataStorageImpl",
-            "addAdjustmentDataset called: $adjustment for datasetId=$datasetId userId=$userId type=$financeType"
+            "addSettlementDataset called: $settlement for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
@@ -322,30 +353,24 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = try {
-                docRef.get().await()
-            } catch (e: Exception) {
-                docRef.get(Source.CACHE).await()
-            }
-            val finance = snapshot.data?.toFinance() ?: return
-
-            // Add new adjustment to list
-            val updatedAdjustments = when (finance) {
-                is FinanceEntity.Goal -> finance.adjustment.toMutableList()
-                is FinanceEntity.Liability -> finance.adjustment.toMutableList()
-                is FinanceEntity.Transaction -> mutableListOf()
-            }
-            updatedAdjustments.add(
-                adjustment.copy(
-                    adjustmentId = adjustment.adjustmentId.ifEmpty { UUID.randomUUID().toString() }
-                )
+            val settlementId = settlement.settlementId.ifEmpty { UUID.randomUUID().toString() }
+            val finalSettlement = settlement.copy(
+                settlementId = settlementId,
+                userId = userId,
+                datasetId = datasetId
             )
 
-            // Update only the adjustment array
-            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
-            Log.d("DataStorageImpl", "Added adjustment to financeEntity record $datasetId")
+            docRef.collection("settlement")
+                .document(settlementId)
+                .set(finalSettlement.settlementToMap)
+                .await()
+
+            Log.d(
+                "DataStorageImpl",
+                "Added settlement to financeEntity record $datasetId subcollection"
+            )
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to add adjustment", e)
+            Log.e("DataStorageImpl", "Failed to add settlement", e)
             throw e
         }
     }
@@ -398,10 +423,28 @@ class DataStorageImpl(
             .document(datasetId)
 
         return try {
-            docRef.get().await().data?.toFinance()
+            val snapshot = docRef.get().await()
+            val entity = snapshot.data?.toFinance() ?: return null
+            val settlements = docRef.collection("settlement").get().await()
+                .documents.mapNotNull { it.data?.asSettlement() }
+
+            when (entity) {
+                is FinanceEntity.Goal -> entity.copy(settlement = settlements)
+                is FinanceEntity.Liability -> entity.copy(settlement = settlements)
+                else -> entity
+            }
         } catch (e: Exception) {
             try {
-                docRef.get(Source.CACHE).await().data?.toFinance()
+                val snapshot = docRef.get(Source.CACHE).await()
+                val entity = snapshot.data?.toFinance() ?: return null
+                val settlements = docRef.collection("settlement").get(Source.CACHE).await()
+                    .documents.mapNotNull { it.data?.asSettlement() }
+
+                when (entity) {
+                    is FinanceEntity.Goal -> entity.copy(settlement = settlements)
+                    is FinanceEntity.Liability -> entity.copy(settlement = settlements)
+                    else -> entity
+                }
             } catch (cacheException: Exception) {
                 if (e is FirebaseFirestoreException) throw e
                 null
@@ -432,37 +475,46 @@ class DataStorageImpl(
             val finance = snapshot.data?.toFinance() ?: return
 
 
-            // Calculate status and total adjustment amount
-            val totalAdjustmentAmount = when (finance) {
-                is FinanceEntity.Goal -> finance.adjustment.sumOf { it.amount }
-                is FinanceEntity.Liability -> finance.adjustment.sumOf { it.amount }
+            // Calculate status and total settlement amount
+            val totalSettlementAmount = when (finance) {
+                is FinanceEntity.Goal -> finance.settlement.sumOf { it.amount }
+                is FinanceEntity.Liability -> finance.settlement.sumOf { it.amount }
                 is FinanceEntity.Transaction -> 0.0
             }
-            val isAchieved = totalAdjustmentAmount >= finance.amount
+            val isAchieved = totalSettlementAmount >= finance.amount
             val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
 
-            // Create status history entry with total adjustment amount and timestamps
-            val statusHistory = StatusHistory(
+            // Create status history entry with total settlement amount and timestamps
+            val achievement = Achievement(
                 status = status.name,
-                totalAdjustmentAmount = totalAdjustmentAmount,
+                totalSettlementAmount = totalSettlementAmount,
                 startDateTime = newDateTime,
                 deadlineDateTime = nextDeadline
             )
 
-            // Add to statusHistory subcollection
+            // Add to achievement subcollection
             val statusId = UUID.randomUUID().toString()
-            docRef.collection("statusHistory")
+            docRef.collection("achievement")
                 .document(statusId)
-                .set(statusHistory.statusHistoryToMap)
+                .set(achievement.achievementToMap)
 
-            // Update financeEntity fields and reset adjustments
+            // Update financeEntity fields and reset settlements
             docRef.update(
                 mapOf(
                     "routineData.startDateTime" to newDateTime,
-                    "routineData.deadlineDateTime" to nextDeadline,
-                    "adjustment" to emptyList<Map<String, Any?>>()
+                    "routineData.deadlineDateTime" to nextDeadline
                 )
             )
+
+            // Clear settlements subcollection
+            val settlementsSnapshot = docRef.collection("settlement").get().await()
+            if (!settlementsSnapshot.isEmpty) {
+                val batch = db.batch()
+                for (adjDoc in settlementsSnapshot.documents) {
+                    batch.delete(adjDoc.reference)
+                }
+                batch.commit().await()
+            }
 
             Log.d("DataStorageImpl", "completeRoutine: Update successful for $datasetId")
         } catch (e: Exception) {
@@ -497,27 +549,27 @@ class DataStorageImpl(
             }
             val finance = snapshot.data?.toFinance() ?: return
 
-            val totalAdjustmentAmount = when (finance) {
-                is FinanceEntity.Goal -> finance.adjustment.sumOf { it.amount }
-                is FinanceEntity.Liability -> finance.adjustment.sumOf { it.amount }
+            val totalSettlementAmount = when (finance) {
+                is FinanceEntity.Goal -> finance.settlement.sumOf { it.amount }
+                is FinanceEntity.Liability -> finance.settlement.sumOf { it.amount }
                 is FinanceEntity.Transaction -> 0.0
             }
-            val isAchieved = totalAdjustmentAmount >= finance.amount
+            val isAchieved = totalSettlementAmount >= finance.amount
             val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
 
-            // Create status history entry with total adjustment amount and timestamps
-            val statusHistory = StatusHistory(
+            // Create status history entry with total settlement amount and timestamps
+            val achievement = Achievement(
                 status = status.name,
-                totalAdjustmentAmount = totalAdjustmentAmount,
+                totalSettlementAmount = totalSettlementAmount,
                 startDateTime = newDateTime,
                 deadlineDateTime = newDeadlineDateTime
             )
 
-            // Add to statusHistory subcollection
+            // Add to achievement subcollection
             val statusId = UUID.randomUUID().toString()
-            datasetDocRef.collection("statusHistory")
+            datasetDocRef.collection("achievement")
                 .document(statusId)
-                .set(statusHistory.statusHistoryToMap)
+                .set(achievement.achievementToMap)
 
             // Update dataset timestamps
             datasetDocRef.update(
@@ -533,14 +585,14 @@ class DataStorageImpl(
         }
     }
 
-    override suspend fun clearAdjustmentList(
+    override suspend fun clearSettlementList(
         userId: String,
         datasetId: String,
         financeType: String
     ) {
         Log.d(
-            "clearAdjustmentList",
-            "clearAdjustmentList called: clear adjustment for datasetId=$datasetId userId=$userId type=$financeType"
+            "clearSettlementList",
+            "clearSettlementList called: clear settlement for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
@@ -549,10 +601,17 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            docRef.update("adjustment", emptyList<Map<String, Any?>>())
-            Log.d("clearAdjustmentList", "Adjustment list cleared for dataset $datasetId")
+            val settlementsSnapshot = docRef.collection("settlement").get().await()
+            if (!settlementsSnapshot.isEmpty) {
+                val batch = db.batch()
+                for (adjDoc in settlementsSnapshot.documents) {
+                    batch.delete(adjDoc.reference)
+                }
+                batch.commit().await()
+            }
+            Log.d("clearSettlementList", "Settlement subcollection cleared for dataset $datasetId")
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to clear adjustment list", e)
+            Log.e("DataStorageImpl", "Failed to clear settlement list", e)
         }
     }
 
@@ -598,17 +657,17 @@ class DataStorageImpl(
 
         try {
             // 1. Get the snapshots (Try to use cache if offline)
-            val statusHistorySnapshot = try {
-                docRef.collection("statusHistory").get().await()
+            val achievementSnapshot = try {
+                docRef.collection("achievement").get().await()
             } catch (e: Exception) {
-                docRef.collection("statusHistory").get(Source.CACHE).await()
+                docRef.collection("achievement").get(Source.CACHE).await()
             }
 
             // 2. Create a Write Batch
             val batch = db.batch()
 
             // 3. Add all subcollection deletes to the batch (No await here!)
-            for (doc in statusHistorySnapshot.documents) {
+            for (doc in achievementSnapshot.documents) {
                 batch.delete(doc.reference)
             }
 
@@ -626,15 +685,15 @@ class DataStorageImpl(
         }
     }
 
-    override suspend fun removeAdjustmentDataset(
+    override suspend fun removeSettlementDataset(
         userId: String,
         datasetId: String,
         financeType: String,
-        adjustment: Adjustment
+        settlement: Settlement
     ) {
         Log.d(
             "DataStorageImpl",
-            "removeAdjustmentDataset called: $adjustment for datasetId=$datasetId userId=$userId type=$financeType"
+            "removeSettlementDataset called: $settlement for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
@@ -643,41 +702,30 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = try {
-                docRef.get().await()
-            } catch (e: Exception) {
-                docRef.get(Source.CACHE).await()
-            }
-            val finance = snapshot.data?.toFinance() ?: return
-
-            // Remove adjustment from list
-            val currentAdjustments = when (finance) {
-                is FinanceEntity.Goal -> finance.adjustment
-                is FinanceEntity.Liability -> finance.adjustment
-                is FinanceEntity.Transaction -> emptyList()
-            }
-            val updatedAdjustments = currentAdjustments.filter {
-                it.adjustmentId != adjustment.adjustmentId
-            }
-
-            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
-            Log.d("DataStorageImpl", "Removed adjustment from financeEntity record $datasetId")
+            docRef.collection("settlement")
+                .document(settlement.settlementId)
+                .delete()
+                .await()
+            Log.d(
+                "DataStorageImpl",
+                "Removed settlement from financeEntity record $datasetId subcollection"
+            )
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to remove adjustment", e)
+            Log.e("DataStorageImpl", "Failed to remove settlement", e)
             throw e
         }
     }
 
-    override suspend fun updateAdjustmentDataset(
+    override suspend fun updateSettlementDataset(
         userId: String,
         datasetId: String,
         financeType: String,
-        oldAdjustment: Adjustment,
-        newAdjustment: Adjustment
+        oldSettlement: Settlement,
+        newSettlement: Settlement
     ) {
         Log.d(
             "DataStorageImpl",
-            "updateAdjustmentDataset called: $oldAdjustment for datasetId=$datasetId userId=$userId type=$financeType"
+            "updateSettlementDataset called: $oldSettlement for datasetId=$datasetId userId=$userId type=$financeType"
         )
 
         val docRef = db.collection(COLLECTION_NAME)
@@ -686,29 +734,20 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            val snapshot = try {
-                docRef.get().await()
-            } catch (e: Exception) {
-                docRef.get(Source.CACHE).await()
-            }
-            val finance = snapshot.data?.toFinance() ?: return
-
-            // Remove old adjustment and add new one
-            val currentAdjustments = when (finance) {
-                is FinanceEntity.Goal -> finance.adjustment
-                is FinanceEntity.Liability -> finance.adjustment
-                is FinanceEntity.Transaction -> emptyList()
-            }
-            val updatedAdjustments = currentAdjustments.filter {
-                it.adjustmentId != oldAdjustment.adjustmentId
-            }.toMutableList()
-
-            updatedAdjustments.add(newAdjustment)
-
-            docRef.update("adjustment", updatedAdjustments.map { it.adjustmentToMap })
-            Log.d("Adjustment update", "Updated adjustment ${oldAdjustment.adjustmentId}")
+            val finalSettlement = newSettlement.copy(
+                userId = userId,
+                datasetId = datasetId
+            )
+            docRef.collection("settlement")
+                .document(oldSettlement.settlementId)
+                .set(finalSettlement.settlementToMap)
+                .await()
+            Log.d(
+                "Settlement update",
+                "Updated settlement ${oldSettlement.settlementId} in subcollection"
+            )
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to update adjustment", e)
+            Log.e("DataStorageImpl", "Failed to update settlement", e)
             throw e
         }
     }

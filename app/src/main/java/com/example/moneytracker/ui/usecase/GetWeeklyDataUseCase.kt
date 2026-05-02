@@ -1,6 +1,6 @@
 package com.example.moneytracker.ui.usecase
 
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import kotlinx.datetime.LocalDate
@@ -11,14 +11,14 @@ class GetWeeklyDataUseCase @Inject constructor() {
     operator fun invoke(
         financeEntityList: List<FinanceEntity>,
         dates: List<LocalDate>
-    ): List<DataAdjust> {
-        return coupleDatasetsWithAdjustments(financeEntityList).filter { item ->
+    ): List<DataSettlement> {
+        return coupleDatasetsWithSettlements(financeEntityList).filter { item ->
             when (item) {
-                is DataAdjust.Data ->
+                is DataSettlement.SettlementData ->
                     item.financeEntity.createdAt.toLocalDateTimeUtc().date in dates
 
-                is DataAdjust.Adjust ->
-                    item.adjustment.dateTime.toLocalDateTimeUtc().date in dates
+                is DataSettlement.SettlementAdjust ->
+                    item.settlement.dateTime.toLocalDateTimeUtc().date in dates
             }
         }
     }

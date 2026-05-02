@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.moneytracker.backend.storage.DataAdjust
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 
@@ -19,7 +19,7 @@ import com.example.moneytracker.ui.homeScreen.HomeViewModel
 fun AllScreen(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel,
-    weeklyData: List<DataAdjust>,
+    weeklyData: List<DataSettlement>,
     uiState: HomeUiState,
     isWeeklyDataLoading: Boolean
 ) {
@@ -37,7 +37,7 @@ fun AllScreen(
                 viewModel = viewModel
             )
 
-            ListForAll(dataAdjusts = weeklyData)
+            ListForAll(dataSettlements = weeklyData)
         } else {
             CalendarViewSectionShimmer()
             ListForAllShimmer()

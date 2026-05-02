@@ -7,7 +7,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.pager.rememberPagerState
@@ -187,21 +189,27 @@ fun CalendarViewSection(
                                     }
                                 }
                             ) {
-                                Text(
-                                    date.day.toString(),
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold,
+                                Column(
                                     modifier = Modifier
+                                        .width(30.dp)
+                                        .height(30.dp)
                                         .border(
                                             width = 1.dp,
                                             color = if (date == selectedDate && selectedTabIndex == 0)
                                                 selectedColor else Color.Transparent,
                                             shape = RoundedCornerShape(100)
-                                        )
-                                        .padding(horizontal = 5.dp, vertical = 5.dp),
-                                    color = if (date == now) selectedColor else
-                                        contentColor
-                                )
+                                        ),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text(
+                                        date.day.toString(),
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = if (date == now) selectedColor else
+                                            contentColor
+                                    )
+                                }
                             }
                         }
                     }

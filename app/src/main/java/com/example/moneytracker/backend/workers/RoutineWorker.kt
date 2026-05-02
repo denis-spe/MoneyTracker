@@ -83,7 +83,7 @@ class RoutineWorker @AssistedInject constructor(
                 "Current status for ${dataset.label}: $currentStatus, progress: $formatProgress%"
             )
 
-            // Complete the current routine: clear adjustment list and add status
+            // Complete the current routine: clear settlement list and add status
             val now = Timestamp.now()
             val normalizedNow = if (dataset.routine.routine in listOf(
                     Routine.EveryDay,

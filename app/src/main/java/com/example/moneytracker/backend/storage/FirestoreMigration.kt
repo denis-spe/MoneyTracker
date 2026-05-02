@@ -1,6 +1,8 @@
 package com.example.moneytracker.backend.storage
 
 import android.util.Log
+import com.example.moneytracker.helper.asSettlement
+import com.example.moneytracker.helper.settlementToMap
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -53,13 +55,27 @@ object FirestoreMigration {
                     .collection(targetCollection)
                     .document(id)
 
-                // 1. Copy document
-                targetRef.set(data).await()
+                // 1. Copy document (without the settlement list field)
+                val mutableData = data.toMutableMap()
+                val settlementsRaw = mutableData.remove("settlement") as? List<*>
+                targetRef.set(mutableData).await()
 
-                // 2. Copy statusHistory subcollection if exists
-                val historySnapshot = doc.reference.collection("statusHistory").get().await()
+                // 2. Migrate settlements from list to subcollection
+                settlementsRaw?.forEach { adjMap ->
+                    if (adjMap is Map<*, *>) {
+                        val adj = adjMap.asSettlement()
+                        val finalAdj = adj.copy(userId = userId, datasetId = id)
+                        targetRef.collection("settlement")
+                            .document(finalAdj.settlementId)
+                            .set(finalAdj.settlementToMap)
+                            .await()
+                    }
+                }
+
+                // 3. Copy achievement subcollection if exists
+                val historySnapshot = doc.reference.collection("achievement").get().await()
                 for (historyDoc in historySnapshot.documents) {
-                    targetRef.collection("statusHistory")
+                    targetRef.collection("achievement")
                         .document(historyDoc.id)
                         .set(historyDoc.data!!)
                         .await()
@@ -75,6 +91,42 @@ object FirestoreMigration {
             Log.d(TAG, "Migration completed for user: $userId")
         } catch (e: Exception) {
             Log.e(TAG, "Migration failed for user: $userId", e)
+        }
+    }
+
+    suspend fun migrateSettlementsOnly(db: FirebaseFirestore, userId: String) {
+        val collections = listOf("Goal", "Liability")
+        for (collection in collections) {
+            val ref = db.collection("database").document(userId).collection(collection)
+            try {
+                val snapshot = ref.get().await()
+                for (doc in snapshot.documents) {
+                    val data = doc.data ?: continue
+                    val settlementsRaw = data["settlement"] as? List<*> ?: continue
+
+                    Log.d(TAG, "Migrating settlements for document ${doc.id} in $collection")
+
+                    // Migrate to subcollection
+                    settlementsRaw.forEach { adjObj ->
+                        if (adjObj is Map<*, *>) {
+                            val adj = adjObj.asSettlement()
+                            val finalAdj = adj.copy(userId = userId, datasetId = doc.id)
+                            doc.reference.collection("settlement")
+                                .document(finalAdj.settlementId)
+                                .set(finalAdj.settlementToMap)
+                                .await()
+                        }
+                    }
+
+                    // Remove list field
+                    doc.reference.update(
+                        "settlement",
+                        com.google.firebase.firestore.FieldValue.delete()
+                    ).await()
+                }
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to migrate settlements only for $collection", e)
+            }
         }
     }
 }
