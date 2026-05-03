@@ -136,7 +136,7 @@ const val MaxWidth = 0.7f
 val BOTTOM_SHEET_PADDING = 10.dp
 private val MODIFIER_DRAWER = Modifier
     .fillMaxWidth()
-    .padding(vertical = 6.dp, horizontal = 13.dp)
+    .padding(vertical = 2.dp, horizontal = 13.dp)
 private val INNER_MODIFIER_DRAWER = Modifier
     .fillMaxWidth()
     .padding(start = 10.dp, end = 10.dp)
@@ -570,7 +570,7 @@ fun SettlementField(
     colorResId: Int,
     selectedFinanceEntity: MutableState<FinanceEntity?>,
     modifier: Modifier = Modifier,
-    wasRepaySuccess: MutableState<State>
+    wasSuccess: MutableState<State>
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -627,14 +627,16 @@ fun SettlementField(
     val numberFormat = remember(locale) { NumberFormat.getCurrencyInstance(locale) }
     val symbol = numberFormat.currency?.symbol ?: "$"
     val onDialogShow = remember { mutableStateOf(false) }
-    var amountToDisplay by remember { mutableStateOf("${symbol}0.0") }
+    var amountToDisplay by remember { mutableStateOf("0.0") }
     var financeEntityToDisplay by remember { mutableStateOf<FinanceEntity?>(null) }
     val focusRequester = remember { FocusRequester() }
     val interactionSource = remember { MutableInteractionSource() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val showCustomKeyboard = remember { mutableStateOf(false) }
 
-    val color = colorResource(colorResId)
+    val color = if (wasSuccess.value == State.ERROR)
+        colorResource(R.color.error_color)
+    else colorResource(colorResId)
 
     if (onDialogShow.value) {
         Dialog(
@@ -642,7 +644,7 @@ fun SettlementField(
                 amountState.setTextAndPlaceCursorAtEnd("")
                 selectedFinanceEntity.value = null
                 financeEntityToDisplay = null
-                amountToDisplay = "${symbol}0.0"
+                amountToDisplay = "0.0"
                 onDialogShow.value = false
             },
             properties = DialogProperties(usePlatformDefaultWidth = false)
@@ -688,48 +690,54 @@ fun SettlementField(
 
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
-                    /* ---------- Dropdown ---------- */
-                    DropdownMenu(
-                        expanded = expanded,
-                        onDismissRequest = { expanded = false }
-                    ) {
-                        filteredFinanceEntity.value.forEach { finance ->
-
-                            DropdownMenuItem(
-                                text = {
-                                    Text(finance.label, fontSize = fontSize)
-                                },
-                                onClick = {
-                                    expanded = false
-                                    focusRequester.requestFocus()
-                                    selectedFinanceEntity.value = finance
-                                },
-                                leadingIcon = {
-                                    Image(
-                                        painter = painterResource(finance.tagIcon.icon),
-                                        contentDescription = finance.label,
-                                        modifier = Modifier.size(ICON_SIZE)
-                                    )
-                                }
-                            )
-                        }
-                    }
-
                     /* ---------- Dataset button ---------- */
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        TextButton(
-                            onClick = { expanded = true },
-                            colors = ButtonDefaults.textButtonColors().copy(
-                                contentColor = color
-                            )
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
                         ) {
-                            Text(
-                                selectedFinanceEntity.value?.label ?: "Select ${datatype.text}",
-                                fontSize = fontSize,
-                            )
+                            TextButton(
+                                onClick = { expanded = true },
+                                colors = ButtonDefaults.textButtonColors().copy(
+                                    contentColor = color
+                                )
+                            ) {
+                                Text(
+                                    selectedFinanceEntity.value?.label ?: "Select ${datatype.text}",
+                                    fontSize = fontSize,
+                                )
+                            }
+
+                            /* ---------- Dropdown ---------- */
+                            DropdownMenu(
+                                expanded = expanded,
+                                onDismissRequest = { expanded = false }
+                            ) {
+                                filteredFinanceEntity.value.forEach { finance ->
+
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(finance.label, fontSize = fontSize)
+                                        },
+                                        onClick = {
+                                            expanded = false
+                                            focusRequester.requestFocus()
+                                            selectedFinanceEntity.value = finance
+                                        },
+                                        leadingIcon = {
+                                            Image(
+                                                painter = painterResource(finance.tagIcon.icon),
+                                                contentDescription = finance.label,
+                                                modifier = Modifier.size(ICON_SIZE)
+                                            )
+                                        }
+                                    )
+                                }
+                            }
+
                         }
 
 
@@ -783,9 +791,8 @@ fun SettlementField(
                                     if (amountState.text.isNotEmpty()) {
                                         onDialogShow.value = false
                                         amountToDisplay = if (amountState.text.isNotEmpty())
-                                            amountState.text.toString().toDouble()
-                                                .formatToAmount() else
-                                            "${symbol}0.0"
+                                            amountState.text.toString() else
+                                            "0.0"
                                     }
                                 },
                                 leadingIcon = {
@@ -838,7 +845,9 @@ fun SettlementField(
                 showCustomKeyboard.value = true
                 onDialogShow.value = true
             },
-        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        colors = ListItemDefaults.colors().copy(
+            containerColor = color.copy(alpha = 0.1f)
+        ),
         headlineContent = {
             val dataTypeText = when (datatype) {
                 DataType.GOAL -> "Attain the goal"
@@ -869,7 +878,7 @@ fun SettlementField(
             )
         },
         trailingContent = {
-            Text(amountToDisplay, color = color, fontSize = fontSize)
+            Text(amountToDisplay.toFloat().formatToAmount(), color = color, fontSize = fontSize)
         }
     )
 
@@ -993,9 +1002,11 @@ fun RepeatableTransaction(
                 Routine.EveryDay -> now
                     .plusDays(repeatByState.value.routineCount.toLong())
 
-                Routine.Weekly -> now.plusWeeks(repeatByState.value.routineCount.toLong())
+                Routine.Weekly -> now.with(TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SATURDAY))
+                    .plusWeeks(repeatByState.value.routineCount.toLong() - 1)
                 Routine.Yearly -> now.plusYears(repeatByState.value.routineCount.toLong())
-                Routine.Monthly -> now.plusMonths(repeatByState.value.routineCount.toLong())
+                Routine.Monthly -> now.with(TemporalAdjusters.lastDayOfMonth())
+                    .plusMonths(repeatByState.value.routineCount.toLong() - 1)
                 Routine.SpecifyDayOfTheWeek -> {
                     val safeCount = if (repeatByState.value.routineCount <= 0) 1L
                     else repeatByState.value.routineCount.toLong()

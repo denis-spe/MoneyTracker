@@ -7,6 +7,7 @@ import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.achievementToMap
 import com.example.moneytracker.helper.asSettlement
 import com.example.moneytracker.helper.settlementToMap
+import com.example.moneytracker.helper.toEpochMilli
 import com.example.moneytracker.helper.toFinance
 import com.example.moneytracker.helper.toMap
 import com.google.firebase.Timestamp
@@ -66,7 +67,17 @@ class DataStorageImpl(
                 val snapshot = query.get().await()
 
                 val finances = snapshot.documents.mapNotNull { doc ->
-                    runCatching { doc.data?.toFinance() }
+                    runCatching {
+                        val entity = doc.data?.toFinance() ?: return@mapNotNull null
+                        val settlements = doc.reference.collection("settlement").get().await()
+                            .documents.mapNotNull { it.data?.asSettlement() }
+
+                        when (entity) {
+                            is FinanceEntity.Goal -> entity.copy(settlement = settlements)
+                            is FinanceEntity.Liability -> entity.copy(settlement = settlements)
+                            else -> entity
+                        }
+                    }
                         .onFailure {
                             Log.e(
                                 "DataStorageImpl",
@@ -467,54 +478,67 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
+            // 1. Fetch parent document
             val snapshot = try {
                 docRef.get().await()
             } catch (e: Exception) {
                 docRef.get(Source.CACHE).await()
             }
-            val finance = snapshot.data?.toFinance() ?: return
+            val baseFinance = snapshot.data?.toFinance() ?: return
 
+            // 2. Fetch settlements subcollection once
+            val settlementsSnapshot = try {
+                docRef.collection("settlement").get().await()
+            } catch (e: Exception) {
+                docRef.collection("settlement").get(Source.CACHE).await()
+            }
+            val settlements = settlementsSnapshot.documents.mapNotNull { it.data?.asSettlement() }
 
-            // Calculate status and total settlement amount
+            val finance = when (baseFinance) {
+                is FinanceEntity.Goal -> baseFinance.copy(settlement = settlements)
+                is FinanceEntity.Liability -> baseFinance.copy(settlement = settlements)
+                else -> baseFinance
+            }
+
+            // 3. Calculate status and total settlement amount
             val totalSettlementAmount = when (finance) {
                 is FinanceEntity.Goal -> finance.settlement.sumOf { it.amount }
                 is FinanceEntity.Liability -> finance.settlement.sumOf { it.amount }
                 is FinanceEntity.Transaction -> 0.0
             }
             val isAchieved = totalSettlementAmount >= finance.amount
-            val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
+            val status = if (isAchieved) Status.COMPLETED else Status.OVERDUE
 
-            // Create status history entry with total settlement amount and timestamps
+            // 4. Prepare updates in a Batch
+            val batch = db.batch()
+
+            // A. Create achievement entry
             val achievement = Achievement(
                 status = status.name,
                 totalSettlementAmount = totalSettlementAmount,
                 startDateTime = newDateTime,
                 deadlineDateTime = nextDeadline
             )
+            val achievementId = UUID.randomUUID().toString()
+            val achievementRef = docRef.collection("achievement").document(achievementId)
+            batch.set(achievementRef, achievement.achievementToMap)
 
-            // Add to achievement subcollection
-            val statusId = UUID.randomUUID().toString()
-            docRef.collection("achievement")
-                .document(statusId)
-                .set(achievement.achievementToMap)
-
-            // Update financeEntity fields and reset settlements
-            docRef.update(
-                mapOf(
+            // B. Update parent document timestamps
+            batch.update(
+                docRef, mapOf(
                     "routineData.startDateTime" to newDateTime,
-                    "routineData.deadlineDateTime" to nextDeadline
+                    "routineData.deadlineDateTime" to nextDeadline,
+                    "routineData.triggerMillis" to nextDeadline.toEpochMilli()
                 )
             )
 
-            // Clear settlements subcollection
-            val settlementsSnapshot = docRef.collection("settlement").get().await()
-            if (!settlementsSnapshot.isEmpty) {
-                val batch = db.batch()
-                for (adjDoc in settlementsSnapshot.documents) {
-                    batch.delete(adjDoc.reference)
-                }
-                batch.commit().await()
+            // C. Delete all settlements in the subcollection
+            for (adjDoc in settlementsSnapshot.documents) {
+                batch.delete(adjDoc.reference)
             }
+
+            // 5. Commit all changes atomically
+            batch.commit().await()
 
             Log.d("DataStorageImpl", "completeRoutine: Update successful for $datasetId")
         } catch (e: Exception) {
@@ -547,7 +571,20 @@ class DataStorageImpl(
             } catch (e: Exception) {
                 datasetDocRef.get(Source.CACHE).await()
             }
-            val finance = snapshot.data?.toFinance() ?: return
+            val baseFinance = snapshot.data?.toFinance() ?: return
+
+            val settlementsSnapshot = try {
+                datasetDocRef.collection("settlement").get().await()
+            } catch (e: Exception) {
+                datasetDocRef.collection("settlement").get(Source.CACHE).await()
+            }
+            val settlements = settlementsSnapshot.documents.mapNotNull { it.data?.asSettlement() }
+
+            val finance = when (baseFinance) {
+                is FinanceEntity.Goal -> baseFinance.copy(settlement = settlements)
+                is FinanceEntity.Liability -> baseFinance.copy(settlement = settlements)
+                else -> baseFinance
+            }
 
             val totalSettlementAmount = when (finance) {
                 is FinanceEntity.Goal -> finance.settlement.sumOf { it.amount }
@@ -555,7 +592,7 @@ class DataStorageImpl(
                 is FinanceEntity.Transaction -> 0.0
             }
             val isAchieved = totalSettlementAmount >= finance.amount
-            val status = if (isAchieved) Status.SUCCESS else Status.OVERDUE
+            val status = if (isAchieved) Status.COMPLETED else Status.OVERDUE
 
             // Create status history entry with total settlement amount and timestamps
             val achievement = Achievement(
@@ -575,7 +612,8 @@ class DataStorageImpl(
             datasetDocRef.update(
                 mapOf(
                     "createdAt" to newDateTime,
-                    "routineData.deadlineDateTime" to newDeadlineDateTime
+                    "routineData.deadlineDateTime" to newDeadlineDateTime,
+                    "routineData.triggerMillis" to newDeadlineDateTime.toEpochMilli()
                 )
             )
 

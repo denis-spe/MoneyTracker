@@ -39,8 +39,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
@@ -59,10 +59,10 @@ import com.example.moneytracker.helper.GoalWarning
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
 import com.example.moneytracker.helper.remainingAmount
+import com.example.moneytracker.helper.toEpochMilli
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toMidnight
 import com.example.moneytracker.ui.UserViewModel
-import com.example.moneytracker.ui.components.ActionNotification
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import kotlinx.datetime.LocalDateTime
@@ -72,6 +72,13 @@ import java.util.UUID
 val MODEL_DRAWER_ICON_SIZE = 25.dp
 val FONT_WEIGHT = FontWeight.Bold
 const val MAX_LABEL_LENGTH = 15
+
+val lazyListRoundedCornerShape = RoundedCornerShape(
+    topStart = 20.dp,
+    topEnd = 20.dp,
+    bottomStart = 0.dp,
+    bottomEnd = 0.dp
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -143,7 +150,6 @@ fun <T> DataAdditionModelDrawerContent(
 
     val showDataTypeBottomSheet = remember { mutableStateOf(false) }
     val clickedDataType = remember { mutableStateOf<T?>(null) }
-    val userUiState by userViewModel.uiState.collectAsState()
 
     LazyColumn(
         modifier = Modifier
@@ -279,7 +285,8 @@ fun <T> DataAdditionModelDrawerContent(
                     SettlementDataInputs(
                         LiabilityType.LOAN,
                         SettlementType.LENT_REPAY,
-                        financeEntityList = financeEntityList
+                        financeEntityList = financeEntityList,
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -290,7 +297,8 @@ fun <T> DataAdditionModelDrawerContent(
                     SettlementDataInputs(
                         GoalType,
                         SettlementType.GOAL_ATTAIN,
-                        financeEntityList = financeEntityList
+                        financeEntityList = financeEntityList,
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -301,7 +309,8 @@ fun <T> DataAdditionModelDrawerContent(
                     SettlementDataInputs(
                         LiabilityType.DEBT,
                         SettlementType.DEBT_REPAY,
-                        financeEntityList = financeEntityList
+                        financeEntityList = financeEntityList,
+                        userViewModel = userViewModel
                     ) {
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
                         viewModel.updateIsBottomSheetContentLoading(true)
@@ -309,20 +318,6 @@ fun <T> DataAdditionModelDrawerContent(
                 }
 
                 else -> {}
-            }
-
-            // Action Notification
-            ActionNotification(
-                backgroundColor = userUiState.actionNotificationColor,
-                visible = userUiState.isActionNotificationVisible,
-                onDismiss = { userViewModel.dismissActionNotification() }
-            ) {
-                Text(
-                    text = userUiState.actionNotificationMessage,
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
-                )
             }
         }
     }
@@ -417,8 +412,7 @@ fun FinancialDataInput(
 
         LazyColumn(
             modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(20.dp)),
+                .fillMaxWidth(),
             state = lazyState,
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -426,7 +420,8 @@ fun FinancialDataInput(
             // Amount
             item(key = 39) {
                 Row(
-                    modifier = Modifier.animateItem()
+                    modifier = Modifier
+                        .animateItem()
                 ) {
                     ModelDrawerAmountField(
                         state = amountState,
@@ -590,7 +585,7 @@ fun FinancialDataInput(
                             if (amountAsDouble == null && labelState.text.toString().isEmpty()) {
                                 errorMessage = "Amount and label cannot be empty"
                             }
-                            if (errorMessage != null) {
+                            if (!errorMessage.isNullOrEmpty()) {
                                 wasSuccess.value = State.ERROR
 
                                 // Show snackbar
@@ -665,7 +660,8 @@ fun GoalDataInput(
             Text(
                 description,
                 color = color,
-                fontWeight = FontWeight.Medium
+                fontWeight = FontWeight.Medium,
+                textAlign = TextAlign.Center
             )
         }
 
@@ -827,7 +823,9 @@ fun GoalDataInput(
 
                             val routine = routineData.value.copy(
                                 startDateTime = normalizedStart.toFirestoreTimestampUtc(),
-                                deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc()
+                                deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc(),
+                                triggerMillis = normalizedEnd.toFirestoreTimestampUtc()
+                                    .toEpochMilli()
                             )
 
                             val financeEntity = FinanceEntity.Goal(
@@ -867,7 +865,7 @@ fun GoalDataInput(
                             if (amountAsDouble == null && labelState.text.toString().isEmpty()) {
                                 errorMessage = "Amount and label cannot be empty"
                             }
-                            if (errorMessage != null) {
+                            if (!errorMessage.isNullOrEmpty()) {
                                 wasSuccess.value = State.ERROR
 
                                 // Show snackbar
@@ -897,6 +895,7 @@ fun GoalDataInput(
 fun SettlementDataInputs(
     type: Any, // FinanceCategory or SettlementType
     settlementType: SettlementType,
+    userViewModel: UserViewModel,
     financeEntityList: List<FinanceEntity>,
     onDismiss: () -> Unit
 ) {
@@ -905,7 +904,7 @@ fun SettlementDataInputs(
     val showTime = remember { mutableStateOf(false) }
     val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
     val descriptionState = rememberTextFieldState()
-    val wasRepaySuccess = remember { mutableStateOf(State.INITIAL) }
+    val wasSuccess = remember { mutableStateOf(State.INITIAL) }
     val selectedFinanceEntity = remember { mutableStateOf<FinanceEntity?>(null) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val adjustAmountState = rememberTextFieldState()
@@ -981,7 +980,7 @@ fun SettlementDataInputs(
                     financeEntityList = financeEntityList,
                     colorResId = settlementType.color,
                     selectedFinanceEntity = selectedFinanceEntity,
-                    wasRepaySuccess = wasRepaySuccess
+                    wasSuccess = wasSuccess
                 )
             }
 
@@ -1032,7 +1031,7 @@ fun SettlementDataInputs(
 
                     ModelDrawerButton(
                         text = "Add",
-                        wasSuccess = wasRepaySuccess,
+                        wasSuccess = wasSuccess,
                         colorResId = settlementType.color,
                         filledColor = Color.Transparent
                     ) {
@@ -1043,7 +1042,7 @@ fun SettlementDataInputs(
                                     settleAsDouble > it.remainingAmount &&
                                     !it.isStartDateTimeNotEqualToDeadlineDateTime
                                 ) {
-                                    wasRepaySuccess.value = State.ERROR
+                                    wasSuccess.value = State.ERROR
                                     return@ModelDrawerButton
                                 }
                                 val settlement = Settlement(
@@ -1076,9 +1075,19 @@ fun SettlementDataInputs(
                                 onDismiss()
                             }
                         } ?: run {
-                            wasRepaySuccess.value = State.ERROR
-                        }
+                            wasSuccess.value = State.ERROR
+                            val errorMessage = when (dataType) {
+                                DataType.LENT -> "Please select a loan to repay"
+                                DataType.DEBT -> "Please select a debt to repay"
+                                else -> "Please select a goal to attain"
+                            }
 
+                            // Show snackbar
+                            userViewModel.showActionNotification(
+                                errorMessage,
+                                color = Color.Red.copy(0.5f)
+                            )
+                        }
                     }
                 }
             }

@@ -186,11 +186,15 @@ fun RoutineData.rescheduleDeadline(
         }
 
         Routine.Weekly -> {
-            startBase.plusWeeks(count).toMidnight()
+            startBase.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY))
+                .plusWeeks(count - 1)
+                .toMidnight()
         }
 
         Routine.Monthly -> {
-            startBase.plusMonths(count).toMidnight()
+            startBase.with(TemporalAdjusters.lastDayOfMonth())
+                .plusMonths(count - 1)
+                .toMidnight()
         }
 
         Routine.Yearly -> {
@@ -202,6 +206,7 @@ fun RoutineData.rescheduleDeadline(
         }
     }
 }
+
 
 /**
  * Calculates the next trigger time based on a [baseMillis].
@@ -226,12 +231,14 @@ fun RoutineData.getTriggerMillisFrom(baseMillis: Long): Long {
             .toInstant()
             .toEpochMilli()
 
-        Routine.Weekly -> base.plusWeeks(count)
+        Routine.Weekly -> base.with(TemporalAdjusters.nextOrSame(DayOfWeek.SATURDAY))
+            .plusWeeks(count - 1)
             .withHour(0).withMinute(0).withSecond(0).withNano(0)
             .toInstant()
             .toEpochMilli()
 
-        Routine.Monthly -> base.plusMonths(count)
+        Routine.Monthly -> base.with(TemporalAdjusters.lastDayOfMonth())
+            .plusMonths(count - 1)
             .withHour(0).withMinute(0).withSecond(0).withNano(0)
             .toInstant()
             .toEpochMilli()
@@ -861,7 +868,7 @@ fun castToStatusList(any: Any?): List<Status>? {
 }
 
 // extension for Firebase Timestamp
-fun Timestamp.toEpochMillis(): Long =
+fun Timestamp.toEpochMilli(): Long =
     this.seconds * 1000L + (this.nanoseconds / 1_000_000L)
 
 
@@ -871,7 +878,7 @@ fun FinanceEntity.isAmountEqualToSettleAmount(): Boolean {
         is FinanceEntity.Liability -> settlement.sumOf { it.amount }
         is FinanceEntity.Transaction -> 0.0
     }
-    return totalSettlement == amount
+    return totalSettlement >= amount
 }
 
 val FinanceEntity.remainingAmount: Double
@@ -897,27 +904,12 @@ val Timestamp.formatToDateTime: String
 
 
 fun Long.formatToAmount(): String {
-    val locale = Locale.getDefault()
-    val numberFormat = NumberFormat.getCurrencyInstance(locale)
-    val symbol = numberFormat.currency?.symbol ?: "$"
-
-    if (this < 1_000_000) {
-        val amount = toDouble()
-        val formattedAmount = amount.toString()
-            .replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")
-            .replace(Regex("\\.0$"), "")
-        return "$symbol$formattedAmount"
-    }
-    val suffixes = charArrayOf('M', 'B', 'T', 'Q') // M for A Million, etc.
-    val formatter = DecimalFormat("#.#")
-    val base = (log10(this.toDouble()) / 3).toInt()
-    val scaledNumber = this / 1000.0.pow(base.toDouble())
-    return "$symbol${formatter.format(scaledNumber) + suffixes[base - 2]}"
+    return this.toDouble().formatToAmount()
 }
 
 
 fun Float.formatToAmount(): String {
-    return this.toLong().formatToAmount()
+    return this.toDouble().formatToAmount()
 }
 
 fun Double.formatToAmount(): String {
@@ -925,14 +917,34 @@ fun Double.formatToAmount(): String {
     val numberFormat = NumberFormat.getCurrencyInstance(locale)
     val symbol = numberFormat.currency?.symbol ?: "$"
 
-    if (this < 1_000_000) {
+    val absValue = kotlin.math.abs(this)
+    val sign = if (this < 0) "-" else ""
+
+    if (absValue < 1_000_000) {
         val rounding = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
 
-        val formattedAmount = rounding.toString()
+        val formattedAmount = rounding.abs().toString()
             .replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")
             .replace(Regex("\\.00$"), "")
-        return "$symbol$formattedAmount"
+        return "$sign$symbol$formattedAmount"
     }
 
-    return this.toLong().formatToAmount()
+    val suffixes = charArrayOf('M', 'B', 'T', 'Q')
+    val formatter = DecimalFormat("#.##") // Using 2 decimals for precision
+    val base = (log10(absValue) / 3).toInt()
+    val scaledNumber = absValue / 1000.0.pow(base.toDouble())
+
+    val suffixIndex = base - 2
+    return if (suffixIndex >= 0 && suffixIndex < suffixes.size) {
+        "$sign$symbol${formatter.format(scaledNumber)}${suffixes[suffixIndex]}"
+    } else {
+        // Fallback for extremely large numbers or unexpected base
+        "$sign$symbol${String.format(Locale.US, "%.2f", absValue)}"
+    }
 }
+
+infix fun Int.formatToTime(minutes: Int): String = String.format(
+    Locale.getDefault(),
+    "%02d:%02d",
+    this, minutes
+)

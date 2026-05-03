@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.helper.formatToTime
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
@@ -90,11 +91,11 @@ fun GoalCard(
 
     val dateTime = when (financeEntityGoal.routine.routine) {
         Routine.EveryMinute -> {
-            "${endState}end at ${endDateTime.hour}:${endDateTime.minute}"
+            "${endState}end at ${endDateTime.hour formatToTime endDateTime.minute}"
         }
 
         Routine.EveryHour -> {
-            "$endState at ${endDateTime.hour}:${endDateTime.minute}"
+            "$endState at ${endDateTime.hour formatToTime endDateTime.minute}"
         }
 
         Routine.EveryDay -> {
@@ -129,8 +130,9 @@ fun GoalCard(
     }
 
     val createdAt = financeEntityGoal.createdAt.toLocalDateTimeUtc()
-    val createdAtDateTime = "Created at ${createdAt.day} ${createdAt.month.name.title} " +
-            "${createdAt.year} ${createdAt.hour}:${createdAt.minute}"
+    val day = String.format(java.util.Locale.getDefault(), "%02d", createdAt.day)
+    val createdAtDateTime = "Created at $day ${createdAt.month.name.title} " +
+            "${createdAt.year} ${createdAt.hour formatToTime createdAt.minute}"
 
 
     Column(
