@@ -188,7 +188,8 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                 ) { page ->
                     when (page) {
                         0 -> GoalScreen(
-                            paddingValues,
+                            onNavigate = onNavigate,
+                            paddingValues = paddingValues,
                             goalFinanceEntityList = goalFinance,
                             uiState = uiState,
                             isGoalDataLoading = uiState.isGoalDataLoading

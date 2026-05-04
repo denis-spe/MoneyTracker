@@ -11,6 +11,7 @@ import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.helper.formatedDateTime
 import com.example.moneytracker.helper.progressPercentage
 import com.example.moneytracker.helper.rescheduleDeadline
 import com.example.moneytracker.helper.status
@@ -24,6 +25,7 @@ import dagger.assisted.AssistedInject
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
 import java.util.Locale
+import kotlin.coroutines.cancellation.CancellationException
 
 @HiltWorker
 class RoutineWorker @AssistedInject constructor(
@@ -37,53 +39,48 @@ class RoutineWorker @AssistedInject constructor(
     workerParams
 ) {
     override suspend fun doWork(): Result {
-        return try {
-            Log.d(TAG, "Routine worker started")
+        Log.d(TAG, "================ WORKER START ================")
 
+        return try {
             val userId = inputData.getString("userId") ?: ""
             val datasetId = inputData.getString("datasetId") ?: ""
             val financeType = inputData.getString("financeType") ?: ""
+
+            Log.d(TAG, "Input Data: userId=$userId datasetId=$datasetId financeType=$financeType")
 
             if (userId.isEmpty() || datasetId.isEmpty() || financeType.isEmpty()) {
                 Log.e(TAG, "Invalid input data")
                 return Result.failure()
             }
 
-            Log.d(TAG, "Processing for user: $userId, dataset: $datasetId type: $financeType")
-
-            // Get the dataset from the database
+            Log.d(TAG, "Fetching dataset...")
             val dataset = dataStorage.getDataset(userId, datasetId, financeType)
+
+            Log.d(TAG, "Dataset fetched: $dataset")
 
             if (dataset !is FinanceEntity.Goal) {
                 Log.e(TAG, "Dataset is not a Goal")
                 return Result.failure()
             }
 
-            // If the dataset is not found, return failure
-            Log.d(TAG, "Dataset found: $dataset")
-
             val nextDeadline = dataset.routine
                 .rescheduleDeadline(
-                    baseTime = dataset.routine.deadlineDateTime.toLocalDateTimeUtc()
+                    baseTime = dataset.routine.deadlineDateTime
+                        .toLocalDateTimeUtc()
                         .toJavaLocalDateTime()
                 )
                 .toKotlinLocalDateTime()
                 .toFirestoreTimestampUtc()
 
+            Log.d(TAG, "Next deadline: $nextDeadline")
+
             val progress = dataset.progressPercentage
-            val formatProgress = String.format(
-                Locale.getDefault(),
-                "%.1f",
-                progress
-            )
-
+            val formatProgress = String.format(Locale.getDefault(), "%.1f", progress)
             val currentStatus = dataset.status
-            Log.d(
-                TAG,
-                "Current status for ${dataset.label}: $currentStatus, progress: $formatProgress%"
-            )
 
-            // Complete the current routine: clear settlement list and add status
+            Log.d(TAG, "Current status: $currentStatus")
+            Log.d(TAG, "Progress: $formatProgress%")
+
             val now = Timestamp.now()
             val normalizedNow = if (dataset.routine.routine in listOf(
                     Routine.EveryDay,
@@ -98,15 +95,21 @@ class RoutineWorker @AssistedInject constructor(
                 now
             }
 
+            Log.d(TAG, "Normalized now: $normalizedNow")
+            Log.d(TAG, "Calling completeRoutine()...")
+
             dataStorage.completeRoutine(
                 userId = userId,
                 datasetId = datasetId,
                 financeType = financeType,
                 newDateTime = normalizedNow,
-                nextDeadline = nextDeadline
+                nextDeadline = nextDeadline,
             )
 
+            Log.d(TAG, "Returned from completeRoutine()")
+
             if (dataset.routine.routine != Routine.Nothing) {
+                Log.d(TAG, "Scheduling next worker...")
                 workers.startRoutineWorker(
                     WorkersTask(
                         userId = userId,
@@ -116,6 +119,7 @@ class RoutineWorker @AssistedInject constructor(
                         routineData = dataset.routine
                     )
                 )
+                Log.d(TAG, "Worker rescheduled")
 
                 if (currentStatus != Status.ACTIVE && currentStatus != Status.INITIAL) {
                     val isSuccessful = currentStatus in listOf(
@@ -124,35 +128,42 @@ class RoutineWorker @AssistedInject constructor(
                         Status.REFUNDED,
                         Status.SUCCESS
                     )
+
+                    Log.d(TAG, "Triggering notification... success=$isSuccessful")
+
                     notifier.showNotification(
                         NotificationItem(
                             title = dataset.label,
-                            // Short and clear summary
-                            message = if (isSuccessful) "Goal completed!"
-                            else "Deadline missed",
-
-                            // Detailed encouraging message
-                            bigMessage = if (isSuccessful)
-                                "Perfect! You've completed ${dataset.label} " +
-                                        "with ${formatProgress}%. Great job!"
-                            else
-                                "Sorry, you didn't finish ${dataset.label} (${formatProgress}%). " +
-                                        "Try to stay on track next time!",
-
+                            message = if (isSuccessful) "Goal completed!" else "Deadline missed",
+                            bigMessage = if (isSuccessful) {
+                                "Perfect! You've completed ${dataset.label} with ${formatProgress}%."
+                            } else {
+                                "You didn't finish ${dataset.label} (${formatProgress}%). " +
+                                        "Please try to complete it before the next deadline on " +
+                                        "${nextDeadline.toLocalDateTimeUtc().formatedDateTime}."
+                            },
                             icon = dataset.tagIcon.icon,
                             largeIcon = currentStatus.icon
                         )
                     )
+
+                    Log.d(TAG, "Notification sent")
+                } else {
+                    Log.d(TAG, "Notification skipped due to status: $currentStatus")
                 }
+            } else {
+                Log.d(TAG, "Routine is NOTHING -> skipping reschedule and notification")
             }
 
-            // Indicate that the work finished successfully
+            Log.d(TAG, "================ WORKER SUCCESS ================")
             Result.success()
+        } catch (e: CancellationException) {
+            Log.w(TAG, "Worker CANCELLED", e)
+            throw e
         } catch (e: FirebaseFirestoreException) {
             Log.e(TAG, "Firestore error in RoutineWorker", e)
             Result.retry()
         } catch (e: Exception) {
-            // Handle any exceptions that occur during the work
             Log.e(TAG, "Error in RoutineWorker", e)
             Result.failure()
         }

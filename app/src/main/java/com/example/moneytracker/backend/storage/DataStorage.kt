@@ -161,7 +161,7 @@ interface DataStorage {
         datasetId: String,
         financeType: String,
         newDateTime: Timestamp,
-        nextDeadline: Timestamp
+        nextDeadline: Timestamp,
     )
 
     /**

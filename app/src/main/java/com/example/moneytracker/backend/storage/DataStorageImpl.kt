@@ -16,11 +16,14 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
 import java.util.UUID
+import kotlin.coroutines.cancellation.CancellationException
 import kotlin.random.Random
 
 class DataStorageImpl(
@@ -468,9 +471,10 @@ class DataStorageImpl(
         datasetId: String,
         financeType: String,
         newDateTime: Timestamp,
-        nextDeadline: Timestamp
-    ) {
-        Log.d("DataStorageImpl", "completeRoutine (Offline-Safe) for $datasetId type=$financeType")
+        nextDeadline: Timestamp,
+    ) = withContext(Dispatchers.IO) {
+        Log.d("DataStorageImpl", "=== completeRoutine START ===")
+        Log.d("DataStorageImpl", "Inputs: userId=$userId datasetId=$datasetId type=$financeType")
 
         val docRef = db.collection(COLLECTION_NAME)
             .document(userId)
@@ -478,21 +482,41 @@ class DataStorageImpl(
             .document(datasetId)
 
         try {
-            // 1. Fetch parent document
+            Log.d("DataStorageImpl", "Fetching document...")
+
             val snapshot = try {
                 docRef.get().await()
             } catch (e: Exception) {
+                Log.e("DataStorageImpl", "Remote fetch failed, trying CACHE", e)
                 docRef.get(Source.CACHE).await()
             }
-            val baseFinance = snapshot.data?.toFinance() ?: return
 
-            // 2. Fetch settlements subcollection once
+            if (!snapshot.exists()) {
+                Log.e("DataStorageImpl", "Document does not exist for $datasetId")
+                return@withContext
+            }
+
+            val baseFinance = snapshot.data?.toFinance()
+            if (baseFinance == null) {
+                Log.e("DataStorageImpl", "toFinance() returned null for $datasetId")
+                return@withContext
+            }
+
+            Log.d("DataStorageImpl", "Parsed finance: $baseFinance")
+
+            Log.d("DataStorageImpl", "Fetching settlements...")
             val settlementsSnapshot = try {
                 docRef.collection("settlement").get().await()
             } catch (e: Exception) {
+                Log.e("DataStorageImpl", "Settlement remote fetch failed, trying CACHE", e)
                 docRef.collection("settlement").get(Source.CACHE).await()
             }
-            val settlements = settlementsSnapshot.documents.mapNotNull { it.data?.asSettlement() }
+
+            val settlements = settlementsSnapshot.documents.mapNotNull {
+                it.data?.asSettlement()
+            }
+
+            Log.d("DataStorageImpl", "Settlements count: ${settlements.size}")
 
             val finance = when (baseFinance) {
                 is FinanceEntity.Goal -> baseFinance.copy(settlement = settlements)
@@ -500,50 +524,71 @@ class DataStorageImpl(
                 else -> baseFinance
             }
 
-            // 3. Calculate status and total settlement amount
             val totalSettlementAmount = when (finance) {
                 is FinanceEntity.Goal -> finance.settlement.sumOf { it.amount }
                 is FinanceEntity.Liability -> finance.settlement.sumOf { it.amount }
                 is FinanceEntity.Transaction -> 0.0
             }
-            val isAchieved = totalSettlementAmount >= finance.amount
-            val status = if (isAchieved) Status.COMPLETED else Status.OVERDUE
 
-            // 4. Prepare updates in a Batch
+            val status = if (totalSettlementAmount >= finance.amount) {
+                Status.COMPLETED
+            } else {
+                Status.OVERDUE
+            }
+
+            Log.d("DataStorageImpl", "Total settlement: $totalSettlementAmount")
+            Log.d("DataStorageImpl", "Target amount: ${finance.amount}")
+            Log.d("DataStorageImpl", "Computed status: $status")
+
             val batch = db.batch()
 
-            // A. Create achievement entry
             val achievement = Achievement(
                 status = status.name,
                 totalSettlementAmount = totalSettlementAmount,
                 startDateTime = newDateTime,
                 deadlineDateTime = nextDeadline
             )
+
             val achievementId = UUID.randomUUID().toString()
             val achievementRef = docRef.collection("achievement").document(achievementId)
-            batch.set(achievementRef, achievement.achievementToMap)
 
-            // B. Update parent document timestamps
+            batch.set(achievementRef, achievement.achievementToMap)
+            Log.d("DataStorageImpl", "Achievement added: $achievementId")
+
             batch.update(
-                docRef, mapOf(
+                docRef,
+                mapOf(
                     "routineData.startDateTime" to newDateTime,
                     "routineData.deadlineDateTime" to nextDeadline,
                     "routineData.triggerMillis" to nextDeadline.toEpochMilli()
                 )
             )
+            Log.d("DataStorageImpl", "Parent document update prepared")
 
-            // C. Delete all settlements in the subcollection
             for (adjDoc in settlementsSnapshot.documents) {
+                Log.d("DataStorageImpl", "Deleting settlement: ${adjDoc.id}")
                 batch.delete(adjDoc.reference)
             }
 
-            // 5. Commit all changes atomically
-            batch.commit().await()
+            Log.d("DataStorageImpl", "Committing batch...")
 
-            Log.d("DataStorageImpl", "completeRoutine: Update successful for $datasetId")
-        } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Error in completeRoutine for $datasetId", e)
+            batch.commit()
+                .addOnSuccessListener {
+                    Log.d("DataStorageImpl", "✅ Batch success")
+                }
+                .addOnFailureListener {
+                    Log.e("DataStorageImpl", "❌ Batch failed", it)
+                }
+
+            Log.d("DataStorageImpl", "✅ completeRoutine SUCCESS for $datasetId")
+        } catch (e: CancellationException) {
+            Log.w("DataStorageImpl", "completeRoutine CANCELLED for $datasetId", e)
             throw e
+        } catch (e: Exception) {
+            Log.e("DataStorageImpl", "❌ completeRoutine FAILED for $datasetId", e)
+            throw e
+        } finally {
+            Log.d("DataStorageImpl", "=== completeRoutine END ===")
         }
     }
 

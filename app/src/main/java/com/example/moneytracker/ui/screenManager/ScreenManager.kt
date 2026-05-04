@@ -21,6 +21,7 @@ import com.example.moneytracker.ui.authScreens.registerScreen.NamesRegistrationS
 import com.example.moneytracker.ui.authScreens.registerScreen.PasswordRegistrationScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.RegisterViewModel
 import com.example.moneytracker.ui.components.LoadingScreen
+import com.example.moneytracker.ui.goalDetailScreen.GoalScreen
 import com.example.moneytracker.ui.homeScreen.HomeScreen
 import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.settings.SettingsScreen
@@ -97,6 +98,14 @@ fun ScreenManager(
                 onLoginClick = { navController.navigate(MailScreenRouter) },
                 navController = navController,
                 userId = account.currentUserId
+            )
+        }
+        composable<GoalScreenRouter> { backStackEntry ->
+            val arguments = backStackEntry.toRoute<GoalScreenRouter>()
+            val goalId = arguments.goalId
+            GoalScreen(
+                goalId = goalId,
+                navController = navController,
             )
         }
     }

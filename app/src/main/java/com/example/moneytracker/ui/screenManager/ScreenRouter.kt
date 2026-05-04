@@ -29,3 +29,7 @@ data class HomeScreenRouter(val userId: String)
 
 @Serializable
 object SettingsScreenRouter
+
+@Serializable
+data class GoalScreenRouter(val goalId: String)
+

@@ -948,3 +948,28 @@ infix fun Int.formatToTime(minutes: Int): String = String.format(
     "%02d:%02d",
     this, minutes
 )
+
+val LocalDateTime.formatedDateTime: String
+    get() {
+        val day = day.addZeroIfLessThenTen
+        val month = this.month.name.take(3).title
+        val year = this.year
+        val hour = this.hour.addZeroIfLessThenTen
+        val minute = this.minute.addZeroIfLessThenTen
+        return "$day $month $year, $hour:$minute"
+    }
+
+val LocalDateTime.formattedDate: String
+    get() {
+        val day = day.addZeroIfLessThenTen
+        val month = this.month.name.take(3).title
+        val year = this.year
+        return "$day $month $year"
+    }
+
+val LocalDateTime.formattedTime: String
+    get() {
+        val hour = this.hour.addZeroIfLessThenTen
+        val minute = this.minute.addZeroIfLessThenTen
+        return "$hour:$minute"
+    }

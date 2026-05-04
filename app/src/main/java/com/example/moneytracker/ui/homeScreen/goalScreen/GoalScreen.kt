@@ -2,6 +2,7 @@
 package com.example.moneytracker.ui.homeScreen.goalScreen
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -27,6 +28,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
@@ -38,6 +40,7 @@ import com.example.moneytracker.ui.components.charts.DonutChart
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.HomeUiState
+import com.example.moneytracker.ui.screenManager.GoalScreenRouter
 
 @Composable
 fun GoalCard(
@@ -230,6 +233,7 @@ fun GoalCard(
 
 @Composable
 fun GoalScreen(
+    onNavigate: NavController?,
     paddingValues: PaddingValues,
     goalFinanceEntityList: List<FinanceEntity.Goal>,
     uiState: HomeUiState,
@@ -268,6 +272,11 @@ fun GoalScreen(
                                     colorResource(id = goal.colorRes)
                                         .copy(alpha = 0.1f)
                                 )
+                                .clickable {
+                                    onNavigate?.navigate(
+                                        GoalScreenRouter(goalId = goal.id),
+                                    )
+                                }
                         )
                     }
                 }
