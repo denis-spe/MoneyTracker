@@ -1,5 +1,5 @@
 // Bless be the  names of LORD of hosts and of his JESUS CHRIST
-package com.example.moneytracker.ui.goalDetailScreen
+package com.example.moneytracker.ui.fulfillmentDetailScreen
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -23,7 +23,7 @@ fun GoalScreen(
     goalId: String,
     navController: NavHostController
 ) {
-    hiltViewModel<GoalDetailViewModel>()
+    hiltViewModel<FulfillmentDetailViewModel>()
 
     Scaffold(
         topBar = {

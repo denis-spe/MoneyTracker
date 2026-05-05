@@ -125,9 +125,9 @@ class HomeViewModel @Inject constructor(
         .onStart { loadYesterdayDatasets() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
-    val goalFinanceEntity = datasetsFlow
-        .map { it.filterIsInstance<FinanceEntity.Goal>() }
-        .onStart { loadGoalData() }
+    val fulfillmentFinanceEntity = datasetsFlow
+        .map { it.filter { entity -> entity is FinanceEntity.Goal || entity is FinanceEntity.Liability } }
+        .onStart { loadFulfillmentData() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
     val adjustFinance = datasetsFlow
@@ -254,12 +254,15 @@ class HomeViewModel @Inject constructor(
         _uiState.update { it.copy(isYesterdayDataLoading = false) }
     }
 
-    fun loadGoalData() = viewModelScope.launch {
+    fun loadFulfillmentData() = viewModelScope.launch {
         val uid = accountService.userState.value?.uid ?: return@launch
         _uiState.update { it.copy(isGoalDataLoading = true) }
         financeOperationsUseCase.filterFinances(
             userId = uid,
-            filter = Filter.equalTo("financeType", "GOAL")
+            filter = Filter.or(
+                Filter.equalTo("financeType", "GOAL"),
+                Filter.equalTo("financeType", "LIABILITY")
+            )
         )
         _uiState.update { it.copy(isGoalDataLoading = false) }
     }

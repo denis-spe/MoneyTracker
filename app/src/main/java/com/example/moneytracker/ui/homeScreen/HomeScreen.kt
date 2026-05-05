@@ -36,7 +36,7 @@ import com.example.moneytracker.ui.components.LoadingScreen
 import com.example.moneytracker.ui.homeScreen.allScreen.AllScreen
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
-import com.example.moneytracker.ui.homeScreen.goalScreen.GoalScreen
+import com.example.moneytracker.ui.homeScreen.fulfillmentScreen.FulfillmentScreen
 import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
 import com.example.moneytracker.ui.homeScreen.topAppAction.TopAppAction
 import com.example.moneytracker.ui.homeScreen.topAppNavigation.DropDownUserProfile
@@ -91,7 +91,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
     val yesterdayFinance by homeViewModel.yesterdayFinance.collectAsStateWithLifecycle()
     val yesterdayChartData by homeViewModel.yesterdayChartData.collectAsStateWithLifecycle()
     val sortAbleDataSettlement by homeViewModel.sortedYesterday.collectAsStateWithLifecycle()
-    val goalFinance by homeViewModel.goalFinanceEntity.collectAsStateWithLifecycle()
+    val fulfillmentFinanceEntity by homeViewModel.fulfillmentFinanceEntity.collectAsStateWithLifecycle()
     val settlementFinance by homeViewModel.adjustFinance.collectAsStateWithLifecycle()
     val yesterdayStats by homeViewModel.yesterdayStats.collectAsStateWithLifecycle()
 
@@ -187,10 +187,10 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                     key = { it }
                 ) { page ->
                     when (page) {
-                        0 -> GoalScreen(
+                        0 -> FulfillmentScreen(
                             onNavigate = onNavigate,
                             paddingValues = paddingValues,
-                            goalFinanceEntityList = goalFinance,
+                            fulfillmentFinanceEntityList = fulfillmentFinanceEntity,
                             uiState = uiState,
                             isGoalDataLoading = uiState.isGoalDataLoading
                         )

@@ -4,7 +4,7 @@
 package com.example.moneytracker.ui.homeScreen.topAppTitle
 
 enum class TopBarNav(val text: String) {
-    GOAL("Goal"),
+    GOAL("Fulfillment"),
     TODAY("Today"),
     YESTERDAY("Yesterday"),
     ALL("All"),

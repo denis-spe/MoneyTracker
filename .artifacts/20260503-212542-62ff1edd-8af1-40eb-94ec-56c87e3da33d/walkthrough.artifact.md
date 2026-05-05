@@ -1,29 +1,24 @@
-# Walkthrough - Improved Logging and Exception Handling in RoutineWorker
+# Walkthrough - Routine Worker Fixes and Fulfillment Data Update
 
-I have fixed the issue where the "Rescheduled next routine" log was missing and improved the visibility of errors in `RoutineWorker`.
+I have implemented several improvements to the routine worker system and expanded the fulfillment data loading to include more types.
 
-## Problem 1: Silent Failures in DataStorage
-The `DataStorageImpl.completeRoutine` method was using `return@withContext` when it couldn't find a document. This caused the method to exit silently without finishing the routine completion logic, which in turn prevented `RoutineWorker` from reaching the rescheduling and logging steps.
+## 1. Routine Worker & Notification Fixes
+- **Problem**: Notifications were often skipped due to strict status checks, and the worker was failing with `JobCancellationException` before rescheduling the next cycle.
+- **Solution**:
+    - **Always Notify**: `RoutineWorker` now triggers notifications based on `progressPercentage` instead of a time-dependent status, ensuring they show up exactly at the deadline.
+    - **NonCancellable Operations**: Critical database updates and rescheduling are now wrapped in `withContext(NonCancellable)`, guaranteeing that once a cycle starts finishing, it always enqueues the next one and notifies the user.
+    - **Consolidated Logic**: The rescheduling and notification logic has been moved from `RoutineWorker` into `DataStorageImpl.completeRoutine` to ensure atomicity and reliability.
+    - **Improved Logging**: Added full stack traces to worker error logs and eliminated silent returns in data operations.
+    - **Data Integrity**: Ensured `triggerMillis` is always stored as a `Long` in Firestore.
 
-### Solution
-I updated [DataStorageImpl.kt](file:///mnt/b44e42b9-497a-47b6-9d82-210124fd3ab8/Programming/android/kotlin/MoneyTracker/app/src/main/java/com/example/moneytracker/backend/storage/DataStorageImpl.kt) to throw an explicit `Exception` if a document is missing. This ensures that `RoutineWorker` is notified of the failure and can log it appropriately.
-
-## Problem 2: Hidden Exception Details
-`RoutineWorker` was logging that an error occurred, but it wasn't always providing the full stack trace or the specific cause (like `JobCancellationException`), making it difficult to debug intermittent failures.
-
-### Solution
-I updated the catch block in [RoutineWorker.kt](file:///mnt/b44e42b9-497a-47b6-9d82-210124fd3ab8/Programming/android/kotlin/MoneyTracker/app/src/main/java/com/example/moneytracker/backend/workers/RoutineWorker.kt) to explicitly include the exception message and the throwable object in `Log.e`. This will now print the full stack trace in Logcat.
-
-## Key Changes
-- Modified `completeRoutine` and `addStatus` in [DataStorageImpl.kt](file:///mnt/b44e42b9-497a-47b6-9d82-210124fd3ab8/Programming/android/kotlin/MoneyTracker/app/src/main/java/com/example/moneytracker/backend/storage/DataStorageImpl.kt) to throw `Exception` instead of returning silently.
-- Ensured these methods correctly return `Unit` by using block bodies.
-- Enhanced error logging in [RoutineWorker.kt](file:///mnt/b44e42b9-497a-47b6-9d82-210124fd3ab8/Programming/android/kotlin/MoneyTracker/app/src/main/java/com/example/moneytracker/backend/workers/RoutineWorker.kt).
+## 2. Fulfillment Data Update
+- **Goal**: Update the app to load and display Goals, Debts, and Loans (Lent) together.
+- **Changes**:
+    - **Renamed Loading**: `loadGoalData` was renamed to `loadFulfillmentData` in [HomeViewModel.kt](file:///mnt/b44e42b9-497a-47b6-9d82-210124fd3ab8/Programming/android/kotlin/MoneyTracker/app/src/main/java/com/example/moneytracker/ui/homeScreen/HomeViewModel.kt).
+    - **Updated Filters**: The query now filters for both `GOAL` and `LIABILITY` (which covers both Debts and Loans) finance types.
+    - **Generic UI**: Updated [FulfillmentScreen.kt](file:///mnt/b44e42b9-497a-47b6-9d82-210124fd3ab8/Programming/android/kotlin/MoneyTracker/app/src/main/java/com/example/moneytracker/ui/homeScreen/fulfillmentScreen/FulfillmentScreen.kt) to accept the generic `FinanceEntity` type, allowing it to display different item types in the same list.
 
 ## Verification Results
-
-### Automated Tests
-- Ran `:app:assembleDebug` and it finished successfully.
-
-### Manual Verification
-1. **Monitor Logcat**: When a routine runs, if it fails, you should now see a detailed error message like `Error in RoutineWorker: Document not found for ...` followed by a full stack trace.
-2. **Success Path**: If the routine completes successfully, you should now consistently see the `Rescheduled next routine for ...` log.
+- **Build**: `:app:assembleDebug` finished successfully.
+- **Logcat**: Success logs like `completeRoutine: Update successful` and `Rescheduled next routine for...` now appear consistently in sequence.
+- **UI**: The "Fulfillment" tab now correctly displays combined data from Goals and Liabilities.

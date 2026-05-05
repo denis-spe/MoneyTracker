@@ -1,18 +1,18 @@
 // Bless be the name of the LORD of hosts
-package com.example.moneytracker.ui.homeScreen.goalScreen
+package com.example.moneytracker.ui.homeScreen.fulfillmentScreen
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -40,7 +40,7 @@ import com.example.moneytracker.ui.components.charts.DonutChart
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.screenManager.GoalScreenRouter
+import com.example.moneytracker.ui.screenManager.FulfillmentDetailScreenRouter
 
 @Composable
 fun GoalCard(
@@ -232,10 +232,10 @@ fun GoalCard(
 }
 
 @Composable
-fun GoalScreen(
+fun FulfillmentScreen(
     onNavigate: NavController?,
     paddingValues: PaddingValues,
-    goalFinanceEntityList: List<FinanceEntity.Goal>,
+    fulfillmentFinanceEntityList: List<FinanceEntity>,
     uiState: HomeUiState,
     isGoalDataLoading: Boolean
 ) {
@@ -254,33 +254,53 @@ fun GoalScreen(
             ) {
                 item { Spacer(modifier = Modifier.size(10.dp)) }
 
-                goalFinanceEntityList.groupBy { it.status }.forEach { statusGroup ->
+                fulfillmentFinanceEntityList.groupBy { it.financeType }.forEach { finance ->
                     stickyHeader {
-                        Text(
-                            text = statusGroup.key.name.title,
-                            style = typography.titleMedium,
-                        )
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(start = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${finance.key.text} Fulfillment",
+                                style = typography.titleMedium,
+                            )
+                        }
                     }
 
-                    items(statusGroup.value) { goal ->
-                        GoalCard(
-                            financeEntityGoal = goal,
+                    item {
+                        val goals = finance.value.filterIsInstance<FinanceEntity.Goal>()
+                        Column(
                             modifier = Modifier
-                                .padding(top = 10.dp, start = 10.dp, end = 10.dp)
                                 .clip(RoundedCornerShape(10))
-                                .background(
-                                    colorResource(id = goal.colorRes)
-                                        .copy(alpha = 0.1f)
+                                .padding(5.dp)
+                                .background(Color.Gray.copy(alpha = 0.05f)),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            goals.forEach { goal ->
+                                GoalCard(
+                                    financeEntityGoal = goal,
+                                    modifier = Modifier
+                                        .padding(10.dp)
+                                        .clip(RoundedCornerShape(10))
+                                        .background(
+                                            colorResource(id = goal.colorRes)
+                                                .copy(alpha = 0.1f)
+                                        )
+                                        .clickable {
+                                            onNavigate?.navigate(
+                                                FulfillmentDetailScreenRouter(goalId = goal.id),
+                                            )
+                                        }
                                 )
-                                .clickable {
-                                    onNavigate?.navigate(
-                                        GoalScreenRouter(goalId = goal.id),
-                                    )
-                                }
-                        )
+                            }
+                        }
                     }
+
+                    item { Spacer(modifier = Modifier.size(10.dp)) }
                 }
-                item { Spacer(modifier = Modifier.size(10.dp)) }
             }
         } else {
             GoalScreenShimmer()
