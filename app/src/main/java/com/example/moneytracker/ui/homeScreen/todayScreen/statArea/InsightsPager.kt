@@ -4,6 +4,7 @@ package com.example.moneytracker.ui.homeScreen.todayScreen.statArea
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -45,7 +46,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
@@ -56,6 +59,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.ui.components.charts.InsightBar
 import kotlinx.coroutines.launch
@@ -66,6 +70,7 @@ import kotlinx.coroutines.launch
 fun Insights(
     modifier: Modifier = Modifier,
     label: String,
+    icon: Painter? = null,
     richTooltipSubheadText: String = "",
     richTooltipActionText: String = "Close",
     firstFinancial: Double,
@@ -145,12 +150,26 @@ fun Insights(
             state = tooltipState
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Text(
-                    text = label,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    textAlign = TextAlign.Center
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    icon?.let {
+                        Image(
+                            painter = it,
+                            contentDescription = null,
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(end = 4.dp)
+                        )
+                    }
+                    Text(
+                        text = label,
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        textAlign = TextAlign.Center
+                    )
+                }
                 InsightBar(
                     percentage.toFloat(),
                     modifier = Modifier
@@ -482,12 +501,12 @@ fun InsightsPager(
 
 
 @Composable
-fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
-    val goals = remember(financeEntityList) {
-        financeEntityList.filterIsInstance<FinanceEntity.Goal>()
+fun FulfillmentInsightPager(financeEntityList: List<FinanceEntity>) {
+    val items = remember(financeEntityList) {
+        financeEntityList.filter { it is FinanceEntity.Goal || it is FinanceEntity.Liability }
     }
 
-    if (goals.isEmpty()) {
+    if (items.isEmpty()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -495,14 +514,14 @@ fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
             contentAlignment = Alignment.Center
         ) {
             Insights(
-                label = "No Goal",
+                label = "No Active Items",
                 firstFinancial = 0.0,
                 secondFinancial = 0.0,
                 colorResId = R.color.Attain,
                 barColorResId = R.color.Attain,
                 builder = {
                     buildAnnotatedString {
-                        append("No goal has been set so far")
+                        append("No goals or liabilities set so far")
                     }
                 }
             )
@@ -510,7 +529,7 @@ fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
         return
     }
 
-    val pagerState = rememberPagerState(pageCount = { goals.size })
+    val pagerState = rememberPagerState(pageCount = { items.size })
 
     Column(
         modifier = Modifier.fillMaxWidth(),
@@ -522,10 +541,40 @@ fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
             modifier = Modifier
                 .fillMaxWidth()
                 .heightIn(min = 100.dp),
-            key = { goals[it].id }
+            key = { items[it].id }
         ) { pageIndex ->
-            val goal = goals[pageIndex]
-            val score = goal.settlement.sumOf { it.amount }
+            val item = items[pageIndex]
+            val score = when (item) {
+                is FinanceEntity.Goal -> item.settlement.sumOf { it.amount }
+                is FinanceEntity.Liability -> item.settlement.sumOf { it.amount }
+                else -> 0.0
+            }
+            val icon = painterResource(item.tagIcon.icon)
+
+            val label = when (item) {
+                is FinanceEntity.Goal -> item.label.ifEmpty { "Goal" }
+                is FinanceEntity.Liability -> {
+                    val typeText = when (item.liabilityType) {
+                        LiabilityType.DEBT -> "Debt from"
+                        LiabilityType.LOAN -> "Lent to"
+                    }
+                    "$typeText ${item.label}"
+                }
+
+                else -> "Item"
+            }
+
+            val progressColor = when (item) {
+                is FinanceEntity.Goal -> R.color.Attain
+                is FinanceEntity.Liability -> if (item.liabilityType == LiabilityType.DEBT) R.color.RepayDebt else R.color.RepayLoan
+                else -> R.color.teal_200
+            }
+
+            val barColor = when (item) {
+                is FinanceEntity.Goal -> R.color.Goal
+                is FinanceEntity.Liability -> item.colorRes
+                else -> R.color.gray
+            }
 
             Column(
                 modifier = Modifier.fillMaxSize(),
@@ -533,26 +582,45 @@ fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
                 verticalArrangement = Arrangement.Center
             ) {
                 Insights(
-                    label = goal.label.ifEmpty { "No goal for today" },
-                    firstFinancial = goal.amount,
+                    label = label,
+                    icon = icon,
+                    firstFinancial = item.amount,
                     secondFinancial = score,
-                    colorResId = R.color.Attain,
-                    barColorResId = R.color.Goal,
+                    colorResId = progressColor,
+                    barColorResId = barColor,
                     builder = {
-                        val remaining = goal.amount - score
+                        val remaining = item.amount - score
                         val now = System.currentTimeMillis()
-                        val deadline = goal.routine.deadlineDateTime.toDate().time
+                        val deadline = if (item is FinanceEntity.Goal) {
+                            item.routine.deadlineDateTime.toDate().time
+                        } else {
+                            0L
+                        }
                         val diffMillis = deadline - now
 
                         buildAnnotatedString {
                             when {
-                                score >= goal.amount && goal.amount > 0 -> append("Goal Achieved!")
-                                goal.amount > 0 -> {
+                                score >= item.amount && item.amount > 0 -> {
+                                    val successText = when (item) {
+                                        is FinanceEntity.Goal -> "Goal Achieved!"
+                                        is FinanceEntity.Liability -> if (item.liabilityType == LiabilityType.DEBT) "Debt Paid!" else "Loan Refunded!"
+                                        else -> "Completed!"
+                                    }
+                                    append(successText)
+                                }
+
+                                item.amount > 0 -> {
                                     withStyle(style = SpanStyle(fontWeight = FontWeight.Bold)) {
                                         append(remaining.formatToAmount())
                                     }
-                                    append(" more to go\n")
-                                    if (diffMillis > 0) {
+                                    val actionText = when (item) {
+                                        is FinanceEntity.Goal -> " more to go\n"
+                                        is FinanceEntity.Liability -> if (item.liabilityType == LiabilityType.DEBT) " remaining to pay\n" else " remaining to be refunded\n"
+                                        else -> " left\n"
+                                    }
+                                    append(actionText)
+
+                                    if (item is FinanceEntity.Goal && diffMillis > 0) {
                                         val minute = 60 * 1000L
                                         val hour = 60 * minute
                                         val day = 24 * hour
@@ -579,7 +647,7 @@ fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
                                     }
                                 }
 
-                                else -> append("Invalid goal amount")
+                                else -> append("Invalid amount")
                             }
                         }
                     }
@@ -587,15 +655,17 @@ fun GoalInsightPager(financeEntityList: List<FinanceEntity>) {
             }
         }
 
-        if (goals.size > 1) {
+        if (items.size > 1) {
             Spacer(modifier = Modifier.height(8.dp))
             Row(
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                repeat(goals.size) { iteration ->
-                    val color =
-                        if (pagerState.currentPage == iteration) R.color.Goal else R.color.gray
+                repeat(items.size) { iteration ->
+                    val isGoal = items[iteration] is FinanceEntity.Goal
+                    val color = if (pagerState.currentPage == iteration) {
+                        if (isGoal) R.color.Goal else R.color.teal_200
+                    } else R.color.gray
                     Box(
                         modifier = Modifier
                             .padding(2.dp)

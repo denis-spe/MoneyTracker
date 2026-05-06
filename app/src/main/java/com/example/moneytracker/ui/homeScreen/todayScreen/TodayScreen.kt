@@ -34,6 +34,7 @@ fun TodayScreen(
     donutChartDataCollection: List<DonutChartData>,
     uiState: HomeUiState,
     todayFinanceEntityList: List<FinanceEntity>,
+    fulfillmentFinanceEntityList: List<FinanceEntity>,
     homeViewModel: HomeViewModel,
     isTodayDataLoading: Boolean,
     isTodayChartDataLoading: Boolean,
@@ -70,7 +71,8 @@ fun TodayScreen(
                         donutChartDataCollection = DonutChartDataCollection(
                             donutChartDataCollection
                         ),
-                        financeEntityList = todayFinanceEntityList
+                        todayFinanceEntityList = todayFinanceEntityList,
+                        fulfillmentFinanceEntityList = fulfillmentFinanceEntityList
                     )
                 } else {
                     StatAreaShimmer(
@@ -82,22 +84,15 @@ fun TodayScreen(
                 }
             }
 
-            if (!isSortedTodayLoading) {
-                ItemListArea(
-                    modifier = Modifier
-                        .fillMaxHeight(1f)
-                        .fillMaxWidth(0.85f),
-                    uiState = uiState,
-                    viewModel = homeViewModel,
-                    datasetWithAdjust = datasetWithAdjust
-                )
-            } else {
-                ItemListAreaShimmer(
-                    modifier = Modifier
-                        .fillMaxHeight(1f)
-                        .fillMaxWidth(0.85f)
-                )
-            }
+            ItemListArea(
+                modifier = Modifier
+                    .fillMaxHeight(1f)
+                    .fillMaxWidth(0.85f),
+                uiState = uiState,
+                viewModel = homeViewModel,
+                datasetWithAdjust = datasetWithAdjust,
+                isLoading = isSortedTodayLoading
+            )
         }
     }
 }

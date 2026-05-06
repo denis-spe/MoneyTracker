@@ -14,6 +14,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -77,6 +78,7 @@ import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
+import com.example.moneytracker.ui.homeScreen.todayScreen.ItemCardShimmer
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
 private val spacerWith = 14.dp
@@ -728,7 +730,8 @@ fun ItemListArea(
     modifier: Modifier = Modifier,
     uiState: HomeUiState,
     datasetWithAdjust: List<DataSettlement>,
-    viewModel: HomeViewModel
+    viewModel: HomeViewModel,
+    isLoading: Boolean = false
 ) {
 
     Column(
@@ -746,24 +749,30 @@ fun ItemListArea(
         )
 
 
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            items(datasetWithAdjust.size, key = { it }) { index ->
-                Row(
-                    modifier = Modifier.animateItem(
-                        fadeInSpec = spring(
-                            dampingRatio = Spring.DampingRatioHighBouncy,
-                            stiffness = Spring.StiffnessMediumLow
+            if (isLoading && datasetWithAdjust.isEmpty()) {
+                items(count = 5) {
+                    ItemCardShimmer()
+                    Spacer(modifier = Modifier.padding(bottom = 10.dp))
+                }
+            } else {
+                items(datasetWithAdjust.size, key = { it }) { index ->
+                    Row(
+                        modifier = Modifier.animateItem(
+                            fadeInSpec = spring(
+                                dampingRatio = Spring.DampingRatioHighBouncy,
+                                stiffness = Spring.StiffnessMediumLow
+                            )
+                        ),
+                    ) {
+                        ItemCard(
+                            modifier = Modifier.animateItem(),
+                            dataSettlement = datasetWithAdjust[index]
                         )
-                    ),
-                ) {
-                    ItemCard(
-                        modifier = Modifier.animateItem(),
-                        dataSettlement = datasetWithAdjust[index]
-                    )
+                    }
                 }
             }
         }

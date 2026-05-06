@@ -44,7 +44,7 @@ class GetTodayChartDonutDataUseCase @Inject constructor() {
 
             val title = when (firstItem) {
                 is DataSettlement.SettlementData -> firstItem.financeEntity.categoryText
-                is DataSettlement.SettlementAdjust -> firstItem.settlement.settlementType.text
+                is DataSettlement.SettlementAdjust -> firstItem.settlement.settlementType.name
             }
 
             val amount = list.sumOf {

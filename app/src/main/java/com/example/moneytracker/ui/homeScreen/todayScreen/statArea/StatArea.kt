@@ -155,7 +155,8 @@ fun DonutChartPager(
                     when (item.title) {
                         "Earnings",
                         "Debt",
-                        "Loan Refund" -> (incoming + item.amount) to outgoing
+                        "Loan Refund",
+                            -> (incoming + item.amount) to outgoing
 
                         "Expense",
                         "Lent",
@@ -198,7 +199,8 @@ fun DonutChartPager(
 fun StatArea(
     modifier: Modifier = Modifier,
     donutChartDataCollection: DonutChartDataCollection,
-    financeEntityList: List<FinanceEntity>,
+    todayFinanceEntityList: List<FinanceEntity>,
+    fulfillmentFinanceEntityList: List<FinanceEntity>,
 ) {
     val items = listOf(
         PagerItem(
@@ -275,7 +277,7 @@ fun StatArea(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                GoalInsightPager(financeEntityList)
+                FulfillmentInsightPager(fulfillmentFinanceEntityList)
             }
         }
 

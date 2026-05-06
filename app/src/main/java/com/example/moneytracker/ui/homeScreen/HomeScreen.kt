@@ -200,6 +200,7 @@ fun HomeScreen(onNavigate: NavController? = null, userId: String) {
                             donutChartDataCollection = donutChartData,
                             uiState = uiState,
                             todayFinanceEntityList = todayFinance,
+                            fulfillmentFinanceEntityList = fulfillmentFinanceEntity,
                             homeViewModel = homeViewModel,
                             isTodayDataLoading = uiState.isTodayDataLoading,
                             isTodayChartDataLoading = uiState.isTodayChartDataLoading,

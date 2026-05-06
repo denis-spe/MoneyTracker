@@ -63,16 +63,11 @@ fun YesterdayScreen(
 
             Spacer(modifier = Modifier.weight(0.05f))
 
-            if (!isSortedYesterdayLoading) {
-                YesterdayItems(
-                    modifier = Modifier.weight(0.6f),
-                    dataSettlement = sortAbleDataSettlement
-                )
-            } else {
-                YesterdayItemsShimmer(
-                    modifier = Modifier.weight(0.6f)
-                )
-            }
+            YesterdayItems(
+                modifier = Modifier.weight(0.6f),
+                dataSettlement = sortAbleDataSettlement,
+                isLoading = isSortedYesterdayLoading
+            )
         }
     }
 }

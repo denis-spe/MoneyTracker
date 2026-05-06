@@ -246,14 +246,18 @@ fun FulfillmentScreen(
             .padding(horizontal = 10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        if (!isGoalDataLoading) {
-            LazyColumn(
-                modifier = Modifier
-                    .clip(RoundedCornerShape(10)),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                item { Spacer(modifier = Modifier.size(10.dp)) }
+        LazyColumn(
+            modifier = Modifier
+                .clip(RoundedCornerShape(10)),
+            horizontalAlignment = Alignment.CenterHorizontally,
+        ) {
+            item { Spacer(modifier = Modifier.size(10.dp)) }
 
+            if (isGoalDataLoading && fulfillmentFinanceEntityList.isEmpty()) {
+                items(5) {
+                    GoalCardShimmer(modifier = Modifier.padding(10.dp))
+                }
+            } else {
                 fulfillmentFinanceEntityList.groupBy { it.financeType }.forEach { finance ->
                     stickyHeader {
                         Row(
@@ -302,10 +306,7 @@ fun FulfillmentScreen(
                     item { Spacer(modifier = Modifier.size(10.dp)) }
                 }
             }
-        } else {
-            GoalScreenShimmer()
         }
-
     }
 }
 

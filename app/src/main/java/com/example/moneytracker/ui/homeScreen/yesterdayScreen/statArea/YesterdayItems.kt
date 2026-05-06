@@ -35,6 +35,7 @@ import com.example.moneytracker.helper.outlinedIcon
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
+import com.example.moneytracker.ui.homeScreen.todayScreen.ItemCardShimmer
 
 private val ICON_SIZE = 20.dp
 private val TIME_FONT_SIZE = 13.sp
@@ -215,7 +216,8 @@ fun YesterdayItem(dataSettlement: DataSettlement) {
 @Composable
 fun YesterdayItems(
     modifier: Modifier = Modifier,
-    dataSettlement: List<DataSettlement>
+    dataSettlement: List<DataSettlement>,
+    isLoading: Boolean = false
 ) {
     Column(
         modifier = modifier
@@ -242,9 +244,16 @@ fun YesterdayItems(
             item {
                 Spacer(modifier = Modifier.heightIn(10.dp))
             }
-            items(dataSettlement.size) {
-                val dataItem = dataSettlement[it]
-                YesterdayItem(dataItem)
+            if (isLoading && dataSettlement.isEmpty()) {
+                items(count = 5) {
+                    ItemCardShimmer()
+                    Spacer(modifier = Modifier.padding(bottom = 10.dp))
+                }
+            } else {
+                items(dataSettlement.size) {
+                    val dataItem = dataSettlement[it]
+                    YesterdayItem(dataItem)
+                }
             }
         }
     }
