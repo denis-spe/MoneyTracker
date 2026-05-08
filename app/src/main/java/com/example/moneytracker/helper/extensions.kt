@@ -98,7 +98,15 @@ fun Modifier.shimmerEffect(
     size: Dp? = null
 ): Modifier = composed {
     val density = LocalDensity.current
-    var componentSize by remember { mutableStateOf(IntSize.Zero) }
+
+    // Use provided width/height/size as initial guess if available
+    val initialWidth = with(density) { (width ?: size)?.toPx() ?: 0f }
+    val initialHeight = with(density) { (height ?: size)?.toPx() ?: 0f }
+
+    var componentSize by remember {
+        mutableStateOf(IntSize(initialWidth.toInt(), initialHeight.toInt()))
+    }
+
     val transition = rememberInfiniteTransition(label = "shimmer")
 
     val startOffsetX by transition.animateFloat(
@@ -142,6 +150,7 @@ fun Modifier.shimmerEffect(
 
     modifier
         .clip(shape)
+        .background(Color.LightGray.copy(alpha = 0.2f)) // Base color for immediate visibility
         .background(
             brush = Brush.linearGradient(
                 colors = listOf(

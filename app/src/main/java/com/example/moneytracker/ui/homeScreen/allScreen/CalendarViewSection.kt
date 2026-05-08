@@ -23,7 +23,7 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,8 +39,10 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.helper.getWeeks
 import com.example.moneytracker.helper.title
+import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import kotlinx.coroutines.flow.map
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
@@ -52,20 +54,22 @@ fun CalendarViewSection(
     updateWeek: (dates: List<kotlinx.datetime.LocalDate>) -> Unit,
     viewModel: HomeViewModel
 ) {
-    val uiState = viewModel.uiState.collectAsState()
     val now = kotlinx.datetime.LocalDate.now()
     val currentWeek by viewModel.currentWeekDerived.collectAsStateWithLifecycle()
     val fontSizeMonthDay = 13.sp
     val date by viewModel.currentDateDerived.collectAsStateWithLifecycle()
+    val activityCounts by viewModel.activityCounts.collectAsStateWithLifecycle()
 
-    val month = date.month.name.title
-    val year = date.year.toString()
-    val weekNumber = date.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR)
-    val selectedTabIndex = uiState.value.selectedTabIndex
+    val month = remember(date) { date.month.name.title }
+    val year = remember(date) { date.year.toString() }
+    val weekNumber =
+        remember(date) { date.toJavaLocalDate().get(IsoFields.WEEK_OF_WEEK_BASED_YEAR) }
+    val selectedTabIndex by remember(viewModel.uiState) {
+        viewModel.uiState.map { it.selectedTabIndex }
+    }.collectAsStateWithLifecycle(1)
     var selectedDate by remember { mutableStateOf(date) }
     val selectedColor = MoneyTrackerTheme.colors.themeColor
     val contentColor = MoneyTrackerTheme.colors.contentColor
-
 
 
     // Change the tab index to week on page swipe
@@ -179,7 +183,7 @@ fun CalendarViewSection(
 
                             BadgedBox(
                                 badge = {
-                                    val lenOfAct = viewModel.getLenOfActivates(date)
+                                    val lenOfAct = activityCounts[date] ?: 0
                                     if (lenOfAct > 0) {
                                         Badge(
                                             containerColor = selectedColor,
@@ -237,17 +241,17 @@ fun GroupedWeeks(
     weekView: @Composable (week: List<kotlinx.datetime.LocalDate>) -> Unit
 ) {
 
-    val currentDate = LocalDate.now()
-    val localDateList = remember {
+    val localDateList = remember(weeksBefore, weeksAfter) {
+        val currentDate = LocalDate.now()
         getWeeks(anchorDate = currentDate, weeksBefore, weeksAfter)
     }
 
-    val getIndexOfCurrentWeek = remember(localDateList) {
-        localDateList.indexOfFirst { it.contains(currentDate) }
+    val initialIndex = remember(localDateList) {
+        val currentDate = LocalDate.now()
+        localDateList.indexOfFirst { it.contains(currentDate) }.coerceAtLeast(0)
     }
 
-
-    val pageState = rememberPagerState(initialPage = getIndexOfCurrentWeek) { localDateList.size }
+    val pageState = rememberPagerState(initialPage = initialIndex) { localDateList.size }
 
     LaunchedEffect(pageState.currentPage) {
         viewModel.updateCurrentWeek(localDateList[pageState.currentPage].map { it.toKotlinLocalDate() })
@@ -259,11 +263,13 @@ fun GroupedWeeks(
         modifier = modifier,
         key = { localDateList[it] }
     ) {
-        val week = localDateList[it].map { weekValue -> weekValue.toKotlinLocalDate() }
+        val week = remember(it, localDateList) {
+            localDateList[it].map { weekValue -> weekValue.toKotlinLocalDate() }
+        }
         weekView(week)
     }
 
-    moveTo(getIndexOfCurrentWeek, pageState)
+    moveTo(initialIndex, pageState)
 }
 
 

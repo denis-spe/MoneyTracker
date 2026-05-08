@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.helper.isForToday
+import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.SortType
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
 import com.example.moneytracker.ui.usecase.FinanceOperationsUseCase
@@ -35,6 +37,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -190,6 +193,28 @@ class HomeViewModel @Inject constructor(
         .map { getCurrentWeekUseCase(it) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
+    val activityCounts = datasetsFlow
+        .map { datasets ->
+            withContext(Dispatchers.Default) {
+                val counts = mutableMapOf<LocalDate, Int>()
+                datasets.forEach { entity ->
+                    val date = entity.createdAt.toLocalDateTimeUtc().date
+                    counts[date] = (counts[date] ?: 0) + 1
+                    val settlements = when (entity) {
+                        is FinanceEntity.Goal -> entity.settlement
+                        is FinanceEntity.Liability -> entity.settlement
+                        else -> emptyList()
+                    }
+                    settlements.forEach { s ->
+                        val sDate = s.dateTime.toLocalDateTimeUtc().date
+                        counts[sDate] = (counts[sDate] ?: 0) + 1
+                    }
+                }
+                counts
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyMap())
+
     val currentDateDerived = combine(currentWeekFlow, uiState.map { it.date }) { week, date ->
         getCurrentDateUseCase(week, date)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), LocalDate.now())
@@ -212,7 +237,8 @@ class HomeViewModel @Inject constructor(
                         datasets = homeData.datasets,
                         info = homeData.info,
                         error = homeData.error,
-                        datasetState = homeData.datasetState
+                        datasetState = homeData.datasetState,
+                        isWeeklyDataLoading = homeData.datasetState is DatasetState.Loading
                     )
                 }
             }
@@ -401,7 +427,4 @@ class HomeViewModel @Inject constructor(
 
     fun removeSettlementFinance(financeId: String, financeType: String, adj: Settlement) =
         removeSettlement(financeId, financeType, adj)
-
-    fun getLenOfActivates(date: LocalDate): Int =
-        getLenOfActivatesUseCase(uiState.value.datasets, date)
 }

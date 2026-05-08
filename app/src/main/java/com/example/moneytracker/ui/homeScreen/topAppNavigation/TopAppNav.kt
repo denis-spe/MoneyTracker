@@ -24,13 +24,13 @@ import com.google.firebase.auth.FirebaseUser
 
 @Composable
 fun TopAppNav(
-    userState: State<FirebaseUser?>,
+    userState: FirebaseUser?,
     userColor: Int,
     contentColor: Color,
     onClick: () -> Unit = {}
 ) {
-    val userName = userState.value?.displayName
-    userState.value?.uid
+    val userName = userState?.displayName
+    userState?.uid
 
     Column(
         modifier = Modifier

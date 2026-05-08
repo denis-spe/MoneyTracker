@@ -4,9 +4,11 @@ package com.example.moneytracker.ui.homeScreen.allScreen
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -36,12 +38,16 @@ import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
+import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.StatusView
 
 @Composable
-fun ListForAll(dataSettlements: List<DataSettlement>) {
+fun ListForAll(
+    dataSettlements: List<DataSettlement>,
+    isLoading: Boolean = false
+) {
     Modifier
         .offset(y = (-4).dp)
         .shadow(
@@ -57,20 +63,31 @@ fun ListForAll(dataSettlements: List<DataSettlement>) {
 
     LazyColumn {
         item { Spacer(modifier = Modifier.size(10.dp)) }
-        items(dataSettlements.size) {
-            val dataItem = dataSettlements[it]
+        if (isLoading) {
+            items(7) {
+                CardForAllItemShimmer(
+                    modifier = Modifier.animateItem()
+                )
+            }
+        } else {
+            items(
+                count = dataSettlements.size,
+                key = { it }
+            ) {
+                val dataItem = dataSettlements[it]
 
-            DataCard(
-                modifier = Modifier.animateItem(),
-                dataSettlement = dataItem
-            )
+                CardForAllItem(
+                    modifier = Modifier.animateItem(),
+                    dataSettlement = dataItem
+                )
+            }
         }
         item { Spacer(modifier = Modifier.size(10.dp)) }
     }
 }
 
 @Composable
-fun DataCard(
+fun CardForAllItem(
     modifier: Modifier = Modifier,
     dataSettlement: DataSettlement
 ) {
@@ -256,3 +273,116 @@ fun DataCard(
         )
     }
 }
+
+
+@Composable
+fun CardForAllItemShimmer(
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        ListItem(
+            modifier = Modifier
+                .fillMaxWidth(),
+            headlineContent = {
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Shimmer for label
+                    Box(
+                        modifier = Modifier
+                            .shimmerEffect(
+                                height = 14.dp,
+                                width = 100.dp,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                    )
+
+
+                    // Shimmer for status
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .shimmerEffect(
+                                height = 12.dp,
+                                width = 60.dp,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                    )
+                }
+            },
+            supportingContent = {
+                // Shimmer for description
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .shimmerEffect(
+                            height = 12.dp,
+                            width = 150.dp,
+                            shape = RoundedCornerShape(4.dp)
+                        )
+                )
+            },
+            trailingContent = {
+
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Shimmer for amount
+                    Box(
+                        modifier = Modifier
+                            .shimmerEffect(
+                                height = 14.dp,
+                                width = 80.dp,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                    )
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Shimmer for dateTime
+                    Box(
+                        modifier = Modifier
+                            .shimmerEffect(
+                                height = 12.dp,
+                                width = 100.dp,
+                                shape = RoundedCornerShape(4.dp)
+                            )
+                    )
+                }
+            },
+
+            leadingContent = {
+                Column(
+                    modifier = Modifier
+                        .clip(CircleShape)
+                        .background(Color.LightGray.copy(alpha = 0.3f)),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    // Shimmer for tag icon
+                    Box(
+                        modifier = Modifier
+                            .size(26.dp)
+                            .shimmerEffect(
+                                shape = CircleShape,
+                                size = 26.dp
+                            )
+                    )
+                }
+            },
+
+            shadowElevation = 0.dp,
+        )
+        HorizontalDivider(
+            thickness = 1.dp,
+            color = Color.LightGray.copy(0.3f)
+        )
+    }
+}
+

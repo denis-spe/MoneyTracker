@@ -407,9 +407,14 @@ fun ModelDrawerAmountField(
     val onDialogShow = remember { mutableStateOf(false) }
     val showCustomKeyboard = remember { mutableStateOf(false) }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val focusRequester = remember { FocusRequester() }
 
 
     if (onDialogShow.value) {
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
+
         Dialog(
             onDismissRequest = {
                 onDialogShow.value = false
@@ -446,12 +451,14 @@ fun ModelDrawerAmountField(
                         }
                     ) {
                         OutlinedTextField(
-                            modifier = modifier.onFocusChanged {
-                                if (it.isFocused) {
-                                    keyboardController?.hide()
-                                    showCustomKeyboard.value = true
-                                }
-                            },
+                            modifier = modifier
+                                .focusRequester(focusRequester)
+                                .onFocusChanged {
+                                    if (it.isFocused) {
+                                        keyboardController?.hide()
+                                        showCustomKeyboard.value = true
+                                    }
+                                },
                             state = state,
                             shape = shape,
                             lineLimits = TextFieldLineLimits.SingleLine,
@@ -507,6 +514,7 @@ fun ModelDrawerAmountField(
 
                     CustomAmountKeyBoard(
                         state = state,
+                        focusRequester = focusRequester,
                         visible = showCustomKeyboard.value,
                         onDone = {
                             showCustomKeyboard.value = false
@@ -594,23 +602,15 @@ fun SettlementField(
         }
     }
 
-    val filteredFinanceEntity = when (datatype) {
-        DataType.LENT -> remember {
-            derivedStateOf {
-                financeEntityList.filter { it.categoryText == "Lent" }
-            }
-        }
+    val filteredFinanceEntity = remember(financeEntityList, datatype) {
+        derivedStateOf {
+            when (datatype) {
+                DataType.LENT -> financeEntityList.filter { it.categoryText == "Lent" }
 
-        DataType.DEBT -> remember {
-            derivedStateOf {
-                financeEntityList.filter { it.categoryText == "Debt" }
-            }
-        }
+                DataType.DEBT -> financeEntityList.filter { it.categoryText == "Debt" }
 
-        // Else it's a goal
-        else -> remember {
-            derivedStateOf {
-                financeEntityList.filter {
+                // Else it's a goal
+                else -> financeEntityList.filter {
                     val now = LocalDateTime.now()
                     val deadlineDateTime = if (it is FinanceEntity.Goal) it.routine.deadlineDateTime
                         .toLocalDateTimeUtc() else LocalDateTime.now()
@@ -639,6 +639,10 @@ fun SettlementField(
     else colorResource(colorResId)
 
     if (onDialogShow.value) {
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
+
         Dialog(
             onDismissRequest = {
                 amountState.setTextAndPlaceCursorAtEnd("")
@@ -810,8 +814,10 @@ fun SettlementField(
                                 outputTransformation = CustomOutputTransformation(),
                             )
                         }
+
                         CustomAmountKeyBoard(
                             state = amountState,
+                            focusRequester = focusRequester,
                             visible = showCustomKeyboard.value,
                             onDone = {
                                 showCustomKeyboard.value = false

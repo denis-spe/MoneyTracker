@@ -7,4 +7,8 @@
 - [x] Ensure Routine Rescheduling and Fix Missing Logs
 - [x] Consolidate Routine Completion Logic
 - [x] Update Fulfillment Data Loading (Goal, Debt, Loan)
+- [x] Implement Shimmer Loader in Lazy Lists
+- [x] Filter GoalInsightPager to Active Goals Only
+- [x] Show Liability in GoalInsightPager
+- [x] Fix Today Flow Refund Calculation Bug
 - [x] Verify the fix

@@ -52,7 +52,7 @@ fun DropDownUserProfile(
     contentColor: Color,
     backgroundColor: Color,
     visible: Boolean = false,
-    userState: State<FirebaseUser?>,
+    userState: FirebaseUser?,
     isLoading: Boolean = false,
     settingsClick: () -> Unit = {},
     onDismiss: () -> Unit = {},
@@ -61,7 +61,7 @@ fun DropDownUserProfile(
 
     val density = LocalDensity.current
 
-    val userNames = userState.value?.displayName.let {
+    val userNames = userState?.displayName.let {
         it?.split(" ") ?: listOf("Guest")
     }
 
@@ -133,36 +133,34 @@ fun DropDownUserProfile(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
             ) {
-                userState.value.let {
-                    Log.d("Photo", it?.photoUrl.toString())
-                    if (it != null) {
-                        ProfileImage(
-                            accountSpecificUrl = it.photoUrl,
-                            currentAccountId = it.uid,
-                            size = 50,
-                            color = contentColor
-                        )
+                userState?.let {
+                    Log.d("Photo", it.photoUrl.toString())
+                    ProfileImage(
+                        accountSpecificUrl = it.photoUrl,
+                        currentAccountId = it.uid,
+                        size = 50,
+                        color = contentColor
+                    )
 
-                        if (it.displayName != null && it.displayName!!.isNotEmpty()) {
-                            Text(
-                                userNames[0],
-                                color = contentColor,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 10.dp)
-                            )
-                            Text(
-                                text = if (userNames.size > 1) userNames[1] else "",
-                                color = contentColor,
-                                fontWeight = FontWeight.Bold
-                            )
-                        } else {
-                            Text(
-                                "Guest",
-                                color = contentColor,
-                                fontWeight = FontWeight.Bold,
-                                modifier = Modifier.padding(top = 6.dp)
-                            )
-                        }
+                    if (it.displayName != null && it.displayName!!.isNotEmpty()) {
+                        Text(
+                            userNames[0],
+                            color = contentColor,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 10.dp)
+                        )
+                        Text(
+                            text = if (userNames.size > 1) userNames[1] else "",
+                            color = contentColor,
+                            fontWeight = FontWeight.Bold
+                        )
+                    } else {
+                        Text(
+                            "Guest",
+                            color = contentColor,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.padding(top = 6.dp)
+                        )
                     }
                 }
 

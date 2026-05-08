@@ -11,6 +11,7 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.onStart
 import javax.inject.Inject
 
 class ObserveUserDataUseCase @Inject constructor(
@@ -54,6 +55,8 @@ class ObserveUserDataUseCase @Inject constructor(
                         info = info,
                         datasetState = DatasetState.Success
                     )
+                }.onStart {
+                    emit(HomeData(datasetState = DatasetState.Loading))
                 }.catch { e ->
                     emit(
                         HomeData(

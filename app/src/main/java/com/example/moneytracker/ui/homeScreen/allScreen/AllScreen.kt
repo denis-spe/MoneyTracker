@@ -36,12 +36,14 @@ fun AllScreen(
                 updateWeek = viewModel::updateWeekDays,
                 viewModel = viewModel
             )
-
-            ListForAll(dataSettlements = weeklyData)
         } else {
             CalendarViewSectionShimmer()
-            ListForAllShimmer()
         }
+
+        ListForAll(
+            dataSettlements = weeklyData,
+            isLoading = isWeeklyDataLoading
+        )
     }
 }
 

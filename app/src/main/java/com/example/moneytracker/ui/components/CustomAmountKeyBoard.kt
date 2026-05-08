@@ -35,6 +35,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusProperties
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +49,7 @@ import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 @Composable
 fun CustomAmountKeyBoard(
     state: TextFieldState,
+    focusRequester: FocusRequester? = null,
     modifier: Modifier = Modifier,
     visible: Boolean = false,
     onDone: () -> Unit = {},
@@ -204,6 +207,7 @@ fun CustomAmountKeyBoard(
                                             }
                                         }
                                     }
+                                    focusRequester?.requestFocus()
                                 }
                             )
                         }
@@ -257,6 +261,7 @@ private fun KeyButton(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
             .background(backgroundColor)
+            .focusProperties { canFocus = false }
             .clickable { onClick() }
             .padding(vertical = 16.dp),
         contentAlignment = Alignment.Center
