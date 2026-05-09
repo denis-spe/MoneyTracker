@@ -16,25 +16,17 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataSettlement
-import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.ui.components.charts.collections.ChartData
-import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayItems
+import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
 
 @Composable
 fun YesterdayScreen(
     paddingValues: PaddingValues,
-    uiState: HomeUiState,
-    sortAbleDataSettlement: List<DataSettlement>,
-    yesterdayFinanceEntityList: List<FinanceEntity>,
-    yesterdayChartData: List<ChartData>,
-    yesterdayStats: YesterdayStats,
-    isYesterdayDataLoading: Boolean,
-    isYesterdayChartDataLoading: Boolean,
-    isYesterdayStatsLoading: Boolean,
-    isSortedYesterdayLoading: Boolean
+    sortAbleDataSettlementDataState: DataState<List<DataSettlement>>,
+    yesterdayChartDataState: DataState<List<ChartData>>,
+    yesterdayStatsDataState: DataState<YesterdayStats>,
 ) {
     val configuration = LocalConfiguration.current
 
@@ -48,25 +40,17 @@ fun YesterdayScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.SpaceBetween
         ) {
-            if (!isYesterdayDataLoading && !isYesterdayChartDataLoading && !isYesterdayStatsLoading) {
-                YesterdayStatArea(
-                    modifier = Modifier.weight(0.4f),
-                    financeEntityList = yesterdayFinanceEntityList,
-                    chartData = yesterdayChartData,
-                    stats = yesterdayStats
-                )
-            } else {
-                YesterdayStatAreaShimmer(
-                    modifier = Modifier.weight(0.4f)
-                )
-            }
+            YesterdayStatArea(
+                modifier = Modifier.weight(0.4f),
+                chartData = yesterdayChartDataState,
+                stats = yesterdayStatsDataState
+            )
 
             Spacer(modifier = Modifier.weight(0.05f))
 
             YesterdayItems(
                 modifier = Modifier.weight(0.6f),
-                dataSettlement = sortAbleDataSettlement,
-                isLoading = isSortedYesterdayLoading
+                dataSettlementDataState = sortAbleDataSettlementDataState,
             )
         }
     }

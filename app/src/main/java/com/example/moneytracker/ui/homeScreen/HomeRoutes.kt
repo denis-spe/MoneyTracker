@@ -91,18 +91,11 @@ fun YesterdayScreenRoute(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    val yesterdayFinance by viewModel
-        .yesterdayFinance
-        .collectAsStateWithLifecycle()
-
-    val yesterdayChartData by viewModel
+    val yesterdayChartDataState by viewModel
         .yesterdayChartData
         .collectAsStateWithLifecycle()
 
-    val yesterdayStats by viewModel
+    val yesterdayStatsDataState by viewModel
         .yesterdayStats
         .collectAsStateWithLifecycle()
 
@@ -113,23 +106,11 @@ fun YesterdayScreenRoute(
     YesterdayScreen(
         paddingValues = paddingValues,
 
-        uiState = uiState,
+        sortAbleDataSettlementDataState = sortedYesterday,
 
-        sortAbleDataSettlement = sortedYesterday,
+        yesterdayChartDataState = yesterdayChartDataState,
 
-        yesterdayFinanceEntityList = yesterdayFinance,
-
-        yesterdayChartData = yesterdayChartData,
-
-        yesterdayStats = yesterdayStats,
-
-        isYesterdayDataLoading = uiState.isYesterdayDataLoading,
-
-        isYesterdayChartDataLoading = uiState.isYesterdayChartDataLoading,
-
-        isYesterdayStatsLoading = uiState.isYesterdayStatsLoading,
-
-        isSortedYesterdayLoading = uiState.isSortedYesterdayLoading
+        yesterdayStatsDataState = yesterdayStatsDataState,
     )
 }
 
@@ -138,10 +119,7 @@ fun AllScreenRoute(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    val weeklyData by viewModel
+    val dataState by viewModel
         .weeklyData
         .collectAsStateWithLifecycle()
 
@@ -150,10 +128,6 @@ fun AllScreenRoute(
 
         viewModel = viewModel,
 
-        weeklyData = weeklyData,
-
-        uiState = uiState,
-
-        isWeeklyDataLoading = uiState.isWeeklyDataLoading
+        dataState = dataState,
     )
 }

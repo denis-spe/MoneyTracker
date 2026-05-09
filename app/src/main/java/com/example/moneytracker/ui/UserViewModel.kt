@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.backend.workers.Workers
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +18,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class UserViewModel @Inject constructor(
-    private val accountService: AccountServices
+    private val accountService: AccountServices,
+    private val workers: Workers
 ) : ViewModel() {
 
     val userState = accountService.userState
@@ -38,6 +40,7 @@ class UserViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
+                workers.cancelAllWorkers()
                 accountService.signOut()
                 _navigationEvents.emit(Unit)
             } finally {

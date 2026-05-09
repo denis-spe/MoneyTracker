@@ -60,6 +60,15 @@ class Workers @Inject constructor(
         }
     }
 
+    override fun cancelAllWorkers() {
+        try {
+            WorkManager.getInstance(context).cancelAllWork()
+            Log.d(TAG, "All routine workers canceled successfully")
+        } catch (e: Exception) {
+            Log.e(TAG, "Error canceling routine workers", e)
+        }
+    }
+
     companion object {
         private const val TAG = "Workers"
         private const val MIN_BACKOFF_MILLIS = 15 * 60 * 1000L // 15 minutes

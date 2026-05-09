@@ -12,16 +12,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataSettlement
-import com.example.moneytracker.ui.homeScreen.HomeUiState
+import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 
 @Composable
 fun AllScreen(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel,
-    weeklyData: List<DataSettlement>,
-    uiState: HomeUiState,
-    isWeeklyDataLoading: Boolean
+    dataState: DataState<List<DataSettlement>>,
 ) {
     Column(
         modifier = Modifier
@@ -31,18 +29,16 @@ fun AllScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
 
-        if (!isWeeklyDataLoading) {
-            CalendarViewSection(
-                updateWeek = viewModel::updateWeekDays,
-                viewModel = viewModel
-            )
-        } else {
-            CalendarViewSectionShimmer()
-        }
+        CalendarViewSection(
+            updateWeek = viewModel::updateWeekDays,
+            viewModel = viewModel
+        )
 
         ListForAll(
-            dataSettlements = weeklyData,
-            isLoading = isWeeklyDataLoading
+            dataSettlements = if (dataState is DataState.Success)
+                dataState.data
+            else emptyList(),
+            isLoading = dataState is DataState.Loading
         )
     }
 }

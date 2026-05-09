@@ -1,10 +1,11 @@
 // Hear oh Israel, The LORD our GOD, The LORD is one, You shall love the
 // love the LORD your GOD with all your soul and with all your mind
 // and with all your strength and love your neighbor as your self.
-package com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea
+package com.example.moneytracker.ui.homeScreen.yesterdayScreen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
@@ -25,6 +27,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.DataSettlement
@@ -32,10 +35,11 @@ import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.outlinedIcon
+import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.StatusView
+import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
-import com.example.moneytracker.ui.homeScreen.todayScreen.ItemCardShimmer
 
 private val ICON_SIZE = 20.dp
 private val TIME_FONT_SIZE = 13.sp
@@ -45,7 +49,10 @@ private val AMOUNT_FONT_SIZE = 18.sp
 
 
 @Composable
-fun YesterdayItem(dataSettlement: DataSettlement) {
+fun YesterdayItem(
+    modifier: Modifier = Modifier,
+    dataSettlement: DataSettlement
+) {
     val amount = when (dataSettlement) {
         is DataSettlement.SettlementData -> dataSettlement.financeEntity.amount.formatToAmount()
         is DataSettlement.SettlementAdjust -> dataSettlement.settlement.amount.formatToAmount()
@@ -119,7 +126,7 @@ fun YesterdayItem(dataSettlement: DataSettlement) {
     val minute = dateTime.minute.addZeroIfLessThenTen
 
     ListItem(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .padding(bottom = 5.dp)
             .shadow(2.dp, spotColor = color),
@@ -214,10 +221,146 @@ fun YesterdayItem(dataSettlement: DataSettlement) {
 }
 
 @Composable
+fun YesterdayItemShimmer(modifier: Modifier = Modifier) {
+
+    ListItem(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = 5.dp)
+            .shadow(2.dp, spotColor = Color.LightGray.copy(0.5f)),
+        headlineContent = {
+            // Shimmer for headline
+            Box(
+                modifier = Modifier
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(10.dp),
+                        width = 100.dp,
+                        height = 20.dp
+                    )
+            )
+        },
+        overlineContent = {
+            // Shimmer for amount
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 4.dp)
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(10.dp),
+                        width = 80.dp,
+                        height = 20.dp
+                    )
+            )
+        },
+
+        supportingContent = {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                verticalArrangement = Arrangement.Center
+            ) {
+                // Shimmer for label
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .shimmerEffect(
+                            shape = RoundedCornerShape(10.dp),
+                            width = 120.dp,
+                            height = 20.dp
+                        )
+                )
+
+                // Shimmer for description
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .shimmerEffect(
+                            shape = RoundedCornerShape(10.dp),
+                            width = 150.dp,
+                            height = 15.dp
+                        )
+                )
+            }
+        },
+
+        trailingContent = {
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Row(
+                    modifier = Modifier.padding(bottom = 5.dp),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Shimmer for dataType Image
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .size(ICON_SIZE)
+                            .shimmerEffect(
+                                shape = CircleShape,
+                                width = ICON_SIZE,
+                                height = ICON_SIZE
+                            )
+                    )
+
+                    // Shimmer for tag Image
+                    Box(
+                        modifier = Modifier
+                            .padding(end = 4.dp)
+                            .size(ICON_SIZE)
+                            .shimmerEffect(
+                                shape = CircleShape,
+                                width = ICON_SIZE,
+                                height = ICON_SIZE
+                            )
+                    )
+
+                    // Shimmer for payment Method Image
+                    Box(
+                        modifier = Modifier
+                            .size(ICON_SIZE)
+                            .shimmerEffect(
+                                shape = CircleShape,
+                                width = ICON_SIZE,
+                                height = ICON_SIZE
+                            )
+                    )
+                }
+
+                // Shimmer for status view
+                Box(
+                    modifier = Modifier
+                        .shimmerEffect(
+                            shape = RoundedCornerShape(10.dp),
+                            width = 60.dp,
+                            height = 20.dp
+                        )
+                )
+
+
+                // Shimmer for time
+                Box(
+                    modifier = Modifier
+                        .padding(top = 4.dp)
+                        .shimmerEffect(
+                            shape = RoundedCornerShape(10.dp),
+                            width = 80.dp,
+                            height = 15.dp
+                        )
+                )
+            }
+        },
+        shadowElevation = 2.dp
+    )
+
+}
+
+
+@Composable
+
 fun YesterdayItems(
     modifier: Modifier = Modifier,
-    dataSettlement: List<DataSettlement>,
-    isLoading: Boolean = false
+    dataSettlementDataState: DataState<List<DataSettlement>>,
 ) {
     Column(
         modifier = modifier
@@ -241,19 +384,80 @@ fun YesterdayItems(
                 .heightIn(220.dp, 300.dp)
                 .clip(RoundedCornerShape(20.dp))
         ) {
-            item {
-                Spacer(modifier = Modifier.heightIn(10.dp))
+            item { Spacer(modifier = Modifier.size(10.dp)) }
+            when (dataSettlementDataState) {
+                is DataState.Error -> {
+                    item {
+                        Text(
+                            "Failed to load data",
+                            color = Color.Red,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
+                    }
+                }
+
+                is DataState.Loading -> {
+                    // Show shimmer effect
+                    items(7) {
+                        YesterdayItemShimmer(
+                            modifier = Modifier.animateItem()
+                        )
+                    }
+                }
+
+                is DataState.Success -> {
+                    val data = dataSettlementDataState.data
+
+                    items(
+                        count = data.size,
+                        key = { it }
+                    ) {
+                        val dataItem = data[it]
+
+                        YesterdayItem(
+                            modifier = Modifier.animateItem(),
+                            dataSettlement = dataItem
+                        )
+                    }
+                }
             }
-            if (isLoading && dataSettlement.isEmpty()) {
-                items(count = 5) {
-                    ItemCardShimmer()
-                    Spacer(modifier = Modifier.padding(bottom = 10.dp))
-                }
-            } else {
-                items(dataSettlement.size) {
-                    val dataItem = dataSettlement[it]
-                    YesterdayItem(dataItem)
-                }
+            item { Spacer(modifier = Modifier.size(10.dp)) }
+        }
+    }
+}
+
+
+/**
+ * ========================= Previews ======================================
+ */
+@Preview(
+    showBackground = true,
+    showSystemUi = true
+)
+@Composable
+fun YesterdayItemShimmerPreview() {
+    Column {
+        Row(
+            horizontalArrangement = Arrangement.Start,
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 10.dp)
+        ) {
+            Text(
+                "Late Transactions",
+                fontSize = 18.sp,
+                fontWeight = FONT_WEIGHT,
+            )
+        }
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(220.dp, 300.dp)
+                .clip(RoundedCornerShape(20.dp))
+        ) {
+            item {
+                YesterdayItemShimmer()
             }
         }
     }

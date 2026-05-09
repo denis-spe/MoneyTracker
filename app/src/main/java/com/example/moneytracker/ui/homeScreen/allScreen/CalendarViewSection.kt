@@ -23,7 +23,6 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,7 +38,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.helper.getWeeks
 import com.example.moneytracker.helper.title
-import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import kotlinx.coroutines.flow.map
@@ -181,18 +180,44 @@ fun CalendarViewSection(
                                 color = if (date == now) selectedColor else Color.Unspecified
                             )
 
-                            BadgedBox(
-                                badge = {
-                                    val lenOfAct = activityCounts[date] ?: 0
-                                    if (lenOfAct > 0) {
-                                        Badge(
-                                            containerColor = selectedColor,
-                                        ) {
-                                            Text(lenOfAct.toString())
+                            if (activityCounts is DataState.Success) {
+                                BadgedBox(
+                                    badge = {
+                                        val lenOfAct = (activityCounts as
+                                                DataState.Success<Map<kotlinx.datetime.LocalDate, Int>>)
+                                            .data[date] ?: 0
+                                        if (lenOfAct > 0) {
+                                            Badge(
+                                                containerColor = selectedColor,
+                                            ) {
+                                                Text(lenOfAct.toString())
+                                            }
                                         }
                                     }
+                                ) {
+                                    Column(
+                                        modifier = Modifier
+                                            .width(30.dp)
+                                            .height(30.dp)
+                                            .border(
+                                                width = 1.dp,
+                                                color = if (date == selectedDate && selectedTabIndex == 0)
+                                                    selectedColor else Color.Transparent,
+                                                shape = RoundedCornerShape(100)
+                                            ),
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        verticalArrangement = Arrangement.Center
+                                    ) {
+                                        Text(
+                                            date.day.toString(),
+                                            fontSize = 15.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (date == now) selectedColor else
+                                                contentColor
+                                        )
+                                    }
                                 }
-                            ) {
+                            } else {
                                 Column(
                                     modifier = Modifier
                                         .width(30.dp)
