@@ -103,7 +103,11 @@ fun YesterdayScreenRoute(
         .sortedYesterday
         .collectAsStateWithLifecycle()
 
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+
     YesterdayScreen(
+        uiState = uiState,
         paddingValues = paddingValues,
 
         sortAbleDataSettlementDataState = sortedYesterday,

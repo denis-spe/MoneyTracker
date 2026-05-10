@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -16,7 +15,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextDecoration
@@ -125,233 +127,253 @@ fun YesterdayItem(
     val hour = dateTime.hour.addZeroIfLessThenTen
     val minute = dateTime.minute.addZeroIfLessThenTen
 
-    ListItem(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 5.dp)
-            .shadow(2.dp, spotColor = color),
-        headlineContent = {
-            settlement?.let {
-                Text(
-                    it,
-                    fontSize = LABEL_FONT_SIZE,
-                    fontWeight = FONT_WEIGHT,
-                    color = Color.Gray,
-                    textDecoration = textDecoration
-                )
-            }
-        },
-        overlineContent = {
-            // Amount
-            Text(
-                amount,
-                fontSize = AMOUNT_FONT_SIZE,
-                fontWeight = FONT_WEIGHT,
-                color = color,
-                textDecoration = textDecoration
-            )
-
-        },
-
-        supportingContent = {
-            Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Center
-            ) {
-                // Label
-                Text(
-                    label,
-                    fontSize = LABEL_FONT_SIZE,
-                    fontWeight = FONT_WEIGHT,
-                    textDecoration = textDecoration
-                )
-
-                // Description
-                if (description.isNotEmpty()) {
-                    Text(description, fontSize = DESCRIPTION_FONT_SIZE)
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        ListItem(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(bottom = 5.dp),
+            colors = ListItemDefaults.colors().copy(
+                containerColor = Color.Transparent
+            ),
+            headlineContent = {
+                settlement?.let {
+                    Text(
+                        it,
+                        fontSize = LABEL_FONT_SIZE,
+                        fontWeight = FONT_WEIGHT,
+                        color = Color.Gray,
+                        textDecoration = textDecoration
+                    )
                 }
-            }
-        },
+            },
+            overlineContent = {
+                // Amount
+                Text(
+                    amount,
+                    fontSize = AMOUNT_FONT_SIZE,
+                    fontWeight = FONT_WEIGHT,
+                    color = color,
+                    textDecoration = textDecoration
+                )
 
-        trailingContent = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Row(
-                    modifier = Modifier.padding(bottom = 5.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+            },
+
+            supportingContent = {
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    // DataType Image
-                    Image(
-                        painter = dataTypeIcon,
-                        contentDescription = null,
-                        modifier = Modifier.size(ICON_SIZE)
+                    // Label
+                    Text(
+                        label,
+                        fontSize = LABEL_FONT_SIZE,
+                        fontWeight = FONT_WEIGHT,
+                        textDecoration = textDecoration
                     )
 
-                    // Tag Image
-                    Image(
-                        painter = tagIcon,
-                        contentDescription = null,
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
+                    // Description
+                    if (description.isNotEmpty()) {
+                        Text(description, fontSize = DESCRIPTION_FONT_SIZE)
+                    }
+                }
+            },
 
-                    // Payment Method Image
-                    Image(
-                        painter = paymentMethod,
-                        contentDescription = null,
-                        modifier = Modifier.size(ICON_SIZE)
+            trailingContent = {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        modifier = Modifier.padding(bottom = 5.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // DataType Image
+                        Image(
+                            painter = dataTypeIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(ICON_SIZE),
+                            colorFilter = ColorFilter.tint(color)
+                        )
+
+                        // Tag Image
+                        Image(
+                            painter = tagIcon,
+                            contentDescription = null,
+                            modifier = Modifier.size(ICON_SIZE)
+                        )
+
+                        // Payment Method Image
+                        Image(
+                            painter = paymentMethod,
+                            contentDescription = null,
+                            modifier = Modifier.size(ICON_SIZE)
+                        )
+                    }
+
+                    StatusView(dataSettlement)
+
+
+                    // Time
+                    Text(
+                        "By $hour:$minute",
+                        fontSize = TIME_FONT_SIZE,
                     )
                 }
+            },
+            shadowElevation = 0.dp
+        )
 
-                StatusView(dataSettlement)
-
-
-                // Time
-                Text(
-                    "By $hour:$minute",
-                    fontSize = TIME_FONT_SIZE,
-                )
-            }
-        },
-        shadowElevation = 2.dp
-    )
+        HorizontalDivider(
+            modifier = Modifier
+                .shadow(
+                    2.dp,
+                    spotColor = color
+                ),
+            color = color.copy(0.6f)
+        )
+    }
 
 }
 
 @Composable
 fun YesterdayItemShimmer(modifier: Modifier = Modifier) {
-
-    ListItem(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(bottom = 5.dp)
-            .shadow(2.dp, spotColor = Color.LightGray.copy(0.5f)),
-        headlineContent = {
-            // Shimmer for headline
-            Box(
-                modifier = Modifier
-                    .shimmerEffect(
-                        shape = RoundedCornerShape(10.dp),
-                        width = 100.dp,
-                        height = 20.dp
-                    )
-            )
-        },
-        overlineContent = {
-            // Shimmer for amount
-            Box(
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
-                    .shimmerEffect(
-                        shape = RoundedCornerShape(10.dp),
-                        width = 80.dp,
-                        height = 20.dp
-                    )
-            )
-        },
-
-        supportingContent = {
-            Column(
-                horizontalAlignment = Alignment.Start,
-                verticalArrangement = Arrangement.Center
-            ) {
-                // Shimmer for label
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        ListItem(
+            modifier = modifier
+                .fillMaxWidth()
+                .padding(bottom = 5.dp),
+            colors = ListItemDefaults.colors().copy(
+                containerColor = Color.Transparent
+            ),
+            headlineContent = {
+                // Shimmer for headline
                 Box(
                     modifier = Modifier
-                        .padding(top = 4.dp)
                         .shimmerEffect(
                             shape = RoundedCornerShape(10.dp),
-                            width = 120.dp,
+                            width = 100.dp,
                             height = 20.dp
                         )
                 )
+            },
 
-                // Shimmer for description
-                Box(
-                    modifier = Modifier
-                        .padding(top = 4.dp)
-                        .shimmerEffect(
-                            shape = RoundedCornerShape(10.dp),
-                            width = 150.dp,
-                            height = 15.dp
-                        )
-                )
-            }
-        },
-
-        trailingContent = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.Center
-            ) {
-                Row(
-                    modifier = Modifier.padding(bottom = 5.dp),
-                    horizontalArrangement = Arrangement.End,
-                    verticalAlignment = Alignment.CenterVertically
+            supportingContent = {
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    // Shimmer for dataType Image
+                    // Shimmer for label
                     Box(
                         modifier = Modifier
-                            .padding(end = 4.dp)
-                            .size(ICON_SIZE)
+                            .padding(top = 4.dp)
                             .shimmerEffect(
-                                shape = CircleShape,
-                                width = ICON_SIZE,
-                                height = ICON_SIZE
+                                shape = RoundedCornerShape(10.dp),
+                                width = 120.dp,
+                                height = 20.dp
                             )
                     )
 
-                    // Shimmer for tag Image
+                    // Shimmer for description
                     Box(
                         modifier = Modifier
-                            .padding(end = 4.dp)
-                            .size(ICON_SIZE)
+                            .padding(top = 4.dp)
                             .shimmerEffect(
-                                shape = CircleShape,
-                                width = ICON_SIZE,
-                                height = ICON_SIZE
-                            )
-                    )
-
-                    // Shimmer for payment Method Image
-                    Box(
-                        modifier = Modifier
-                            .size(ICON_SIZE)
-                            .shimmerEffect(
-                                shape = CircleShape,
-                                width = ICON_SIZE,
-                                height = ICON_SIZE
+                                shape = RoundedCornerShape(10.dp),
+                                width = 150.dp,
+                                height = 15.dp
                             )
                     )
                 }
+            },
 
-                // Shimmer for status view
-                Box(
-                    modifier = Modifier
-                        .shimmerEffect(
-                            shape = RoundedCornerShape(10.dp),
-                            width = 60.dp,
-                            height = 20.dp
+            trailingContent = {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
+                        modifier = Modifier.padding(bottom = 5.dp),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Shimmer for dataType Image
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(ICON_SIZE)
+                                .shimmerEffect(
+                                    shape = CircleShape,
+                                    width = ICON_SIZE,
+                                    height = ICON_SIZE
+                                )
                         )
-                )
 
-
-                // Shimmer for time
-                Box(
-                    modifier = Modifier
-                        .padding(top = 4.dp)
-                        .shimmerEffect(
-                            shape = RoundedCornerShape(10.dp),
-                            width = 80.dp,
-                            height = 15.dp
+                        // Shimmer for tag Image
+                        Box(
+                            modifier = Modifier
+                                .padding(end = 4.dp)
+                                .size(ICON_SIZE)
+                                .shimmerEffect(
+                                    shape = CircleShape,
+                                    width = ICON_SIZE,
+                                    height = ICON_SIZE
+                                )
                         )
-                )
-            }
-        },
-        shadowElevation = 2.dp
-    )
+
+                        // Shimmer for payment Method Image
+                        Box(
+                            modifier = Modifier
+                                .size(ICON_SIZE)
+                                .shimmerEffect(
+                                    shape = CircleShape,
+                                    width = ICON_SIZE,
+                                    height = ICON_SIZE
+                                )
+                        )
+                    }
+
+                    // Shimmer for status view
+                    Box(
+                        modifier = Modifier
+                            .shimmerEffect(
+                                shape = RoundedCornerShape(10.dp),
+                                width = 60.dp,
+                                height = 20.dp
+                            )
+                    )
+
+
+                    // Shimmer for time
+                    Box(
+                        modifier = Modifier
+                            .padding(top = 4.dp)
+                            .shimmerEffect(
+                                shape = RoundedCornerShape(10.dp),
+                                width = 80.dp,
+                                height = 15.dp
+                            )
+                    )
+                }
+            },
+            shadowElevation = 0.dp
+        )
+
+        HorizontalDivider(
+            modifier = Modifier
+                .shadow(
+                    2.dp,
+                    spotColor = Color.LightGray
+                ),
+            color = Color.LightGray.copy(0.6f)
+        )
+    }
 
 }
 
@@ -365,64 +387,7 @@ fun YesterdayItems(
     Column(
         modifier = modifier
     ) {
-        Row(
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 10.dp)
-        ) {
-            Text(
-                "Late Transactions",
-                fontSize = 18.sp,
-                fontWeight = FONT_WEIGHT,
-            )
-        }
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(220.dp, 300.dp)
-                .clip(RoundedCornerShape(20.dp))
-        ) {
-            item { Spacer(modifier = Modifier.size(10.dp)) }
-            when (dataSettlementDataState) {
-                is DataState.Error -> {
-                    item {
-                        Text(
-                            "Failed to load data",
-                            color = Color.Red,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-                    }
-                }
 
-                is DataState.Loading -> {
-                    // Show shimmer effect
-                    items(7) {
-                        YesterdayItemShimmer(
-                            modifier = Modifier.animateItem()
-                        )
-                    }
-                }
-
-                is DataState.Success -> {
-                    val data = dataSettlementDataState.data
-
-                    items(
-                        count = data.size,
-                        key = { it }
-                    ) {
-                        val dataItem = data[it]
-
-                        YesterdayItem(
-                            modifier = Modifier.animateItem(),
-                            dataSettlement = dataItem
-                        )
-                    }
-                }
-            }
-            item { Spacer(modifier = Modifier.size(10.dp)) }
-        }
     }
 }
 
