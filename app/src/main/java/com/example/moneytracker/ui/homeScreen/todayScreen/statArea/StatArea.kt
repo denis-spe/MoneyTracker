@@ -17,7 +17,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -31,14 +31,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.mean
 import com.example.moneytracker.helper.median
+import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.std
 import com.example.moneytracker.ui.components.charts.DonutChart
+import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
+import com.example.moneytracker.ui.homeScreen.DataState
 
 @Composable
 fun Stat(
@@ -194,92 +196,89 @@ fun DonutChartPager(
     }
 }
 
-
 @Composable
-fun StatArea(
-    modifier: Modifier = Modifier,
-    donutChartDataCollection: DonutChartDataCollection,
-    todayFinanceEntityList: List<FinanceEntity>,
-    fulfillmentFinanceEntityList: List<FinanceEntity>,
-) {
-    val items = listOf(
-        PagerItem(
-            "EarningsVsExpense",
-            Pair(R.color.Earnings, R.color.Expense)
-        ),
-        PagerItem(
-            "DebtVsEarnings",
-            Pair(R.color.Earnings, R.color.Debt)
-        ),
-        PagerItem(
-            "LentVsEarnings",
-            Pair(R.color.Earnings, R.color.Lent)
-        ),
-        PagerItem(
-            "SavingsVsEarnings",
-            Pair(R.color.Earnings, R.color.Savings)
-        ),
-        PagerItem(
-            "DebtRepay",
-            Pair(R.color.Debt, R.color.RepayLoan)
-        ),
-        PagerItem(
-            "LentRepay",
-            Pair(R.color.Lent, R.color.RepayLoan)
-        ),
-        PagerItem(
-            "GoalVsEarnings",
-            Pair(R.color.Earnings, R.color.Goal)
-        ),
-        PagerItem(
-            "GoalVsScore",
-            Pair(R.color.Goal, R.color.Attain)
-        )
-    )
-    rememberPagerState(pageCount = { items.size })
-
+fun DonutChartShimmer() {
     Column(
-        modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
-        // Chart Area
         Box(
             modifier = Modifier
                 .weight(1.1f),
             contentAlignment = Alignment.Center
         ) {
-            Column(
+            Box(
                 modifier = Modifier
-                    .fillMaxSize()
-                    .padding(bottom = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                DonutChartPager(
-                    donutChartDataCollection,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
-                )
+                    .shimmerEffect(shape = CircleShape, size = 150.dp)
+            )
+        }
+    }
+}
+
+
+@Composable
+fun StatArea(
+    modifier: Modifier = Modifier,
+    donutChartDataCollection: DataState<List<DonutChartData>>,
+    fulfillmentFinanceEntityList: DataState<List<FinanceEntity>>,
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(vertical = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+
+        // Chart Area
+        Box(
+            modifier = Modifier.weight(1f),
+            contentAlignment = Alignment.Center
+        ) {
+            when (donutChartDataCollection) {
+                is DataState.Success -> {
+                    val donutChartData = DonutChartDataCollection(
+                        donutChartDataCollection.data
+                    )
+                    DonutChartPager(
+                        donutChartData,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
+                    )
+                }
+
+                is DataState.Loading -> {
+                    DonutChartShimmer()
+                }
+
+                is DataState.Error -> {
+                    Text("Error in Loading")
+                }
+
             }
         }
 
         // Pager Area
         Box(
             modifier = Modifier
-                .weight(0.3f)
+                .weight(0.5f)
                 .fillMaxWidth(),
-            contentAlignment = Alignment.Center
+            contentAlignment = Alignment.TopCenter
         ) {
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
-            ) {
-                FulfillmentInsightPager(fulfillmentFinanceEntityList)
+            when (fulfillmentFinanceEntityList) {
+                is DataState.Success -> {
+                    FulfillmentInsightPager(fulfillmentFinanceEntityList.data)
+                }
+
+                is DataState.Loading -> {
+                    FulfillmentInsightPagerShimmer()
+                }
+
+                is DataState.Error -> {
+                    Text("Failed to Loading fulfillment data")
+                }
+
             }
         }
-
     }
 }

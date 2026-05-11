@@ -31,12 +31,8 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.DataSettlement
-import com.example.moneytracker.backend.storage.FinanceEntity
-import com.example.moneytracker.backend.storage.SettlementType
-import com.example.moneytracker.backend.storage.types.LiabilityType
-import com.example.moneytracker.backend.storage.types.TransactionType
+import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.addZeroIfLessThenTen
-import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.title
@@ -96,27 +92,7 @@ fun CardForAllItem(
         is DataSettlement.SettlementAdjust -> dataSettlement.settlement.label
     }
 
-    val amount = when (dataSettlement) {
-        is DataSettlement.SettlementData -> {
-            val amount = dataSettlement.financeEntity.amount
-            if ((dataSettlement.financeEntity is FinanceEntity.Liability && dataSettlement.financeEntity.liabilityType == LiabilityType.LOAN) ||
-                (dataSettlement.financeEntity is FinanceEntity.Transaction && dataSettlement.financeEntity.transactionType == TransactionType.EXPENSES)
-            ) {
-                "-${amount.formatToAmount()}"
-            } else {
-                amount.formatToAmount()
-            }
-        }
-
-        is DataSettlement.SettlementAdjust -> {
-            val amount = dataSettlement.settlement.amount
-            if (dataSettlement.settlement.settlementType == SettlementType.DEBT_REPAY) {
-                "-${amount.formatToAmount()}"
-            } else {
-                amount.formatToAmount()
-            }
-        }
-    }
+    val amount = dataSettlement.addNegativeToAmount
 
     val description = when (dataSettlement) {
         is DataSettlement.SettlementData -> dataSettlement.financeEntity.description

@@ -21,10 +21,6 @@ fun TodayScreenRoute(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val todayFinance by viewModel
-        .todayFinance
-        .collectAsStateWithLifecycle()
-
     val donutChartData by viewModel
         .donutChartData
         .collectAsStateWithLifecycle()
@@ -44,18 +40,9 @@ fun TodayScreenRoute(
 
         uiState = uiState,
 
-        todayFinanceEntityList = todayFinance,
-
         fulfillmentFinanceEntityList = fulfillmentFinanceEntity,
 
         homeViewModel = viewModel,
-
-        isTodayDataLoading = uiState.isTodayDataLoading,
-
-        isTodayChartDataLoading = uiState.isTodayChartDataLoading,
-
-        isSortedTodayLoading = uiState.isSortedTodayLoading,
-
         datasetWithAdjust = datasetWithAdjust
     )
 }
@@ -69,8 +56,8 @@ fun FulfillmentScreenRoute(
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    val fulfillmentFinanceEntity by viewModel
-        .fulfillmentFinanceEntity
+    val allDataset by viewModel
+        .allDataset
         .collectAsStateWithLifecycle()
 
     FulfillmentScreen(
@@ -78,11 +65,9 @@ fun FulfillmentScreenRoute(
 
         paddingValues = paddingValues,
 
-        fulfillmentFinanceEntityList = fulfillmentFinanceEntity,
+        allDataset = allDataset,
 
         uiState = uiState,
-
-        isGoalDataLoading = uiState.isGoalDataLoading
     )
 }
 

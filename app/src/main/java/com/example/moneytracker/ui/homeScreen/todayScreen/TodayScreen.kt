@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.ui.components.charts.DonutChartData
-import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
+import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.ItemListArea
@@ -31,15 +31,11 @@ import com.example.moneytracker.ui.homeScreen.todayScreen.statArea.StatArea
 @Composable
 fun TodayScreen(
     paddingValues: PaddingValues,
-    donutChartDataCollection: List<DonutChartData>,
+    donutChartDataCollection: DataState<List<DonutChartData>>,
     uiState: HomeUiState,
-    todayFinanceEntityList: List<FinanceEntity>,
-    fulfillmentFinanceEntityList: List<FinanceEntity>,
+    fulfillmentFinanceEntityList: DataState<List<FinanceEntity>>,
     homeViewModel: HomeViewModel,
-    isTodayDataLoading: Boolean,
-    isTodayChartDataLoading: Boolean,
-    isSortedTodayLoading: Boolean,
-    datasetWithAdjust: List<DataSettlement>
+    datasetWithAdjust: DataState<List<DataSettlement>>
 ) {
     val isTransactionListExpended = uiState.onActivateShow
     val configuration = LocalConfiguration.current
@@ -62,26 +58,14 @@ fun TodayScreen(
                     )
                 )
             ) {
-                if (!isTodayDataLoading && !isTodayChartDataLoading) {
-                    StatArea(
-                        modifier = Modifier
-                            .fillMaxHeight(0.5f)
-                            .fillMaxWidth(0.85f)
-                            .padding(bottom = 10.dp),
-                        donutChartDataCollection = DonutChartDataCollection(
-                            donutChartDataCollection
-                        ),
-                        todayFinanceEntityList = todayFinanceEntityList,
-                        fulfillmentFinanceEntityList = fulfillmentFinanceEntityList
-                    )
-                } else {
-                    StatAreaShimmer(
-                        modifier = Modifier
-                            .fillMaxHeight(0.5f)
-                            .fillMaxWidth(0.85f)
-                            .padding(bottom = 10.dp)
-                    )
-                }
+                StatArea(
+                    modifier = Modifier
+                        .fillMaxHeight(0.5f)
+                        .fillMaxWidth(0.85f)
+                        .padding(bottom = 10.dp),
+                    donutChartDataCollection = donutChartDataCollection,
+                    fulfillmentFinanceEntityList = fulfillmentFinanceEntityList
+                )
             }
 
             ItemListArea(
@@ -91,7 +75,6 @@ fun TodayScreen(
                 uiState = uiState,
                 viewModel = homeViewModel,
                 datasetWithAdjust = datasetWithAdjust,
-                isLoading = isSortedTodayLoading
             )
         }
     }

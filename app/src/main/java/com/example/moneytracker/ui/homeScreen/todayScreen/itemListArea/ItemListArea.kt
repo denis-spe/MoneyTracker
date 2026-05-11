@@ -1,8 +1,6 @@
 // Praise be the LORD GOD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
-import android.os.Build
-import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -12,18 +10,23 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.selection.selectableGroup
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccessTimeFilled
 import androidx.compose.material.icons.filled.Category
@@ -71,14 +74,15 @@ import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.SettlementType
-import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
+import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.ui.components.StatusView
+import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
-import com.example.moneytracker.ui.homeScreen.todayScreen.ItemCardShimmer
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 
 private val spacerWith = 14.dp
@@ -729,9 +733,8 @@ fun ItemListAreaSort(
 fun ItemListArea(
     modifier: Modifier = Modifier,
     uiState: HomeUiState,
-    datasetWithAdjust: List<DataSettlement>,
+    datasetWithAdjust: DataState<List<DataSettlement>>,
     viewModel: HomeViewModel,
-    isLoading: Boolean = false
 ) {
 
     Column(
@@ -753,24 +756,41 @@ fun ItemListArea(
             modifier = Modifier
                 .fillMaxSize()
         ) {
-            if (isLoading && datasetWithAdjust.isEmpty()) {
-                items(count = 5) {
-                    ItemCardShimmer()
-                    Spacer(modifier = Modifier.padding(bottom = 10.dp))
+            when (datasetWithAdjust) {
+                is DataState.Loading -> {
+                    item {
+                        repeat(7) {
+                            ItemCardShimmer()
+                        }
+                        Spacer(modifier = Modifier.padding(bottom = 10.dp))
+                    }
                 }
-            } else {
-                items(datasetWithAdjust.size, key = { it }) { index ->
-                    Row(
-                        modifier = Modifier.animateItem(
-                            fadeInSpec = spring(
-                                dampingRatio = Spring.DampingRatioHighBouncy,
-                                stiffness = Spring.StiffnessMediumLow
+
+                is DataState.Success -> {
+                    val data = datasetWithAdjust.data
+                    items(data.size, key = { it }) { index ->
+                        Row(
+                            modifier = Modifier.animateItem(
+                                fadeInSpec = spring(
+                                    dampingRatio = Spring.DampingRatioHighBouncy,
+                                    stiffness = Spring.StiffnessMediumLow
+                                )
+                            ),
+                        ) {
+                            ItemCard(
+                                modifier = Modifier.animateItem(),
+                                dataSettlement = data[index]
                             )
-                        ),
-                    ) {
-                        ItemCard(
-                            modifier = Modifier.animateItem(),
-                            dataSettlement = datasetWithAdjust[index]
+                        }
+                    }
+                }
+
+                is DataState.Error -> {
+                    item {
+                        Text(
+                            text = "Error: ${datasetWithAdjust.exception.message}",
+                            color = Color.Red,
+                            modifier = Modifier.padding(16.dp)
                         )
                     }
                 }
@@ -779,7 +799,6 @@ fun ItemListArea(
     }
 }
 
-@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ItemCard(
     modifier: Modifier = Modifier,
@@ -822,10 +841,7 @@ fun ItemCard(
         painterResource(id = it)
     }
 
-    val amount = when (dataSettlement) {
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.amount
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.amount
-    }.formatToAmount()
+    val amount = dataSettlement.addNegativeToAmount
 
     when (dataSettlement) {
         is DataSettlement.SettlementData -> dataSettlement.financeEntity.categoryText
@@ -955,5 +971,55 @@ fun ItemCard(
             dataSettlement = dataSettlement,
             onShowDialog = onShowDialog,
         )
+    }
+}
+
+@Composable
+fun ItemCardShimmer() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Leading Icon
+        Box(
+            modifier = Modifier
+                .shimmerEffect(shape = CircleShape, size = 40.dp)
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // Content Area
+        Column(modifier = Modifier.weight(1f)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.5f)
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(10.dp),
+                        width = 150.dp,
+                        height = 18.dp
+                    )
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.3f)
+                    .shimmerEffect(shape = RoundedCornerShape(4.dp), width = 100.dp, height = 14.dp)
+            )
+        }
+
+        // Trailing Content
+        Column(horizontalAlignment = Alignment.End) {
+            Box(
+                modifier = Modifier
+                    .shimmerEffect(shape = RoundedCornerShape(4.dp), width = 70.dp, height = 18.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Box(
+                modifier = Modifier
+                    .shimmerEffect(shape = CircleShape, size = 20.dp)
+            )
+        }
     }
 }

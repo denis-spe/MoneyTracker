@@ -44,17 +44,4 @@ data class HomeUiState(
     val datasetState: DatasetState = DatasetState.Loading,
     val isBottomSheetContentLoading: Boolean = true,
     val onActivateShow: Boolean = false,
-
-    // Loading flags for granular shimmers
-    val isTodayDataLoading: Boolean = false,
-    val isYesterdayDataLoading: Boolean = false,
-    val isGoalDataLoading: Boolean = false,
-    val isSettleDataLoading: Boolean = false,
-    val isAllDataLoading: Boolean = false,
-    val isTodayChartDataLoading: Boolean = false,
-    val isYesterdayChartDataLoading: Boolean = false,
-    val isYesterdayStatsLoading: Boolean = false,
-    val isWeeklyDataLoading: Boolean = false,
-    val isSortedTodayLoading: Boolean = false,
-    val isSortedYesterdayLoading: Boolean = false,
 )

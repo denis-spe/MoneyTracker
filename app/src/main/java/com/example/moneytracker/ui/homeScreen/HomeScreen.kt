@@ -1,7 +1,6 @@
 // Bless be the Name of the Lord
 package com.example.moneytracker.ui.homeScreen
 
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -77,11 +76,6 @@ fun HomeScreen(
 
     // IMPORTANT:
     // Use settledPage instead of currentPage for smoother movement
-    val selectedPage by remember {
-        derivedStateOf {
-            pagerState.settledPage
-        }
-    }
 
     val customColors = MoneyTrackerTheme.colors
 
@@ -138,16 +132,8 @@ fun HomeScreen(
                             ) { tab ->
 
                             scope.launch {
-
                                 val index = topBarEntries.indexOf(tab)
-
-                                pagerState.animateScrollToPage(
-                                    index,
-                                    animationSpec = tween(
-                                        durationMillis = 500,
-                                        easing = androidx.compose.animation.core.FastOutSlowInEasing
-                                    )
-                                )
+                                pagerState.animateScrollToPage(index)
                             }
                         }
 
@@ -196,10 +182,9 @@ fun HomeScreen(
                 pageSpacing = 0.dp,
 
                 snapPosition = SnapPosition.Start,
-
+                userScrollEnabled = false,
                 // Prevent unnecessary page recreation
-                key = { topBarEntries[it] }
-
+                key = { topBarEntries[it] },
             ) { page ->
 
                 when (page) {

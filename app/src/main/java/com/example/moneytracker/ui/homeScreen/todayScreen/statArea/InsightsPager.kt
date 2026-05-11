@@ -61,6 +61,7 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.ui.components.charts.InsightBar
 import kotlinx.coroutines.launch
 
@@ -678,3 +679,84 @@ fun FulfillmentInsightPager(financeEntityList: List<FinanceEntity>) {
         }
     }
 }
+
+@Composable
+fun FulfillmentInsightPagerShimmer() {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(100.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Shimmer for label
+            Box(
+                modifier = Modifier
+                    .padding(bottom = 4.dp)
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(50),
+                        width = 100.dp,
+                        height = 20.dp
+                    )
+            )
+
+            // Shimmer for label
+            Box(
+                modifier = Modifier
+                    .width(200.dp)
+                    .height(20.dp)
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(50),
+                    )
+            )
+
+            Row(
+                modifier = Modifier
+                    .padding(top = 4.dp)
+                    .width(200.dp)
+                    .height(20.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Absolute.SpaceBetween
+            ) {
+                // Shimmer for zero
+                Box(
+                    modifier = Modifier
+                        .width(25.dp)
+                        .height(20.dp)
+                        .shimmerEffect(
+                            shape = RoundedCornerShape(50),
+                        )
+                )
+
+                // Shimmer for 50
+                Box(
+                    modifier = Modifier
+                        .width(25.dp)
+                        .height(20.dp)
+                        .shimmerEffect(
+                            shape = RoundedCornerShape(50),
+                        )
+                )
+
+                // Shimmer for 100
+                Box(
+                    modifier = Modifier
+                        .width(25.dp)
+                        .height(20.dp)
+                        .shimmerEffect(
+                            shape = RoundedCornerShape(50),
+                        )
+                )
+
+
+            }
+
+
+        }
+    }
+}
+

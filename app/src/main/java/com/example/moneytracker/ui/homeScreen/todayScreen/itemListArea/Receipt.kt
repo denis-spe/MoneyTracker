@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.clearText
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
@@ -33,6 +34,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -41,6 +43,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -74,7 +77,6 @@ import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
-import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeRange
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.dataAddition.MAX_LABEL_LENGTH
 import com.example.moneytracker.ui.homeScreen.dataAddition.MODEL_DRAWER_ICON_SIZE
@@ -924,7 +926,10 @@ fun OnUpdate(
         ModalBottomSheet(
             onDismissRequest = {
                 isUpdateModelBottonOpen.value = false
-            }
+            },
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true
+            )
         ) {
             Column(
                 modifier = Modifier
@@ -955,7 +960,8 @@ fun OnUpdate(
                 }
 
                 LazyColumn(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth(),
                     state = lazyState,
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
@@ -963,9 +969,16 @@ fun OnUpdate(
                     // Amount
                     item(key = 322) {
                         Row(
-                            modifier = Modifier.animateItem()
+                            modifier = Modifier
+                                .animateItem()
                         ) {
                             ModelDrawerAmountField(
+                                modifier = Modifier.clip(
+                                    RoundedCornerShape(
+                                        topStart = 5.dp,
+                                        topEnd = 5.dp
+                                    )
+                                ),
                                 state = amountState,
                                 placeholder = "0.0",
                                 colorResId = colorResId,
@@ -1029,19 +1042,13 @@ fun OnUpdate(
                     // Date time picker
                     item(key = 12) {
                         // Show date time picker.
-                        Row(
+                        Column(
                             modifier = Modifier.animateItem()
                         ) {
                             if (
                                 dataSettlement is DataSettlement.SettlementData &&
-                                dataSettlement.financeEntity is FinanceEntity.Goal
+                                dataSettlement.financeEntity !is FinanceEntity.Goal
                             ) {
-                                DateTimeRange(
-                                    startLocalDateTimeState = localDateTimeState,
-                                    endLocalDateTimeState = endLocalDateTimeState,
-                                    colorResId = colorResId
-                                )
-                            } else {
                                 DateTimeInput(
                                     showTime = showTime,
                                     showDate = showDate,
@@ -1051,7 +1058,6 @@ fun OnUpdate(
                             }
                         }
                     }
-
 
                     // Updating dataset
                     item(key = 6) {
@@ -1079,8 +1085,7 @@ fun OnUpdate(
                                             val finance = dataSettlement.financeEntity
                                             val normalizedStart =
                                                 localDateTimeState.value.toMidnight()
-                                            val normalizedEnd =
-                                                endLocalDateTimeState.value.toMidnight()
+                                            endLocalDateTimeState.value.toMidnight()
 
                                             val newFinanceEntity = when (finance) {
                                                 is FinanceEntity.Transaction -> finance.copy(
@@ -1099,10 +1104,6 @@ fun OnUpdate(
                                                     createdAt = normalizedStart.toFirestoreTimestampUtc(),
                                                     tagIcon = tagIconState.value,
                                                     paymentMethod = selectedPaymentMethod.value,
-                                                    routine = finance.routine.copy(
-                                                        startDateTime = normalizedStart.toFirestoreTimestampUtc(),
-                                                        deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc()
-                                                    )
                                                 )
 
                                                 is FinanceEntity.Liability -> finance.copy(
@@ -1220,7 +1221,6 @@ fun OnUpdate(
                             }
                         }
                     }
-
                 }
             }
         }
@@ -1256,19 +1256,18 @@ fun OnUpdate(
             is DataSettlement.SettlementAdjust -> dataSettlement.settlement.tagIcon
         }
 
-        if (amountState.text.toString() != amount.toString()) {
-            amountState.setTextAndPlaceCursorAtEnd(amount.toString())
-            displayAmountState.value = amount.toString()
+        amountState.setTextAndPlaceCursorAtEnd(amount.toString())
+        displayAmountState.value = amount.toString()
 
-            labelState.setTextAndPlaceCursorAtEnd(label)
-            displayLabel.value = label
+        labelState.setTextAndPlaceCursorAtEnd(label)
+        displayLabel.value = label
 
-            descriptionState.setTextAndPlaceCursorAtEnd(description)
+        descriptionState.setTextAndPlaceCursorAtEnd(description)
 
-            localDateTimeState.value = dateTime.toLocalDateTimeUtc()
+        localDateTimeState.value = dateTime.toLocalDateTimeUtc()
 
-            tagIconState.value = tagIcon
-        }
+        tagIconState.value = tagIcon
+
     }
 
 }

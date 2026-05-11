@@ -33,8 +33,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.DataSettlement
+import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.addZeroIfLessThenTen
-import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.outlinedIcon
 import com.example.moneytracker.helper.shimmerEffect
@@ -55,10 +55,8 @@ fun YesterdayItem(
     modifier: Modifier = Modifier,
     dataSettlement: DataSettlement
 ) {
-    val amount = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.amount.formatToAmount()
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.amount.formatToAmount()
-    }
+    val amount = dataSettlement.addNegativeToAmount
+
     val label = when (dataSettlement) {
         is DataSettlement.SettlementData -> dataSettlement.financeEntity.label
         is DataSettlement.SettlementAdjust -> dataSettlement.settlement.label

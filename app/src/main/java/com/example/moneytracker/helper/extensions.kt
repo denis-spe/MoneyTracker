@@ -31,6 +31,7 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Achievement
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
@@ -61,6 +62,32 @@ import kotlin.math.log10
 import kotlin.math.pow
 
 private val zone = ZoneId.systemDefault()
+
+
+val DataSettlement.addNegativeToAmount: String
+    get() {
+        return when (this) {
+            is DataSettlement.SettlementData -> {
+                val amount = financeEntity.amount
+                if ((financeEntity is FinanceEntity.Liability && financeEntity.liabilityType == LiabilityType.LOAN) ||
+                    (financeEntity is FinanceEntity.Transaction && financeEntity.transactionType == TransactionType.EXPENSES)
+                ) {
+                    "-${amount.formatToAmount()}"
+                } else {
+                    amount.formatToAmount()
+                }
+            }
+
+            is DataSettlement.SettlementAdjust -> {
+                val amount = settlement.amount
+                if (settlement.settlementType == SettlementType.DEBT_REPAY) {
+                    "-${amount.formatToAmount()}"
+                } else {
+                    amount.formatToAmount()
+                }
+            }
+        }
+    }
 
 fun java.time.LocalDateTime.toMidnight(): java.time.LocalDateTime =
     this.withHour(0)
@@ -935,7 +962,7 @@ fun Double.formatToAmount(): String {
         val formattedAmount = rounding.abs().toString()
             .replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")
             .replace(Regex("\\.00$"), "")
-        return "$sign$symbol$formattedAmount"
+        return "$sign$symbol $formattedAmount"
     }
 
     val suffixes = charArrayOf('M', 'B', 'T', 'Q')
@@ -945,10 +972,10 @@ fun Double.formatToAmount(): String {
 
     val suffixIndex = base - 2
     return if (suffixIndex >= 0 && suffixIndex < suffixes.size) {
-        "$sign$symbol${formatter.format(scaledNumber)}${suffixes[suffixIndex]}"
+        "$sign$symbol ${formatter.format(scaledNumber)}${suffixes[suffixIndex]}"
     } else {
         // Fallback for extremely large numbers or unexpected base
-        "$sign$symbol${String.format(Locale.US, "%.2f", absValue)}"
+        "$sign$symbol ${String.format(Locale.US, "%.2f", absValue)}"
     }
 }
 

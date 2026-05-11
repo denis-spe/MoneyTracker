@@ -5,7 +5,6 @@ import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -70,6 +69,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -115,6 +115,7 @@ import com.example.moneytracker.helper.toMidnight
 import com.example.moneytracker.ui.components.CustomAmountKeyBoard
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.launch
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
@@ -628,9 +629,10 @@ fun SettlementField(
     val symbol = numberFormat.currency?.symbol ?: "$"
     val onDialogShow = remember { mutableStateOf(false) }
     var amountToDisplay by remember { mutableStateOf("0.0") }
+    val scope = rememberCoroutineScope()
     var financeEntityToDisplay by remember { mutableStateOf<FinanceEntity?>(null) }
     val focusRequester = remember { FocusRequester() }
-    val interactionSource = remember { MutableInteractionSource() }
+    remember { MutableInteractionSource() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val showCustomKeyboard = remember { mutableStateOf(false) }
 
@@ -728,7 +730,10 @@ fun SettlementField(
                                         },
                                         onClick = {
                                             expanded = false
-                                            focusRequester.requestFocus()
+                                            scope.launch {
+                                                awaitFrame()
+                                                focusRequester.requestFocus()
+                                            }
                                             selectedFinanceEntity.value = finance
                                         },
                                         leadingIcon = {
@@ -759,10 +764,7 @@ fun SettlementField(
                                             keyboardController?.hide()
                                             showCustomKeyboard.value = true
                                         }
-                                    }
-                                    .focusable(
-                                        interactionSource = interactionSource
-                                    ),
+                                    },
                                 state = amountState,
                                 lineLimits = TextFieldLineLimits.SingleLine,
                                 placeholder = {
@@ -797,6 +799,7 @@ fun SettlementField(
                                         amountToDisplay = if (amountState.text.isNotEmpty())
                                             amountState.text.toString() else
                                             "0.0"
+                                        financeEntityToDisplay = selectedFinanceEntity.value
                                     }
                                 },
                                 leadingIcon = {
@@ -831,6 +834,7 @@ fun SettlementField(
 
                                     onDialogShow.value = false
                                     amountToDisplay = amountState.text.toString()
+                                    financeEntityToDisplay = selectedFinanceEntity.value
                                 }
                             },
                             onCancel = {
