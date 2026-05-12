@@ -98,7 +98,7 @@ fun CalendarViewSection(
             },
             divider = {
                 HorizontalDivider(
-                    color = MoneyTrackerTheme.colors.currentPage
+                    color = MoneyTrackerTheme.colors.themeColor
                 )
             },
         ) {
@@ -189,6 +189,7 @@ fun CalendarViewSection(
                                         if (lenOfAct > 0) {
                                             Badge(
                                                 containerColor = selectedColor,
+                                                contentColor = contentColor
                                             ) {
                                                 Text(lenOfAct.toString())
                                             }

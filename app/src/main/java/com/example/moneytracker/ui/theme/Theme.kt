@@ -39,6 +39,11 @@ fun MoneyTrackerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
+    customThemeColor: Color? = null,
+    customBackgroundColor: Color? = null,
+    customContentColor: Color? = null,
+    customAutoBackgroundColor: Color? = null,
+    customAutoTextColor: Color? = null,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -54,23 +59,38 @@ fun MoneyTrackerTheme(
     val darkBackgroundColor = Color(0xFF282626)
     val lightBackgroundColor = Color(0xFFE0DDDD)
 
-    val extendedColors = if (darkTheme) {
-        ExtendedColors(
-            customBackground = darkBackgroundColor.copy(alpha = 0.5f),
-            contentColor = Color.White.copy(alpha = 0.8f),
-            currentPage = Color(0xFF8F8686).copy(alpha = 0.2f),
-            autoBackground = darkBackgroundColor,
-            autoText = Color.White,
-            themeColor = Color(0xFF11575E)
-        )
-    } else {
-        ExtendedColors(
-            customBackground = lightBackgroundColor.copy(alpha = 0.5f),
-            contentColor = Color.Black.copy(alpha = 0.8f),
-            currentPage = Color(0xFF8C8B8B).copy(alpha = 0.2f),
-            autoBackground = lightBackgroundColor,
-            autoText = Color.Black,
-            themeColor = Color(0xFF688E26)
+    val extendedColors = ExtendedColors(
+        customBackground = themeColor(
+            darkTheme,
+            darkBackgroundColor.copy(alpha = 0.5f),
+            lightBackgroundColor.copy(alpha = 0.5f)
+        ),
+        contentColor = themeColor(
+            darkTheme,
+            Color.White.copy(alpha = 0.8f),
+            Color.Black.copy(alpha = 0.8f)
+        ),
+        autoBackground = themeColor(darkTheme, darkBackgroundColor, lightBackgroundColor),
+        autoText = themeColor(darkTheme, Color.White, Color.Black),
+        themeColor = themeColor(darkTheme, Color(0xFF59A5D8), Color(0xFF688E26))
+    )
+
+    if (!dynamicColor) {
+        MoneyTrackerTheme.composableColor(
+            light = ExtendedColors(
+                customBackground = customBackgroundColor ?: Color.Unspecified,
+                contentColor = customContentColor ?: Color.Unspecified,
+                autoBackground = customAutoBackgroundColor ?: Color.Unspecified,
+                autoText = customAutoTextColor ?: Color.Unspecified,
+                themeColor = customThemeColor ?: Color.Unspecified
+            ),
+            dark = ExtendedColors(
+                customBackground = customBackgroundColor ?: Color.Unspecified,
+                contentColor = customContentColor ?: Color.Unspecified,
+                autoBackground = customAutoBackgroundColor ?: Color.Unspecified,
+                autoText = customAutoTextColor ?: Color.Unspecified,
+                themeColor = customThemeColor ?: Color.Unspecified
+            )
         )
     }
 
@@ -86,5 +106,32 @@ fun MoneyTrackerTheme(
 object MoneyTrackerTheme {
     val colors: ExtendedColors
         @Composable
-        get() = LocalExtendedColors.current
+        get() = appColors ?: LocalExtendedColors.current
+
+    private var appColors: ExtendedColors? = null
+
+    /**
+     * Returns [light] if the system is in light theme, and [dark] otherwise.
+     */
+    @Composable
+    fun <T> composableColor(light: T? = null, dark: T? = null): T? {
+        val result = if (isSystemInDarkTheme()) dark else light
+        if (result is ExtendedColors) {
+            val current = appColors ?: LocalExtendedColors.current
+            appColors = current.copy(
+                customBackground = if (result.customBackground != Color.Unspecified) result.customBackground else current.customBackground,
+                contentColor = if (result.contentColor != Color.Unspecified) result.contentColor else current.contentColor,
+                autoBackground = if (result.autoBackground != Color.Unspecified) result.autoBackground else current.autoBackground,
+                autoText = if (result.autoText != Color.Unspecified) result.autoText else current.autoText,
+                themeColor = if (result.themeColor != Color.Unspecified) result.themeColor else current.themeColor
+            )
+        }
+        return result
+    }
 }
+
+private fun themeColor(isDark: Boolean, dark: Color, light: Color): Color {
+    return if (isDark) dark else light
+}
+
+

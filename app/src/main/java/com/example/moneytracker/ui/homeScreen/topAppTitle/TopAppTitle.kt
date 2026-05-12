@@ -14,17 +14,16 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
-import androidx.compose.runtime.derivedStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import kotlin.math.absoluteValue
 
 @Composable
 fun TopAppTitle(
@@ -39,14 +38,7 @@ fun TopAppTitle(
         TopBarNav.entries
     }
 
-    // IMPORTANT:
-    // settledPage updates ONLY after animation completes
-    // much smoother than currentPage
-    val selectedTabIndex by remember {
-        derivedStateOf {
-            state.settledPage
-        }
-    }
+    val selectedTabIndex = state.currentPage
 
     PrimaryScrollableTabRow(
         selectedTabIndex = selectedTabIndex,
@@ -60,7 +52,6 @@ fun TopAppTitle(
         edgePadding = 0.dp,
 
         indicator = {
-
             TabRowDefaults.PrimaryIndicator(
                 modifier = Modifier
                     .tabIndicatorOffset(
@@ -73,7 +64,7 @@ fun TopAppTitle(
                 width = 5.dp,
                 height = 5.dp,
 
-                color = MoneyTrackerTheme.colors.autoText
+                color = contentColor
             )
         },
 
@@ -82,11 +73,14 @@ fun TopAppTitle(
     ) {
 
         topBarNav.forEachIndexed { index, nav ->
+            val distance =
+                (state.currentPage + state.currentPageOffsetFraction - index).absoluteValue
+            val activeProgress = (1f - distance).coerceIn(0f, 1f)
 
             TopBarItem(
                 nav = nav,
 
-                selected = selectedTabIndex == index,
+                activeProgress = activeProgress,
 
                 currentPageColor = currentPageColor,
 
@@ -103,29 +97,26 @@ fun TopAppTitle(
 @Composable
 private fun TopBarItem(
     nav: TopBarNav,
-    selected: Boolean,
+    activeProgress: Float,
     currentPageColor: Color,
     contentColor: Color,
     onClick: () -> Unit
 ) {
 
     Tab(
-        selected = selected,
+        selected = activeProgress > 0.5f,
 
         onClick = onClick,
 
         modifier = Modifier
             .clip(RoundedCornerShape(50.dp))
             .background(
-                if (selected)
-                    currentPageColor
-                else
-                    Color.Transparent
+                currentPageColor.copy(alpha = activeProgress)
             ),
 
         unselectedContentColor = MoneyTrackerTheme.colors.autoText,
 
-        selectedContentColor = contentColor
+        selectedContentColor = lerp(MoneyTrackerTheme.colors.autoText, contentColor, activeProgress)
     ) {
 
         Text(

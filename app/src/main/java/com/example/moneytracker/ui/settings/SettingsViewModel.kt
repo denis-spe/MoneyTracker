@@ -28,6 +28,25 @@ class SettingsViewModel @Inject constructor(
             initialValue = true
         )
 
+    val customBackground: StateFlow<Long?> = settingsManager.customBackground
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val contentColor: StateFlow<Long?> = settingsManager.contentColor
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val autoBackground: StateFlow<Long?> = settingsManager.autoBackground
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val autoText: StateFlow<Long?> = settingsManager.autoText
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+
+    val themeColor: StateFlow<Long?> = settingsManager.themeColor
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = null
+        )
+
     fun setThemeConfig(themeConfig: ThemeConfig) {
         viewModelScope.launch {
             settingsManager.setThemeConfig(themeConfig)
@@ -37,6 +56,28 @@ class SettingsViewModel @Inject constructor(
     fun setDynamicColor(enabled: Boolean) {
         viewModelScope.launch {
             settingsManager.setDynamicColor(enabled)
+        }
+    }
+
+    fun setCustomBackground(color: Long) {
+        viewModelScope.launch { settingsManager.setCustomBackground(color) }
+    }
+
+    fun setContentColor(color: Long) {
+        viewModelScope.launch { settingsManager.setContentColor(color) }
+    }
+
+    fun setAutoBackground(color: Long) {
+        viewModelScope.launch { settingsManager.setAutoBackground(color) }
+    }
+
+    fun setAutoText(color: Long) {
+        viewModelScope.launch { settingsManager.setAutoText(color) }
+    }
+
+    fun setThemeColor(color: Long) {
+        viewModelScope.launch {
+            settingsManager.setThemeColor(color)
         }
     }
 }

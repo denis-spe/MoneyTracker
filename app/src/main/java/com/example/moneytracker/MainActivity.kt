@@ -14,6 +14,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import com.example.moneytracker.ui.settings.SettingsViewModel
 import com.example.moneytracker.ui.settings.ThemeConfig
@@ -75,6 +76,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             val themeConfig by settingsViewModel.themeConfig.collectAsState()
             val dynamicColor by settingsViewModel.dynamicColor.collectAsState()
+            val customThemeColorValue by settingsViewModel.themeColor.collectAsState()
+            val customBackgroundColorValue by settingsViewModel.customBackground.collectAsState()
+            val customContentColorValue by settingsViewModel.contentColor.collectAsState()
+            val customAutoBackgroundColorValue by settingsViewModel.autoBackground.collectAsState()
+            val customAutoTextColorValue by settingsViewModel.autoText.collectAsState()
 
             val darkTheme = when (themeConfig) {
                 ThemeConfig.SYSTEM -> isSystemInDarkTheme()
@@ -84,7 +90,12 @@ class MainActivity : ComponentActivity() {
 
             MoneyTrackerTheme(
                 darkTheme = darkTheme,
-                dynamicColor = dynamicColor
+                dynamicColor = dynamicColor,
+                customThemeColor = customThemeColorValue?.let { Color(it.toULong()) },
+                customBackgroundColor = customBackgroundColorValue?.let { Color(it.toULong()) },
+                customContentColor = customContentColorValue?.let { Color(it.toULong()) },
+                customAutoBackgroundColor = customAutoBackgroundColorValue?.let { Color(it.toULong()) },
+                customAutoTextColor = customAutoTextColorValue?.let { Color(it.toULong()) }
             ) {
                 App()
             }

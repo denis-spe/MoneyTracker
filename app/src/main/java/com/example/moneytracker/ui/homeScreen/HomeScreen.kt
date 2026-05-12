@@ -13,7 +13,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -28,8 +27,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DatasetState
+import com.example.moneytracker.ui.LoadingScreen
 import com.example.moneytracker.ui.UserViewModel
-import com.example.moneytracker.ui.components.LoadingScreen
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
 import com.example.moneytracker.ui.homeScreen.topAppAction.TopAppAction
@@ -73,9 +72,6 @@ fun HomeScreen(
         initialPage = 1,
         pageCount = { topBarEntries.size }
     )
-
-    // IMPORTANT:
-    // Use settledPage instead of currentPage for smoother movement
 
     val customColors = MoneyTrackerTheme.colors
 
@@ -126,7 +122,7 @@ fun HomeScreen(
                         TopAppTitle(
                             state = pagerState,
                             contentColor = customColors.contentColor,
-                            currentPageColor = customColors.currentPage,
+                            currentPageColor = customColors.themeColor,
                             backgroundColor = customColors.customBackground,
 
                             ) { tab ->
@@ -177,12 +173,12 @@ fun HomeScreen(
                 state = pagerState,
 
                 // VERY IMPORTANT FOR PERFORMANCE
-                beyondViewportPageCount = 0,
+                beyondViewportPageCount = 1,
 
                 pageSpacing = 0.dp,
 
                 snapPosition = SnapPosition.Start,
-                userScrollEnabled = false,
+                userScrollEnabled = true,
                 // Prevent unnecessary page recreation
                 key = { topBarEntries[it] },
             ) { page ->

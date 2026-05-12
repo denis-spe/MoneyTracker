@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.ui.LoadingScreen
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.authScreens.loginScreen.LoginScreen
 import com.example.moneytracker.ui.authScreens.mailScreen.MailScreen
@@ -20,7 +21,6 @@ import com.example.moneytracker.ui.authScreens.registerScreen.EmailRegistrationS
 import com.example.moneytracker.ui.authScreens.registerScreen.NamesRegistrationScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.PasswordRegistrationScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.RegisterViewModel
-import com.example.moneytracker.ui.components.LoadingScreen
 import com.example.moneytracker.ui.fulfillmentDetailScreen.GoalScreen
 import com.example.moneytracker.ui.homeScreen.HomeScreen
 import com.example.moneytracker.ui.loading.LoadingViewModel

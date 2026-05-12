@@ -1,5 +1,5 @@
 // Bless be the name of LORD of hosts
-package com.example.moneytracker.ui.components
+package com.example.moneytracker.ui
 
 import android.util.Log
 import androidx.compose.foundation.background
@@ -28,10 +28,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
@@ -57,8 +55,8 @@ fun LoadingScreen(
 ) {
     val customColors = MoneyTrackerTheme.colors
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    val homeViewModel: HomeViewModel = hiltViewModel()
-    val userViewModel: UserViewModel = hiltViewModel()
+    hiltViewModel()
+    hiltViewModel()
 
 
     // Navigation logic (only if user and navController are provided)
@@ -91,7 +89,7 @@ fun LoadingScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MoneyTrackerTheme.colors.autoBackground),
+                .background(MoneyTrackerTheme.colors.themeColor),
             contentAlignment = Alignment.Center
         ) {
             // Top/Center Area: App Name
@@ -129,7 +127,7 @@ fun LoadingScreen(
                     CircularProgressIndicator(
                         strokeWidth = 3.dp,
                         strokeCap = StrokeCap.Round,
-                        color = MoneyTrackerTheme.colors.themeColor,
+                        color = MoneyTrackerTheme.colors.contentColor,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(

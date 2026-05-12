@@ -151,4 +151,7 @@ dependencies {
 
     implementation("androidx.datastore:datastore-preferences:1.0.0")
 
+    implementation("com.github.skydoves:colorpicker-compose:1.1.4")
+
+
 }

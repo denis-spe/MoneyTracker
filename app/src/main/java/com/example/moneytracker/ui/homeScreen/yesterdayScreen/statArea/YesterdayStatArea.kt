@@ -373,7 +373,8 @@ fun YesterdayStatArea(
                 },
                 colors = ButtonDefaults.textButtonColors().copy(
                     contentColor = if (pageState.currentPage == 0)
-                        Color.White else MoneyTrackerTheme.colors.autoText,
+                        MoneyTrackerTheme.colors.contentColor
+                    else MoneyTrackerTheme.colors.autoText,
                     containerColor = if (pageState.currentPage == 0) {
                         MoneyTrackerTheme.colors.themeColor
                     } else {
@@ -391,7 +392,8 @@ fun YesterdayStatArea(
                 },
                 colors = ButtonDefaults.textButtonColors().copy(
                     contentColor = if (pageState.currentPage == 1)
-                        Color.White else MoneyTrackerTheme.colors.autoText,
+                        MoneyTrackerTheme.colors.contentColor
+                    else MoneyTrackerTheme.colors.autoText,
                     containerColor = if (pageState.currentPage == 1) {
                         MoneyTrackerTheme.colors.themeColor
                     } else {

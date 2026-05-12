@@ -3,22 +3,29 @@ package com.example.moneytracker.ui.settings
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
 import androidx.compose.material.icons.automirrored.filled.Logout
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,19 +42,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.example.moneytracker.ui.LoadingScreen
 import com.example.moneytracker.ui.UserViewModel
-import com.example.moneytracker.ui.components.LoadingScreen
 import com.example.moneytracker.ui.components.ProfileImage
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.github.skydoves.colorpicker.compose.HsvColorPicker
+import com.github.skydoves.colorpicker.compose.rememberColorPickerController
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +77,9 @@ fun SettingsScreen(
     val dynamicColor by viewModel.dynamicColor.collectAsState()
     val uiState by userViewModel.uiState.collectAsStateWithLifecycle()
     val userState by userViewModel.userState.collectAsStateWithLifecycle()
+    val scrollState = rememberScrollState()
+    var pickedColor by remember { mutableStateOf(Color.Unspecified) }
+    var showDialogForField by remember { mutableStateOf<String?>(null) }
 
 
     if (uiState.isLoading) {
@@ -99,6 +116,7 @@ fun SettingsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
+                .verticalScroll(scrollState)
                 .padding(16.dp)
         ) {
             UserCredentialSettings(
@@ -121,15 +139,109 @@ fun SettingsScreen(
                 onThemeConfigChange = viewModel::setThemeConfig
             )
 
-            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
-
             DynamicColorSettings(
                 dynamicColor = dynamicColor,
                 onDynamicColorChange = viewModel::setDynamicColor
             )
 
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+            Text(
+                text = "Custom Theme Colors",
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Spacer(modifier = Modifier.padding(8.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val fields =
+                    listOf(
+                        "Theme Color",
+                        "Custom Background",
+                        "Content",
+                        "Auto Background",
+                        "Auto Text"
+                    )
+
+                fields.forEach { field ->
+
+                    Row(
+                        modifier = Modifier.clickable {
+                            showDialogForField = field
+                        },
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        val color = when (field) {
+                            "Theme Color" -> MoneyTrackerTheme.colors.themeColor
+                            "Custom Background" -> MoneyTrackerTheme.colors.customBackground
+                            "Content" -> MoneyTrackerTheme.colors.contentColor
+                            "Auto Background" -> MoneyTrackerTheme.colors.autoBackground
+                            "Auto Text" -> MoneyTrackerTheme.colors.autoText
+                            else -> Color.Unspecified
+                        }
+                        Box(
+                            modifier = Modifier
+                                .width(23.dp)
+                                .height(20.dp)
+                                .padding(end = 3.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                        )
+                        Text(field)
+                    }
+                }
+            }
+
+            if (showDialogForField != null) {
+                val field = showDialogForField!!
+                Dialog(onDismissRequest = { showDialogForField = null }) {
+                    Card {
+                        Column(
+                            modifier = Modifier.padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "Pick $field", style = MaterialTheme.typography.titleLarge)
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            ColorSettings(onColorChange = { pickedColor = it })
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            Button(
+                                onClick = {
+                                    applyColor(field, pickedColor, viewModel)
+                                    showDialogForField = null
+                                },
+                                enabled = pickedColor != Color.Unspecified,
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = ButtonDefaults.buttonColors().copy(
+                                    containerColor = pickedColor
+                                )
+                            ) {
+                                Text("Apply")
+                            }
+                        }
+                    }
+                }
+            }
+
+            HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
 
         }
+    }
+}
+
+private fun applyColor(field: String, color: Color, viewModel: SettingsViewModel) {
+    val colorLong = color.value.toLong()
+    viewModel.setDynamicColor(false)
+    when (field) {
+        "Theme Color" -> viewModel.setThemeColor(colorLong)
+        "Custom Background" -> viewModel.setCustomBackground(colorLong)
+        "Content" -> viewModel.setContentColor(colorLong)
+        "Auto Background" -> viewModel.setAutoBackground(colorLong)
+        "Auto Text" -> viewModel.setAutoText(colorLong)
     }
 }
 
@@ -150,14 +262,14 @@ fun CredentialButton(
         Column(
             modifier = Modifier
                 .clip(CircleShape)
-                .background(MoneyTrackerTheme.colors.customBackground),
+                .background(MoneyTrackerTheme.colors.themeColor),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = "Log out icon",
-                tint = MoneyTrackerTheme.colors.autoText,
+                tint = MoneyTrackerTheme.colors.contentColor,
                 modifier = Modifier
                     .size(30.dp)
                     .padding(5.dp)
@@ -250,6 +362,23 @@ fun UserCredentialSettings(
             )
         }
     }
+}
+
+@Composable
+fun ColorSettings(onColorChange: (Color) -> Unit) {
+    val controller = rememberColorPickerController()
+    HsvColorPicker(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp)
+            .padding(10.dp),
+        controller = controller,
+        onColorChanged = { colorEnvelope ->
+            if (colorEnvelope.fromUser) {
+                onColorChange(colorEnvelope.color)
+            }
+        }
+    )
 }
 
 @Composable
