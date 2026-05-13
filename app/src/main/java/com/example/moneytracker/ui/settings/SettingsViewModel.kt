@@ -28,24 +28,25 @@ class SettingsViewModel @Inject constructor(
             initialValue = true
         )
 
-    val customBackground: StateFlow<Long?> = settingsManager.customBackground
+    // Light mode flows
+    val lightSecondarySurface = settingsManager.lightSecondarySurface
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val lightAccentContent = settingsManager.lightAccentContent
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val lightOnSurfaceText = settingsManager.lightOnSurfaceText
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
+    val lightPrimaryAccent = settingsManager.lightPrimaryAccent
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    val contentColor: StateFlow<Long?> = settingsManager.contentColor
+    // Dark mode flows
+    val darkSecondarySurface = settingsManager.darkSecondarySurface
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    val autoBackground: StateFlow<Long?> = settingsManager.autoBackground
+    val darkAccentContent = settingsManager.darkAccentContent
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    val autoText: StateFlow<Long?> = settingsManager.autoText
+    val darkOnSurfaceText = settingsManager.darkOnSurfaceText
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
-
-    val themeColor: StateFlow<Long?> = settingsManager.themeColor
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5000),
-            initialValue = null
-        )
+    val darkPrimaryAccent = settingsManager.darkPrimaryAccent
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
     fun setThemeConfig(themeConfig: ThemeConfig) {
         viewModelScope.launch {
@@ -59,25 +60,32 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    fun setCustomBackground(color: Long) {
-        viewModelScope.launch { settingsManager.setCustomBackground(color) }
-    }
+    // Light mode setters
+    fun setLightSecondarySurface(color: Long) =
+        viewModelScope.launch { settingsManager.setLightSecondarySurface(color) }
 
-    fun setContentColor(color: Long) {
-        viewModelScope.launch { settingsManager.setContentColor(color) }
-    }
+    fun setLightAccentContent(color: Long) =
+        viewModelScope.launch { settingsManager.setLightAccentContent(color) }
 
-    fun setAutoBackground(color: Long) {
-        viewModelScope.launch { settingsManager.setAutoBackground(color) }
-    }
+    fun setLightOnSurfaceText(color: Long) =
+        viewModelScope.launch { settingsManager.setLightOnSurfaceText(color) }
 
-    fun setAutoText(color: Long) {
-        viewModelScope.launch { settingsManager.setAutoText(color) }
-    }
+    fun setLightPrimaryAccent(color: Long) =
+        viewModelScope.launch { settingsManager.setLightPrimaryAccent(color) }
 
-    fun setThemeColor(color: Long) {
-        viewModelScope.launch {
-            settingsManager.setThemeColor(color)
-        }
-    }
+    // Dark mode setters
+    fun setDarkSecondarySurface(color: Long) =
+        viewModelScope.launch { settingsManager.setDarkSecondarySurface(color) }
+
+    fun setDarkAccentContent(color: Long) =
+        viewModelScope.launch { settingsManager.setDarkAccentContent(color) }
+
+    fun setDarkOnSurfaceText(color: Long) =
+        viewModelScope.launch { settingsManager.setDarkOnSurfaceText(color) }
+
+    fun setDarkPrimaryAccent(color: Long) =
+        viewModelScope.launch { settingsManager.setDarkPrimaryAccent(color) }
+
+    fun resetLightColors() = viewModelScope.launch { settingsManager.resetLightColors() }
+    fun resetDarkColors() = viewModelScope.launch { settingsManager.resetDarkColors() }
 }

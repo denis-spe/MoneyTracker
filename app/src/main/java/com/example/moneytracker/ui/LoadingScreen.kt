@@ -27,10 +27,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
@@ -55,9 +53,6 @@ fun LoadingScreen(
 ) {
     val customColors = MoneyTrackerTheme.colors
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
-    hiltViewModel()
-    hiltViewModel()
-
 
     // Navigation logic (only if user and navController are provided)
     var navigated by remember { mutableStateOf(false) }
@@ -89,7 +84,7 @@ fun LoadingScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MoneyTrackerTheme.colors.themeColor),
+                .background(MoneyTrackerTheme.colors.primaryAccent),
             contentAlignment = Alignment.Center
         ) {
             // Top/Center Area: App Name
@@ -102,7 +97,7 @@ fun LoadingScreen(
             ) {
                 Text(
                     text = stringResource(R.string.app_name),
-                    color = customColors.contentColor,
+                    color = customColors.accentContent,
                     style = typography.headlineMedium,
                     fontSize = 30.sp
                 )
@@ -127,7 +122,7 @@ fun LoadingScreen(
                     CircularProgressIndicator(
                         strokeWidth = 3.dp,
                         strokeCap = StrokeCap.Round,
-                        color = MoneyTrackerTheme.colors.contentColor,
+                        color = MoneyTrackerTheme.colors.accentContent,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(
@@ -135,7 +130,7 @@ fun LoadingScreen(
                             append("Glory be to the Lord of hosts\n")
                             append("Copyright@$currentYear Den.\n All rights reserved.")
                         },
-                        color = customColors.contentColor,
+                        color = customColors.accentContent,
                         style = typography.bodyMedium,
                         modifier = Modifier.padding(top = 8.dp),
                         textAlign = TextAlign.Center

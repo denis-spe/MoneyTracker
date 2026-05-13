@@ -132,7 +132,7 @@ fun StartUpScreen(
                     loadingViewModel!!.setScreenContent {
                         Text(
                             "Welcome ${userState.value?.displayName}",
-                            color = MoneyTrackerTheme.colors.autoText,
+                            color = MoneyTrackerTheme.colors.onSurfaceText,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )

@@ -76,7 +76,7 @@ fun VicoLineChart(
     val chartData = chartDataCollection.chartData
 
     var lineLayer = rememberLineCartesianLayer()
-    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.autoText)
+    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.onSurfaceText)
 
     val legend = rememberHorizontalLegend<CartesianMeasuringContext, CartesianDrawingContext>(
         items = { _ ->

@@ -544,7 +544,7 @@ fun LoadableButton(
             .border(borderSize, color, shape)
             .clickable { onClick() },
         shape = shape,
-        color = MoneyTrackerTheme.colors.autoBackground,
+        color = MoneyTrackerTheme.colors.secondarySurface,
     ) {
         Surface(
             modifier = Modifier
@@ -603,7 +603,7 @@ fun AuthNextPageButton(
         gradient = Brush.sweepGradient(
             listOf(
                 colorResource(id = R.color.authBtnContainerColor),
-                MoneyTrackerTheme.colors.autoBackground
+                MoneyTrackerTheme.colors.secondarySurface
             )
         )
     ) {

@@ -6,19 +6,17 @@ import androidx.compose.ui.graphics.Color
 
 @Immutable
 data class ExtendedColors(
-    val customBackground: Color = Color.Unspecified,
-    val contentColor: Color = Color.Unspecified,
-    val autoBackground: Color = Color.Unspecified,
-    val autoText: Color = Color.Unspecified,
-    val themeColor: Color = Color.Unspecified
+    val secondarySurface: Color = Color.Unspecified,
+    val accentContent: Color = Color.Unspecified,
+    val onSurfaceText: Color = Color.Unspecified,
+    val primaryAccent: Color = Color.Unspecified
 )
 
 val LocalExtendedColors = staticCompositionLocalOf {
     ExtendedColors(
-        customBackground = Color.Unspecified,
-        contentColor = Color.Unspecified,
-        autoBackground = Color.Unspecified,
-        autoText = Color.Unspecified,
-        themeColor = Color.Unspecified
+        secondarySurface = Color.Unspecified,
+        accentContent = Color.Unspecified,
+        onSurfaceText = Color.Unspecified,
+        primaryAccent = Color.Unspecified
     )
 }

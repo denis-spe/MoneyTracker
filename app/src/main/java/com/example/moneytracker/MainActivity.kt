@@ -18,6 +18,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import com.example.moneytracker.ui.settings.SettingsViewModel
 import com.example.moneytracker.ui.settings.ThemeConfig
+import com.example.moneytracker.ui.theme.CustomPalette
 import com.example.moneytracker.ui.theme.MoneyTrackerTheme
 import dagger.hilt.android.AndroidEntryPoint
 
@@ -55,32 +56,21 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         checkNotificationPermission()
 
-
-//        val isDebug = 0 != (applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE)
-//
-//        if (isDebug) {
-//            val ip = "192.168.10.141" // ← your dev machine's IP
-//            FirebaseAuth.getInstance().useEmulator(ip, 9099)
-//            FirebaseFirestore.getInstance().useEmulator(ip, 8080)
-//
-//            // Optional:
-//            // FirebaseStorage.getInstance().useEmulator(ip, 9199)
-//            Log.d("Firebase", "Using Firebase emulators for debug build")
-//        } else {
-//            // Initialize Firebase
-//            FirebaseApp.initializeApp(this)
-//            Log.d("Firebase", "Using real Firebase backend")
-//        }
-
-
         setContent {
             val themeConfig by settingsViewModel.themeConfig.collectAsState()
             val dynamicColor by settingsViewModel.dynamicColor.collectAsState()
-            val customThemeColorValue by settingsViewModel.themeColor.collectAsState()
-            val customBackgroundColorValue by settingsViewModel.customBackground.collectAsState()
-            val customContentColorValue by settingsViewModel.contentColor.collectAsState()
-            val customAutoBackgroundColorValue by settingsViewModel.autoBackground.collectAsState()
-            val customAutoTextColorValue by settingsViewModel.autoText.collectAsState()
+
+            // Light palette
+            val lSecondarySurface by settingsViewModel.lightSecondarySurface.collectAsState()
+            val lAccentContent by settingsViewModel.lightAccentContent.collectAsState()
+            val lOnSurfaceText by settingsViewModel.lightOnSurfaceText.collectAsState()
+            val lPrimaryAccent by settingsViewModel.lightPrimaryAccent.collectAsState()
+
+            // Dark palette
+            val dSecondarySurface by settingsViewModel.darkSecondarySurface.collectAsState()
+            val dAccentContent by settingsViewModel.darkAccentContent.collectAsState()
+            val dOnSurfaceText by settingsViewModel.darkOnSurfaceText.collectAsState()
+            val dPrimaryAccent by settingsViewModel.darkPrimaryAccent.collectAsState()
 
             val darkTheme = when (themeConfig) {
                 ThemeConfig.SYSTEM -> isSystemInDarkTheme()
@@ -91,11 +81,18 @@ class MainActivity : ComponentActivity() {
             MoneyTrackerTheme(
                 darkTheme = darkTheme,
                 dynamicColor = dynamicColor,
-                customThemeColor = customThemeColorValue?.let { Color(it.toULong()) },
-                customBackgroundColor = customBackgroundColorValue?.let { Color(it.toULong()) },
-                customContentColor = customContentColorValue?.let { Color(it.toULong()) },
-                customAutoBackgroundColor = customAutoBackgroundColorValue?.let { Color(it.toULong()) },
-                customAutoTextColor = customAutoTextColorValue?.let { Color(it.toULong()) }
+                lightCustomColors = CustomPalette(
+                    primaryAccent = lPrimaryAccent?.let { Color(it.toULong()) },
+                    secondarySurface = lSecondarySurface?.let { Color(it.toULong()) },
+                    accentContent = lAccentContent?.let { Color(it.toULong()) },
+                    onSurfaceText = lOnSurfaceText?.let { Color(it.toULong()) }
+                ),
+                darkCustomColors = CustomPalette(
+                    primaryAccent = dPrimaryAccent?.let { Color(it.toULong()) },
+                    secondarySurface = dSecondarySurface?.let { Color(it.toULong()) },
+                    accentContent = dAccentContent?.let { Color(it.toULong()) },
+                    onSurfaceText = dOnSurfaceText?.let { Color(it.toULong()) }
+                )
             ) {
                 App()
             }

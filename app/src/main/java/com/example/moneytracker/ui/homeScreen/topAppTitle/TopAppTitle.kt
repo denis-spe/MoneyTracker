@@ -114,9 +114,13 @@ private fun TopBarItem(
                 currentPageColor.copy(alpha = activeProgress)
             ),
 
-        unselectedContentColor = MoneyTrackerTheme.colors.autoText,
+        unselectedContentColor = MoneyTrackerTheme.colors.onSurfaceText,
 
-        selectedContentColor = lerp(MoneyTrackerTheme.colors.autoText, contentColor, activeProgress)
+        selectedContentColor = lerp(
+            MoneyTrackerTheme.colors.onSurfaceText,
+            contentColor,
+            activeProgress
+        )
     ) {
 
         Text(

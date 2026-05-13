@@ -129,7 +129,7 @@ fun IconList(
                             if (selectionIcon.icon == icon.second)
                                 Modifier.border(
                                     2.dp,
-                                    MoneyTrackerTheme.colors.autoText,
+                                    MoneyTrackerTheme.colors.onSurfaceText,
                                     CircleShape
                                 )
                             else Modifier

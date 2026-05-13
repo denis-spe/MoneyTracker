@@ -67,8 +67,8 @@ fun CalendarViewSection(
         viewModel.uiState.map { it.selectedTabIndex }
     }.collectAsStateWithLifecycle(1)
     var selectedDate by remember { mutableStateOf(date) }
-    val selectedColor = MoneyTrackerTheme.colors.themeColor
-    val contentColor = MoneyTrackerTheme.colors.contentColor
+    val selectedColor = MoneyTrackerTheme.colors.primaryAccent
+    val contentColor = MoneyTrackerTheme.colors.accentContent
 
 
     // Change the tab index to week on page swipe
@@ -98,7 +98,7 @@ fun CalendarViewSection(
             },
             divider = {
                 HorizontalDivider(
-                    color = MoneyTrackerTheme.colors.themeColor
+                    color = MoneyTrackerTheme.colors.primaryAccent
                 )
             },
         ) {

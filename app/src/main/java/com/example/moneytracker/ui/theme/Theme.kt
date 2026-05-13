@@ -9,6 +9,8 @@ import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Immutable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 
@@ -34,16 +36,21 @@ private val LightColorScheme = lightColorScheme(
     */
 )
 
+@Immutable
+data class CustomPalette(
+    val primaryAccent: Color? = null,
+    val secondarySurface: Color? = null,
+    val accentContent: Color? = null,
+    val onSurfaceText: Color? = null
+)
+
 @Composable
 fun MoneyTrackerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
-    customThemeColor: Color? = null,
-    customBackgroundColor: Color? = null,
-    customContentColor: Color? = null,
-    customAutoBackgroundColor: Color? = null,
-    customAutoTextColor: Color? = null,
+    lightCustomColors: CustomPalette? = null,
+    darkCustomColors: CustomPalette? = null,
     content: @Composable () -> Unit
 ) {
     val colorScheme = when {
@@ -59,39 +66,41 @@ fun MoneyTrackerTheme(
     val darkBackgroundColor = Color(0xFF282626)
     val lightBackgroundColor = Color(0xFFE0DDDD)
 
-    val extendedColors = ExtendedColors(
-        customBackground = themeColor(
-            darkTheme,
-            darkBackgroundColor.copy(alpha = 0.5f),
-            lightBackgroundColor.copy(alpha = 0.5f)
-        ),
-        contentColor = themeColor(
-            darkTheme,
-            Color.White.copy(alpha = 0.8f),
-            Color.Black.copy(alpha = 0.8f)
-        ),
-        autoBackground = themeColor(darkTheme, darkBackgroundColor, lightBackgroundColor),
-        autoText = themeColor(darkTheme, Color.White, Color.Black),
-        themeColor = themeColor(darkTheme, Color(0xFF59A5D8), Color(0xFF688E26))
-    )
+    val activeCustom = if (darkTheme) darkCustomColors else lightCustomColors
 
-    if (!dynamicColor) {
-        MoneyTrackerTheme.composableColor(
-            light = ExtendedColors(
-                customBackground = customBackgroundColor ?: Color.Unspecified,
-                contentColor = customContentColor ?: Color.Unspecified,
-                autoBackground = customAutoBackgroundColor ?: Color.Unspecified,
-                autoText = customAutoTextColor ?: Color.Unspecified,
-                themeColor = customThemeColor ?: Color.Unspecified
+    val extendedColors = remember(
+        darkTheme,
+        dynamicColor,
+        activeCustom
+    ) {
+        ExtendedColors(
+            secondarySurface = (if (!dynamicColor) activeCustom?.secondarySurface else null)
+                ?: themeColor(
+                    darkTheme,
+                    darkBackgroundColor.copy(alpha = 0.5f),
+                    lightBackgroundColor.copy(alpha = 0.5f)
             ),
-            dark = ExtendedColors(
-                customBackground = customBackgroundColor ?: Color.Unspecified,
-                contentColor = customContentColor ?: Color.Unspecified,
-                autoBackground = customAutoBackgroundColor ?: Color.Unspecified,
-                autoText = customAutoTextColor ?: Color.Unspecified,
-                themeColor = customThemeColor ?: Color.Unspecified
+            accentContent = (if (!dynamicColor) activeCustom?.accentContent else null)
+                ?: themeColor(
+                    darkTheme,
+                    Color.White.copy(alpha = 0.8f),
+                    Color.Black.copy(alpha = 0.8f)
+                ),
+            onSurfaceText = (if (!dynamicColor) activeCustom?.onSurfaceText else null)
+                ?: themeColor(
+                    darkTheme,
+                    Color.White,
+                    Color.Black
+                ),
+            primaryAccent = (if (!dynamicColor) activeCustom?.primaryAccent else null)
+                ?: themeColor(
+                    darkTheme,
+                    Color(0xFF59A5D8),
+                    Color(0xFF688E26)
             )
-        )
+        ).also {
+            MoneyTrackerTheme.setAppColors(it)
+        }
     }
 
     CompositionLocalProvider(LocalExtendedColors provides extendedColors) {
@@ -110,6 +119,10 @@ object MoneyTrackerTheme {
 
     private var appColors: ExtendedColors? = null
 
+    internal fun setAppColors(colors: ExtendedColors) {
+        appColors = colors
+    }
+
     /**
      * Returns [light] if the system is in light theme, and [dark] otherwise.
      */
@@ -119,11 +132,10 @@ object MoneyTrackerTheme {
         if (result is ExtendedColors) {
             val current = appColors ?: LocalExtendedColors.current
             appColors = current.copy(
-                customBackground = if (result.customBackground != Color.Unspecified) result.customBackground else current.customBackground,
-                contentColor = if (result.contentColor != Color.Unspecified) result.contentColor else current.contentColor,
-                autoBackground = if (result.autoBackground != Color.Unspecified) result.autoBackground else current.autoBackground,
-                autoText = if (result.autoText != Color.Unspecified) result.autoText else current.autoText,
-                themeColor = if (result.themeColor != Color.Unspecified) result.themeColor else current.themeColor
+                secondarySurface = if (result.secondarySurface != Color.Unspecified) result.secondarySurface else current.secondarySurface,
+                accentContent = if (result.accentContent != Color.Unspecified) result.accentContent else current.accentContent,
+                onSurfaceText = if (result.onSurfaceText != Color.Unspecified) result.onSurfaceText else current.onSurfaceText,
+                primaryAccent = if (result.primaryAccent != Color.Unspecified) result.primaryAccent else current.primaryAccent
             )
         }
         return result
@@ -133,5 +145,3 @@ object MoneyTrackerTheme {
 private fun themeColor(isDark: Boolean, dark: Color, light: Color): Color {
     return if (isDark) dark else light
 }
-
-

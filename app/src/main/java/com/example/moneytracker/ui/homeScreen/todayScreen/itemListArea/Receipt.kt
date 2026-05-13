@@ -805,7 +805,7 @@ fun OnDeleteReceipt(
                                 containerColor = Color.Gray.copy(0.2f)
                             )
                         ) {
-                            Text("Cancel", color = MoneyTrackerTheme.colors.autoText)
+                            Text("Cancel", color = MoneyTrackerTheme.colors.onSurfaceText)
                         }
 
                         Spacer(modifier = Modifier.width(10.dp))
@@ -816,7 +816,7 @@ fun OnDeleteReceipt(
                                 containerColor = colorResource(R.color.error_color)
                             )
                         ) {
-                            Text("Delete", color = MoneyTrackerTheme.colors.autoText)
+                            Text("Delete", color = MoneyTrackerTheme.colors.onSurfaceText)
                         }
                     }
                 }

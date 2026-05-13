@@ -219,7 +219,7 @@ fun CustomAmountKeyBoard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val contentColor = MoneyTrackerTheme.colors.autoText
+                    val contentColor = MoneyTrackerTheme.colors.onSurfaceText
 
                     KeyButton(
                         text = "CANCEL",

@@ -75,9 +75,9 @@ fun HomeScreen(
 
     val customColors = MoneyTrackerTheme.colors
 
-    val isLoading = remember(uiState.datasetState, userUiState.isLoading) {
-        uiState.datasetState is DatasetState.Loading ||
-                userUiState.isLoading
+    val isLoading = remember(uiState.datasetState, userUiState.isLoading, uiState.datasets) {
+        (uiState.datasetState is DatasetState.Loading && uiState.datasets.isEmpty()) ||
+                (userUiState.isLoading && userState == null)
     }
 
     LaunchedEffect(Unit) {
@@ -121,9 +121,9 @@ fun HomeScreen(
 
                         TopAppTitle(
                             state = pagerState,
-                            contentColor = customColors.contentColor,
-                            currentPageColor = customColors.themeColor,
-                            backgroundColor = customColors.customBackground,
+                            contentColor = customColors.accentContent,
+                            currentPageColor = customColors.primaryAccent,
+                            backgroundColor = customColors.secondarySurface,
 
                             ) { tab ->
 
@@ -139,7 +139,7 @@ fun HomeScreen(
 
                         TopAppNav(
                             userState = userState,
-                            contentColor = customColors.contentColor,
+                            contentColor = customColors.accentContent,
                             userColor = uiState.info.color
                         ) {
 
@@ -226,9 +226,9 @@ fun HomeScreen(
         DropDownUserProfile(
             modifier = Modifier.align(Alignment.TopCenter),
 
-            contentColor = customColors.contentColor,
+            contentColor = customColors.accentContent,
 
-            backgroundColor = customColors.customBackground.copy(
+            backgroundColor = customColors.secondarySurface.copy(
                 alpha = 0.9f
             ),
 

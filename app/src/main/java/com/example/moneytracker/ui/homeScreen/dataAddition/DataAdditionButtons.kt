@@ -81,12 +81,12 @@ fun DataAdditionFloatingButton(
                 shape = CircleShape,
                 modifier = Modifier.size(FLOAT_BUTTON_SIZE),
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
-                containerColor = MoneyTrackerTheme.colors.themeColor,
+                containerColor = MoneyTrackerTheme.colors.primaryAccent,
             ) {
                 Icon(
                     imageVector = if (isDatasetBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
                     contentDescription = "Add data",
-                    tint = MoneyTrackerTheme.colors.contentColor,
+                    tint = MoneyTrackerTheme.colors.accentContent,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -100,13 +100,13 @@ fun DataAdditionFloatingButton(
                 shape = CircleShape,
                 modifier = Modifier.size(43.dp),
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
-                containerColor = MoneyTrackerTheme.colors.themeColor
+                containerColor = MoneyTrackerTheme.colors.primaryAccent
             ) {
                 Icon(
                     imageVector = if (isSettlementBottomSheetOpen) Icons.Outlined.DoDisturbOn
                     else Icons.Default.Adjust,
                     contentDescription = "Add settlement",
-                    tint = MoneyTrackerTheme.colors.contentColor,
+                    tint = MoneyTrackerTheme.colors.accentContent,
                     modifier = Modifier.size(20.dp)
                 )
             }

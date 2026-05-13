@@ -42,7 +42,7 @@ fun YesterdayScreen(
     uiState: HomeUiState,
 ) {
     val configuration = LocalConfiguration.current
-    val userColor = MoneyTrackerTheme.colors.customBackground
+    val userColor = MoneyTrackerTheme.colors.secondarySurface
     val cardColor = CardDefaults.cardColors().copy(
         containerColor = userColor.copy(0.4f)
     )

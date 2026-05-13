@@ -57,7 +57,7 @@ import com.patrykandpatrick.vico.core.common.shape.Shape
 //) {
 //    val modelProducer = remember { CartesianChartModelProducer() }
 //    val chartData = chartDataCollection.chartData
-//    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.autoText)
+//    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.onSurfaceText)
 //    val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
 //
 //    val markerFormatter = DefaultCartesianMarker.ValueFormatter { context, targets ->
@@ -180,7 +180,7 @@ fun VicoBarChart(
     val modelProducer = remember { CartesianChartModelProducer() }
     val chartData = chartDataCollection.chartData
 
-    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.autoText)
+    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.onSurfaceText)
     val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
 
     // ---------- Marker ----------
