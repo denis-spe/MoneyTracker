@@ -29,7 +29,7 @@ import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 
 @Composable
 fun YesterdayScreen(
@@ -39,7 +39,7 @@ fun YesterdayScreen(
     yesterdayStatsDataState: DataState<YesterdayStats>,
     uiState: HomeUiState,
 ) {
-    val userColor = MoneyTrackerTheme.colors.secondarySurface
+    val userColor = StewardTheme.colors.secondarySurface
     val cardColor = CardDefaults.cardColors().copy(
         containerColor = userColor.copy(0.4f)
     )

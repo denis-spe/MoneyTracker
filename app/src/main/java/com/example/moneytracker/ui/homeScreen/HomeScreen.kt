@@ -38,7 +38,7 @@ import com.example.moneytracker.ui.homeScreen.topAppTitle.TopAppTitle
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
 import com.example.moneytracker.ui.screenManager.SettingsScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.coroutines.launch
 
 @Suppress("UNUSED_PARAMETER")
@@ -73,7 +73,7 @@ fun HomeScreen(
         pageCount = { topBarEntries.size }
     )
 
-    val customColors = MoneyTrackerTheme.colors
+    val customColors = StewardTheme.colors
 
     val isLoading = remember(uiState.datasetState, userUiState.isLoading, uiState.datasets) {
         (uiState.datasetState is DatasetState.Loading && uiState.datasets.isEmpty()) ||

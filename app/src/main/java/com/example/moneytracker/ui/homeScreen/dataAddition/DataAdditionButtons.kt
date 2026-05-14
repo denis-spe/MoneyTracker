@@ -42,7 +42,7 @@ import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 
 private val FLOAT_BUTTON_SIZE = 45.dp
 
@@ -81,12 +81,12 @@ fun DataAdditionFloatingButton(
                 shape = CircleShape,
                 modifier = Modifier.size(FLOAT_BUTTON_SIZE),
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
-                containerColor = MoneyTrackerTheme.colors.primaryAccent,
+                containerColor = StewardTheme.colors.primaryAccent,
             ) {
                 Icon(
                     imageVector = if (isDatasetBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
                     contentDescription = "Add data",
-                    tint = MoneyTrackerTheme.colors.accentContent,
+                    tint = StewardTheme.colors.accentContent,
                     modifier = Modifier.size(20.dp)
                 )
             }
@@ -100,13 +100,13 @@ fun DataAdditionFloatingButton(
                 shape = CircleShape,
                 modifier = Modifier.size(43.dp),
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
-                containerColor = MoneyTrackerTheme.colors.primaryAccent
+                containerColor = StewardTheme.colors.primaryAccent
             ) {
                 Icon(
                     imageVector = if (isSettlementBottomSheetOpen) Icons.Outlined.DoDisturbOn
                     else Icons.Default.Adjust,
                     contentDescription = "Add settlement",
-                    tint = MoneyTrackerTheme.colors.accentContent,
+                    tint = StewardTheme.colors.accentContent,
                     modifier = Modifier.size(20.dp)
                 )
             }

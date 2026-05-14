@@ -40,7 +40,7 @@ import androidx.compose.ui.window.Dialog
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.title
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 
 
 private val ICONS_TEXT_SIZE = 11.sp
@@ -129,7 +129,7 @@ fun IconList(
                             if (selectionIcon.icon == icon.second)
                                 Modifier.border(
                                     2.dp,
-                                    MoneyTrackerTheme.colors.onSurfaceText,
+                                    StewardTheme.colors.onSurfaceText,
                                     CircleShape
                                 )
                             else Modifier

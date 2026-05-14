@@ -40,7 +40,7 @@ import com.example.moneytracker.helper.getWeeks
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
@@ -67,8 +67,8 @@ fun CalendarViewSection(
         viewModel.uiState.map { it.selectedTabIndex }
     }.collectAsStateWithLifecycle(1)
     var selectedDate by remember { mutableStateOf(date) }
-    val selectedColor = MoneyTrackerTheme.colors.primaryAccent
-    val contentColor = MoneyTrackerTheme.colors.accentContent
+    val selectedColor = StewardTheme.colors.primaryAccent
+    val contentColor = StewardTheme.colors.accentContent
 
 
     // Change the tab index to week on page swipe
@@ -98,7 +98,7 @@ fun CalendarViewSection(
             },
             divider = {
                 HorizontalDivider(
-                    color = MoneyTrackerTheme.colors.primaryAccent
+                    color = StewardTheme.colors.primaryAccent
                 )
             },
         ) {

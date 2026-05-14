@@ -14,7 +14,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.components.charts.marker.rememberMarker
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 import com.patrykandpatrick.vico.compose.cartesian.CartesianChartHost
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberBottom
 import com.patrykandpatrick.vico.compose.cartesian.axis.rememberStart
@@ -76,7 +76,7 @@ fun VicoLineChart(
     val chartData = chartDataCollection.chartData
 
     var lineLayer = rememberLineCartesianLayer()
-    val textComponent = rememberTextComponent(color = MoneyTrackerTheme.colors.onSurfaceText)
+    val textComponent = rememberTextComponent(color = StewardTheme.colors.onSurfaceText)
 
     val legend = rememberHorizontalLegend<CartesianMeasuringContext, CartesianDrawingContext>(
         items = { _ ->

@@ -46,7 +46,7 @@ import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.LoadingScreenRouter
 import com.example.moneytracker.ui.screenManager.MailScreenRouter
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 
 private const val BUTTON_WIDTH = 0.5f
 
@@ -132,7 +132,7 @@ fun StartUpScreen(
                     loadingViewModel!!.setScreenContent {
                         Text(
                             "Welcome ${userState.value?.displayName}",
-                            color = MoneyTrackerTheme.colors.onSurfaceText,
+                            color = StewardTheme.colors.onSurfaceText,
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold
                         )

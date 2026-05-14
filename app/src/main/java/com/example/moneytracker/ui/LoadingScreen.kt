@@ -31,7 +31,7 @@ import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.screenManager.HomeScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.coroutines.delay
 import java.util.Calendar
 
@@ -51,7 +51,7 @@ fun LoadingScreen(
     isSplashScreen: Boolean = false,
     content: @Composable (() -> Unit)? = null
 ) {
-    val customColors = MoneyTrackerTheme.colors
+    val customColors = StewardTheme.colors
     val currentYear = Calendar.getInstance().get(Calendar.YEAR)
 
     // Navigation logic (only if user and navController are provided)
@@ -84,7 +84,7 @@ fun LoadingScreen(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(MoneyTrackerTheme.colors.primaryAccent),
+                .background(StewardTheme.colors.primaryAccent),
             contentAlignment = Alignment.Center
         ) {
             // Top/Center Area: App Name
@@ -122,7 +122,7 @@ fun LoadingScreen(
                     CircularProgressIndicator(
                         strokeWidth = 3.dp,
                         strokeCap = StrokeCap.Round,
-                        color = MoneyTrackerTheme.colors.accentContent,
+                        color = StewardTheme.colors.accentContent,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                     Text(

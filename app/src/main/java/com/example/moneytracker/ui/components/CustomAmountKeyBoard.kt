@@ -44,7 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.helper.eval
 import com.example.moneytracker.helper.formatResult
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 
 @Composable
 fun CustomAmountKeyBoard(
@@ -219,7 +219,7 @@ fun CustomAmountKeyBoard(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val contentColor = MoneyTrackerTheme.colors.onSurfaceText
+                    val contentColor = StewardTheme.colors.onSurfaceText
 
                     KeyButton(
                         text = "CANCEL",

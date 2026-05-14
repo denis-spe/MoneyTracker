@@ -45,7 +45,7 @@ data class CustomPalette(
 )
 
 @Composable
-fun MoneyTrackerTheme(
+fun StewardTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
     // Dynamic color is available on Android 12+
     dynamicColor: Boolean = true,
@@ -99,7 +99,7 @@ fun MoneyTrackerTheme(
                     Color(0xFF688E26)
             )
         ).also {
-            MoneyTrackerTheme.setAppColors(it)
+            StewardTheme.setAppColors(it)
         }
     }
 
@@ -112,7 +112,7 @@ fun MoneyTrackerTheme(
     }
 }
 
-object MoneyTrackerTheme {
+object StewardTheme {
     val colors: ExtendedColors
         @Composable
         get() = appColors ?: LocalExtendedColors.current

@@ -66,7 +66,7 @@ import com.example.moneytracker.R
 import com.example.moneytracker.ui.LoadingScreen
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.ProfileImage
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 import com.github.skydoves.colorpicker.compose.AlphaSlider
 import com.github.skydoves.colorpicker.compose.AlphaTile
 import com.github.skydoves.colorpicker.compose.BrightnessSlider
@@ -182,12 +182,12 @@ fun SettingsScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(10.dp)),
-                containerColor = MoneyTrackerTheme.colors.secondarySurface,
-                contentColor = MoneyTrackerTheme.colors.primaryAccent,
+                containerColor = StewardTheme.colors.secondarySurface,
+                contentColor = StewardTheme.colors.primaryAccent,
                 indicator = {
                     TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.tabIndicatorOffset(if (configModeIsDark) 1 else 0),
-                        color = MoneyTrackerTheme.colors.primaryAccent
+                        color = StewardTheme.colors.primaryAccent
                     )
                 },
                 divider = {}
@@ -196,15 +196,15 @@ fun SettingsScreen(
                     selected = !configModeIsDark,
                     onClick = { configModeIsDark = false },
                     text = { Text("Light Mode") },
-                    selectedContentColor = MoneyTrackerTheme.colors.primaryAccent,
-                    unselectedContentColor = MoneyTrackerTheme.colors.onSurfaceText
+                    selectedContentColor = StewardTheme.colors.primaryAccent,
+                    unselectedContentColor = StewardTheme.colors.onSurfaceText
                 )
                 Tab(
                     selected = configModeIsDark,
                     onClick = { configModeIsDark = true },
                     text = { Text("Dark Mode") },
-                    selectedContentColor = MoneyTrackerTheme.colors.primaryAccent,
-                    unselectedContentColor = MoneyTrackerTheme.colors.onSurfaceText
+                    selectedContentColor = StewardTheme.colors.primaryAccent,
+                    unselectedContentColor = StewardTheme.colors.onSurfaceText
                 )
             }
 
@@ -229,7 +229,7 @@ fun SettingsScreen(
                             .clip(RoundedCornerShape(10.dp))
                             .background(
                                 if (showDialogForField == field)
-                                    MoneyTrackerTheme.colors.primaryAccent.copy(alpha = 0.2f)
+                                    StewardTheme.colors.primaryAccent.copy(alpha = 0.2f)
                                 else
                                     Color.Transparent
                             )
@@ -344,7 +344,7 @@ fun SettingsScreen(
                                     containerColor = if (pickedColor != Color.Unspecified)
                                         pickedColor
                                     else
-                                        MoneyTrackerTheme.colors.primaryAccent
+                                        StewardTheme.colors.primaryAccent
                                 )
                             ) {
                                 Text("Apply")
@@ -396,14 +396,14 @@ fun CredentialButton(
         Column(
             modifier = Modifier
                 .clip(CircleShape)
-                .background(MoneyTrackerTheme.colors.primaryAccent),
+                .background(StewardTheme.colors.primaryAccent),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
             Icon(
                 imageVector = icon,
                 contentDescription = "Log out icon",
-                tint = MoneyTrackerTheme.colors.accentContent,
+                tint = StewardTheme.colors.accentContent,
                 modifier = Modifier
                     .size(30.dp)
                     .padding(5.dp)
@@ -603,7 +603,7 @@ fun ThemeSettings(
                 RadioButton(
                     selected = (theme == themeConfig),
                     colors = RadioButtonDefaults.colors(
-                        selectedColor = MoneyTrackerTheme.colors.primaryAccent,
+                        selectedColor = StewardTheme.colors.primaryAccent,
                     ),
                     onClick = null
                 )
@@ -648,8 +648,8 @@ fun DynamicColorSettings(
             checked = dynamicColor,
             onCheckedChange = null,
             colors = SwitchDefaults.colors(
-                checkedThumbColor = MoneyTrackerTheme.colors.primaryAccent,
-                checkedTrackColor = MoneyTrackerTheme.colors.primaryAccent.copy(alpha = 0.5f),
+                checkedThumbColor = StewardTheme.colors.primaryAccent,
+                checkedTrackColor = StewardTheme.colors.primaryAccent.copy(alpha = 0.5f),
             )
         )
     }

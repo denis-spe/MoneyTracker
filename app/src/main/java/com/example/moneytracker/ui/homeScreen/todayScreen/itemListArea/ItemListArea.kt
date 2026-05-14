@@ -81,7 +81,7 @@ import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 
 private val spacerWith = 14.dp
 private val labelFontSize = 13.sp
@@ -221,7 +221,7 @@ fun ItemListAreaSort(
                         else Icons.Outlined.Category,
                         contentDescription = "Category",
                         modifier = Modifier.size(FilterIconSize),
-                        tint = if (uiState.categorySorting != "Initial") MoneyTrackerTheme.colors.onSurfaceText
+                        tint = if (uiState.categorySorting != "Initial") StewardTheme.colors.onSurfaceText
                         else Color.Gray
                     )
                 }
@@ -232,7 +232,7 @@ fun ItemListAreaSort(
                     }
                 ) {
                     val color =
-                        if (uiState.timeSorting != SortType.Initial) MoneyTrackerTheme.colors.onSurfaceText
+                        if (uiState.timeSorting != SortType.Initial) StewardTheme.colors.onSurfaceText
                         else Color.Gray
                     val imageVec = if (
                         uiState.timeSorting == SortType.Ascending ||
@@ -258,7 +258,7 @@ fun ItemListAreaSort(
                     else Icons.Outlined.Payments
                     val color = if (uiState.paymentSorting != null
                         || uiState.amountSorting != SortType.Initial
-                    ) MoneyTrackerTheme.colors.onSurfaceText else Color.Gray
+                    ) StewardTheme.colors.onSurfaceText else Color.Gray
 
 
                     Icon(
@@ -285,7 +285,7 @@ fun ItemListAreaSort(
                         contentDescription = "Sort",
                         modifier = Modifier.size(FilterIconSize),
                         tint = if (uiState.alphabeticalOrder != SortType.Initial)
-                            MoneyTrackerTheme.colors.onSurfaceText else Color.Gray
+                            StewardTheme.colors.onSurfaceText else Color.Gray
                     )
                 }
             }
@@ -452,7 +452,7 @@ fun ItemListAreaSort(
                                 isCategoryModelBottomOpen.value = false
                             },
                             colors = ButtonDefaults.textButtonColors()
-                                .copy(contentColor = MoneyTrackerTheme.colors.onSurfaceText)
+                                .copy(contentColor = StewardTheme.colors.onSurfaceText)
                         ) {
                             Text("Cancel")
                         }
@@ -464,7 +464,7 @@ fun ItemListAreaSort(
                             },
                             colors = ButtonDefaults.buttonColors()
                                 .copy(
-                                    contentColor = MoneyTrackerTheme.colors.onSurfaceText,
+                                    contentColor = StewardTheme.colors.onSurfaceText,
                                     containerColor = Color.LightGray.copy(alpha = 0.3f)
                                 )
                         ) {
@@ -583,7 +583,7 @@ fun ItemListAreaSort(
                         modifier = Modifier.padding(bottom = 8.dp),
                         horizontalArrangement = Arrangement.SpaceEvenly,
                     ) {
-                        val selectedColor = MoneyTrackerTheme.colors.onSurfaceText
+                        val selectedColor = StewardTheme.colors.onSurfaceText
                         val unselectedColor = Color.Gray.copy(0.4f)
 
                         Column {
@@ -698,7 +698,7 @@ fun ItemListAreaSort(
                                 isPaymentModelBottomOpen.value = false
                             },
                             colors = ButtonDefaults.textButtonColors()
-                                .copy(contentColor = MoneyTrackerTheme.colors.onSurfaceText)
+                                .copy(contentColor = StewardTheme.colors.onSurfaceText)
                         ) {
                             Text("Cancel")
                         }
@@ -711,7 +711,7 @@ fun ItemListAreaSort(
                             },
                             colors = ButtonDefaults.buttonColors()
                                 .copy(
-                                    contentColor = MoneyTrackerTheme.colors.onSurfaceText,
+                                    contentColor = StewardTheme.colors.onSurfaceText,
                                     containerColor = Color.LightGray.copy(alpha = 0.3f)
                                 )
                         ) {

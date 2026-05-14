@@ -19,7 +19,7 @@ import androidx.core.content.ContextCompat
 import com.example.moneytracker.ui.settings.SettingsViewModel
 import com.example.moneytracker.ui.settings.ThemeConfig
 import com.example.moneytracker.ui.theme.CustomPalette
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -78,7 +78,7 @@ class MainActivity : ComponentActivity() {
                 ThemeConfig.DARK -> true
             }
 
-            MoneyTrackerTheme(
+            StewardTheme(
                 darkTheme = darkTheme,
                 dynamicColor = dynamicColor,
                 lightCustomColors = CustomPalette(

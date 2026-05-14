@@ -28,7 +28,7 @@ import com.example.moneytracker.ui.components.charts.VicoBarChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.coroutines.launch
 
 
@@ -373,10 +373,10 @@ fun YesterdayStatArea(
                 },
                 colors = ButtonDefaults.textButtonColors().copy(
                     contentColor = if (pageState.currentPage == 0)
-                        MoneyTrackerTheme.colors.accentContent
-                    else MoneyTrackerTheme.colors.onSurfaceText,
+                        StewardTheme.colors.accentContent
+                    else StewardTheme.colors.onSurfaceText,
                     containerColor = if (pageState.currentPage == 0) {
-                        MoneyTrackerTheme.colors.primaryAccent
+                        StewardTheme.colors.primaryAccent
                     } else {
                         Color.Transparent
                     }
@@ -392,10 +392,10 @@ fun YesterdayStatArea(
                 },
                 colors = ButtonDefaults.textButtonColors().copy(
                     contentColor = if (pageState.currentPage == 1)
-                        MoneyTrackerTheme.colors.accentContent
-                    else MoneyTrackerTheme.colors.onSurfaceText,
+                        StewardTheme.colors.accentContent
+                    else StewardTheme.colors.onSurfaceText,
                     containerColor = if (pageState.currentPage == 1) {
-                        MoneyTrackerTheme.colors.primaryAccent
+                        StewardTheme.colors.primaryAccent
                     } else {
                         Color.Transparent
                     }

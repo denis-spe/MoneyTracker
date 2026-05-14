@@ -22,7 +22,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.ui.theme.MoneyTrackerTheme
+import com.example.moneytracker.ui.theme.StewardTheme
 import kotlin.math.absoluteValue
 
 @Composable
@@ -114,10 +114,10 @@ private fun TopBarItem(
                 currentPageColor.copy(alpha = activeProgress)
             ),
 
-        unselectedContentColor = MoneyTrackerTheme.colors.onSurfaceText,
+        unselectedContentColor = StewardTheme.colors.onSurfaceText,
 
         selectedContentColor = lerp(
-            MoneyTrackerTheme.colors.onSurfaceText,
+            StewardTheme.colors.onSurfaceText,
             contentColor,
             activeProgress
         )

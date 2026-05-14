@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MoneyTracker</string>
+    <string name="app_name">Steward</string>
     <string name="title_money">money</string>
     <string name="title_tracker">Tracker</string>
     <string name="or_text">OR</string>
@@ -24,7 +24,7 @@
 
     <!-- STARTUP SCREEN -->
     <string name="introduction_text">
-        Greeting guest, welcome to money tracker,
+        Greeting guest, welcome to Steward,
         peace be with you in our LORD GOD and of the LORD and
         survivor JESUS CHRIST
     </string>
@@ -58,7 +58,7 @@
     <string name="mailDescriptionId">mailDescription</string>
     <string name="mail_description_text">
         Register or login with\n
-        money Tracker account
+        Steward account
     </string>
     <string name="mail_img">mail_img</string>
     <string name="mailLoginBtnId">mailBtnLogin</string>
@@ -71,7 +71,7 @@
     <string name="loginScreenId">loginScreen</string>
     <string name="loginDescriptionId">loginDescription</string>
     <string name="login_desc_text">
-        Login your money tracker \n
+        Login your Steward \n
         account enter email address \n
         and password to get started
     </string>
@@ -88,7 +88,7 @@
     <string name="emailRegisterScreenId">emailRegisterScreen</string>
     <string name="emailRegisterDescriptionId">emailRegisterDescription</string>
     <string name="email_register_desc_text">
-        Create money tracker account \n
+        Create Steward account \n
         enter email address to get \n
         started
     </string>
@@ -119,8 +119,8 @@
     <string name="passwordRegisterScreenId">passwordRegisterScreen</string>
     <string name="passwordRegisterDescriptionId">passwordRegisterDescription</string>
     <string name="password_register_desc_text">
-        What will be your money \n
-        tracker account password
+        What will be your Steward \n
+        account password
     </string>
     <string name="password_register_img">password_register_img</string>
     <string name="passwordRegisterPasswordFieldId">passwordRegisterPasswordField</string>
@@ -135,7 +135,7 @@
     <string name="homeScreenId">homeScreen</string>
 
     <!-- NOTIFICATION -->
-    <string name="channel_name">Money Tracker Alarms</string>
-    <string name="channel_description">Notifications for money tracking routines and status updates</string>
+    <string name="channel_name">Steward Alarms</string>
+    <string name="channel_description">Notifications for Steward routines and status updates</string>
 
 </resources>
