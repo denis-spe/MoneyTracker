@@ -3,7 +3,6 @@
 // and with all your strength, and you shall love your neighbor as yourself
 package com.example.moneytracker.ui.homeScreen.yesterdayScreen
 
-import android.content.res.Configuration.ORIENTATION_PORTRAIT
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -21,7 +20,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.DataSettlement
@@ -41,134 +39,132 @@ fun YesterdayScreen(
     yesterdayStatsDataState: DataState<YesterdayStats>,
     uiState: HomeUiState,
 ) {
-    val configuration = LocalConfiguration.current
     val userColor = MoneyTrackerTheme.colors.secondarySurface
     val cardColor = CardDefaults.cardColors().copy(
         containerColor = userColor.copy(0.4f)
     )
 
-    if (configuration.orientation == ORIENTATION_PORTRAIT) {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.SpaceBetween
-        ) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(paddingValues)
+            .padding(horizontal = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.SpaceBetween
+    ) {
 
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxWidth()
-            ) {
-                item {
-                    Card(
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+        ) {
+            item {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                    colors = cardColor,
+                ) {
+                    Column(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 10.dp),
-                        colors = cardColor,
+                            .padding(10.dp)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .padding(10.dp)
-                                .fillMaxWidth(),
-                            verticalArrangement = Arrangement.Center,
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            YesterdayStatArea(
-                                modifier = Modifier.fillMaxWidth(),
-                                chartData = yesterdayChartDataState,
-                                stats = yesterdayStatsDataState
-                            )
-                        }
-                    }
-                }
-                item { Spacer(modifier = Modifier.size(20.dp)) }
-                item {
-                    Row(
-                        horizontalArrangement = Arrangement.Start,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(bottom = 10.dp)
-                    ) {
-                        Text(
-                            "Late Transactions",
-                            fontSize = 18.sp,
-                            fontWeight = FONT_WEIGHT,
+                        YesterdayStatArea(
+                            modifier = Modifier.fillMaxWidth(),
+                            chartData = yesterdayChartDataState,
+                            stats = yesterdayStatsDataState
                         )
                     }
                 }
-                item { Spacer(modifier = Modifier.size(10.dp)) }
-                when (sortAbleDataSettlementDataState) {
-                    is DataState.Error -> {
-                        item {
-                            Text(
-                                "Failed to load data",
-                                color = Color.Red,
-                                modifier = Modifier.align(Alignment.CenterHorizontally)
-                            )
-                        }
+            }
+            item { Spacer(modifier = Modifier.size(20.dp)) }
+            item {
+                Row(
+                    horizontalArrangement = Arrangement.Start,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp)
+                ) {
+                    Text(
+                        "Late Transactions",
+                        fontSize = 18.sp,
+                        fontWeight = FONT_WEIGHT,
+                    )
+                }
+            }
+            item { Spacer(modifier = Modifier.size(10.dp)) }
+            when (sortAbleDataSettlementDataState) {
+                is DataState.Error -> {
+                    item {
+                        Text(
+                            "Failed to load data",
+                            color = Color.Red,
+                            modifier = Modifier.align(Alignment.CenterHorizontally)
+                        )
                     }
+                }
 
-                    is DataState.Loading -> {
-                        // Show shimmer effect
-                        item {
-                            Card(
+                is DataState.Loading -> {
+                    // Show shimmer effect
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 10.dp),
+                            colors = cardColor
+                        ) {
+                            Column(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 10.dp),
-                                colors = cardColor
+                                    .padding(10.dp)
+                                    .fillMaxWidth(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(10.dp)
-                                        .fillMaxWidth(),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    repeat(7) {
-                                        YesterdayItemShimmer(
-                                            modifier = Modifier.animateItem()
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    is DataState.Success -> {
-                        val data = sortAbleDataSettlementDataState.data
-
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 10.dp),
-                                colors = cardColor
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(10.dp)
-                                        .fillMaxWidth(),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    data.forEach {
-                                        YesterdayItem(
-                                            modifier = Modifier.animateItem(),
-                                            dataSettlement = it
-                                        )
-                                    }
+                                repeat(7) {
+                                    YesterdayItemShimmer(
+                                        modifier = Modifier.animateItem()
+                                    )
                                 }
                             }
                         }
                     }
                 }
-                item { Spacer(modifier = Modifier.size(10.dp)) }
+
+                is DataState.Success -> {
+                    val data = sortAbleDataSettlementDataState.data
+
+                    item {
+                        Card(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(bottom = 10.dp),
+                            colors = cardColor
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .padding(10.dp)
+                                    .fillMaxWidth(),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                data.forEach {
+                                    YesterdayItem(
+                                        modifier = Modifier.animateItem(),
+                                        dataSettlement = it
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
             }
+            item { Spacer(modifier = Modifier.size(10.dp)) }
         }
     }
+
 }
 
 

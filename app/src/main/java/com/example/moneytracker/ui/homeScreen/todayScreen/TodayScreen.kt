@@ -6,11 +6,12 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -35,7 +36,7 @@ fun TodayScreen(
     uiState: HomeUiState,
     fulfillmentFinanceEntityList: DataState<List<FinanceEntity>>,
     homeViewModel: HomeViewModel,
-    datasetWithAdjust: DataState<List<DataSettlement>>
+    datasetWithAdjust: DataState<List<DataSettlement>>,
 ) {
     val isTransactionListExpended = uiState.onActivateShow
     val configuration = LocalConfiguration.current
@@ -51,6 +52,7 @@ fun TodayScreen(
         ) {
             AnimatedVisibility(
                 visible = !isTransactionListExpended,
+                modifier = if (!isTransactionListExpended) Modifier.weight(0.4f) else Modifier,
                 exit = shrinkVertically() + fadeOut(
                     animationSpec = tween(
                         durationMillis = 1000,
@@ -60,7 +62,6 @@ fun TodayScreen(
             ) {
                 StatArea(
                     modifier = Modifier
-                        .fillMaxHeight(0.5f)
                         .fillMaxWidth(0.85f)
                         .padding(bottom = 10.dp),
                     donutChartDataCollection = donutChartDataCollection,
@@ -70,8 +71,44 @@ fun TodayScreen(
 
             ItemListArea(
                 modifier = Modifier
-                    .fillMaxHeight(1f)
+                    .weight(if (isTransactionListExpended) 1f else 0.6f)
                     .fillMaxWidth(0.85f),
+                uiState = uiState,
+                viewModel = homeViewModel,
+                datasetWithAdjust = datasetWithAdjust,
+            )
+        }
+    } else {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            AnimatedVisibility(
+                visible = !isTransactionListExpended,
+                modifier = if (!isTransactionListExpended) Modifier.weight(0.5f) else Modifier,
+                exit = shrinkHorizontally() + fadeOut(
+                    animationSpec = tween(
+                        durationMillis = 1000,
+                        easing = LinearEasing
+                    )
+                )
+            ) {
+                StatArea(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp),
+                    donutChartDataCollection = donutChartDataCollection,
+                    fulfillmentFinanceEntityList = fulfillmentFinanceEntityList
+                )
+            }
+
+            ItemListArea(
+                modifier = Modifier
+                    .weight(if (isTransactionListExpended) 1f else 0.5f)
+                    .fillMaxWidth(),
                 uiState = uiState,
                 viewModel = homeViewModel,
                 datasetWithAdjust = datasetWithAdjust,

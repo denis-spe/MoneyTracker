@@ -1,4 +1,4 @@
-package com.example.moneytracker.ui.homeScreen.fulfillmentScreen
+package com.example.moneytracker.ui.homeScreen.overviewScreen
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column

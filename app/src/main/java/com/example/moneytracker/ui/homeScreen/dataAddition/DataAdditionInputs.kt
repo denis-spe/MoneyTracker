@@ -426,116 +426,129 @@ fun ModelDrawerAmountField(
             Card(
                 modifier = DIALOG_CARD_MODIFIER
             ) {
-                Column(
-                    modifier = Modifier.padding(top = 10.dp),
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Image(
-                            painter = painterResource(id = R.drawable.amount),
-                            contentDescription = "Amount"
-                        )
-                        Spacer(modifier = Modifier.width(5.dp))
-                        Text("Amount", fontSize = fontSize, fontWeight = FontWeight.Bold)
-                    }
-                    Text("Enter the amount", textAlign = TextAlign.Center)
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-
-                    InterceptPlatformTextInput(
-                        interceptor = { _, _ ->
-                            awaitCancellation()
+                    item {
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.amount),
+                                contentDescription = "Amount"
+                            )
+                            Spacer(modifier = Modifier.width(5.dp))
+                            Text("Amount", fontSize = fontSize, fontWeight = FontWeight.Bold)
                         }
-                    ) {
-                        OutlinedTextField(
-                            modifier = modifier
-                                .focusRequester(focusRequester)
-                                .onFocusChanged {
-                                    if (it.isFocused) {
-                                        keyboardController?.hide()
-                                        showCustomKeyboard.value = true
+                    }
+
+                    item {
+                        Text("Enter the amount", textAlign = TextAlign.Center)
+                    }
+
+                    item {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                    }
+
+                    item {
+                        InterceptPlatformTextInput(
+                            interceptor = { _, _ ->
+                                awaitCancellation()
+                            }
+                        ) {
+                            OutlinedTextField(
+                                modifier = modifier
+                                    .focusRequester(focusRequester)
+                                    .onFocusChanged {
+                                        if (it.isFocused) {
+                                            keyboardController?.hide()
+                                            showCustomKeyboard.value = true
+                                        }
+                                    },
+                                state = state,
+                                shape = shape,
+                                lineLimits = TextFieldLineLimits.SingleLine,
+                                placeholder = {
+                                    Text(
+                                        text = placeholder,
+                                        color = color,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = AMOUNT_FONT_SIZE
+                                    )
+                                },
+                                colors = OutlinedTextFieldDefaults.colors().copy(
+                                    focusedTextColor = color,
+                                    unfocusedTextColor = color.copy(alpha = 0.5f),
+                                    cursorColor = color,
+                                    focusedIndicatorColor = Color.Transparent,
+                                    unfocusedIndicatorColor = Color.Transparent,
+                                    focusedContainerColor = Color.Transparent,
+                                    unfocusedContainerColor = Color.Transparent
+                                ),
+                                textStyle = TextStyle(
+                                    color = color,
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = AMOUNT_FONT_SIZE
+                                ),
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number, // only digits expected
+                                    imeAction = ImeAction.Done
+                                ),
+                                onKeyboardAction = KeyAction {
+                                    if (state.text.isNotEmpty()) {
+                                        onDialogShow.value = false
+                                        displayState.value = if (state.text.isNotEmpty())
+                                            state.text.toString() else
+                                            "0.0"
                                     }
                                 },
-                            state = state,
-                            shape = shape,
-                            lineLimits = TextFieldLineLimits.SingleLine,
-                            placeholder = {
-                                Text(
-                                    text = placeholder,
-                                    color = color,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = AMOUNT_FONT_SIZE
-                                )
-                            },
-                            colors = OutlinedTextFieldDefaults.colors().copy(
-                                focusedTextColor = color,
-                                unfocusedTextColor = color.copy(alpha = 0.5f),
-                                cursorColor = color,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent
-                            ),
-                            textStyle = TextStyle(
-                                color = color,
-                                fontWeight = FontWeight.Bold,
-                                fontSize = AMOUNT_FONT_SIZE
-                            ),
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number, // only digits expected
-                                imeAction = ImeAction.Done
-                            ),
-                            onKeyboardAction = KeyAction {
-                                if (state.text.isNotEmpty()) {
-                                    onDialogShow.value = false
-                                    displayState.value = if (state.text.isNotEmpty())
-                                        state.text.toString() else
-                                        "0.0"
-                                }
-                            },
-                            leadingIcon = {
-                                Text(
-                                    text = symbol,
-                                    color = color,
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = AMOUNT_FONT_SIZE
-                                )
-                            },
+                                leadingIcon = {
+                                    Text(
+                                        text = symbol,
+                                        color = color,
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = AMOUNT_FONT_SIZE
+                                    )
+                                },
 
-                            inputTransformation = InputTransformation.maxLength(16).then(
-                                CustomInputTransformation()
-                            ),
-                            outputTransformation = CustomOutputTransformation(),
-                        )
+                                inputTransformation = InputTransformation.maxLength(16).then(
+                                    CustomInputTransformation()
+                                ),
+                                outputTransformation = CustomOutputTransformation(),
+                            )
+                        }
                     }
 
-                    CustomAmountKeyBoard(
-                        state = state,
-                        focusRequester = focusRequester,
-                        visible = showCustomKeyboard.value,
-                        onDone = {
-                            showCustomKeyboard.value = false
-                            if (state.text.isNotEmpty()) {
-                                state.edit {
-                                    delete(selection.start, selection.end)
-                                    val result = originalText.eval.formatResult
-                                    Log.d("CustomAmountKeyBoard", "result: $result")
-                                    replace(0, length, result)
-                                }
+                    item {
+                        CustomAmountKeyBoard(
+                            state = state,
+                            focusRequester = focusRequester,
+                            visible = showCustomKeyboard.value,
+                            onDone = {
+                                showCustomKeyboard.value = false
+                                if (state.text.isNotEmpty()) {
+                                    state.edit {
+                                        delete(selection.start, selection.end)
+                                        val result = originalText.eval.formatResult
+                                        Log.d("CustomAmountKeyBoard", "result: $result")
+                                        replace(0, length, result)
+                                    }
 
+                                    onDialogShow.value = false
+                                    displayState.value = state.text.toString()
+                                }
+                            },
+                            onCancel = {
                                 onDialogShow.value = false
-                                displayState.value = state.text.toString()
+                                state.setTextAndPlaceCursorAtEnd(displayState.value)
                             }
-                        },
-                        onCancel = {
-                            onDialogShow.value = false
-                            state.setTextAndPlaceCursorAtEnd(displayState.value)
-                        }
-                    )
+                        )
+                    }
                 }
             }
         }
@@ -658,49 +671,54 @@ fun SettlementField(
             Card(
                 modifier = DIALOG_CARD_MODIFIER
             ) {
-                Column(
-                    modifier = Modifier.padding(top = 10.dp),
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
                     verticalArrangement = Arrangement.Center,
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    val title = when (datatype) {
-                        DataType.GOAL -> "Attain"
-                        DataType.LENT -> "Refund"
-                        else -> "Repayment"
+                    item {
+                        val title = when (datatype) {
+                            DataType.GOAL -> "Attain"
+                            DataType.LENT -> "Refund"
+                            else -> "Repayment"
+                        }
+                        val icon = when (datatype) {
+                            DataType.GOAL -> R.drawable.achievement
+                            else -> R.drawable.repay
+                        }
+
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Image(
+                                painter = painterResource(id = icon),
+                                contentDescription = "Repay"
+                            )
+
+                            Spacer(modifier = Modifier.width(5.dp))
+
+                            Text(title, fontSize = fontSize, fontWeight = FontWeight.Bold)
+                        }
                     }
-                    val desc = when (datatype) {
-                        DataType.GOAL -> "Attain your goal"
-                        DataType.LENT -> "Refund of loan payment"
-                        else -> "Payback the debt which is owed"
+
+                    item {
+                        val desc = when (datatype) {
+                            DataType.GOAL -> "Attain your goal"
+                            DataType.LENT -> "Refund of loan payment"
+                            else -> "Payback the debt which is owed"
+                        }
+                        Text(desc)
                     }
 
-                    val icon = when (datatype) {
-                        DataType.GOAL -> R.drawable.achievement
-                        else -> R.drawable.repay
+                    item {
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
                     }
-
-                    Row(
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Image(
-                            painter = painterResource(id = icon),
-                            contentDescription = "Repay"
-                        )
-
-                        Spacer(modifier = Modifier.width(5.dp))
-
-                        Text(title, fontSize = fontSize, fontWeight = FontWeight.Bold)
-                    }
-                    Text(desc)
-
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
                     /* ---------- Dataset button ---------- */
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
+                    item {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
@@ -746,11 +764,12 @@ fun SettlementField(
                                     )
                                 }
                             }
-
                         }
+                    }
 
 
-                        /* ---------- Amount field ---------- */
+                    /* ---------- Amount field ---------- */
+                    item {
                         InterceptPlatformTextInput(
                             interceptor = { _, _ ->
                                 awaitCancellation()
@@ -817,7 +836,9 @@ fun SettlementField(
                                 outputTransformation = CustomOutputTransformation(),
                             )
                         }
+                    }
 
+                    item {
                         CustomAmountKeyBoard(
                             state = amountState,
                             focusRequester = focusRequester,

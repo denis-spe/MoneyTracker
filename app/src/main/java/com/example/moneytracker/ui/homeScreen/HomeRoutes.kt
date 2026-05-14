@@ -9,7 +9,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneytracker.ui.homeScreen.allScreen.AllScreen
-import com.example.moneytracker.ui.homeScreen.fulfillmentScreen.FulfillmentScreen
+import com.example.moneytracker.ui.homeScreen.overviewScreen.OverviewScreen
 import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 
@@ -60,7 +60,7 @@ fun FulfillmentScreenRoute(
         .allDataset
         .collectAsStateWithLifecycle()
 
-    FulfillmentScreen(
+    OverviewScreen(
         onNavigate = onNavigate,
 
         paddingValues = paddingValues,

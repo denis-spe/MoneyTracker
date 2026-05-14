@@ -2,14 +2,14 @@
 // who is the KING of kings and LORD of lords, who alone has immortality,
 // who dwells in unapproachable light, whom no one has ever seen or can see.
 // To him be honor and eternal dominion. Amen.
-package com.example.moneytracker.ui.homeScreen.fulfillmentScreen
+package com.example.moneytracker.ui.homeScreen.overviewScreen
 
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 
 @HiltViewModel
-class FulfillmentViewModel @Inject constructor() : ViewModel() {
+class overviewViewModel @Inject constructor() : ViewModel() {
     fun onGoalCardClick(goalId: String) {
         // Handle goal card click, e.g., navigate to goal details
     }

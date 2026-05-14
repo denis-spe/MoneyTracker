@@ -2,8 +2,6 @@
 package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideOutVertically
@@ -128,7 +126,6 @@ fun ItemFilter(
         }
     }
 }
-
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -737,62 +734,51 @@ fun ItemListArea(
     viewModel: HomeViewModel,
 ) {
 
-    Column(
+    LazyColumn(
         modifier = modifier
     ) {
-        ItemListAreaSort(
-            uiState = uiState,
-            onFilterClick = viewModel::updateOnFilterClick,
-            onActivateShow = viewModel::updateOnActivateShow,
-            categorySorting = viewModel::updateCategorySorting,
-            timeSorting = viewModel::updateTimeSorting,
-            amountSorting = viewModel::updateAmountSorting,
-            paymentSorting = viewModel::updatePaymentSorting,
-            alphabeticalOrder = viewModel::updateAlphabeticalOrder
-        )
+        item {
+            ItemListAreaSort(
+                uiState = uiState,
+                onFilterClick = viewModel::updateOnFilterClick,
+                onActivateShow = viewModel::updateOnActivateShow,
+                categorySorting = viewModel::updateCategorySorting,
+                timeSorting = viewModel::updateTimeSorting,
+                amountSorting = viewModel::updateAmountSorting,
+                paymentSorting = viewModel::updatePaymentSorting,
+                alphabeticalOrder = viewModel::updateAlphabeticalOrder
+            )
+        }
 
 
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-        ) {
-            when (datasetWithAdjust) {
-                is DataState.Loading -> {
-                    item {
-                        repeat(7) {
-                            ItemCardShimmer()
-                        }
-                        Spacer(modifier = Modifier.padding(bottom = 10.dp))
-                    }
+        when (datasetWithAdjust) {
+            is DataState.Loading -> {
+                items(7) {
+                    ItemCardShimmer()
                 }
-
-                is DataState.Success -> {
-                    val data = datasetWithAdjust.data
-                    items(data.size, key = { it }) { index ->
-                        Row(
-                            modifier = Modifier.animateItem(
-                                fadeInSpec = spring(
-                                    dampingRatio = Spring.DampingRatioHighBouncy,
-                                    stiffness = Spring.StiffnessMediumLow
-                                )
-                            ),
-                        ) {
-                            ItemCard(
-                                modifier = Modifier.animateItem(),
-                                dataSettlement = data[index]
-                            )
-                        }
-                    }
+                item {
+                    Spacer(modifier = Modifier.padding(bottom = 10.dp))
                 }
+            }
 
-                is DataState.Error -> {
-                    item {
-                        Text(
-                            text = "Error: ${datasetWithAdjust.exception.message}",
-                            color = Color.Red,
-                            modifier = Modifier.padding(16.dp)
-                        )
-                    }
+            is DataState.Success -> {
+                val data = datasetWithAdjust.data
+
+                items(data.size) { index ->
+                    ItemCard(
+                        modifier = Modifier,
+                        dataSettlement = data[index]
+                    )
+                }
+            }
+
+            is DataState.Error -> {
+                item {
+                    Text(
+                        text = "Error: ${datasetWithAdjust.exception.message}",
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
         }

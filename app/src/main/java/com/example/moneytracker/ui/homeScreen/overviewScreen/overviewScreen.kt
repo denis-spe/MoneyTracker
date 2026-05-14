@@ -1,5 +1,5 @@
 // Bless be the name of the LORD of hosts
-package com.example.moneytracker.ui.homeScreen.fulfillmentScreen
+package com.example.moneytracker.ui.homeScreen.overviewScreen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -378,7 +378,7 @@ fun SettlementCard(
 }
 
 @Composable
-fun FulfillmentScreen(
+fun OverviewScreen(
     onNavigate: NavController?,
     paddingValues: PaddingValues,
     allDataset: DataState<List<FinanceEntity>>,
