@@ -2,7 +2,7 @@
 // You shall love the LORD your GOD with all your heart
 // and all your soul and with all your mind, and
 // you shall love your neighbor as yourself
-package com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea
+package com.example.moneytracker.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
@@ -72,7 +72,6 @@ import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.helper.toMidnight
-import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeViewModel

@@ -3,7 +3,7 @@ package com.example.moneytracker.helper
 
 import android.icu.text.DecimalFormat
 import android.util.Log
-import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
@@ -140,50 +140,34 @@ fun Modifier.shimmerEffect(
         initialValue = -2 * componentSize.width.toFloat(),
         targetValue = 2 * componentSize.width.toFloat(),
         animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000)
+            animation = tween(durationMillis = 1200, easing = LinearEasing)
         ),
         label = "shimmer_offset"
     )
 
-    val animatedWidth by transition.animateFloat(
-        initialValue = if (width != null) with(density) { width.toPx() } * 0.8f else 0f,
-        targetValue = if (width != null) with(density) { width.toPx() } else 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "width"
-    )
-
-    val animatedSize by transition.animateFloat(
-        initialValue = if (size != null) with(density) { size.toPx() } * 0.8f else 0f,
-        targetValue = if (size != null) with(density) { size.toPx() } else 0f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "size"
-    )
-
     val modifier = if (shape == CircleShape && size != null) {
-        this.size(with(density) { animatedSize.toDp() })
+        this.size(size)
     } else if (width != null && height != null) {
         this
-            .width(with(density) { animatedWidth.toDp() })
+            .width(width)
             .height(height)
+    } else if (width != null) {
+        this.width(width)
+    } else if (height != null) {
+        this.height(height)
     } else {
         this
     }
 
     modifier
         .clip(shape)
-        .background(Color.LightGray.copy(alpha = 0.2f)) // Base color for immediate visibility
+        .background(Color.LightGray.copy(alpha = 0.15f))
         .background(
             brush = Brush.linearGradient(
                 colors = listOf(
-                    Color.LightGray.copy(alpha = 0.6f),
-                    Color.LightGray.copy(alpha = 0.2f),
-                    Color.LightGray.copy(alpha = 0.6f),
+                    Color.Transparent,
+                    Color.White.copy(alpha = 0.3f),
+                    Color.Transparent,
                 ),
                 start = Offset(startOffsetX, 0f),
                 end = Offset(
@@ -193,7 +177,9 @@ fun Modifier.shimmerEffect(
             )
         )
         .onGloballyPositioned {
-            componentSize = it.size
+            if (it.size.width > 0 && it.size.height > 0) {
+                componentSize = it.size
+            }
         }
 }
 

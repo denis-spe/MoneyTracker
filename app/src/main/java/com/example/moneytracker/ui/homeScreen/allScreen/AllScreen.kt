@@ -35,10 +35,7 @@ fun AllScreen(
         )
 
         ListForAll(
-            dataSettlements = if (dataState is DataState.Success)
-                dataState.data
-            else emptyList(),
-            isLoading = dataState is DataState.Loading
+            dataSettlements = dataState
         )
     }
 }

@@ -4,6 +4,7 @@
 package com.example.moneytracker.ui.homeScreen.yesterdayScreen
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -20,6 +21,8 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -39,6 +42,7 @@ import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.outlinedIcon
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.Receipt
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
@@ -124,8 +128,14 @@ fun YesterdayItem(
 
     val hour = dateTime.hour.addZeroIfLessThenTen
     val minute = dateTime.minute.addZeroIfLessThenTen
+    val onShowDialog = remember {
+        mutableStateOf(false)
+    }
 
     Column(
+        modifier = Modifier.clickable {
+            onShowDialog.value = true
+        },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -233,6 +243,13 @@ fun YesterdayItem(
                 ),
             color = color.copy(0.6f)
         )
+
+        if (onShowDialog.value) {
+            Receipt(
+                dataSettlement = dataSettlement,
+                onShowDialog = onShowDialog,
+            )
+        }
     }
 
 }
@@ -305,11 +322,9 @@ fun YesterdayItemShimmer(modifier: Modifier = Modifier) {
                         Box(
                             modifier = Modifier
                                 .padding(end = 4.dp)
-                                .size(ICON_SIZE)
                                 .shimmerEffect(
                                     shape = CircleShape,
-                                    width = ICON_SIZE,
-                                    height = ICON_SIZE
+                                    size = ICON_SIZE
                                 )
                         )
 
@@ -317,22 +332,18 @@ fun YesterdayItemShimmer(modifier: Modifier = Modifier) {
                         Box(
                             modifier = Modifier
                                 .padding(end = 4.dp)
-                                .size(ICON_SIZE)
                                 .shimmerEffect(
                                     shape = CircleShape,
-                                    width = ICON_SIZE,
-                                    height = ICON_SIZE
+                                    size = ICON_SIZE
                                 )
                         )
 
                         // Shimmer for payment Method Image
                         Box(
                             modifier = Modifier
-                                .size(ICON_SIZE)
                                 .shimmerEffect(
                                     shape = CircleShape,
-                                    width = ICON_SIZE,
-                                    height = ICON_SIZE
+                                    size = ICON_SIZE
                                 )
                         )
                     }

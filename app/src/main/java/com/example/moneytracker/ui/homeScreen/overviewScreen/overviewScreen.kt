@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -33,9 +34,11 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
@@ -57,6 +60,8 @@ import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.screenManager.FulfillmentDetailScreenRouter
+
+private val SPACE = 10.dp
 
 @Composable
 fun TransactionCard(
@@ -387,164 +392,187 @@ fun OverviewScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues)
-            .padding(horizontal = 10.dp),
+            .padding(paddingValues),
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+
     ) {
         LazyColumn(
             modifier = Modifier
-                .clip(RoundedCornerShape(10)),
+                .padding(15.dp)
+                .clip(RoundedCornerShape(6)),
             horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            item { Spacer(modifier = Modifier.size(10.dp)) }
+            item { Spacer(modifier = Modifier.height(SPACE)) }
 
             when (allDataset) {
                 is DataState.Loading -> {
                     items(5) {
-                        GoalCardShimmer(modifier = Modifier.padding(10.dp))
+                        GoalCardShimmer()
                     }
                 }
 
                 is DataState.Success -> {
-                    allDataset.data.groupBy {
-                        val type = it.financeType
-                        if (type is TransactionType) "Transactions" else type
-                    }.forEach { finance ->
+                    val data = allDataset.data
+                    if (data.isEmpty()) {
                         item {
-                            Row(
+                            Column(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 10.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .fillParentMaxHeight()
+                                    .fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                val headerText = when (val key = finance.key) {
-                                    is String -> key
-                                    is FinanceCategory -> {
-                                        when (key) {
-                                            GoalType -> "${key.text} Fulfillment"
-                                            is LiabilityType -> "${key.text} Settlements"
-                                            else -> key.text
-                                        }
-                                    }
-
-                                    else -> key.toString()
-                                }
-
+                                Image(
+                                    painter = painterResource(R.drawable.empty_list),
+                                    contentDescription = "empty list",
+                                    modifier = Modifier.size(60.dp)
+                                )
                                 Text(
-                                    text = headerText,
-                                    style = typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    buildString {
+                                        append("No activity recorded\n")
+                                        append("yet")
+                                    },
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.LightGray,
+                                    textAlign = TextAlign.Center
                                 )
                             }
                         }
-
-                        item {
-                            val goals = finance.value.filterIsInstance<FinanceEntity.Goal>()
-                                .sortedBy {
-                                    it.routine.deadlineDateTime
-                                }
-
-                            Spacer(modifier = Modifier.width(10.dp))
-                            goals.forEach { goal ->
-                                GoalCard(
-                                    financeEntityGoal = goal,
+                    } else {
+                        data.groupBy {
+                            val type = it.financeType
+                            if (type is TransactionType) "Transactions" else type
+                        }.forEach { finance ->
+                            // Title part
+                            item {
+                                Spacer(modifier = Modifier.height(SPACE))
+                                Row(
                                     modifier = Modifier
-                                        .padding(10.dp)
-                                        .clip(RoundedCornerShape(10))
-                                        .background(
-                                            colorResource(id = goal.colorRes)
-                                                .copy(alpha = 0.1f)
-                                        )
-                                        .clickable {
-                                            onNavigate?.navigate(
-                                                FulfillmentDetailScreenRouter(goalId = goal.id),
-                                            )
+                                        .fillMaxWidth(),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    val headerText = when (val key = finance.key) {
+                                        is String -> key
+                                        is FinanceCategory -> {
+                                            when (key) {
+                                                GoalType -> "${key.text} Fulfillment"
+                                                is LiabilityType -> "${key.text} Settlements"
+                                                else -> key.text
+                                            }
                                         }
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(10.dp))
-                        }
 
-                        item {
-                            val liabilities =
-                                finance.value.filterIsInstance<FinanceEntity.Liability>()
-                                    .sortedBy {
-                                        it.createdAt
+                                        else -> key.toString()
                                     }
 
-                            LazyRow(
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                item {
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                    liabilities.forEach { liability ->
-                                        SettlementCard(
-                                            financeEntity = liability,
+                                    Text(
+                                        text = headerText,
+                                        style = typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                Spacer(modifier = Modifier.height(SPACE))
+                            }
+
+                            // Goal part
+                            item {
+                                val goals = finance.value.filterIsInstance<FinanceEntity.Goal>()
+                                    .sortedBy {
+                                        it.routine.deadlineDateTime
+                                    }
+                                goals.forEachIndexed { index, goal ->
+                                    GoalCard(
+                                        financeEntityGoal = goal,
+                                        modifier = Modifier
+                                            .background(
+                                                colorResource(id = goal.colorRes)
+                                                    .copy(alpha = 0.1f)
+                                            )
+                                            .clickable {
+                                                onNavigate?.navigate(
+                                                    FulfillmentDetailScreenRouter(goalId = goal.id),
+                                                )
+                                            }
+                                    )
+
+                                    if (index < goals.size) Spacer(modifier = Modifier.height(SPACE))
+                                }
+                            }
+
+                            // Liabilities part
+                            item {
+                                val liabilities =
+                                    finance.value.filterIsInstance<FinanceEntity.Liability>()
+                                        .sortedBy {
+                                            it.createdAt
+                                        }
+
+                                if (liabilities.isNotEmpty()) {
+                                    LazyRow(
+                                        modifier = Modifier.fillMaxWidth()
+                                    ) {
+                                        item {
+                                            liabilities.forEach { liability ->
+                                                SettlementCard(
+                                                    financeEntity = liability,
+                                                    modifier = Modifier
+                                                        .padding(end = SPACE)
+                                                        .clip(RoundedCornerShape(10))
+                                                        .background(
+                                                            colorResource(id = liability.colorRes)
+                                                                .copy(alpha = 0.1f)
+                                                        )
+                                                        .clickable {
+                                                            onNavigate?.navigate(
+                                                                FulfillmentDetailScreenRouter(goalId = liability.id),
+                                                            )
+                                                        }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Transactions part
+                            item {
+                                val transactions =
+                                    finance.value.filterIsInstance<FinanceEntity.Transaction>()
+                                        .sortedByDescending {
+                                            it.createdAt
+                                        }
+                                if (transactions.isNotEmpty()) {
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.Center
+                                    ) {
+                                        LazyRow(
                                             modifier = Modifier
-                                                .padding(
-                                                    top = 10.dp,
-                                                    bottom = 10.dp,
-                                                    end = 8.dp
+                                                .clip(
+                                                    RoundedCornerShape(
+                                                        topStart = 50.dp,
+                                                        topEnd = 50.dp,
+                                                        bottomStart = 50.dp,
+                                                        bottomEnd = 50.dp
+                                                    )
                                                 )
-                                                .clip(RoundedCornerShape(10))
-                                                .background(
-                                                    colorResource(id = liability.colorRes)
-                                                        .copy(alpha = 0.1f)
-                                                )
-                                                .clickable {
-                                                    onNavigate?.navigate(
-                                                        FulfillmentDetailScreenRouter(goalId = liability.id),
+                                        ) {
+                                            item {
+                                                transactions.forEach { transaction ->
+                                                    TransactionCard(
+                                                        modifier = Modifier
+                                                            .padding(end = SPACE)
+                                                            .animateItem(),
+                                                        financeEntity = transaction
                                                     )
                                                 }
-                                        )
-                                    }
-                                    Spacer(modifier = Modifier.width(10.dp))
-                                }
-                            }
-                        }
-
-                        item {
-                            val transactions =
-                                finance.value.filterIsInstance<FinanceEntity.Transaction>()
-                                    .sortedByDescending {
-                                        it.createdAt
-                                    }
-                            Row(
-                                Modifier.fillMaxWidth(),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Spacer(modifier = Modifier.width(10.dp))
-                                LazyRow(
-                                    modifier = Modifier
-                                        .padding(
-                                            top = 10.dp,
-                                            bottom = 10.dp,
-                                            end = 8.dp
-                                        )
-                                        .clip(
-                                            RoundedCornerShape(
-                                                topStart = 50.dp,
-                                                topEnd = 50.dp,
-                                                bottomStart = 50.dp,
-                                                bottomEnd = 50.dp
-                                            )
-                                        )
-                                ) {
-                                    item {
-                                        transactions.forEach { transaction ->
-                                            TransactionCard(
-                                                modifier = Modifier
-                                                    .padding(end = 5.dp)
-                                                    .animateItem(),
-                                                financeEntity = transaction
-                                            )
+                                            }
                                         }
                                     }
                                 }
-                                Spacer(modifier = Modifier.width(10.dp))
                             }
-                            Spacer(modifier = Modifier.width(10.dp))
                         }
                     }
                 }
@@ -552,6 +580,8 @@ fun OverviewScreen(
                 is DataState.Error -> {
                 }
             }
+
+            item { Spacer(modifier = Modifier.height(SPACE)) }
         }
     }
 }

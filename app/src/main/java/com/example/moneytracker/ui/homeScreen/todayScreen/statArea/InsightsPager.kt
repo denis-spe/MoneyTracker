@@ -707,52 +707,49 @@ fun FulfillmentInsightPagerShimmer() {
             // Shimmer for label
             Box(
                 modifier = Modifier
-                    .width(200.dp)
-                    .height(20.dp)
                     .shimmerEffect(
                         shape = RoundedCornerShape(50),
+                        width = 200.dp,
+                        height = 20.dp
                     )
             )
 
             Row(
                 modifier = Modifier
                     .padding(top = 4.dp)
-                    .width(200.dp)
-                    .height(20.dp),
+                    .width(200.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Absolute.SpaceBetween
             ) {
                 // Shimmer for zero
                 Box(
                     modifier = Modifier
-                        .width(25.dp)
-                        .height(20.dp)
                         .shimmerEffect(
                             shape = RoundedCornerShape(50),
+                            width = 25.dp,
+                            height = 20.dp
                         )
                 )
 
                 // Shimmer for 50
                 Box(
                     modifier = Modifier
-                        .width(25.dp)
-                        .height(20.dp)
                         .shimmerEffect(
                             shape = RoundedCornerShape(50),
+                            width = 25.dp,
+                            height = 20.dp
                         )
                 )
 
                 // Shimmer for 100
                 Box(
                     modifier = Modifier
-                        .width(25.dp)
-                        .height(20.dp)
                         .shimmerEffect(
                             shape = RoundedCornerShape(50),
+                            width = 25.dp,
+                            height = 20.dp
                         )
                 )
-
-
             }
 
 

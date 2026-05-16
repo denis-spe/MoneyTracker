@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
@@ -76,6 +77,7 @@ import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.shimmerEffect
+import com.example.moneytracker.ui.Receipt
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
@@ -753,7 +755,7 @@ fun ItemListArea(
 
         when (datasetWithAdjust) {
             is DataState.Loading -> {
-                items(7) {
+                items(5) {
                     ItemCardShimmer()
                 }
                 item {
@@ -769,6 +771,33 @@ fun ItemListArea(
                         modifier = Modifier,
                         dataSettlement = data[index]
                     )
+                }
+
+                data.ifEmpty {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillParentMaxHeight(0.7f)
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.empty_list),
+                                contentDescription = "empty list",
+                                modifier = Modifier.size(60.dp)
+                            )
+                            Text(
+                                buildString {
+                                    append("No activity recorded\n")
+                                    append("for today")
+                                },
+                                fontWeight = FontWeight.Bold,
+                                color = Color.LightGray,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
 
@@ -980,7 +1009,6 @@ fun ItemCardShimmer() {
         Column(modifier = Modifier.weight(1f)) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.5f)
                     .shimmerEffect(
                         shape = RoundedCornerShape(10.dp),
                         width = 150.dp,
@@ -990,7 +1018,6 @@ fun ItemCardShimmer() {
             Spacer(modifier = Modifier.height(8.dp))
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.3f)
                     .shimmerEffect(shape = RoundedCornerShape(4.dp), width = 100.dp, height = 14.dp)
             )
         }

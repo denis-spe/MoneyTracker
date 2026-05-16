@@ -3,10 +3,12 @@ package com.example.moneytracker.ui.homeScreen.allScreen
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -19,6 +21,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,9 +31,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.addZeroIfLessThenTen
@@ -37,12 +43,13 @@ import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.Receipt
 import com.example.moneytracker.ui.components.StatusView
+import com.example.moneytracker.ui.homeScreen.DataState
 
 @Composable
 fun ListForAll(
-    dataSettlements: List<DataSettlement>,
-    isLoading: Boolean = false
+    dataSettlements: DataState<List<DataSettlement>>,
 ) {
     Modifier
         .offset(y = (-4).dp)
@@ -59,25 +66,75 @@ fun ListForAll(
 
     LazyColumn {
         item { Spacer(modifier = Modifier.size(10.dp)) }
-        if (isLoading) {
-            items(7) {
-                CardForAllItemShimmer(
-                    modifier = Modifier.animateItem()
-                )
-            }
-        } else {
-            items(
-                count = dataSettlements.size,
-                key = { it }
-            ) {
-                val dataItem = dataSettlements[it]
+        when (dataSettlements) {
+            is DataState.Success -> {
+                val data = dataSettlements.data
 
-                CardForAllItem(
-                    modifier = Modifier.animateItem(),
-                    dataSettlement = dataItem
-                )
+                if (data.isEmpty()) {
+                    item {
+                        Column(
+                            modifier = Modifier
+                                .fillParentMaxHeight()
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.empty_list),
+                                contentDescription = "empty list",
+                                modifier = Modifier.size(60.dp)
+                            )
+                            Text(
+                                buildString {
+                                    append("No activity recorded\n")
+                                    append("for this period")
+                                },
+                                fontWeight = FontWeight.Bold,
+                                color = Color.LightGray,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                } else {
+                    items(
+                        count = data.size,
+                        key = { index ->
+                            when (val item = data[index]) {
+                                is DataSettlement.SettlementData -> item.financeEntity.id
+                                is DataSettlement.SettlementAdjust -> item.settlement.settlementId
+                            }
+                        }
+                    ) { index ->
+                        val dataItem = data[index]
+
+                        CardForAllItem(
+                            modifier = Modifier.animateItem(),
+                            dataSettlement = dataItem
+                        )
+                    }
+                }
+            }
+
+            is DataState.Loading -> {
+                items(7) {
+                    CardForAllItemShimmer()
+                }
+            }
+
+            is DataState.Error -> {
+                val error = dataSettlements.exception.message ?: "Failed to Load"
+                item {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text("Error: $error")
+                    }
+                }
             }
         }
+
         item { Spacer(modifier = Modifier.size(10.dp)) }
     }
 }
@@ -169,8 +226,14 @@ fun CardForAllItem(
         TextDecoration.None
     }
 
+    val onShowDialog = remember {
+        mutableStateOf(false)
+    }
+
     Column(
-        modifier = modifier,
+        modifier = modifier.clickable {
+            onShowDialog.value = true
+        },
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -247,6 +310,13 @@ fun CardForAllItem(
             thickness = 1.dp,
             color = Color.LightGray.copy(0.3f)
         )
+
+        if (onShowDialog.value) {
+            Receipt(
+                dataSettlement = dataSettlement,
+                onShowDialog = onShowDialog,
+            )
+        }
     }
 }
 

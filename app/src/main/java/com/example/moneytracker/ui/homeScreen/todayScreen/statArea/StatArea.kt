@@ -277,7 +277,6 @@ fun StatArea(
                 is DataState.Error -> {
                     Text("Failed to Loading fulfillment data")
                 }
-
             }
         }
     }
