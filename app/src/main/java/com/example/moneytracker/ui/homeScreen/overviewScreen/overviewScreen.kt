@@ -50,6 +50,7 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToTime
 import com.example.moneytracker.helper.formattedDate
 import com.example.moneytracker.helper.formattedTime
+import com.example.moneytracker.helper.limit
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
@@ -392,20 +393,13 @@ fun OverviewScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(paddingValues),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-
+            .padding(paddingValues)
     ) {
         LazyColumn(
             modifier = Modifier
                 .padding(15.dp)
                 .clip(RoundedCornerShape(6)),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
         ) {
-            item { Spacer(modifier = Modifier.height(SPACE)) }
-
             when (allDataset) {
                 is DataState.Loading -> {
                     items(5) {
@@ -441,6 +435,7 @@ fun OverviewScreen(
                             }
                         }
                     } else {
+                        item { Spacer(modifier = Modifier.height(SPACE)) }
                         data.groupBy {
                             val type = it.financeType
                             if (type is TransactionType) "Transactions" else type
@@ -481,6 +476,7 @@ fun OverviewScreen(
                                     .sortedBy {
                                         it.routine.deadlineDateTime
                                     }
+                                    .limit(3)
                                 goals.forEachIndexed { index, goal ->
                                     GoalCard(
                                         financeEntityGoal = goal,
@@ -495,8 +491,11 @@ fun OverviewScreen(
                                                 )
                                             }
                                     )
-
-                                    if (index < goals.size) Spacer(modifier = Modifier.height(SPACE))
+                                    if (index < goals.size && goals.isNotEmpty()) Spacer(
+                                        modifier = Modifier.height(
+                                            SPACE
+                                        )
+                                    )
                                 }
                             }
 
@@ -507,6 +506,7 @@ fun OverviewScreen(
                                         .sortedBy {
                                             it.createdAt
                                         }
+                                        .limit(10)
 
                                 if (liabilities.isNotEmpty()) {
                                     LazyRow(
@@ -542,6 +542,8 @@ fun OverviewScreen(
                                         .sortedByDescending {
                                             it.createdAt
                                         }
+                                        .limit(10)
+
                                 if (transactions.isNotEmpty()) {
                                     Row(
                                         Modifier.fillMaxWidth(),
@@ -574,6 +576,7 @@ fun OverviewScreen(
                                 }
                             }
                         }
+                        item { Spacer(modifier = Modifier.height(SPACE)) }
                     }
                 }
 

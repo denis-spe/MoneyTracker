@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.EditCalendar
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DatePickerState
 import androidx.compose.material3.DisplayMode
@@ -58,6 +59,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
 import androidx.compose.material3.TimePickerState
 import androidx.compose.material3.getSelectedDate
 import androidx.compose.material3.rememberDatePickerState
@@ -193,6 +195,7 @@ fun ModelDrawerTag(
     IconList(
         onConfirm = iconState,
         onDialogOpen = onDialogShow,
+        color = color
     )
 }
 
@@ -222,9 +225,13 @@ fun ModelDrawerTextField(
     val onDialogShow = remember { mutableStateOf(false) }
     val optionsTitle = if (title == "Label") "Required" else
         "Optional"
-
+    val focusRequester = remember { FocusRequester() }
 
     if (onDialogShow.value) {
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
+
         Dialog(
             onDismissRequest = {
                 state.setTextAndPlaceCursorAtEnd(displayText.value)
@@ -260,6 +267,7 @@ fun ModelDrawerTextField(
                     OutlinedTextField(
                         modifier = modifier
                             .fillMaxWidth()
+                            .focusRequester(focusRequester)
                             .padding(
                                 vertical = 5.dp,
                                 horizontal = 5.dp
@@ -329,8 +337,18 @@ fun ModelDrawerTextField(
                                 onDialogShow.value = false
                             }
                         ) {
-                            Text("Cancel", fontSize = fontSize)
+                            Text(
+                                "Cancel", fontSize = fontSize,
+                                color = color,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
+
+                        Text(
+                            "|",
+                            color = color,
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        )
 
                         TextButton(
                             onClick = {
@@ -340,7 +358,12 @@ fun ModelDrawerTextField(
                                 }
                             }
                         ) {
-                            Text("OK", fontSize = fontSize)
+                            Text(
+                                "OK",
+                                fontSize = fontSize,
+                                color = color,
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -529,6 +552,7 @@ fun ModelDrawerAmountField(
                             state = state,
                             focusRequester = focusRequester,
                             visible = showCustomKeyboard.value,
+                            contentColor = color,
                             onDone = {
                                 showCustomKeyboard.value = false
                                 if (state.text.isNotEmpty()) {
@@ -843,6 +867,7 @@ fun SettlementField(
                             state = amountState,
                             focusRequester = focusRequester,
                             visible = showCustomKeyboard.value,
+                            contentColor = color,
                             onDone = {
                                 showCustomKeyboard.value = false
                                 if (amountState.text.isNotEmpty()) {
@@ -1168,7 +1193,10 @@ fun RepeatableTransaction(
                                 contentColor = color
                             )
                         ) {
-                            Text("Cancel")
+                            Text(
+                                "Cancel",
+                                fontWeight = FontWeight.Bold
+                            )
                         }
 
                         Text("|", color = color)
@@ -1182,7 +1210,10 @@ fun RepeatableTransaction(
                                 contentColor = color
                             )
                         ) {
-                            Text("Use")
+                            Text(
+                                "Use",
+                                fontWeight = FontWeight.Bold
+                            )
                         }
                     }
                 }
@@ -1295,6 +1326,7 @@ fun PaymentMethodDropdown(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DatePickerComponent(
+    color: Color = Color.Unspecified,
     onDateSelected: (DatePickerState) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1305,17 +1337,18 @@ fun DatePickerComponent(
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
+        colors = DatePickerDefaults.colors().copy(),
         confirmButton = {
             TextButton(onClick = {
                 onDateSelected(datePickerState)
                 onDismiss()
             }) {
-                Text("OK")
+                Text("OK", color = color, fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text("Cancel", color = color, fontWeight = FontWeight.Bold)
             }
         }
     ) {
@@ -1327,6 +1360,7 @@ fun DatePickerComponent(
 @Composable
 fun TimePickerComponent(
     title: String,
+    color: Color = Color.Unspecified,
     onConfirm: (TimePickerState) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1348,6 +1382,13 @@ fun TimePickerComponent(
     } else {
         Icons.Filled.AccessTime
     }
+
+    val colors = TimePickerDefaults.colors().copy(
+        timeSelectorSelectedContainerColor = color.copy(0.4f),
+        periodSelectorBorderColor = color,
+        periodSelectorSelectedContainerColor = color.copy(0.4f),
+        selectorColor = color
+    )
 
 
     Dialog(
@@ -1379,10 +1420,12 @@ fun TimePickerComponent(
                 )
                 if (showDial) {
                     TimePicker(
+                        colors = colors,
                         state = timePickerState,
                     )
                 } else {
                     TimeInput(
+                        colors = colors,
                         state = timePickerState,
                     )
                 }
@@ -1398,8 +1441,18 @@ fun TimePickerComponent(
                         )
                     }
                     Spacer(modifier = Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
-                    TextButton(onClick = { onConfirm(timePickerState) }) { Text("OK") }
+                    TextButton(onClick = onDismiss) {
+                        Text(
+                            "Cancel",
+                            color = color, fontWeight = FontWeight.Bold
+                        )
+                    }
+                    TextButton(onClick = { onConfirm(timePickerState) }) {
+                        Text(
+                            "OK",
+                            color = color, fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
         }
@@ -1409,6 +1462,7 @@ fun TimePickerComponent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DoubleTimePickerComponent(
+    color: Color = Color.Unspecified,
     onConfirm: (TimePickerState, TimePickerState) -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -1455,6 +1509,10 @@ fun DoubleTimePickerComponent(
                 )
 
                 TimeInput(
+                    colors = TimePickerDefaults.colors().copy(
+                        containerColor = color,
+                        selectorColor = color
+                    ),
                     state = firstTimePickerState,
                 )
 
@@ -1469,6 +1527,10 @@ fun DoubleTimePickerComponent(
                 )
 
                 TimeInput(
+                    colors = TimePickerDefaults.colors().copy(
+                        containerColor = color,
+                        selectorColor = color
+                    ),
                     state = secondTimePickerState,
                 )
 
@@ -1578,7 +1640,9 @@ fun DateTimeInput(
 
     // Show the date picker.
     if (showDate.value) {
-        DatePickerComponent({ localDate ->
+        DatePickerComponent(
+            color = color,
+            { localDate ->
             localDate.getSelectedDate()?.let {
                 // Change the date to kotlin date
                 val localDate = it.toKotlinLocalDate()
@@ -1601,6 +1665,7 @@ fun DateTimeInput(
     if (showTime.value) {
         TimePickerComponent(
             "Select time",
+            color = color,
             onConfirm = { timePickerState ->
                 // Hour and minute from time picker
                 val hour = timePickerState.hour
@@ -1759,7 +1824,9 @@ fun DateTimeRange(
     )
 
     if (isPresentStartDateDialogOpen.value) {
-        DatePickerComponent({ localDate ->
+        DatePickerComponent(
+            color = color,
+            { localDate ->
             localDate.getSelectedDate()?.let {
                 // Change the date to kotlin date
                 val localDate = it.toKotlinLocalDate()
@@ -1779,7 +1846,9 @@ fun DateTimeRange(
     }
 
     if (isPresentEndDateDialogOpen.value) {
-        DatePickerComponent({ localDate ->
+        DatePickerComponent(
+            color = color,
+            { localDate ->
             localDate.getSelectedDate()?.let {
                 // Change the date to kotlin date
                 val localDate = it.toKotlinLocalDate()

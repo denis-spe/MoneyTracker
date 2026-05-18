@@ -14,12 +14,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.example.moneytracker.ui.theme.StewardTheme
 import com.google.firebase.auth.FirebaseUser
 
 @Composable
@@ -39,7 +39,7 @@ fun TopAppNav(
             .padding(5.dp)
             .border(4.dp, contentColor.copy(0.5f), RoundedCornerShape(100))
             .clip(RoundedCornerShape(100))
-            .background(Color(userColor))
+            .background(StewardTheme.colors.primaryAccent)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

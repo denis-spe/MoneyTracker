@@ -63,6 +63,7 @@ import kotlin.math.pow
 
 private val zone = ZoneId.systemDefault()
 
+fun <T> List<T>.limit(by: Int) = if (size > by) this.subList(0, by) else this
 
 val DataSettlement.addNegativeToAmount: String
     get() {
@@ -165,9 +166,9 @@ fun Modifier.shimmerEffect(
         .background(
             brush = Brush.linearGradient(
                 colors = listOf(
-                    Color.Transparent,
-                    Color.White.copy(alpha = 0.3f),
-                    Color.Transparent,
+                    Color.LightGray.copy(alpha = 0.3f),
+                    Color.White.copy(alpha = 0.6f),
+                    Color.LightGray.copy(alpha = 0.3f),
                 ),
                 start = Offset(startOffsetX, 0f),
                 end = Offset(

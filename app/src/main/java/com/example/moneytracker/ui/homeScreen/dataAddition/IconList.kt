@@ -32,7 +32,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -75,7 +77,8 @@ private val ICONS = listOf(
 fun IconList(
     onConfirm: MutableState<TagIcon>,
     onDialogOpen: MutableState<Boolean>,
-    defaultIcon: Int = R.drawable.description
+    defaultIcon: Int = R.drawable.description,
+    color: Color = Color.Unspecified
 ) {
 
     var selectionIcon by remember {
@@ -179,8 +182,18 @@ fun IconList(
                         .padding(top = 10.dp, bottom = 10.dp)
                 ) {
                     TextButton(onClick = { onDialogOpen.value = false }) {
-                        Text("Cancel")
+                        Text(
+                            "Cancel",
+                            fontWeight = FontWeight.Bold,
+                            color = color
+                        )
                     }
+
+                    Text(
+                        "|",
+                        color = color,
+                        modifier = Modifier.padding(horizontal = 2.dp)
+                    )
 
                     TextButton(
                         onClick = {
@@ -188,7 +201,11 @@ fun IconList(
                             onConfirm.value = selectionIcon
                         }
                     ) {
-                        Text("Select")
+                        Text(
+                            "Select",
+                            fontWeight = FontWeight.Bold,
+                            color = color
+                        )
                     }
                 }
             }

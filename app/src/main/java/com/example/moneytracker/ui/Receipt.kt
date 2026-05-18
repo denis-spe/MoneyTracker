@@ -71,7 +71,6 @@ import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
-import com.example.moneytracker.helper.toMidnight
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
@@ -835,8 +834,7 @@ fun OnUpdate(
 ) {
     val showDate = remember { mutableStateOf(false) }
     val showTime = remember { mutableStateOf(false) }
-    val localDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
-    val endLocalDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
+    val onCreatedDateTimeState = remember { mutableStateOf(LocalDateTime.now()) }
     val amountState = rememberTextFieldState()
     val displayAmountState = rememberSaveable { mutableStateOf("") }
     val labelState = rememberTextFieldState()
@@ -894,16 +892,8 @@ fun OnUpdate(
                     amountState.setTextAndPlaceCursorAtEnd(finance.amount.toString())
                     labelState.setTextAndPlaceCursorAtEnd(finance.label)
                     descriptionState.setTextAndPlaceCursorAtEnd(finance.description)
-                    localDateTimeState.value = if (finance is FinanceEntity.Goal) {
-                        finance.createdAt.toLocalDateTimeUtc().toMidnight()
-                    } else {
-                        finance.createdAt.toLocalDateTimeUtc()
-                    }
-                    endLocalDateTimeState.value = if (finance is FinanceEntity.Goal) {
-                        finance.routine.deadlineDateTime.toLocalDateTimeUtc().toMidnight()
-                    } else {
-                        finance.createdAt.toLocalDateTimeUtc()
-                    }
+                    onCreatedDateTimeState.value = finance.createdAt.toLocalDateTimeUtc()
+
                     tagIconState.value = finance.tagIcon
                     selectedPaymentMethod.value = finance.paymentMethod
                 }
@@ -913,7 +903,7 @@ fun OnUpdate(
                     amountState.setTextAndPlaceCursorAtEnd(settlement.amount.toString())
                     labelState.setTextAndPlaceCursorAtEnd(settlement.label)
                     descriptionState.setTextAndPlaceCursorAtEnd(settlement.description)
-                    localDateTimeState.value = settlement.dateTime.toLocalDateTimeUtc()
+                    onCreatedDateTimeState.value = settlement.dateTime.toLocalDateTimeUtc()
                     tagIconState.value = settlement.tagIcon
                     selectedPaymentMethod.value = settlement.paymentMethod
                 }
@@ -1044,17 +1034,12 @@ fun OnUpdate(
                         Column(
                             modifier = Modifier.animateItem()
                         ) {
-                            if (
-                                dataSettlement is DataSettlement.SettlementData &&
-                                dataSettlement.financeEntity !is FinanceEntity.Goal
-                            ) {
-                                DateTimeInput(
-                                    showTime = showTime,
-                                    showDate = showDate,
-                                    localDateTimeState = localDateTimeState,
-                                    colorResId = colorResId
-                                )
-                            }
+                            DateTimeInput(
+                                showTime = showTime,
+                                showDate = showDate,
+                                localDateTimeState = onCreatedDateTimeState,
+                                colorResId = colorResId
+                            )
                         }
                     }
 
@@ -1082,9 +1067,7 @@ fun OnUpdate(
                                                 .isNotEmpty()
                                         ) {
                                             val finance = dataSettlement.financeEntity
-                                            val normalizedStart =
-                                                localDateTimeState.value.toMidnight()
-                                            endLocalDateTimeState.value.toMidnight()
+                                            val normalizedStart = onCreatedDateTimeState.value
 
                                             val newFinanceEntity = when (finance) {
                                                 is FinanceEntity.Transaction -> finance.copy(
@@ -1183,7 +1166,7 @@ fun OnUpdate(
                                                         amount = amountAsDouble,
                                                         label = settlement.label,
                                                         description = descriptionState.text.toString(),
-                                                        dateTime = localDateTimeState
+                                                        dateTime = onCreatedDateTimeState
                                                             .value.toFirestoreTimestampUtc(),
                                                         tagIcon = tagIconState.value,
                                                         settlementType = settlement.settlementType,
@@ -1263,7 +1246,7 @@ fun OnUpdate(
 
         descriptionState.setTextAndPlaceCursorAtEnd(description)
 
-        localDateTimeState.value = dateTime.toLocalDateTimeUtc()
+        onCreatedDateTimeState.value = dateTime.toLocalDateTimeUtc()
 
         tagIconState.value = tagIcon
 
