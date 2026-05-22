@@ -57,7 +57,8 @@ private val AMOUNT_FONT_SIZE = 18.sp
 @Composable
 fun YesterdayItem(
     modifier: Modifier = Modifier,
-    dataSettlement: DataSettlement
+    dataSettlement: DataSettlement,
+    showDivider: Boolean = true
 ) {
     val amount = dataSettlement.addNegativeToAmount
 
@@ -133,16 +134,17 @@ fun YesterdayItem(
     }
 
     Column(
-        modifier = Modifier.clickable {
-            onShowDialog.value = true
-        },
+        modifier = modifier
+            .fillMaxWidth()
+            .clickable {
+                onShowDialog.value = true
+            },
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
         ListItem(
-            modifier = modifier
-                .fillMaxWidth()
-                .padding(bottom = 5.dp),
+            modifier = Modifier
+                .fillMaxWidth(),
             colors = ListItemDefaults.colors().copy(
                 containerColor = Color.Transparent
             ),
@@ -235,14 +237,7 @@ fun YesterdayItem(
             shadowElevation = 0.dp
         )
 
-        HorizontalDivider(
-            modifier = Modifier
-                .shadow(
-                    2.dp,
-                    spotColor = color
-                ),
-            color = color.copy(0.6f)
-        )
+        if (showDivider) HorizontalDivider()
 
         if (onShowDialog.value) {
             Receipt(

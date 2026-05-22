@@ -47,71 +47,115 @@ fun YesterdayScreen(
         containerColor = userColor.copy(0.4f)
     )
 
-    Column(
+    LazyColumn(
         modifier = Modifier
-            .fillMaxSize()
             .padding(paddingValues)
-            .padding(horizontal = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Top
+            .padding(horizontal = 10.dp)
+            .fillMaxWidth()
     ) {
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.45f)
-                .padding(bottom = 10.dp),
-            colors = cardColor,
-        ) {
-            Column(
+        item {
+            Card(
                 modifier = Modifier
-                    .padding(10.dp)
-                    .fillMaxSize(),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp),
+                colors = cardColor,
             ) {
-                YesterdayStatArea(
-                    modifier = Modifier.fillMaxWidth(),
-                    chartData = yesterdayChartDataState,
-                    stats = yesterdayStatsDataState
+                Column(
+                    modifier = Modifier
+                        .padding(10.dp)
+                        .fillMaxSize(),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    YesterdayStatArea(
+                        modifier = Modifier.fillMaxWidth(),
+                        chartData = yesterdayChartDataState,
+                        stats = yesterdayStatsDataState
+                    )
+                }
+            }
+        }
+
+        item {
+            Spacer(modifier = Modifier.size(10.dp))
+        }
+
+        item {
+            Row(
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 10.dp)
+            ) {
+                Text(
+                    "Late Transactions",
+                    fontSize = 18.sp,
+                    fontWeight = FONT_WEIGHT,
                 )
             }
         }
 
-        Spacer(modifier = Modifier.size(10.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 5.dp)
-        ) {
-            Text(
-                "Late Transactions",
-                fontSize = 18.sp,
-                fontWeight = FONT_WEIGHT,
-            )
-        }
-
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.55f)
-        ) {
+        item {
             when (sortAbleDataSettlementDataState) {
                 is DataState.Error -> {
-                    item {
-                        Text(
-                            "Failed to load data",
-                            color = Color.Red,
-                            modifier = Modifier.align(Alignment.CenterHorizontally)
-                        )
-                    }
+                    Text(
+                        "Failed to load data",
+                        color = Color.Red,
+                    )
                 }
 
                 is DataState.Loading -> {
                     // Show shimmer effect
-                    item {
+                    Card(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp),
+                        colors = cardColor
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .padding(10.dp)
+                                .fillMaxWidth(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            repeat(7) {
+                                YesterdayItemShimmer(
+                                    modifier = Modifier.animateItem()
+                                )
+                            }
+                        }
+                    }
+                }
+
+                is DataState.Success -> {
+                    val data = sortAbleDataSettlementDataState.data
+
+                    if (data.isEmpty()) {
+                        Column(
+                            modifier = Modifier
+                                .fillParentMaxHeight()
+                                .fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = painterResource(R.drawable.empty_list),
+                                contentDescription = "empty list",
+                                modifier = Modifier.size(60.dp)
+                            )
+                            Text(
+                                buildString {
+                                    append("No activity recorded\n")
+                                    append("for yesterday")
+                                },
+                                fontWeight = FontWeight.Bold,
+                                color = Color.LightGray,
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    } else {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -125,65 +169,15 @@ fun YesterdayScreen(
                                 verticalArrangement = Arrangement.Center,
                                 horizontalAlignment = Alignment.CenterHorizontally
                             ) {
-                                repeat(7) {
-                                    YesterdayItemShimmer(
-                                        modifier = Modifier.animateItem()
+                                data.forEachIndexed { index, settlement ->
+                                    val isItemLast = index < data.size - 1
+                                    YesterdayItem(
+                                        modifier = Modifier
+                                            .padding(bottom = if (isItemLast) 10.dp else 0.dp)
+                                            .animateItem(),
+                                        dataSettlement = settlement,
+                                        showDivider = isItemLast
                                     )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                is DataState.Success -> {
-                    val data = sortAbleDataSettlementDataState.data
-
-                    if (data.isEmpty()) {
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillParentMaxHeight()
-                                    .fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(R.drawable.empty_list),
-                                    contentDescription = "empty list",
-                                    modifier = Modifier.size(60.dp)
-                                )
-                                Text(
-                                    buildString {
-                                        append("No activity recorded\n")
-                                        append("for yesterday")
-                                    },
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.LightGray,
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
-                    } else {
-                        item {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(bottom = 10.dp),
-                                colors = cardColor
-                            ) {
-                                Column(
-                                    modifier = Modifier
-                                        .padding(10.dp)
-                                        .fillMaxWidth(),
-                                    verticalArrangement = Arrangement.Center,
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    data.forEach {
-                                        YesterdayItem(
-                                            modifier = Modifier.animateItem(),
-                                            dataSettlement = it
-                                        )
-                                    }
                                 }
                             }
                         }
@@ -192,7 +186,6 @@ fun YesterdayScreen(
             }
         }
     }
-
 }
 
 

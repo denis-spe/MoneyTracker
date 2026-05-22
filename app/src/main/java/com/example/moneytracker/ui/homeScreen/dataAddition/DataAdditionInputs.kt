@@ -1035,7 +1035,7 @@ fun RepeatableTransaction(
     goalDateTimeWarningState: MutableState<GoalWarning>,
     startLocalDateTimeState: MutableState<LocalDateTime>,
     endLocalDateTimeState: MutableState<LocalDateTime>,
-    ) {
+) {
 
     val nowMillis = System.currentTimeMillis()
     val now = ZonedDateTime.ofInstant(Instant.ofEpochMilli(nowMillis), ZoneId.systemDefault())
@@ -1060,9 +1060,11 @@ fun RepeatableTransaction(
 
                 Routine.Weekly -> now.with(TemporalAdjusters.nextOrSame(java.time.DayOfWeek.SATURDAY))
                     .plusWeeks(repeatByState.value.routineCount.toLong() - 1)
+
                 Routine.Yearly -> now.plusYears(repeatByState.value.routineCount.toLong())
                 Routine.Monthly -> now.with(TemporalAdjusters.lastDayOfMonth())
                     .plusMonths(repeatByState.value.routineCount.toLong() - 1)
+
                 Routine.SpecifyDayOfTheWeek -> {
                     val safeCount = if (repeatByState.value.routineCount <= 0) 1L
                     else repeatByState.value.routineCount.toLong()
@@ -1337,7 +1339,6 @@ fun DatePickerComponent(
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
-        colors = DatePickerDefaults.colors().copy(),
         confirmButton = {
             TextButton(onClick = {
                 onDateSelected(datePickerState)
@@ -1352,7 +1353,19 @@ fun DatePickerComponent(
             }
         }
     ) {
-        DatePicker(state = datePickerState)
+        DatePicker(
+            state = datePickerState,
+            colors = DatePickerDefaults.colors(
+                selectedDayContainerColor = color,
+                todayDateBorderColor = color,
+                todayContentColor = color,
+                dateTextFieldColors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = color,
+                    focusedLabelColor = color,
+                    cursorColor = color
+                )
+            )
+        )
     }
 }
 
@@ -1418,17 +1431,25 @@ fun TimePickerComponent(
                     text = title,
                     style = MaterialTheme.typography.labelMedium
                 )
-                if (showDial) {
-                    TimePicker(
-                        colors = colors,
-                        state = timePickerState,
+
+                MaterialTheme(
+                    colorScheme = MaterialTheme.colorScheme.copy(
+                        primary = color
                     )
-                } else {
-                    TimeInput(
-                        colors = colors,
-                        state = timePickerState,
-                    )
+                ) {
+                    if (showDial) {
+                        TimePicker(
+                            colors = colors,
+                            state = timePickerState,
+                        )
+                    } else {
+                        TimeInput(
+                            colors = colors,
+                            state = timePickerState,
+                        )
+                    }
                 }
+
                 Row(
                     modifier = Modifier
                         .height(40.dp)
@@ -1480,6 +1501,13 @@ fun DoubleTimePickerComponent(
         is24Hour = true,
     )
 
+    val colors = TimePickerDefaults.colors().copy(
+        timeSelectorSelectedContainerColor = color.copy(0.4f),
+        periodSelectorBorderColor = color,
+        periodSelectorUnselectedContainerColor = color.copy(0.4f),
+        selectorColor = color
+    )
+
     Dialog(
         onDismissRequest = onDismiss,
         properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -1500,53 +1528,79 @@ fun DoubleTimePickerComponent(
                 modifier = Modifier.padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp),
-                    text = "Your starting time",
-                    style = MaterialTheme.typography.labelMedium
-                )
 
-                TimeInput(
-                    colors = TimePickerDefaults.colors().copy(
-                        containerColor = color,
-                        selectorColor = color
-                    ),
-                    state = firstTimePickerState,
-                )
-
-                HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
-
-                Text(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 20.dp),
-                    text = "Your ending time",
-                    style = MaterialTheme.typography.labelMedium
-                )
-
-                TimeInput(
-                    colors = TimePickerDefaults.colors().copy(
-                        containerColor = color,
-                        selectorColor = color
-                    ),
-                    state = secondTimePickerState,
-                )
-
-                Row(
-                    modifier = Modifier
-                        .height(40.dp)
-                        .fillMaxWidth()
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
-                    Spacer(modifier = Modifier.weight(1f))
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
-                    TextButton(onClick = {
-                        onConfirm(
-                            firstTimePickerState,
-                            secondTimePickerState
-                        )
-                    }) { Text("OK") }
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 20.dp),
+                        text = "Your starting time",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+
+                    TimeInput(
+                        colors = colors,
+                        state = firstTimePickerState,
+                    )
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                    Text(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 20.dp),
+                        text = "Your ending time",
+                        style = MaterialTheme.typography.labelMedium
+                    )
+
+                    TimeInput(
+                        colors = colors,
+                        state = secondTimePickerState,
+                    )
+                }
+
+                MaterialTheme(
+                    colorScheme = MaterialTheme.colorScheme.copy(
+                        surface = color
+                    )
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .height(40.dp)
+                            .fillMaxWidth()
+                    ) {
+                        Spacer(modifier = Modifier.weight(1f))
+                        TextButton(
+                            onClick = onDismiss,
+                            colors = ButtonDefaults.textButtonColors().copy(
+                                contentColor = color
+                            )
+                        ) {
+                            Text(
+                                "Cancel",
+                                color = color
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                onConfirm(
+                                    firstTimePickerState,
+                                    secondTimePickerState
+                                )
+                            },
+                            colors = ButtonDefaults.textButtonColors().copy(
+                                contentColor = color
+                            )
+                        ) {
+                            Text(
+                                "OK",
+                                color = color
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -1643,20 +1697,20 @@ fun DateTimeInput(
         DatePickerComponent(
             color = color,
             { localDate ->
-            localDate.getSelectedDate()?.let {
-                // Change the date to kotlin date
-                val localDate = it.toKotlinLocalDate()
+                localDate.getSelectedDate()?.let {
+                    // Change the date to kotlin date
+                    val localDate = it.toKotlinLocalDate()
 
-                // Add the time to the date
-                val localDateTime = localDate.atTime(localDateTimeState.value.time)
+                    // Add the time to the date
+                    val localDateTime = localDate.atTime(localDateTimeState.value.time)
 
-                // Update the state
-                localDateTimeState.value = localDateTime
+                    // Update the state
+                    localDateTimeState.value = localDateTime
 
-                // Close the date picker
-                showDate.value = false
-            }
-        }) {
+                    // Close the date picker
+                    showDate.value = false
+                }
+            }) {
             showDate.value = false
         }
     }
@@ -1827,20 +1881,20 @@ fun DateTimeRange(
         DatePickerComponent(
             color = color,
             { localDate ->
-            localDate.getSelectedDate()?.let {
-                // Change the date to kotlin date
-                val localDate = it.toKotlinLocalDate()
+                localDate.getSelectedDate()?.let {
+                    // Change the date to kotlin date
+                    val localDate = it.toKotlinLocalDate()
 
-                // Add the time to the date
-                val localDateTime = localDate.atTime(startLocalDateTimeState.value.time)
+                    // Add the time to the date
+                    val localDateTime = localDate.atTime(startLocalDateTimeState.value.time)
 
-                // Update the state
-                startLocalDateTimeState.value = localDateTime
+                    // Update the state
+                    startLocalDateTimeState.value = localDateTime
 
-                // Close the date picker
-                isPresentStartDateDialogOpen.value = false
-            }
-        }) {
+                    // Close the date picker
+                    isPresentStartDateDialogOpen.value = false
+                }
+            }) {
             isPresentStartDateDialogOpen.value = false
         }
     }
@@ -1849,21 +1903,21 @@ fun DateTimeRange(
         DatePickerComponent(
             color = color,
             { localDate ->
-            localDate.getSelectedDate()?.let {
-                // Change the date to kotlin date
-                val localDate = it.toKotlinLocalDate()
+                localDate.getSelectedDate()?.let {
+                    // Change the date to kotlin date
+                    val localDate = it.toKotlinLocalDate()
 
-                // Add the time to the date
-                val localDateTime = localDate.atTime(endLocalDateTimeState.value.time)
+                    // Add the time to the date
+                    val localDateTime = localDate.atTime(endLocalDateTimeState.value.time)
 
-                // Update the state
-                endLocalDateTimeState.value = localDateTime
+                    // Update the state
+                    endLocalDateTimeState.value = localDateTime
 
-                // Close the date picker
-                isPresentEndDateDialogOpen.value = false
+                    // Close the date picker
+                    isPresentEndDateDialogOpen.value = false
 
-            }
-        }) {
+                }
+            }) {
             isPresentEndDateDialogOpen.value = false
         }
     }
@@ -1897,5 +1951,4 @@ fun DateTimeRange(
             isTimeDialogOpen.value = false
         }
     }
-
 }
