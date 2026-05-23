@@ -90,7 +90,9 @@ fun Insights(
         var percentage by remember { mutableDoubleStateOf(0.0) }
         var marginRatio by remember { mutableDoubleStateOf(0.0) }
         var text by remember { mutableStateOf(buildAnnotatedString { "" }) }
-        val tooltipState = rememberTooltipState()
+        val tooltipState = rememberTooltipState(
+            isPersistent = true
+        )
         val coroutineScope = rememberCoroutineScope()
 
         LaunchedEffect(firstFinancial, secondFinancial) {

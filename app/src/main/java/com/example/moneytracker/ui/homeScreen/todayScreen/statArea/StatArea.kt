@@ -3,6 +3,7 @@
 // And with all your strength and love your neighbor as your self.
 package com.example.moneytracker.ui.homeScreen.todayScreen.statArea
 
+import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -33,6 +34,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.mean
 import com.example.moneytracker.helper.median
 import com.example.moneytracker.helper.shimmerEffect
@@ -169,6 +171,8 @@ fun DonutChartPager(
                     }
                 }
 
+                Log.e("Donut chart", donutChartDataCollection.items.toString())
+
                 var enabled by remember { mutableStateOf(true) }
                 val totalAmount: Float by animateFloatAsState(
                     if (enabled)
@@ -267,7 +271,9 @@ fun StatArea(
         ) {
             when (fulfillmentFinanceEntityList) {
                 is DataState.Success -> {
-                    FulfillmentInsightPager(fulfillmentFinanceEntityList.data)
+                    FulfillmentInsightPager(
+                        fulfillmentFinanceEntityList.data
+                            .filterNot { it.isAmountEqualToSettleAmount() })
                 }
 
                 is DataState.Loading -> {
