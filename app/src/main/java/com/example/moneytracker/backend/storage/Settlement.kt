@@ -2,6 +2,7 @@
 package com.example.moneytracker.backend.storage
 
 import androidx.annotation.Keep
+import com.example.moneytracker.backend.storage.types.SettlementType
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Exclude
 

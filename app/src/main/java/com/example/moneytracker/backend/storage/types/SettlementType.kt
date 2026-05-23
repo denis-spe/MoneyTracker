@@ -1,5 +1,4 @@
-// Bless be the name of LORD our GOD
-package com.example.moneytracker.backend.storage
+package com.example.moneytracker.backend.storage.types
 
 import androidx.annotation.Keep
 import com.example.moneytracker.R
@@ -12,12 +11,12 @@ enum class SettlementType(
     val typeDescription: String,
 ) {
     DEBT_REPAY(
-        "Debt Payback",
+        "Payback",
         icon = R.drawable.outlined_repay, color = R.color.RepayDebt,
         typeDescription = "Payback your debt"
     ),
     LENT_REPAY(
-        "Loan Refund",
+        "Refund",
         icon = R.drawable.outlined_repay, color = R.color.RepayLoan,
         typeDescription = "Refund your loan"
     ),

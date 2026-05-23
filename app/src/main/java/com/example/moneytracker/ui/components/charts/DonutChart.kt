@@ -5,8 +5,11 @@
 // Code by eozsahin1993
 package com.example.moneytracker.ui.components.charts
 
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.TweenSpec
 import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
@@ -99,6 +102,16 @@ fun PlaceHolderDonutChart(
     val gapAngle = data.calculateGapAngle(gapPercentage)
     var center = Offset(0f, 0f)
 
+    var animationProgress by remember { mutableStateOf(0f) }
+    LaunchedEffect(data) {
+        animationProgress = 1f
+    }
+    val progress by animateFloatAsState(
+        targetValue = animationProgress,
+        animationSpec = tween(durationMillis = 1000, easing = LinearEasing),
+        label = "DonutChartAnimation"
+    )
+
     Box(
         modifier = modifier,
         contentAlignment = Alignment.Center,
@@ -137,8 +150,8 @@ fun PlaceHolderDonutChart(
                     val currentStrokeWidth = animValues[ind].value.toPx()
                     drawArc(
                         color = item.color,
-                        startAngle = lastAngle,
-                        sweepAngle = sweepAngle,
+                        startAngle = lastAngle * progress,
+                        sweepAngle = sweepAngle * progress,
                         useCenter = false,
                         topLeft = Offset(maxStrokeWidth / 2, maxStrokeWidth / 2),
                         style = Stroke(currentStrokeWidth, cap = strokeCap),
@@ -194,6 +207,16 @@ fun DonutChart(
     val anglesList: MutableList<DrawingAngles> = remember { mutableListOf() }
     val gapAngle = data.calculateGapAngle(gapPercentage)
     var center = Offset(0f, 0f)
+
+    var animationProgress by remember { mutableStateOf(0f) }
+    LaunchedEffect(data) {
+        animationProgress = 1f
+    }
+    val progress by animateFloatAsState(
+        targetValue = animationProgress,
+        animationSpec = tween(durationMillis = 1000, easing = LinearEasing),
+        label = "DonutChartAnimation"
+    )
 
     Box(
         modifier = modifier,
@@ -252,8 +275,8 @@ fun DonutChart(
                     val currentStrokeWidth = animValues[ind].value.toPx()
                     drawArc(
                         color = item.color,
-                        startAngle = lastAngle,
-                        sweepAngle = sweepAngle,
+                        startAngle = lastAngle * progress,
+                        sweepAngle = sweepAngle * progress,
                         useCenter = false,
                         topLeft = Offset(maxStrokeWidth / 2, maxStrokeWidth / 2),
                         style = Stroke(currentStrokeWidth, cap = strokeCap),

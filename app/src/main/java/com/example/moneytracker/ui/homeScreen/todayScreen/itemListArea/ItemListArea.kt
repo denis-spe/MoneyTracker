@@ -72,7 +72,7 @@ import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.PaymentMethod
-import com.example.moneytracker.backend.storage.SettlementType
+import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount

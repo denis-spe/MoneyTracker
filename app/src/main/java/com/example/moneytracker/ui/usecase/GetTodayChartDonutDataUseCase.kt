@@ -5,7 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
-import com.example.moneytracker.backend.storage.SettlementType
+import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import javax.inject.Inject

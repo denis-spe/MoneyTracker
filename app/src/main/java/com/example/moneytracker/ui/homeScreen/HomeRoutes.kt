@@ -33,6 +33,10 @@ fun TodayScreenRoute(
         .fulfillmentFinanceEntity
         .collectAsStateWithLifecycle()
 
+    val currentAmountBalance by viewModel
+        .currentAccountBalance
+        .collectAsStateWithLifecycle()
+
     TodayScreen(
         paddingValues = paddingValues,
 
@@ -41,6 +45,7 @@ fun TodayScreenRoute(
         uiState = uiState,
 
         fulfillmentFinanceEntityList = fulfillmentFinanceEntity,
+        currentAmountBalance = currentAmountBalance,
 
         homeViewModel = viewModel,
         datasetWithAdjust = datasetWithAdjust

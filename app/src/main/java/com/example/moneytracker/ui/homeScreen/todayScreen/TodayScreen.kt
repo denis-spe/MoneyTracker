@@ -36,7 +36,6 @@ import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.ItemListArea
 import com.example.moneytracker.ui.homeScreen.todayScreen.statArea.StatArea
-import com.example.moneytracker.ui.theme.StewardTheme
 
 @Composable
 fun TodayScreen(
@@ -46,11 +45,11 @@ fun TodayScreen(
     fulfillmentFinanceEntityList: DataState<List<FinanceEntity>>,
     homeViewModel: HomeViewModel,
     datasetWithAdjust: DataState<List<DataSettlement>>,
+    currentAmountBalance: DataState<Map<String, Double>>,
 ) {
     val isTransactionListExpended = uiState.onActivateShow
     val configuration = LocalConfiguration.current
 
-    StewardTheme.colors.secondarySurface
     val cardColor = CardDefaults.cardColors().copy(
         containerColor = Color.Transparent
     )
@@ -97,7 +96,8 @@ fun TodayScreen(
                             .fillMaxSize()
                             .padding(10.dp),
                         donutChartDataCollection = donutChartDataCollection,
-                        fulfillmentFinanceEntityList = fulfillmentFinanceEntityList
+                        fulfillmentFinanceEntityList = fulfillmentFinanceEntityList,
+                        currentAmountBalance = currentAmountBalance
                     )
                 }
             }
@@ -141,7 +141,8 @@ fun TodayScreen(
                             .fillMaxSize()
                             .padding(10.dp),
                         donutChartDataCollection = donutChartDataCollection,
-                        fulfillmentFinanceEntityList = fulfillmentFinanceEntityList
+                        fulfillmentFinanceEntityList = fulfillmentFinanceEntityList,
+                        currentAmountBalance = currentAmountBalance
                     )
                 }
             }

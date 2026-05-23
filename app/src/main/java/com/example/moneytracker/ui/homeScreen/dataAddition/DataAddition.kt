@@ -5,7 +5,6 @@
 
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -34,7 +33,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.Stable
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +50,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.FinanceEntity
@@ -59,11 +58,11 @@ import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.Settlement
-import com.example.moneytracker.backend.storage.SettlementType
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.backend.storage.types.FinanceCategory
 import com.example.moneytracker.backend.storage.types.GoalType
 import com.example.moneytracker.backend.storage.types.LiabilityType
+import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.GoalWarning
 import com.example.moneytracker.helper.State
@@ -907,8 +906,11 @@ fun SettlementDataInputs(
     val selectedFinanceEntity = remember {
         mutableStateOf<FinanceEntity?>(null)
     }
-    val selectedPaymentMethod = remember {
-        mutableStateOf(PaymentMethod.CASH)
+    val selectedPaymentMethod = remember(selectedFinanceEntity.value) {
+        mutableStateOf(
+            selectedFinanceEntity.value?.paymentMethod
+                ?: PaymentMethod.CASH
+        )
     }
     val localDateTimeState = remember {
         mutableStateOf(LocalDateTime.now())

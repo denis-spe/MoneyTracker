@@ -2,6 +2,7 @@
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import android.util.Log
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,6 +51,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
@@ -96,7 +98,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
 import com.example.moneytracker.backend.storage.FinanceEntity
@@ -621,7 +622,7 @@ fun SettlementField(
     var expanded by remember { mutableStateOf(false) }
 
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
-    val height = integerResource(R.integer.textFieldAndButtonHeight).dp
+    val height = 58.dp
 
     /* ----------------------------------------------------------
      * 1) React to Firestore datasets ONLY when sheet is visible
@@ -1261,67 +1262,57 @@ fun PaymentMethodDropdown(
     colorResId: Int,
     selectedPaymentMethod: MutableState<PaymentMethod>,
 ) {
-    val expanded = remember { mutableStateOf(false) }
+    remember { mutableStateOf(false) }
     val paymentMethods = PaymentMethod.entries.toTypedArray()
         .toList()
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
-    val height = integerResource(R.integer.textFieldAndButtonHeight).dp
+    integerResource(R.integer.textFieldAndButtonHeight).dp
     val color = colorResource(id = colorResId)
 
-    Column(
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        DropdownMenu(
-            expanded = expanded.value,
-            onDismissRequest = { expanded.value = false }
-        ) {
-            paymentMethods
-                .forEach { paymentMethod ->
-
-                    DropdownMenuItem(
-                        text = {
-                            Text(paymentMethod.text, fontSize = fontSize)
-                        },
-                        onClick = {
-                            expanded.value = false
-                            selectedPaymentMethod.value = paymentMethod
-                        },
-                        leadingIcon = {
-                            // Replace Image(painter = painterResource(...)) with:
-                            AsyncImage(
-                                model = paymentMethod.icon,
-                                contentDescription = paymentMethod.text,
-                                modifier = Modifier.size(ICON_SIZE)
-                            )
-                        }
+        paymentMethods
+            .forEachIndexed { index, paymentMethod ->
+                OutlinedButton(
+                    border = BorderStroke(
+                        ButtonDefaults.outlinedButtonBorder().width,
+                        color = color
+                    ),
+                    colors = ButtonDefaults.outlinedButtonColors().copy(
+                        containerColor = if (selectedPaymentMethod.value == paymentMethod)
+                            color.copy(0.25f) else Color.Unspecified
+                    ),
+                    onClick = {
+                        selectedPaymentMethod.value = paymentMethod
+                    },
+                    modifier = Modifier.padding(
+                        end = if (index < paymentMethods.size - 1) 5.dp
+                        else 0.dp
                     )
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Image(
+                            painter = painterResource(paymentMethod.icon),
+                            contentDescription = paymentMethod.text,
+                            modifier = Modifier.size(ICON_SIZE)
+                        )
+
+                        Text(
+                            paymentMethod.text,
+                            fontSize = fontSize,
+                            fontWeight = FONT_WEIGHT,
+                            color = color
+                        )
+                    }
                 }
-        }
+            }
     }
-
-    ListItem(
-        modifier = MODIFIER_DRAWER
-            .height(height)
-            .clickable {
-                expanded.value = true
-            },
-        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
-        headlineContent = {
-            Text("Payment method", fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
-        },
-        leadingContent = {
-            Image(
-                painter = painterResource(id = selectedPaymentMethod.value.icon),
-                contentDescription = "Calendar",
-                modifier = Modifier.size(ICON_SIZE)
-            )
-        },
-        trailingContent = {
-            Text(selectedPaymentMethod.value.text, color = color, fontSize = fontSize)
-        }
-
-    )
 }
 
 

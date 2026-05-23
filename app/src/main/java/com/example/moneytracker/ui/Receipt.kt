@@ -58,10 +58,10 @@ import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Settlement
-import com.example.moneytracker.backend.storage.SettlementType
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.backend.storage.types.LiabilityType
+import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen

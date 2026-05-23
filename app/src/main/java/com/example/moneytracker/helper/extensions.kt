@@ -12,7 +12,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,10 +36,10 @@ import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.Settlement
-import com.example.moneytracker.backend.storage.SettlementType
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.backend.storage.types.LiabilityType
+import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.backend.storage.types.TransactionType
 import com.google.firebase.Timestamp
 import kotlinx.datetime.LocalDate
@@ -146,7 +145,7 @@ fun Modifier.shimmerEffect(
         label = "shimmer_offset"
     )
 
-    val modifier = if (shape == CircleShape && size != null) {
+    val modifier = if (size != null) {
         this.size(size)
     } else if (width != null && height != null) {
         this
