@@ -30,6 +30,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
@@ -44,6 +45,7 @@ fun TodayScreen(
     uiState: HomeUiState,
     fulfillmentFinanceEntityList: DataState<List<FinanceEntity>>,
     homeViewModel: HomeViewModel,
+    userViewModel: UserViewModel,
     datasetWithAdjust: DataState<List<DataSettlement>>,
     currentAmountBalance: DataState<Map<String, Double>>,
 ) {
@@ -109,6 +111,7 @@ fun TodayScreen(
                 uiState = uiState,
                 viewModel = homeViewModel,
                 datasetWithAdjust = datasetWithAdjust,
+                userViewModel = userViewModel
             )
         }
     } else {
@@ -154,6 +157,7 @@ fun TodayScreen(
                 uiState = uiState,
                 viewModel = homeViewModel,
                 datasetWithAdjust = datasetWithAdjust,
+                userViewModel = userViewModel
             )
         }
     }

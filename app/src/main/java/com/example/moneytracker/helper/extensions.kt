@@ -172,7 +172,7 @@ fun Modifier.shimmerEffect(
                 start = Offset(startOffsetX, 0f),
                 end = Offset(
                     startOffsetX + componentSize.width.toFloat(),
-                    componentSize.height.toFloat()
+                    0f
                 )
             )
         )

@@ -36,16 +36,23 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.DataSettlement
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.outlinedIcon
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.OnDeleteReceipt
+import com.example.moneytracker.ui.OnUpdate
 import com.example.moneytracker.ui.Receipt
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.StatusView
+import com.example.moneytracker.ui.components.Swipe
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
+import com.example.moneytracker.ui.theme.StewardTheme
 
 private val ICON_SIZE = 20.dp
 private val TIME_FONT_SIZE = 13.sp
@@ -58,7 +65,9 @@ private val AMOUNT_FONT_SIZE = 18.sp
 fun YesterdayItem(
     modifier: Modifier = Modifier,
     dataSettlement: DataSettlement,
-    showDivider: Boolean = true
+    showDivider: Boolean = true,
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel
 ) {
     val amount = dataSettlement.addNegativeToAmount
 
@@ -133,6 +142,11 @@ fun YesterdayItem(
         mutableStateOf(false)
     }
 
+    val onShowDeleteDialog = remember { mutableStateOf(false) }
+    val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
+
+
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -142,110 +156,156 @@ fun YesterdayItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        ListItem(
-            modifier = Modifier
-                .fillMaxWidth(),
-            colors = ListItemDefaults.colors().copy(
-                containerColor = Color.Transparent
-            ),
-            headlineContent = {
-                settlement?.let {
-                    Text(
-                        it,
-                        fontSize = LABEL_FONT_SIZE,
-                        fontWeight = FONT_WEIGHT,
-                        color = Color.Gray,
-                        textDecoration = textDecoration
-                    )
-                }
+        Swipe(
+            onUpdate = {
+                isUpdateModelBottonOpen.value = true
             },
-            overlineContent = {
-                // Amount
-                Text(
-                    amount,
-                    fontSize = AMOUNT_FONT_SIZE,
-                    fontWeight = FONT_WEIGHT,
-                    color = color,
-                    textDecoration = textDecoration
-                )
-
-            },
-
-            supportingContent = {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    // Label
-                    Text(
-                        label,
-                        fontSize = LABEL_FONT_SIZE,
-                        fontWeight = FONT_WEIGHT,
-                        textDecoration = textDecoration
-                    )
-
-                    // Description
-                    if (description.isNotEmpty()) {
-                        Text(description, fontSize = DESCRIPTION_FONT_SIZE)
+            onRemove = {
+                onShowDeleteDialog.value = true
+            }
+        ) {
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                colors = ListItemDefaults.colors()
+                    .copy(
+                        containerColor = StewardTheme.colors.secondarySurface
+                            .copy(0.4f)
+                    ),
+                headlineContent = {
+                    settlement?.let {
+                        Text(
+                            it,
+                            fontSize = LABEL_FONT_SIZE,
+                            fontWeight = FONT_WEIGHT,
+                            color = Color.Gray,
+                            textDecoration = textDecoration
+                        )
                     }
-                }
-            },
+                },
+                overlineContent = {
+                    // Amount
+                    Text(
+                        amount,
+                        fontSize = AMOUNT_FONT_SIZE,
+                        fontWeight = FONT_WEIGHT,
+                        color = color,
+                        textDecoration = textDecoration
+                    )
 
-            trailingContent = {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Row(
-                        modifier = Modifier.padding(bottom = 5.dp),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
+                },
+
+                supportingContent = {
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Center
                     ) {
-                        // DataType Image
-                        Image(
-                            painter = dataTypeIcon,
-                            contentDescription = null,
-                            modifier = Modifier.size(ICON_SIZE),
-                            colorFilter = ColorFilter.tint(color)
+                        // Label
+                        Text(
+                            label,
+                            fontSize = LABEL_FONT_SIZE,
+                            fontWeight = FONT_WEIGHT,
+                            textDecoration = textDecoration
                         )
 
-                        // Tag Image
-                        Image(
-                            painter = tagIcon,
-                            contentDescription = null,
-                            modifier = Modifier.size(ICON_SIZE)
-                        )
+                        // Description
+                        if (description.isNotEmpty()) {
+                            Text(description, fontSize = DESCRIPTION_FONT_SIZE)
+                        }
+                    }
+                },
 
-                        // Payment Method Image
-                        Image(
-                            painter = paymentMethod,
-                            contentDescription = null,
-                            modifier = Modifier.size(ICON_SIZE)
+                trailingContent = {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(bottom = 5.dp),
+                            horizontalArrangement = Arrangement.End,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // DataType Image
+                            Image(
+                                painter = dataTypeIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(ICON_SIZE),
+                                colorFilter = ColorFilter.tint(color)
+                            )
+
+                            // Tag Image
+                            Image(
+                                painter = tagIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(ICON_SIZE)
+                            )
+
+                            // Payment Method Image
+                            Image(
+                                painter = paymentMethod,
+                                contentDescription = null,
+                                modifier = Modifier.size(ICON_SIZE)
+                            )
+                        }
+
+                        StatusView(dataSettlement)
+
+
+                        // Time
+                        Text(
+                            "By $hour:$minute",
+                            fontSize = TIME_FONT_SIZE,
                         )
                     }
-
-                    StatusView(dataSettlement)
-
-
-                    // Time
-                    Text(
-                        "By $hour:$minute",
-                        fontSize = TIME_FONT_SIZE,
-                    )
-                }
-            },
-            shadowElevation = 0.dp
-        )
-
-        if (showDivider) HorizontalDivider()
-
-        if (onShowDialog.value) {
-            Receipt(
-                dataSettlement = dataSettlement,
-                onShowDialog = onShowDialog,
+                },
+                shadowElevation = 0.dp
             )
+
+            if (showDivider) HorizontalDivider()
         }
     }
+
+    if (onShowDialog.value) {
+        Receipt(
+            dataSettlement = dataSettlement,
+            onShowDialog = onShowDialog,
+        )
+    }
+
+    OnDeleteReceipt(
+        dataSettlement = dataSettlement,
+        onShowDeleteDialog = onShowDeleteDialog,
+    ) {
+        when (dataSettlement) {
+            is DataSettlement.SettlementData -> {
+                viewModel.removeData(dataSettlement.financeEntity)
+                userViewModel.showActionNotification("Data deleted successfully", Color.Red)
+            }
+
+            is DataSettlement.SettlementAdjust -> {
+                val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
+                    is FinanceEntity.Transaction -> "TRANSACTION"
+                    is FinanceEntity.Goal -> "GOAL"
+                    is FinanceEntity.Liability -> "LIABILITY"
+                }
+                viewModel.removeSettlementFinance(
+                    dataSettlement.settlement.financeEntity!!.id,
+                    financeEntityType,
+                    dataSettlement.settlement
+                )
+                userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
+            }
+        }
+        onShowDialog.value = false
+    }
+
+    OnUpdate(
+        dataSettlement = dataSettlement,
+        viewModel = viewModel,
+        userViewModel = userViewModel,
+        isUpdateModelBottonOpen = isUpdateModelBottonOpen,
+        onShowDialog = onShowDialog
+    )
 
 }
 

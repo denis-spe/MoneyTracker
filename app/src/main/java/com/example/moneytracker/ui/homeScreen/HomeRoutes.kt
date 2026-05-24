@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.homeScreen.allScreen.AllScreen
 import com.example.moneytracker.ui.homeScreen.overviewScreen.OverviewScreen
 import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
@@ -16,7 +17,8 @@ import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 @Composable
 fun TodayScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel()
 ) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -48,7 +50,8 @@ fun TodayScreenRoute(
         currentAmountBalance = currentAmountBalance,
 
         homeViewModel = viewModel,
-        datasetWithAdjust = datasetWithAdjust
+        datasetWithAdjust = datasetWithAdjust,
+        userViewModel = userViewModel
     )
 }
 
@@ -79,7 +82,8 @@ fun FulfillmentScreenRoute(
 @Composable
 fun YesterdayScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel()
 ) {
     val yesterdayChartDataState by viewModel
         .yesterdayChartData
@@ -101,13 +105,16 @@ fun YesterdayScreenRoute(
         yesterdayChartDataState = yesterdayChartDataState,
 
         yesterdayStatsDataState = yesterdayStatsDataState,
+        viewModel = viewModel,
+        userViewModel = userViewModel
     )
 }
 
 @Composable
 fun AllScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel()
+    viewModel: HomeViewModel = hiltViewModel(),
+    userViewModel: UserViewModel = hiltViewModel()
 ) {
     val dataState by viewModel
         .weeklyData
@@ -119,5 +126,6 @@ fun AllScreenRoute(
         viewModel = viewModel,
 
         dataState = dataState,
+        userViewModel = userViewModel
     )
 }

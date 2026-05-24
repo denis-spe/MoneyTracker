@@ -37,18 +37,26 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.OnDeleteReceipt
+import com.example.moneytracker.ui.OnUpdate
 import com.example.moneytracker.ui.Receipt
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.StatusView
+import com.example.moneytracker.ui.components.Swipe
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 
 @Composable
 fun ListForAll(
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel,
     dataSettlements: DataState<List<DataSettlement>>,
 ) {
     Modifier
@@ -109,7 +117,9 @@ fun ListForAll(
 
                         CardForAllItem(
                             modifier = Modifier.animateItem(),
-                            dataSettlement = dataItem
+                            dataSettlement = dataItem,
+                            viewModel = viewModel,
+                            userViewModel = userViewModel,
                         )
                     }
                 }
@@ -141,6 +151,8 @@ fun ListForAll(
 
 @Composable
 fun CardForAllItem(
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel,
     modifier: Modifier = Modifier,
     dataSettlement: DataSettlement
 ) {
@@ -230,94 +242,143 @@ fun CardForAllItem(
         mutableStateOf(false)
     }
 
-    Column(
-        modifier = modifier.clickable {
-            onShowDialog.value = true
+
+    val onShowDeleteDialog = remember { mutableStateOf(false) }
+    val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
+
+    Swipe(
+        onUpdate = {
+            isUpdateModelBottonOpen.value = true
         },
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+        onRemove = {
+            onShowDeleteDialog.value = true
+        }
     ) {
-        ListItem(
-            modifier = Modifier
-                .fillMaxWidth(),
-            headlineContent = {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        label,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        textDecoration = labelTextDecoration
-                    )
-                    StatusView(dataSettlement, fontSize = 12.sp)
-                }
+        Column(
+            modifier = modifier.clickable {
+                onShowDialog.value = true
             },
-            supportingContent = {
-                if (description.isNotEmpty()) {
-                    Text(description, fontSize = 12.sp)
-                }
-            },
-            trailingContent = {
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ListItem(
+                modifier = Modifier
+                    .fillMaxWidth(),
+                headlineContent = {
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            label,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            textDecoration = labelTextDecoration
+                        )
+                        StatusView(dataSettlement, fontSize = 12.sp)
+                    }
+                },
+                supportingContent = {
+                    if (description.isNotEmpty()) {
+                        Text(description, fontSize = 12.sp)
+                    }
+                },
+                trailingContent = {
 
-            Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        amount,
-                        fontSize = 14.sp,
-                        color = color,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(dateTime)
-                }
-            },
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            amount,
+                            fontSize = 14.sp,
+                            color = color,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(dateTime)
+                    }
+                },
 
-            leadingContent = {
-                Column(
-                    modifier = Modifier
-                        .clip(CircleShape)
-                        .background(color),
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Image(
-                        tagIcon,
-                        contentDescription = "Tag Icon",
+                leadingContent = {
+                    Column(
                         modifier = Modifier
-                            .size(20.dp)
-                            .padding(3.dp)
-                    )
+                            .clip(CircleShape)
+                            .background(color),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        Image(
+                            tagIcon,
+                            contentDescription = "Tag Icon",
+                            modifier = Modifier
+                                .size(20.dp)
+                                .padding(3.dp)
+                        )
+                    }
+                },
+
+                shadowElevation = 0.dp,
+
+                overlineContent = {
+                    settlement?.let {
+                        Text(
+                            it,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            textDecoration = adjustTextDecoration
+                        )
+                    }
                 }
-            },
-
-            shadowElevation = 0.dp,
-
-            overlineContent = {
-                settlement?.let {
-                    Text(
-                        it,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Bold,
-                        textDecoration = adjustTextDecoration
-                    )
-                }
-            }
-        )
-        HorizontalDivider(
-            thickness = 1.dp,
-            color = Color.LightGray.copy(0.3f)
-        )
-
-        if (onShowDialog.value) {
-            Receipt(
-                dataSettlement = dataSettlement,
-                onShowDialog = onShowDialog,
+            )
+            HorizontalDivider(
+                thickness = 1.dp,
+                color = Color.LightGray.copy(0.3f)
             )
         }
     }
+
+    if (onShowDialog.value) {
+        Receipt(
+            dataSettlement = dataSettlement,
+            onShowDialog = onShowDialog,
+        )
+    }
+
+
+    OnDeleteReceipt(
+        dataSettlement = dataSettlement,
+        onShowDeleteDialog = onShowDeleteDialog,
+    ) {
+        when (dataSettlement) {
+            is DataSettlement.SettlementData -> {
+                viewModel.removeData(dataSettlement.financeEntity)
+                userViewModel.showActionNotification("Data deleted successfully", Color.Red)
+            }
+
+            is DataSettlement.SettlementAdjust -> {
+                val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
+                    is FinanceEntity.Transaction -> "TRANSACTION"
+                    is FinanceEntity.Goal -> "GOAL"
+                    is FinanceEntity.Liability -> "LIABILITY"
+                }
+                viewModel.removeSettlementFinance(
+                    dataSettlement.settlement.financeEntity!!.id,
+                    financeEntityType,
+                    dataSettlement.settlement
+                )
+                userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
+            }
+        }
+        onShowDialog.value = false
+    }
+
+    OnUpdate(
+        dataSettlement = dataSettlement,
+        viewModel = viewModel,
+        userViewModel = userViewModel,
+        isUpdateModelBottonOpen = isUpdateModelBottonOpen,
+        onShowDialog = onShowDialog
+    )
 }
 
 

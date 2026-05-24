@@ -29,8 +29,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
@@ -42,6 +44,8 @@ fun YesterdayScreen(
     sortAbleDataSettlementDataState: DataState<List<DataSettlement>>,
     yesterdayChartDataState: DataState<List<ChartData>>,
     yesterdayStatsDataState: DataState<YesterdayStats>,
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel,
 ) {
     val userColor = StewardTheme.colors.secondarySurface
     val cardColor = CardDefaults.cardColors().copy(
@@ -178,7 +182,9 @@ fun YesterdayScreen(
                                             .padding(bottom = if (isItemLast) 10.dp else 0.dp)
                                             .animateItem(),
                                         dataSettlement = settlement,
-                                        showDivider = isItemLast
+                                        showDivider = isItemLast,
+                                        viewModel = viewModel,
+                                        userViewModel = userViewModel,
                                     )
                                 }
                             }

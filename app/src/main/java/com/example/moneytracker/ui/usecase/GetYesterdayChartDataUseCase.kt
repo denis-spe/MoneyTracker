@@ -1,51 +1,84 @@
 package com.example.moneytracker.ui.usecase
 
 import android.content.Context
+import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.helper.isCreatedAtEqualTo
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.collections.ChartData
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.minus
+import network.chaintech.kmp_date_time_picker.utils.now
 import javax.inject.Inject
 
 class GetYesterdayChartDataUseCase @Inject constructor() {
 
     operator fun invoke(financeEntityList: List<FinanceEntity>, context: Context): List<ChartData> {
-        if (financeEntityList.isEmpty()) return emptyList()
+        return try {
+            if (financeEntityList.isEmpty()) return emptyList()
 
-        // 🔥 Precompute X once
-        val xAxis = DoubleArray(24) { it * 3600.0 }
+            val yesterday = LocalDateTime.now().date.minus(1, DateTimeUnit.DAY)
 
-        // 🔥 Map<String, IntArray(24)>
-        val resultMap = mutableMapOf<String, IntArray>()
-        val colorMap = mutableMapOf<String, Int>()
+            // 🔥 Precompute X once
+            val xAxis = DoubleArray(24) { it * 3600.0 }
 
-        for (finance in financeEntityList) {
-            val type = finance.categoryText
-            colorMap[type] = finance.colorRes
+            // 🔥 Map<String, IntArray(24)>
+            val resultMap = mutableMapOf<String, IntArray>()
+            val colorMap = mutableMapOf<String, Int>()
 
-            // 🚀 Get or create bucket
-            val hoursArray = resultMap.getOrPut(type) { IntArray(24) }
+            for (finance in financeEntityList) {
+                // Process the main entity if it was created yesterday
+                if (finance.isCreatedAtEqualTo(yesterday)) {
+                    val type = finance.categoryText
+                    colorMap[type] = finance.colorRes
 
-            // ⚡ Convert once
-            val hour = finance.createdAt.toLocalDateTimeUtc().hour
+                    // 🚀 Get or create bucket
+                    val hoursArray = resultMap.getOrPut(type) { IntArray(24) }
 
-            hoursArray[hour] += finance.amount.toInt()
-        }
+                    // ⚡ Convert once
+                    val hour = finance.createdAt.toLocalDateTimeUtc().hour
+                    if (hour in 0..23) {
+                        hoursArray[hour] += finance.amount.toInt()
+                    }
+                }
 
-        // 🔥 Build final list
-        return resultMap.map { (categoryText, hoursArray) ->
-            ChartData(
-                x = xAxis.toList(),
-                y = hoursArray.map { it }, // or keep as IntArray if your chart supports it
-                label = categoryText,
-                color = Color(
-                    ContextCompat.getColor(
-                        context,
-                        colorMap[categoryText] ?: 0
-                    )
+                // Process settlements regardless of when the parent entity was created
+                val settlements = when (finance) {
+                    is FinanceEntity.Goal -> finance.settlement
+                    is FinanceEntity.Liability -> finance.settlement
+                    is FinanceEntity.Transaction -> emptyList()
+                }
+
+                for (settlement in settlements) {
+                    if (settlement.isCreatedAtEqualTo(yesterday)) {
+                        val type = settlement.settlementType.text
+                        colorMap[type] = settlement.settlementType.color
+
+                        val hoursArray = resultMap.getOrPut(type) { IntArray(24) }
+                        val hour = settlement.dateTime.toLocalDateTimeUtc().hour
+                        if (hour in 0..23) {
+                            hoursArray[hour] += settlement.amount.toInt()
+                        }
+                    }
+                }
+            }
+
+            // 🔥 Build final list
+            resultMap.map { (categoryText, hoursArray) ->
+                val colorRes = colorMap[categoryText] ?: android.R.color.darker_gray
+                ChartData(
+                    x = xAxis.toList(),
+                    y = hoursArray.map { it },
+                    label = categoryText,
+                    color = Color(ContextCompat.getColor(context, colorRes))
                 )
-            )
+            }
+        } catch (e: Exception) {
+            Log.e("GetYesterdayChartData", "Error generating chart data", e)
+            emptyList()
         }
     }
 }

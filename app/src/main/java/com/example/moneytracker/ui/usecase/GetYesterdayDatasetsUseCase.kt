@@ -14,6 +14,17 @@ class GetYesterdayFinanceUseCase @Inject constructor() {
             .date
             .minus(1, DateTimeUnit.DAY)
 
-        return financeEntityList.filter { it.isCreatedAtEqualTo(yesterday) }
+        return financeEntityList.filter { entity ->
+            entity.isCreatedAtEqualTo(yesterday) || when (entity) {
+                is FinanceEntity.Goal -> entity.settlement.any { it.isCreatedAtEqualTo(yesterday) }
+                is FinanceEntity.Liability -> entity.settlement.any {
+                    it.isCreatedAtEqualTo(
+                        yesterday
+                    )
+                }
+
+                else -> false
+            }
+        }
     }
 }

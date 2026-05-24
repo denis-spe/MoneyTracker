@@ -66,7 +66,7 @@ fun YesterdayStat(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Settle Debts:")
+            Text("Debts:")
             Text(stats.debts.formatToAmount())
         }
 
@@ -75,8 +75,26 @@ fun YesterdayStat(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text("Refund:")
+            Text("Lent:")
             Text(stats.lent.formatToAmount())
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Payback:")
+            Text(stats.payback.formatToAmount())
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Refund:")
+            Text(stats.refund.formatToAmount())
         }
 
         Row(
@@ -86,15 +104,6 @@ fun YesterdayStat(
         ) {
             Text("Savings:")
             Text(stats.savings.formatToAmount())
-        }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text("Attained:")
-            Text(stats.attained.formatToAmount())
         }
 
         HorizontalDivider()
@@ -174,6 +183,60 @@ fun YesterdayStatShimmer() {
                     .shimmerEffect(
                         shape = RoundedCornerShape(roundPercent),
                         width = 50.dp,
+                        height = height
+                    )
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(bottom = 4.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Shimmer for Debts
+            Box(
+                modifier = Modifier
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(roundPercent),
+                        width = 50.dp,
+                        height = height
+                    )
+            )
+
+            Box(
+                modifier = Modifier
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(roundPercent),
+                        width = 65.dp,
+                        height = height
+                    )
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .padding(bottom = 4.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Shimmer for Lent
+            Box(
+                modifier = Modifier
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(roundPercent),
+                        width = 40.dp,
+                        height = height
+                    )
+            )
+
+            Box(
+                modifier = Modifier
+                    .shimmerEffect(
+                        shape = RoundedCornerShape(roundPercent),
+                        width = 71.dp,
                         height = height
                     )
             )

@@ -74,6 +74,7 @@ fun TransactionCard(
     val tagIcon = painterResource(financeEntity.tagIcon.icon)
     val transactionType = financeEntity.transactionType.text
     val color = colorResource(financeEntity.colorRes)
+    val paymentMethod = financeEntity.paymentMethod
 
     Card(
         modifier = modifier
@@ -95,7 +96,13 @@ fun TransactionCard(
                     painter = tagIcon,
                     contentDescription = label,
                 )
+                Image(
+                    painter = painterResource(paymentMethod.icon),
+                    contentDescription = paymentMethod.text,
+                    modifier = Modifier.size(ICON_SIZE)
+                )
             }
+
             Column {
                 Text(
                     label,
@@ -106,10 +113,15 @@ fun TransactionCard(
                     style = typography.titleSmall,
                     color = color
                 )
-                Text(
-                    amount,
-                    style = typography.titleSmall
-                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        amount,
+                        style = typography.titleSmall
+                    )
+                }
             }
         }
     }

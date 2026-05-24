@@ -71,14 +71,19 @@ import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.DataType
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.shimmerEffect
+import com.example.moneytracker.ui.OnDeleteReceipt
+import com.example.moneytracker.ui.OnUpdate
 import com.example.moneytracker.ui.Receipt
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.StatusView
+import com.example.moneytracker.ui.components.Swipe
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
@@ -734,6 +739,7 @@ fun ItemListArea(
     uiState: HomeUiState,
     datasetWithAdjust: DataState<List<DataSettlement>>,
     viewModel: HomeViewModel,
+    userViewModel: UserViewModel
 ) {
 
     LazyColumn(
@@ -769,7 +775,9 @@ fun ItemListArea(
                 items(data.size) { index ->
                     ItemCard(
                         modifier = Modifier,
-                        dataSettlement = data[index]
+                        dataSettlement = data[index],
+                        viewModel = viewModel,
+                        userViewModel = userViewModel
                     )
                 }
 
@@ -816,6 +824,8 @@ fun ItemListArea(
 
 @Composable
 fun ItemCard(
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel,
     modifier: Modifier = Modifier,
     dataSettlement: DataSettlement,
 ) {
@@ -895,90 +905,101 @@ fun ItemCard(
 
     val color = colorResource(colorResId)
     val onShowDialog = remember { mutableStateOf(false) }
+    val onShowDeleteDialog = remember { mutableStateOf(false) }
+    val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
 
-    Column(
-        modifier = modifier,
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+    Swipe(
+        onUpdate = {
+            isUpdateModelBottonOpen.value = true
+        },
+        onRemove = {
+            onShowDeleteDialog.value = true
+        }
     ) {
-        ListItem(
-            modifier = Modifier
-                .clickable {
-                    onShowDialog.value = true
-                },
-            headlineContent = {
-                Column(
-                    horizontalAlignment = Alignment.Start,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = label,
-                        fontSize = labelFontSize,
-                        fontWeight = FontWeight.Bold,
-                        textDecoration = labelTextDecoration
-                    )
-
-                    settlement?.let {
+        Column(
+            modifier = modifier,
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            ListItem(
+                modifier = Modifier
+                    .clickable {
+                        onShowDialog.value = true
+                    },
+                headlineContent = {
+                    Column(
+                        horizontalAlignment = Alignment.Start,
+                        verticalArrangement = Arrangement.Center
+                    ) {
                         Text(
-                            it,
+                            text = label,
                             fontSize = labelFontSize,
                             fontWeight = FontWeight.Bold,
-                            textDecoration = adjustTextDecoration
+                            textDecoration = labelTextDecoration
                         )
+
+                        settlement?.let {
+                            Text(
+                                it,
+                                fontSize = labelFontSize,
+                                fontWeight = FontWeight.Bold,
+                                textDecoration = adjustTextDecoration
+                            )
+                        }
+
+                        if (description.isNotEmpty()) {
+                            Text(
+                                text = description,
+                                fontSize = labelFontSize,
+                            )
+                        }
                     }
+                },
 
-                    if (description.isNotEmpty()) {
-                        Text(
-                            text = description,
-                            fontSize = labelFontSize,
-                        )
-                    }
-                }
-            },
-
-            supportingContent = {
-                Text(
-                    text = dateTime,
-                    fontSize = labelFontSize,
-                )
-
-            },
-
-            leadingContent = {
-                Image(
-                    painter = labelIcon,
-                    contentDescription = "TagIcon",
-                    modifier = Modifier.size(ICON_SIZE)
-                )
-            },
-
-            trailingContent = {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
-                ) {
-
+                supportingContent = {
                     Text(
-                        text = amount,
-                        fontSize = AMOUNT_SIZE,
-                        color = color
+                        text = dateTime,
+                        fontSize = labelFontSize,
                     )
 
+                },
+
+                leadingContent = {
                     Image(
-                        painter = paymentMethod,
-                        contentDescription = "PaymentMethod",
+                        painter = labelIcon,
+                        contentDescription = "TagIcon",
                         modifier = Modifier.size(ICON_SIZE)
                     )
+                },
 
-                    StatusView(dataSettlement = dataSettlement)
+                trailingContent = {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+
+                        Text(
+                            text = amount,
+                            fontSize = AMOUNT_SIZE,
+                            color = color
+                        )
+
+                        Image(
+                            painter = paymentMethod,
+                            contentDescription = "PaymentMethod",
+                            modifier = Modifier.size(ICON_SIZE)
+                        )
+
+                        StatusView(dataSettlement = dataSettlement)
+                    }
                 }
-            }
-        )
-        HorizontalDivider(
-            thickness = 1.dp,
-            modifier = Modifier.fillMaxSize(0.8f),
-            color = color
-        )
+            )
+            HorizontalDivider(
+                thickness = 1.dp,
+                modifier = Modifier.fillMaxSize(0.8f),
+                color = color
+            )
+        }
     }
 
     if (onShowDialog.value) {
@@ -987,6 +1008,41 @@ fun ItemCard(
             onShowDialog = onShowDialog,
         )
     }
+
+    OnDeleteReceipt(
+        dataSettlement = dataSettlement,
+        onShowDeleteDialog = onShowDeleteDialog,
+    ) {
+        when (dataSettlement) {
+            is DataSettlement.SettlementData -> {
+                viewModel.removeData(dataSettlement.financeEntity)
+                userViewModel.showActionNotification("Data deleted successfully", Color.Red)
+            }
+
+            is DataSettlement.SettlementAdjust -> {
+                val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
+                    is FinanceEntity.Transaction -> "TRANSACTION"
+                    is FinanceEntity.Goal -> "GOAL"
+                    is FinanceEntity.Liability -> "LIABILITY"
+                }
+                viewModel.removeSettlementFinance(
+                    dataSettlement.settlement.financeEntity!!.id,
+                    financeEntityType,
+                    dataSettlement.settlement
+                )
+                userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
+            }
+        }
+        onShowDialog.value = false
+    }
+
+    OnUpdate(
+        dataSettlement = dataSettlement,
+        viewModel = viewModel,
+        userViewModel = userViewModel,
+        isUpdateModelBottonOpen = isUpdateModelBottonOpen,
+        onShowDialog = onShowDialog
+    )
 }
 
 @Composable

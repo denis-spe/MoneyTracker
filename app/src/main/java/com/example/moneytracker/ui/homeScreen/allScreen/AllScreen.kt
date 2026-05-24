@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataSettlement
+import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 
@@ -19,6 +20,7 @@ import com.example.moneytracker.ui.homeScreen.HomeViewModel
 fun AllScreen(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel,
+    userViewModel: UserViewModel,
     dataState: DataState<List<DataSettlement>>,
 ) {
     Column(
@@ -35,7 +37,9 @@ fun AllScreen(
         )
 
         ListForAll(
-            dataSettlements = dataState
+            dataSettlements = dataState,
+            viewModel = viewModel,
+            userViewModel = userViewModel,
         )
     }
 }
