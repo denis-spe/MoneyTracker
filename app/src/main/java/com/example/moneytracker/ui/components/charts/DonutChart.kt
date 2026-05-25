@@ -177,7 +177,6 @@ fun DonutChart(
     strokeWidth: Dp = 20.dp,
     strokeWidthSelected: Dp = 40.dp,
     strokeCap: StrokeCap = StrokeCap.Butt,
-    placeholderDonutColor: Color = Color.Gray,
     selectionView: @Composable (selectedItem: DonutChartData?) -> Unit = {},
 ) {
 

@@ -247,10 +247,10 @@ fun CardForAllItem(
     val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
 
     Swipe(
-        onUpdate = {
+        onStartToEnd = {
             isUpdateModelBottonOpen.value = true
         },
-        onRemove = {
+        onEndToStart = {
             onShowDeleteDialog.value = true
         }
     ) {

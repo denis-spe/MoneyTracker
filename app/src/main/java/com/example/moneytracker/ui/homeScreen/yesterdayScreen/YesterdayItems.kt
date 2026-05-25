@@ -9,7 +9,9 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -49,7 +51,6 @@ import com.example.moneytracker.ui.Receipt
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.components.Swipe
-import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.theme.StewardTheme
@@ -157,10 +158,10 @@ fun YesterdayItem(
         verticalArrangement = Arrangement.Center
     ) {
         Swipe(
-            onUpdate = {
+            onStartToEnd = {
                 isUpdateModelBottonOpen.value = true
             },
-            onRemove = {
+            onEndToStart = {
                 onShowDeleteDialog.value = true
             }
         ) {
@@ -169,8 +170,7 @@ fun YesterdayItem(
                     .fillMaxWidth(),
                 colors = ListItemDefaults.colors()
                     .copy(
-                        containerColor = StewardTheme.colors.secondarySurface
-                            .copy(0.4f)
+                        containerColor = StewardTheme.colors.secondarySurface.copy(0.8f)
                     ),
                 headlineContent = {
                     settlement?.let {
@@ -446,12 +446,40 @@ fun YesterdayItemShimmer(modifier: Modifier = Modifier) {
 
 fun YesterdayItems(
     modifier: Modifier = Modifier,
-    dataSettlementDataState: DataState<List<DataSettlement>>,
+    dataSettlements: List<DataSettlement>,
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel
 ) {
     Column(
-        modifier = modifier
+        modifier = Modifier
+            .padding(vertical = 10.dp)
+            .fillMaxWidth(),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
+        dataSettlements.forEachIndexed { index, settlement ->
+            val isItemNotTheLast = index < dataSettlements.size - 1
+            val isItemTheLast = index == dataSettlements.size - 1
 
+            YesterdayItem(
+                modifier = modifier
+                    .clip(
+                        RoundedCornerShape(
+                            topStart = if (index == 0) 10.dp else 0.dp,
+                            topEnd = if (index == 0) 10.dp else 0.dp,
+                            bottomStart = if (isItemTheLast) 10.dp else 0.dp,
+                            bottomEnd = if (isItemTheLast) 10.dp else 0.dp
+                        )
+                    )
+                    .fillMaxWidth(),
+                dataSettlement = settlement,
+                showDivider = isItemNotTheLast,
+                viewModel = viewModel,
+                userViewModel = userViewModel,
+            )
+
+            if (isItemNotTheLast) Spacer(modifier = Modifier.height(4.dp))
+        }
     }
 }
 

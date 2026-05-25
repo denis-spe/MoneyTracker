@@ -162,33 +162,12 @@ fun YesterdayScreen(
                             )
                         }
                     } else {
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(bottom = 10.dp),
-                            colors = cardColor
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .padding(10.dp)
-                                    .fillMaxWidth(),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                data.forEachIndexed { index, settlement ->
-                                    val isItemLast = index < data.size - 1
-                                    YesterdayItem(
-                                        modifier = Modifier
-                                            .padding(bottom = if (isItemLast) 10.dp else 0.dp)
-                                            .animateItem(),
-                                        dataSettlement = settlement,
-                                        showDivider = isItemLast,
-                                        viewModel = viewModel,
-                                        userViewModel = userViewModel,
-                                    )
-                                }
-                            }
-                        }
+                        YesterdayItems(
+                            modifier = Modifier.animateItem(),
+                            dataSettlements = data,
+                            viewModel = viewModel,
+                            userViewModel = userViewModel
+                        )
                     }
                 }
             }

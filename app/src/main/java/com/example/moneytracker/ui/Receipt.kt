@@ -32,6 +32,7 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -47,6 +48,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.dp
@@ -781,7 +783,7 @@ fun OnDeleteReceipt(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Are you sure you want to delete this ${item.lowercase()} item",
+                            "Are you sure you want to delete this ${item.lowercase()} item?",
                             textAlign = TextAlign.Center
                         )
                     }
@@ -803,7 +805,12 @@ fun OnDeleteReceipt(
                                 containerColor = Color.Gray.copy(0.2f)
                             )
                         ) {
-                            Text("Cancel", color = StewardTheme.colors.onSurfaceText)
+                            Text(
+                                "Cancel",
+                                fontWeight = FontWeight.Bold,
+                                style = typography.titleMedium,
+                                color = StewardTheme.colors.accentContent
+                            )
                         }
 
                         Spacer(modifier = Modifier.width(10.dp))
@@ -814,7 +821,12 @@ fun OnDeleteReceipt(
                                 containerColor = colorResource(R.color.error_color)
                             )
                         ) {
-                            Text("Delete", color = StewardTheme.colors.onSurfaceText)
+                            Text(
+                                "Delete",
+                                fontWeight = FontWeight.Bold,
+                                style = typography.titleMedium,
+                                color = StewardTheme.colors.accentContent
+                            )
                         }
                     }
                 }

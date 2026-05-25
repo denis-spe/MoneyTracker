@@ -1,7 +1,6 @@
 // Great is the LORD of hosts
 package com.example.moneytracker.helper
 
-import android.icu.text.DecimalFormat
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -50,6 +49,7 @@ import net.objecthunter.exp4j.ExpressionBuilder
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.math.BigDecimal
 import java.math.RoundingMode
+import java.text.DecimalFormat
 import java.text.NumberFormat
 import java.time.DayOfWeek
 import java.time.Instant
@@ -57,10 +57,39 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.TemporalAdjusters
 import java.util.Locale
+import kotlin.math.abs
 import kotlin.math.log10
 import kotlin.math.pow
 
 private val zone = ZoneId.systemDefault()
+
+fun getCurrencySymbol(): String {
+    val locale = Locale.getDefault()
+    val numberFormat = NumberFormat.getCurrencyInstance(locale)
+    return numberFormat.currency?.symbol ?: "$"
+}
+
+fun Double.formatValueOnly(): String {
+    val absValue = abs(this)
+    if (absValue < 1_000_000) {
+        val rounding = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
+        return rounding.abs().toString()
+            .replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")
+            .replace(Regex("\\.00$"), "")
+    }
+
+    val suffixes = charArrayOf('M', 'B', 'T', 'Q')
+    val formatter = DecimalFormat("#.##")
+    val base = (log10(absValue) / 3).toInt()
+    val scaledNumber = absValue / 1000.0.pow(base.toDouble())
+    val suffixIndex = base - 2
+
+    return if (suffixIndex >= 0 && suffixIndex < suffixes.size) {
+        "${formatter.format(scaledNumber)}${suffixes[suffixIndex]}"
+    } else {
+        String.format(Locale.US, "%.2f", absValue)
+    }
+}
 
 fun <T> List<T>.limit(by: Int) = if (size > by) this.subList(0, by) else this
 
@@ -939,7 +968,7 @@ fun Double.formatToAmount(): String {
     val numberFormat = NumberFormat.getCurrencyInstance(locale)
     val symbol = numberFormat.currency?.symbol ?: "$"
 
-    val absValue = kotlin.math.abs(this)
+    val absValue = abs(this)
     val sign = if (this < 0) "-" else ""
 
     if (absValue < 1_000_000) {

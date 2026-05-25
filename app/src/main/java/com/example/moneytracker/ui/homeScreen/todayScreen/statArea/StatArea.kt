@@ -6,8 +6,9 @@ package com.example.moneytracker.ui.homeScreen.todayScreen.statArea
 import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,6 +48,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -56,6 +58,8 @@ import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.formatValueOnly
+import com.example.moneytracker.helper.getCurrencySymbol
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.mean
 import com.example.moneytracker.helper.median
@@ -67,40 +71,6 @@ import com.example.moneytracker.ui.components.charts.collections.DonutChartDataC
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.coroutines.launch
-import java.math.BigDecimal
-import java.math.RoundingMode
-import java.text.DecimalFormat
-import java.text.NumberFormat
-import java.util.Locale
-import kotlin.math.pow
-
-fun Double.formatValueOnly(): String {
-    val absValue = kotlin.math.abs(this)
-    if (absValue < 1_000_000) {
-        val rounding = BigDecimal(this).setScale(2, RoundingMode.HALF_UP)
-        return rounding.abs().toString()
-            .replace(Regex("\\B(?=(\\d{3})+(?!\\d))"), ",")
-            .replace(Regex("\\.00$"), "")
-    }
-
-    val suffixes = charArrayOf('M', 'B', 'T', 'Q')
-    val formatter = DecimalFormat("#.##")
-    val base = (kotlin.math.log10(absValue) / 3).toInt()
-    val scaledNumber = absValue / 1000.0.pow(base.toDouble())
-    val suffixIndex = base - 2
-
-    return if (suffixIndex >= 0 && suffixIndex < suffixes.size) {
-        "${formatter.format(scaledNumber)}${suffixes[suffixIndex]}"
-    } else {
-        String.format(Locale.US, "%.2f", absValue)
-    }
-}
-
-fun getCurrencySymbol(): String {
-    val locale = Locale.getDefault()
-    val numberFormat = NumberFormat.getCurrencyInstance(locale)
-    return numberFormat.currency?.symbol ?: "$"
-}
 
 @Composable
 fun Stat(
@@ -235,8 +205,8 @@ fun DonutChartPager(
                 LaunchedEffect(flowIn - flowOut) {
                     enabled = true
                 }
-                val totalAmount: Float by animateFloatAsState(
-                    targetValue = if (enabled) flowIn - flowOut else 0f,
+                val totalAmount: Int by animateIntAsState(
+                    targetValue = if (enabled) (flowIn - flowOut).toInt() else 0,
                     label = "Amount flow",
                     animationSpec = tween(
                         durationMillis = 1000,
@@ -359,16 +329,34 @@ fun CurrentAmountBalanceSection(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Text(
-                                    accountName,
-                                    style = typography.titleMedium
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Image(
+                                        painter = painterResource(
+                                            id = when (accountName) {
+                                                "Card" -> R.drawable.credit_card
+                                                "Cash" -> R.drawable.cash
+                                                else -> R.drawable.steward
+                                            }
+                                        ),
+                                        modifier = Modifier.size(25.dp),
+
+                                        contentDescription = accountName
+                                    )
+                                    Text(
+                                        accountName,
+                                        style = typography.titleMedium
+                                    )
+                                }
+
                                 var enabled by remember { mutableStateOf(false) }
                                 LaunchedEffect(amount) {
                                     enabled = true
                                 }
-                                val animatedAmount: Float by animateFloatAsState(
-                                    targetValue = if (enabled) amount.toFloat() else 0f,
+                                val animatedAmount: Int by animateIntAsState(
+                                    targetValue = if (enabled) amount.toInt() else 0,
                                     label = "AccountBalanceAnimation",
                                     animationSpec = tween(1000, easing = LinearEasing)
                                 )

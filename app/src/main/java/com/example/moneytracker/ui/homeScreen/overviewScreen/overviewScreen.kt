@@ -1,6 +1,8 @@
 // Bless be the name of the LORD of hosts
 package com.example.moneytracker.ui.homeScreen.overviewScreen
 
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -26,6 +28,11 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -214,6 +221,20 @@ fun GoalCard(
         financeEntityGoal.routine.routine.text
     }
 
+    val targetPercentage = if (financeEntityGoal.amount > 0)
+        ((progressAmount / financeEntityGoal.amount) * 100).toInt()
+    else 0
+
+    var enabled by remember { mutableStateOf(false) }
+    LaunchedEffect(targetPercentage) {
+        enabled = true
+    }
+    val animatedPercentage by animateIntAsState(
+        targetValue = if (enabled) targetPercentage else 0,
+        label = "GoalPercentageAnimation",
+        animationSpec = tween(1000)
+    )
+
     val createdAt = financeEntityGoal.createdAt.toLocalDateTimeUtc()
     val day = String.format(java.util.Locale.getDefault(), "%02d", createdAt.day)
     val createdAtDateTime = "Created at $day ${createdAt.month.name.title} " +
@@ -258,11 +279,8 @@ fun GoalCard(
                         gapPercentage = 0.06f,
                         strokeCap = StrokeCap.Round,
                         selectionView = {
-                            val percentage = if (financeEntityGoal.amount > 0)
-                                ((progressAmount / financeEntityGoal.amount) * 100).toInt()
-                            else 0
                             Text(
-                                text = "$percentage%",
+                                text = "$animatedPercentage%",
                                 style = typography.labelSmall.copy(fontSize = 8.sp)
                             )
                         }
@@ -325,6 +343,20 @@ fun SettlementCard(
     val remainingAmount = (financeEntity.amount - progressAmount).coerceAtLeast(0.0)
     val color = colorResource(financeEntity.colorRes)
 
+    val targetPercentage = if (financeEntity.amount > 0)
+        ((progressAmount / financeEntity.amount) * 100).toInt()
+    else 0
+
+    var enabled by remember { mutableStateOf(false) }
+    LaunchedEffect(targetPercentage) {
+        enabled = true
+    }
+    val animatedPercentage by animateIntAsState(
+        targetValue = if (enabled) targetPercentage else 0,
+        label = "SettlementPercentageAnimation",
+        animationSpec = tween(1000)
+    )
+
     val donutChartDataCollection = DonutChartDataCollection(
         listOf(
             DonutChartData(
@@ -363,11 +395,8 @@ fun SettlementCard(
                 gapPercentage = 0.06f,
                 strokeCap = StrokeCap.Round,
                 selectionView = {
-                    val percentage = if (financeEntity.amount > 0)
-                        ((progressAmount / financeEntity.amount) * 100).toInt()
-                    else 0
                     Text(
-                        text = "$percentage%",
+                        text = "$animatedPercentage%",
                         style = typography.labelSmall.copy(fontSize = 8.sp)
                     )
                 }
