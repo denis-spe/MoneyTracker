@@ -170,7 +170,7 @@ fun YesterdayItem(
                     .fillMaxWidth(),
                 colors = ListItemDefaults.colors()
                     .copy(
-                        containerColor = StewardTheme.colors.secondarySurface.copy(0.8f)
+                        containerColor = StewardTheme.colors.secondarySurface.copy(0.4f)
                     ),
                 headlineContent = {
                     settlement?.let {
@@ -478,7 +478,7 @@ fun YesterdayItems(
                 userViewModel = userViewModel,
             )
 
-            if (isItemNotTheLast) Spacer(modifier = Modifier.height(4.dp))
+            if (isItemNotTheLast) Spacer(modifier = Modifier.height(2.dp))
         }
     }
 }

@@ -1160,7 +1160,7 @@ fun OnUpdate(
                                         ) {
                                             if (amountAsDouble != null
                                                 && amountAsDouble
-                                                <= dataSettlement.settlement.financeEntity!!.remainingAmount
+                                                <= (dataSettlement.settlement.financeEntity!!.remainingAmount + dataSettlement.settlement.amount)
                                             ) {
                                                 val settlement = dataSettlement.settlement
                                                 val financeEntityType =
@@ -1187,7 +1187,7 @@ fun OnUpdate(
                                                 )
 
 
-                                                wasSuccess.value = State.SUCCESS
+                                                wasSettlementSuccess.value = State.SUCCESS
                                                 userViewModel.showActionNotification(
                                                     "Settlement updated successfully",
                                                     color
@@ -1206,7 +1206,7 @@ fun OnUpdate(
                                                 onShowDialog.value = false
 
                                             } else {
-                                                wasSuccess.value = State.ERROR
+                                                wasSettlementSuccess.value = State.ERROR
                                             }
                                         }
                                     }
