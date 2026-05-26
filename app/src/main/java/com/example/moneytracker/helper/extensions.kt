@@ -817,6 +817,7 @@ fun Map<*, *>.toFinance(): FinanceEntity {
                 tagIcon = tagIcon,
                 paymentMethod = paymentMethod,
                 settlement = this.toSettlement(),
+                achievement = this.toAchievement(),
                 routine = (this["routineData"] as? Map<*, *>)?.asRoutineData() ?: RoutineData()
             )
         }

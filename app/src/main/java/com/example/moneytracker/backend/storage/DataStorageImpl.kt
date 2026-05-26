@@ -439,11 +439,14 @@ class DataStorageImpl(
         return try {
             val snapshot = docRef.get().await()
             val entity = snapshot.data?.toFinance() ?: return null
-            val settlements = docRef.collection("settlement").get().await()
-                .documents.mapNotNull { it.data?.asSettlement() }
+            val settlements = loadSettlementForDataset(db, userId, datasetId, financeType)
+            val achievements = loadAchievementForDataset(db, userId, datasetId, financeType)
 
             when (entity) {
-                is FinanceEntity.Goal -> entity.copy(settlement = settlements)
+                is FinanceEntity.Goal -> entity.copy(
+                    settlement = settlements,
+                    achievement = achievements
+                )
                 is FinanceEntity.Liability -> entity.copy(settlement = settlements)
                 else -> entity
             }
@@ -451,11 +454,16 @@ class DataStorageImpl(
             try {
                 val snapshot = docRef.get(Source.CACHE).await()
                 val entity = snapshot.data?.toFinance() ?: return null
-                val settlements = docRef.collection("settlement").get(Source.CACHE).await()
-                    .documents.mapNotNull { it.data?.asSettlement() }
+                val settlements =
+                    loadSettlementForDataset(db, userId, datasetId, financeType, Source.CACHE)
+                val achievements =
+                    loadAchievementForDataset(db, userId, datasetId, financeType, Source.CACHE)
 
                 when (entity) {
-                    is FinanceEntity.Goal -> entity.copy(settlement = settlements)
+                    is FinanceEntity.Goal -> entity.copy(
+                        settlement = settlements,
+                        achievement = achievements
+                    )
                     is FinanceEntity.Liability -> entity.copy(settlement = settlements)
                     else -> entity
                 }

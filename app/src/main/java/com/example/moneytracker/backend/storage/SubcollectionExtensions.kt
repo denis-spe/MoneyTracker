@@ -2,6 +2,7 @@
 package com.example.moneytracker.backend.storage
 
 import android.util.Log
+import com.example.moneytracker.helper.asSettlement
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -35,7 +36,8 @@ suspend fun loadAchievementForDataset(
     db: FirebaseFirestore,
     userId: String,
     datasetId: String,
-    financeType: String
+    financeType: String,
+    source: com.google.firebase.firestore.Source = com.google.firebase.firestore.Source.DEFAULT
 ): List<Achievement> {
     return try {
         val snapshot = db.collection("database")
@@ -44,7 +46,7 @@ suspend fun loadAchievementForDataset(
             .document(datasetId)
             .collection("achievement")
             .orderBy("startDateTime", com.google.firebase.firestore.Query.Direction.DESCENDING)
-            .get()
+            .get(source)
             .await()
 
         snapshot.documents.mapNotNull { doc ->
@@ -164,6 +166,39 @@ suspend fun getLatestAchievementForDataset(
     } catch (e: Exception) {
         Log.e("LatestStatusLoad", "Failed to load latest status", e)
         null
+    }
+}
+
+/**
+ * Load settlements for a specific dataset
+ */
+suspend fun loadSettlementForDataset(
+    db: FirebaseFirestore,
+    userId: String,
+    datasetId: String,
+    financeType: String,
+    source: com.google.firebase.firestore.Source = com.google.firebase.firestore.Source.DEFAULT
+): List<Settlement> {
+    return try {
+        val snapshot = db.collection("database")
+            .document(userId)
+            .collection(getCollectionNameFromType(financeType))
+            .document(datasetId)
+            .collection("settlement")
+            .get(source)
+            .await()
+
+        snapshot.documents.mapNotNull { doc ->
+            try {
+                (doc.data ?: return@mapNotNull null).asSettlement()
+            } catch (e: Exception) {
+                Log.e("SettlementLoad", "Failed to parse settlement entry", e)
+                null
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("SettlementLoad", "Failed to load settlements", e)
+        emptyList()
     }
 }
 

@@ -141,7 +141,7 @@ fun YesterdayScreen(
                     if (data.isEmpty()) {
                         Column(
                             modifier = Modifier
-                                .fillParentMaxHeight()
+                                .fillParentMaxHeight(0.4f)
                                 .fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center

@@ -443,8 +443,8 @@ fun OverviewScreen(
         ) {
             when (allDataset) {
                 is DataState.Loading -> {
-                    items(5) {
-                        GoalCardShimmer()
+                    item {
+                        OverviewShimmer()
                     }
                 }
 
