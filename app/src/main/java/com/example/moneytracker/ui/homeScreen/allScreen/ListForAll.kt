@@ -154,7 +154,8 @@ fun CardForAllItem(
 
     val tagIcon = painterResource(id = dataSettlement.tagIcon.icon)
     val color = colorResource(id = dataSettlement.colorRes)
-    val categoryIcon = painterResource(id = dataSettlement.icon)
+    painterResource(id = dataSettlement.icon)
+    val paymentMethodIcon = painterResource(id = dataSettlement.paymentMethod.icon)
 
     val settlementLabel = when (dataSettlement) {
         is DataSettlement.SettlementAdjust -> dataSettlement.settlement.financeEntity?.label
@@ -249,8 +250,8 @@ fun CardForAllItem(
                         }
                         
                         Image(
-                            categoryIcon,
-                            contentDescription = "Category Icon",
+                            paymentMethodIcon,
+                            contentDescription = "Payment method Icon",
                             modifier = Modifier
                                 .size(12.dp)
                                 .clip(CircleShape)

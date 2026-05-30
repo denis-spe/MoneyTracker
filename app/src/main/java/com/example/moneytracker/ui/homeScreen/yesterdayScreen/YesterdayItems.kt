@@ -82,7 +82,7 @@ fun YesterdayItem(
 
     val dataTypeIcon = painterResource(id = dataSettlement.icon)
 
-    val tagIcon = dataSettlement.tagIcon?.let { painterResource(id = it.icon) }
+    val tagIcon = dataSettlement.tagIcon.let { painterResource(id = it.icon) }
 
     val paymentMethod = painterResource(id = dataSettlement.paymentMethod.icon)
 
@@ -206,14 +206,16 @@ fun YesterdayItem(
                                 colorFilter = ColorFilter.tint(color)
                             )
 
+                            Spacer(modifier = Modifier.size(2.dp))
+
                             // Tag Image
-                            tagIcon?.let {
-                                Image(
-                                    painter = it,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(ICON_SIZE)
-                                )
-                            }
+                            Image(
+                                painter = tagIcon,
+                                contentDescription = null,
+                                modifier = Modifier.size(ICON_SIZE)
+                            )
+
+                            Spacer(modifier = Modifier.size(2.dp))
 
                             // Payment Method Image
                             Image(

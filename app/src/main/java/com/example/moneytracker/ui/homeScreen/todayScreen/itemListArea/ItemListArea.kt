@@ -159,7 +159,8 @@ fun ItemListAreaSort(
 
     Column(
         modifier = Modifier
-            .fillMaxWidth(),
+            .fillMaxWidth()
+            .padding(horizontal = 15.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -170,7 +171,7 @@ fun ItemListAreaSort(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Recent Transactions",
+                "Recent Activity",
                 fontWeight = FontWeight.Bold,
                 fontSize = 18.sp
             )

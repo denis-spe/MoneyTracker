@@ -13,6 +13,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.toRoute
 import com.example.moneytracker.backend.auth.AccountServices
+import com.example.moneytracker.helper.safePopBackStack
 import com.example.moneytracker.ui.LoadingScreen
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.authScreens.loginScreen.LoginScreen
@@ -94,7 +95,7 @@ fun ScreenManager(
         }
         composable<SettingsScreenRouter> {
             SettingsScreen(
-                onBackClick = { navController.popBackStack() },
+                onBackClick = { navController.safePopBackStack() },
                 onLoginClick = { navController.navigate(MailScreenRouter) },
                 navController = navController,
                 userId = account.currentUserId

@@ -95,7 +95,7 @@ fun YesterdayScreen(
                     .padding(bottom = 10.dp)
             ) {
                 Text(
-                    "Late Transactions",
+                    "Yesterday's Activity",
                     fontSize = 18.sp,
                     fontWeight = FONT_WEIGHT,
                 )

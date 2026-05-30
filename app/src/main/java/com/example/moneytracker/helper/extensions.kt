@@ -1,6 +1,7 @@
 // Great is the LORD of hosts
 package com.example.moneytracker.helper
 
+// Add this import if not present
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloat
@@ -27,6 +28,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntSize
+import androidx.lifecycle.Lifecycle
+import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.Achievement
 import com.example.moneytracker.backend.storage.DataSettlement
@@ -63,6 +66,18 @@ import kotlin.math.log10
 import kotlin.math.pow
 
 private val zone = ZoneId.systemDefault()
+
+
+/**
+ * Safely pops the back stack only if the current entry is in the RESUMED state.
+ * This prevents "double-click" issues where two screens are popped at once,
+ * which often results in a white/blank screen.
+ */
+fun NavController.safePopBackStack() {
+    if (currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+        popBackStack()
+    }
+}
 
 fun getCurrencySymbol(): String {
     val locale = Locale.getDefault()

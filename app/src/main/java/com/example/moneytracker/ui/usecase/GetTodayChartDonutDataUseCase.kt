@@ -21,7 +21,7 @@ class GetTodayChartDonutDataUseCase @Inject constructor() {
             when (it) {
                 is DataSettlement.SettlementData -> it.financeEntity is FinanceEntity.Goal
                 is DataSettlement.SettlementAdjust -> it.settlement.settlementType == SettlementType.GOAL_ATTAIN
-                is DataSettlement.SettlementWithdrawal -> false
+                is DataSettlement.SettlementWithdrawal -> true
             }
         }
 

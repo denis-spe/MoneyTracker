@@ -36,6 +36,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -290,8 +291,6 @@ fun CurrentAmountBalanceSection(
                                     )
                                 )
 
-                                Spacer(modifier = Modifier.height(3.dp))
-
                                 Box(
                                     modifier = Modifier.shimmerEffect(
                                         shape = RoundedCornerShape(40),
@@ -319,6 +318,8 @@ fun CurrentAmountBalanceSection(
                         style = typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
+
+                    Spacer(modifier = Modifier.size(10.dp))
 
                     Row {
                         currentAmountBalance.data.forEach { (accountName, amount) ->
@@ -383,6 +384,10 @@ fun CurrentAmountBalanceSection(
                                         fontWeight = FontWeight.Medium
                                     )
                                 }
+                            }
+
+                            if (accountName != "Cash") {
+                                VerticalDivider(modifier = Modifier.height(50.dp))
                             }
                         }
                     }

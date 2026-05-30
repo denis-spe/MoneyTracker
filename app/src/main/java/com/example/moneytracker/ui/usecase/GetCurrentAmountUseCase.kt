@@ -23,7 +23,8 @@ class GetCurrentAmountUseCase @Inject constructor() {
 
                         "Expense",
                         "Lent",
-                        "Savings" -> outgoing += entity.amount
+                        "Savings",
+                        "Withdrawal" -> outgoing += entity.amount
                     }
                 }
 
@@ -38,8 +39,24 @@ class GetCurrentAmountUseCase @Inject constructor() {
                     if (settlement.paymentMethod == method) {
                         when (settlement.settlementType.text) {
                             "Refund" -> incoming += settlement.amount
-                            "Payback" -> outgoing += settlement.amount
+                            "Payback",
+                            "Withdrawal" -> outgoing += settlement.amount
                         }
+                    }
+                }
+
+                // Process withdrawals within the entity
+                val withdrawals = when (entity) {
+                    is FinanceEntity.Transaction -> entity.withdrawal
+                    else -> emptyList()
+                }
+
+                withdrawals.forEach { withdrawal ->
+                    if (withdrawal.fromPaymentMethod == method) {
+                        outgoing += withdrawal.amount
+                    }
+                    if (withdrawal.toPaymentMethod == method) {
+                        incoming += withdrawal.amount
                     }
                 }
             }

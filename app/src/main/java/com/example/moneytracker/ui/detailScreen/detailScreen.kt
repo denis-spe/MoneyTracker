@@ -44,6 +44,7 @@ import androidx.navigation.NavHostController
 import com.example.moneytracker.R
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
+import com.example.moneytracker.helper.safePopBackStack
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,7 +66,7 @@ fun GoalDetailScreen(
                 title = { Text("Goal Details") },
                 navigationIcon = {
                     IconButton(
-                        onClick = { navController.popBackStack() }
+                        onClick = { navController.safePopBackStack() }
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,

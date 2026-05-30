@@ -941,15 +941,15 @@ class DataStorageImpl(
 
         try {
             docRef.collection("withdrawal")
-                .document(withdrawal.datasetId)
+                .document(withdrawal.withdrawalId)
                 .delete()
                 .await()
             Log.d(
                 "DataStorageImpl",
-                "Removed settlement from financeEntity record $datasetId subcollection"
+                "Removed withdrawal from financeEntity record $datasetId subcollection"
             )
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to remove settlement", e)
+            Log.e("DataStorageImpl", "Failed to remove withdrawal", e)
             throw e
         }
     }
@@ -1012,15 +1012,15 @@ class DataStorageImpl(
                 datasetId = datasetId
             )
             docRef.collection("withdrawal")
-                .document(oldWithdrawal.datasetId)
+                .document(oldWithdrawal.withdrawalId)
                 .set(finalWithdrawal.withdrawalToMap)
                 .await()
             Log.d(
-                "Settlement update",
-                "Updated settlement ${oldWithdrawal.datasetId} in subcollection"
+                "Withdrawal update",
+                "Updated withdrawal ${oldWithdrawal.withdrawalId} in subcollection"
             )
         } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Failed to update settlement", e)
+            Log.e("DataStorageImpl", "Failed to update withdrawal", e)
             throw e
         }
     }

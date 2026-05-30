@@ -86,6 +86,7 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerAmountFiel
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTag
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTextField
+import com.example.moneytracker.ui.homeScreen.dataAddition.PaymentMethodDropdown
 import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
@@ -309,6 +310,58 @@ fun FinanceReceipt(
             ) {
                 Text(text = "Deadline Time:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
                 Text(text = deadlineTime, fontSize = fontSize)
+            }
+        }
+
+        if (financeEntity is FinanceEntity.Transaction && financeEntity.withdrawal.isNotEmpty()) {
+            val withdrawals = financeEntity.withdrawal
+            val lastPayment = withdrawals[withdrawals.size - 1]
+            val date = lastPayment.createdAt.toLocalDateTimeUtc()
+            val day = date.day.addZeroIfLessThenTen
+            val month = date.month.number.addZeroIfLessThenTen
+            val year = date.year
+            val hour = date.hour.addZeroIfLessThenTen
+            val minute = date.minute.addZeroIfLessThenTen
+            val time = "${hour}:${minute}"
+            val dateString = "${day}/${month}/${year}"
+
+
+            Text("")
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Remaining Amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = financeEntity.remainingAmount.formatToAmount(), fontSize = fontSize)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Last Withdrawn amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = lastPayment.amount.formatToAmount(), fontSize = fontSize)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Last Withdrawn Date:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = dateString, fontSize = fontSize)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Last Withdrawn Time:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = time, fontSize = fontSize)
             }
         }
 
@@ -810,7 +863,7 @@ fun WithdrawalReceipt(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            val label = "Withdrawn: "
+            val label = "Withdrawn from: "
 
             Text(text = label, fontSize = fontSize, fontWeight = FONT_WEIGHT)
             val labelState = remember { mutableStateOf("") }
@@ -843,15 +896,13 @@ fun WithdrawalReceipt(
             Text(text = withdrawal.toPaymentMethod.text, fontSize = fontSize)
         }
 
-        val settlements = when (financeEntity) {
-            is FinanceEntity.Goal -> financeEntity.settlement
-            is FinanceEntity.Liability -> financeEntity.settlement
-            is FinanceEntity.Transaction -> emptyList()
-        }
+        val settlements = if (financeEntity is FinanceEntity.Transaction) {
+            financeEntity.withdrawal
+        } else emptyList()
 
         if (settlements.isNotEmpty()) {
             val lastPayment = settlements[settlements.size - 1]
-            val date = lastPayment.dateTime.toLocalDateTimeUtc()
+            val date = lastPayment.createdAt.toLocalDateTimeUtc()
             val day = date.day.addZeroIfLessThenTen
             val month = date.month.number.addZeroIfLessThenTen
             val year = date.year
@@ -877,7 +928,7 @@ fun WithdrawalReceipt(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Last Payment:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = "Last Withdrawn amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
                 Text(text = lastPayment.amount.formatToAmount(), fontSize = fontSize)
             }
 
@@ -886,7 +937,7 @@ fun WithdrawalReceipt(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Last Payment Date:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = "Last Withdrawn Date:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
                 Text(text = dateString, fontSize = fontSize)
             }
 
@@ -895,7 +946,7 @@ fun WithdrawalReceipt(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(text = "Last Payment Time:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = "Last Withdrawn Time:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
                 Text(text = time, fontSize = fontSize)
             }
         }
@@ -1123,6 +1174,8 @@ fun OnUpdate(
     val wasSettlementSuccess = remember { mutableStateOf(State.INITIAL) }
     val tagIconState = remember { mutableStateOf(TagIcon("description", R.drawable.description)) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
+    val toPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
+    val fromPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val lazyState = rememberLazyListState()
 
     val dataTypeText = dataSettlement.text
@@ -1169,11 +1222,13 @@ fun OnUpdate(
                 }
 
                 is DataSettlement.SettlementWithdrawal -> {
-                    val settlement = dataSettlement.withdrawal
-                    amountState.setTextAndPlaceCursorAtEnd(settlement.amount.toString())
-                    labelState.setTextAndPlaceCursorAtEnd(settlement.label)
-                    descriptionState.setTextAndPlaceCursorAtEnd(settlement.description)
-                    onCreatedDateTimeState.value = settlement.createdAt.toLocalDateTimeUtc()
+                    val withdrawal = dataSettlement.withdrawal
+                    amountState.setTextAndPlaceCursorAtEnd(withdrawal.amount.toString())
+                    labelState.setTextAndPlaceCursorAtEnd(withdrawal.label)
+                    descriptionState.setTextAndPlaceCursorAtEnd(withdrawal.description)
+                    onCreatedDateTimeState.value = withdrawal.createdAt.toLocalDateTimeUtc()
+                    fromPaymentMethod.value = withdrawal.fromPaymentMethod
+                    toPaymentMethod.value = withdrawal.toPaymentMethod
                 }
             }
         }
@@ -1307,6 +1362,32 @@ fun OnUpdate(
                                 showDate = showDate,
                                 localDateTimeState = onCreatedDateTimeState,
                                 colorResId = colorResId
+                            )
+                        }
+                    }
+
+                    // Payment Methods for Withdrawal
+                    if (dataSettlement is DataSettlement.SettlementWithdrawal) {
+                        item {
+                            Text(
+                                "From account:",
+                                color = color,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                            PaymentMethodDropdown(
+                                colorResId = colorResId,
+                                selectedPaymentMethod = fromPaymentMethod
+                            )
+                            Text(
+                                "To account:",
+                                color = color,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(top = 8.dp)
+                            )
+                            PaymentMethodDropdown(
+                                colorResId = colorResId,
+                                selectedPaymentMethod = toPaymentMethod
                             )
                         }
                     }

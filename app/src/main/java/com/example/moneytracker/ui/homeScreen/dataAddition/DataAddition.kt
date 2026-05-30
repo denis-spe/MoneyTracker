@@ -1067,7 +1067,7 @@ fun SettlementDataInputs(
                 }
 
                 val financeEntityType = when (entity) {
-                    is FinanceEntity.Transaction -> "WITHDRAWAL"
+                    is FinanceEntity.Transaction -> "TRANSACTION"
                     is FinanceEntity.Goal -> "GOAL"
                     is FinanceEntity.Liability -> "LIABILITY"
                 }
@@ -1111,11 +1111,14 @@ fun WithdrawalInputs(
     val selectedFinanceEntity = remember {
         mutableStateOf<FinanceEntity?>(null)
     }
-    val selectedPaymentMethod = remember(selectedFinanceEntity.value) {
+    val fromPaymentMethod = remember(selectedFinanceEntity.value) {
         mutableStateOf(
             selectedFinanceEntity.value?.paymentMethod
                 ?: PaymentMethod.CASH
         )
+    }
+    val toPaymentMethod = remember {
+        mutableStateOf(PaymentMethod.CASH)
     }
     val localDateTimeState = remember {
         mutableStateOf(LocalDateTime.now())
@@ -1188,9 +1191,26 @@ fun WithdrawalInputs(
             colorResId = settlementType.color
         )
 
+        Text(
+            "From account:",
+            color = color,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 8.dp)
+        )
         PaymentMethodDropdown(
             colorResId = settlementType.color,
-            selectedPaymentMethod = selectedPaymentMethod
+            selectedPaymentMethod = fromPaymentMethod
+        )
+
+        Text(
+            "To account:",
+            color = color,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+        PaymentMethodDropdown(
+            colorResId = settlementType.color,
+            selectedPaymentMethod = toPaymentMethod
         )
 
         Row(
@@ -1212,11 +1232,7 @@ fun WithdrawalInputs(
                 if (entity == null) {
                     wasSuccess = State.ERROR
                     userViewModel.showActionNotification(
-                        when (dataType) {
-                            DataType.LENT -> "Please select a loan to repay"
-                            DataType.DEBT -> "Please select a debt to repay"
-                            else -> "Please select a goal to attain"
-                        },
+                        "Please select a transaction",
                         color = Color.Red.copy(alpha = 0.5f)
                     )
                     return@ModelDrawerButton
@@ -1231,25 +1247,18 @@ fun WithdrawalInputs(
                     return@ModelDrawerButton
                 }
 
-                if (
-                    settleAmount > entity.remainingAmount &&
-                    !entity.isStartDateTimeNotEqualToDeadlineDateTime
-                ) {
-                    wasSuccess = State.ERROR
-                    return@ModelDrawerButton
-                }
-
                 val withdrawal = Withdrawal(
+                    withdrawalId = UUID.randomUUID().toString(),
                     amount = settleAmount,
                     createdAt = localDateTimeState.value.toFirestoreTimestampUtc(),
                     label = settlementType.text,
                     description = descriptionState.text.toString(),
-                    toPaymentMethod = selectedPaymentMethod.value,
-                    fromPaymentMethod = selectedPaymentMethod.value
+                    toPaymentMethod = toPaymentMethod.value,
+                    fromPaymentMethod = fromPaymentMethod.value
                 )
 
                 val financeEntityType = when (entity) {
-                    is FinanceEntity.Transaction -> "WITHDRAWAL"
+                    is FinanceEntity.Transaction -> "TRANSACTION"
                     is FinanceEntity.Goal -> "GOAL"
                     is FinanceEntity.Liability -> "LIABILITY"
                 }
