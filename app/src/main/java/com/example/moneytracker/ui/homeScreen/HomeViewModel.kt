@@ -9,6 +9,7 @@ import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Settlement
+import com.example.moneytracker.backend.storage.Withdrawal
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.DonutChartData
@@ -466,6 +467,10 @@ class HomeViewModel @Inject constructor(
             .onEach { uid ->
                 if (uid == null) {
                     _uiState.value = HomeUiState()
+                } else {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        financeOperationsUseCase.triggerMigration(uid)
+                    }
                 }
             }
             .flatMapLatest { uid ->
@@ -552,6 +557,13 @@ class HomeViewModel @Inject constructor(
         financeOperationsUseCase.addSettlement(it, financeId, financeType, adj)
     }
 
+    fun addWithdrawal(financeId: String, financeType: String, withdrawal: Withdrawal) =
+        launchWithUid {
+            financeOperationsUseCase.addWithdrawal(
+                it, financeId, financeType, withdrawal
+            )
+        }
+
     fun updateSettlement(
         financeId: String,
         financeType: String,
@@ -564,6 +576,20 @@ class HomeViewModel @Inject constructor(
     fun removeSettlement(financeId: String, financeType: String, adj: Settlement) = launchWithUid {
         financeOperationsUseCase.removeSettlement(it, financeId, financeType, adj)
     }
+
+    fun updateWithdrawal(
+        financeId: String,
+        financeType: String,
+        old: Withdrawal,
+        new: Withdrawal
+    ) = launchWithUid {
+        financeOperationsUseCase.updateWithdrawal(it, financeId, financeType, old, new)
+    }
+
+    fun removeWithdrawal(financeId: String, financeType: String, withdrawal: Withdrawal) =
+        launchWithUid {
+            financeOperationsUseCase.removeWithdrawal(it, financeId, financeType, withdrawal)
+        }
 
     private fun launchWithUid(block: suspend (String) -> Unit) {
         viewModelScope.launch {
@@ -648,6 +674,23 @@ class HomeViewModel @Inject constructor(
 
     fun addSettlementData(financeId: String, financeType: String, adj: Settlement) =
         addSettlement(financeId, financeType, adj)
+
+    fun addWithdrawalData(financeId: String, financeType: String, withdrawal: Withdrawal) =
+        addWithdrawal(
+            financeId,
+            financeType,
+            withdrawal = withdrawal
+        )
+
+    fun updateWithdrawalData(
+        financeId: String,
+        financeType: String,
+        old: Withdrawal,
+        new: Withdrawal
+    ) = updateWithdrawal(financeId, financeType, old, new)
+
+    fun removeWithdrawalFinance(financeId: String, financeType: String, withdrawal: Withdrawal) =
+        removeWithdrawal(financeId, financeType, withdrawal)
 
     fun updateSettlementData(
         financeId: String,

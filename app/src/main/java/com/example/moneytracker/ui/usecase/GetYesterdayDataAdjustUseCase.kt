@@ -2,7 +2,7 @@ package com.example.moneytracker.ui.usecase
 
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
-import com.example.moneytracker.helper.isCreatedAtEqualTo
+import com.example.moneytracker.helper.toLocalDateTimeUtc
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.minus
@@ -18,10 +18,7 @@ class GetYesterdayDataSettlementUseCase @Inject constructor() {
 
 
         return coupleDatasetsWithSettlements(financeEntityList).filter {
-            when (it) {
-                is DataSettlement.SettlementData -> it.financeEntity.isCreatedAtEqualTo(yesterday)
-                is DataSettlement.SettlementAdjust -> it.settlement.isCreatedAtEqualTo(yesterday)
-            }
+            it.createdAt.toLocalDateTimeUtc().date == yesterday
         }
     }
 }

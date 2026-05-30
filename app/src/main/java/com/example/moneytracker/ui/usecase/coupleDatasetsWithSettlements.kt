@@ -3,8 +3,8 @@ package com.example.moneytracker.ui.usecase
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 
-internal fun coupleDatasetsWithSettlements(financeEntityList: List<FinanceEntity>): List<DataSettlement> {
-    val adjust = financeEntityList.map { finance ->
+fun coupleDatasetsWithSettlements(financeEntityList: List<FinanceEntity>): List<DataSettlement> {
+    val adjust = financeEntityList.flatMap { finance ->
         val settlements = when (finance) {
             is FinanceEntity.Goal -> finance.settlement
             is FinanceEntity.Liability -> finance.settlement
@@ -16,9 +16,20 @@ internal fun coupleDatasetsWithSettlements(financeEntityList: List<FinanceEntity
         }
     }
 
+    val withdrawals = financeEntityList.flatMap { finance ->
+        val withdrawalList = when (finance) {
+            is FinanceEntity.Transaction -> finance.withdrawal
+            else -> emptyList()
+        }
+        withdrawalList.map { withdrawal ->
+            withdrawal.financeEntity = finance
+            DataSettlement.SettlementWithdrawal(withdrawal)
+        }
+    }
+
     val data = financeEntityList.map { finance ->
         DataSettlement.SettlementData(finance)
     }
 
-    return adjust.flatten() + data
+    return adjust + withdrawals + data
 }

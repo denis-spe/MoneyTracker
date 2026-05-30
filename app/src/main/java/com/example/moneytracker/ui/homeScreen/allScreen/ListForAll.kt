@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,7 +25,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -40,7 +38,6 @@ import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.addZeroIfLessThenTen
-import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
@@ -59,19 +56,6 @@ fun ListForAll(
     userViewModel: UserViewModel,
     dataSettlements: DataState<List<DataSettlement>>,
 ) {
-    Modifier
-        .offset(y = (-4).dp)
-        .shadow(
-            20.dp,
-            shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
-        )
-    Modifier
-        .offset(y = (-4).dp)
-        .shadow(
-            20.dp,
-            shape = RoundedCornerShape(bottomStart = 20.dp, bottomEnd = 20.dp)
-        )
-
     LazyColumn {
         item { Spacer(modifier = Modifier.size(10.dp)) }
         when (dataSettlements) {
@@ -106,12 +90,7 @@ fun ListForAll(
                 } else {
                     items(
                         count = data.size,
-                        key = { index ->
-                            when (val item = data[index]) {
-                                is DataSettlement.SettlementData -> item.financeEntity.id
-                                is DataSettlement.SettlementAdjust -> item.settlement.settlementId
-                            }
-                        }
+                        key = { index -> data[index].id }
                     ) { index ->
                         val dataItem = data[index]
 
@@ -156,114 +135,66 @@ fun CardForAllItem(
     modifier: Modifier = Modifier,
     dataSettlement: DataSettlement
 ) {
-    val label = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.label
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.label
-    }
-
+    val label = dataSettlement.label
     val amount = dataSettlement.addNegativeToAmount
-
-    val description = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.description
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.description
-    }.let {
-        if (it.length > 16) it.take(20) + "..." else it
+    val description = dataSettlement.description.let {
+        if (it.length > 20) it.take(20) + "..." else it
     }
 
-    val dateTime = when (dataSettlement) {
-        is DataSettlement.SettlementData -> {
-            val dateTime = dataSettlement.financeEntity.createdAt
-            val date = dateTime.toLocalDateTimeUtc()
-            val time = dateTime.toLocalDateTimeUtc()
-            val hour = time.hour.addZeroIfLessThenTen
-            val minute = time.minute.addZeroIfLessThenTen
-            val weekDay = date.dayOfWeek.name.title
+    val dateTime = run {
+        val dt = dataSettlement.createdAt
+        val date = dt.toLocalDateTimeUtc()
+        val time = dt.toLocalDateTimeUtc()
+        val hour = time.hour.addZeroIfLessThenTen
+        val minute = time.minute.addZeroIfLessThenTen
+        val weekDay = date.dayOfWeek.name.title
 
-            "On $weekDay at $hour:$minute"
-        }
-
-        is DataSettlement.SettlementAdjust -> {
-            val dateTime = dataSettlement.settlement.dateTime
-            val date = dateTime.toLocalDateTimeUtc()
-            val time = dateTime.toLocalDateTimeUtc()
-            val hour = time.hour.addZeroIfLessThenTen
-            val minute = time.minute.addZeroIfLessThenTen
-            val weekDay = date.dayOfWeek.name.title
-
-            "On $weekDay at $hour:$minute"
-        }
+        "On $weekDay at $hour:$minute"
     }
 
-    val tagIcon = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.tagIcon.icon
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.tagIcon.icon
-    }.let {
-        painterResource(id = it)
+    val tagIcon = painterResource(id = dataSettlement.tagIcon.icon)
+    val color = colorResource(id = dataSettlement.colorRes)
+    val categoryIcon = painterResource(id = dataSettlement.icon)
+
+    val settlementLabel = when (dataSettlement) {
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.financeEntity?.label
+        is DataSettlement.SettlementWithdrawal -> dataSettlement.withdrawal.financeEntity?.label
+        else -> null
     }
 
-    val color = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.colorRes
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.color
-    }.let {
-        colorResource(id = it)
-    }
+    val isAmountEqualWithAdjustAmount = dataSettlement.isAmountEqualWithAdjustAmount
 
-    val settlement = if (dataSettlement is DataSettlement.SettlementAdjust)
-        dataSettlement.settlement.financeEntity?.label
-    else null
-
-    val isAmountEqualWithAdjustAmount = when (dataSettlement) {
-        is DataSettlement.SettlementData -> {
-            dataSettlement.financeEntity.isAmountEqualToSettleAmount()
-        }
-
-        is DataSettlement.SettlementAdjust -> {
-            dataSettlement.settlement.financeEntity?.isAmountEqualToSettleAmount()
-        }
-    }
-
-    val adjustTextDecoration = if (
-        isAmountEqualWithAdjustAmount == true
-    ) {
+    val adjustTextDecoration = if (isAmountEqualWithAdjustAmount == true) {
         TextDecoration.LineThrough
     } else {
         TextDecoration.None
     }
 
     val labelTextDecoration = if (
-        isAmountEqualWithAdjustAmount == true && dataSettlement !is DataSettlement.SettlementAdjust
+        isAmountEqualWithAdjustAmount == true &&
+        dataSettlement !is DataSettlement.SettlementAdjust &&
+        dataSettlement !is DataSettlement.SettlementWithdrawal
     ) {
         TextDecoration.LineThrough
     } else {
         TextDecoration.None
     }
 
-    val onShowDialog = remember {
-        mutableStateOf(false)
-    }
-
-
+    val onShowDialog = remember { mutableStateOf(false) }
     val onShowDeleteDialog = remember { mutableStateOf(false) }
     val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
 
     Swipe(
-        onStartToEnd = {
-            isUpdateModelBottonOpen.value = true
-        },
-        onEndToStart = {
-            onShowDeleteDialog.value = true
-        }
+        onStartToEnd = { isUpdateModelBottonOpen.value = true },
+        onEndToStart = { onShowDeleteDialog.value = true }
     ) {
         Column(
-            modifier = modifier.clickable {
-                onShowDialog.value = true
-            },
+            modifier = modifier.clickable { onShowDialog.value = true },
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             ListItem(
-                modifier = Modifier
-                    .fillMaxWidth(),
+                modifier = Modifier.fillMaxWidth(),
                 headlineContent = {
                     Column(
                         horizontalAlignment = Alignment.Start,
@@ -284,7 +215,6 @@ fun CardForAllItem(
                     }
                 },
                 trailingContent = {
-
                     Column(
                         horizontalAlignment = Alignment.End,
                         verticalArrangement = Arrangement.Center
@@ -298,29 +228,39 @@ fun CardForAllItem(
                         Text(dateTime)
                     }
                 },
-
                 leadingContent = {
-                    Column(
-                        modifier = Modifier
-                            .clip(CircleShape)
-                            .background(color),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Box(
+                        contentAlignment = Alignment.BottomEnd
                     ) {
-                        Image(
-                            tagIcon,
-                            contentDescription = "Tag Icon",
+                        Column(
                             modifier = Modifier
-                                .size(20.dp)
-                                .padding(3.dp)
+                                .clip(CircleShape)
+                                .background(color),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                tagIcon,
+                                contentDescription = "Tag Icon",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(4.dp)
+                            )
+                        }
+                        
+                        Image(
+                            categoryIcon,
+                            contentDescription = "Category Icon",
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
                         )
                     }
                 },
-
                 shadowElevation = 0.dp,
-
                 overlineContent = {
-                    settlement?.let {
+                    settlementLabel?.let {
                         Text(
                             it,
                             fontSize = 12.sp,
@@ -344,7 +284,6 @@ fun CardForAllItem(
         )
     }
 
-
     OnDeleteReceipt(
         dataSettlement = dataSettlement,
         onShowDeleteDialog = onShowDeleteDialog,
@@ -354,7 +293,6 @@ fun CardForAllItem(
                 viewModel.removeData(dataSettlement.financeEntity)
                 userViewModel.showActionNotification("Data deleted successfully", Color.Red)
             }
-
             is DataSettlement.SettlementAdjust -> {
                 val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
                     is FinanceEntity.Transaction -> "TRANSACTION"
@@ -368,6 +306,15 @@ fun CardForAllItem(
                 )
                 userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
             }
+
+            is DataSettlement.SettlementWithdrawal -> {
+                viewModel.removeWithdrawalFinance(
+                    dataSettlement.withdrawal.datasetId,
+                    dataSettlement.financeEntityType,
+                    dataSettlement.withdrawal
+                )
+                userViewModel.showActionNotification("Withdrawal deleted successfully", Color.Red)
+            }
         }
         onShowDialog.value = false
     }
@@ -380,7 +327,6 @@ fun CardForAllItem(
         onShowDialog = onShowDialog
     )
 }
-
 
 @Composable
 fun CardForAllItemShimmer(
@@ -399,7 +345,6 @@ fun CardForAllItemShimmer(
                     horizontalAlignment = Alignment.Start,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Shimmer for label
                     Box(
                         modifier = Modifier
                             .shimmerEffect(
@@ -408,9 +353,6 @@ fun CardForAllItemShimmer(
                                 shape = RoundedCornerShape(4.dp)
                             )
                     )
-
-
-                    // Shimmer for status
                     Box(
                         modifier = Modifier
                             .padding(top = 4.dp)
@@ -423,7 +365,6 @@ fun CardForAllItemShimmer(
                 }
             },
             supportingContent = {
-                // Shimmer for description
                 Box(
                     modifier = Modifier
                         .padding(top = 4.dp)
@@ -435,12 +376,10 @@ fun CardForAllItemShimmer(
                 )
             },
             trailingContent = {
-
                 Column(
                     horizontalAlignment = Alignment.End,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Shimmer for amount
                     Box(
                         modifier = Modifier
                             .shimmerEffect(
@@ -449,10 +388,7 @@ fun CardForAllItemShimmer(
                                 shape = RoundedCornerShape(4.dp)
                             )
                     )
-
                     Spacer(modifier = Modifier.height(4.dp))
-
-                    // Shimmer for dateTime
                     Box(
                         modifier = Modifier
                             .shimmerEffect(
@@ -463,7 +399,6 @@ fun CardForAllItemShimmer(
                     )
                 }
             },
-
             leadingContent = {
                 Column(
                     modifier = Modifier
@@ -472,7 +407,6 @@ fun CardForAllItemShimmer(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    // Shimmer for tag icon
                     Box(
                         modifier = Modifier
                             .size(26.dp)
@@ -483,7 +417,6 @@ fun CardForAllItemShimmer(
                     )
                 }
             },
-
             shadowElevation = 0.dp,
         )
         HorizontalDivider(
@@ -492,4 +425,3 @@ fun CardForAllItemShimmer(
         )
     }
 }
-

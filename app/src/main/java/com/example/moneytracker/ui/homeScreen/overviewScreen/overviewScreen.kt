@@ -46,9 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.backend.storage.Withdrawal
 import com.example.moneytracker.backend.storage.types.FinanceCategory
 import com.example.moneytracker.backend.storage.types.GoalType
 import com.example.moneytracker.backend.storage.types.LiabilityType
@@ -68,6 +70,7 @@ import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.screenManager.FulfillmentDetailScreenRouter
+import com.example.moneytracker.ui.usecase.coupleDatasetsWithSettlements
 
 private val SPACE = 10.dp
 
@@ -117,6 +120,68 @@ fun TransactionCard(
                 )
                 Text(
                     transactionType,
+                    style = typography.titleSmall,
+                    color = color
+                )
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        amount,
+                        style = typography.titleSmall
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun WithdrawalCard(
+    modifier: Modifier = Modifier,
+    withdrawal: Withdrawal
+) {
+    val amount = "-${withdrawal.amount.formatToAmount()}"
+    val label = withdrawal.financeEntity!!.label
+    val tagIcon = painterResource(withdrawal.financeEntity?.tagIcon?.icon ?: R.drawable.initial)
+    val color = colorResource(R.color.Lent)
+    val toPaymentMethod = withdrawal.toPaymentMethod
+
+    Card(
+        modifier = modifier
+            .clip(RoundedCornerShape(50))
+    ) {
+        Row(
+            modifier = Modifier
+                .width(165.dp)
+                .padding(5.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Start
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(10.dp)
+            ) {
+                Image(
+                    modifier = Modifier.size(ICON_SIZE),
+                    painter = tagIcon,
+                    contentDescription = label,
+                )
+                Image(
+                    painter = painterResource(toPaymentMethod.icon),
+                    contentDescription = toPaymentMethod.text,
+                    modifier = Modifier.size(ICON_SIZE)
+                )
+            }
+
+            Column {
+                Text(
+                    label,
+                    style = typography.titleSmall
+                )
+                Text(
+                    "Withdrawal",
                     style = typography.titleSmall,
                     color = color
                 )
@@ -477,10 +542,19 @@ fun OverviewScreen(
                         }
                     } else {
                         item { Spacer(modifier = Modifier.height(SPACE)) }
-                        data.groupBy {
-                            val type = it.financeType
-                            if (type is TransactionType) "Transactions" else type
-                        }.forEach { finance ->
+                        val coupledData = coupleDatasetsWithSettlements(data)
+
+                        coupledData.groupBy {
+                            val type = when (it) {
+                                is DataSettlement.SettlementData -> it.financeEntity.financeType
+                                is DataSettlement.SettlementAdjust -> it.settlement.financeEntity?.financeType
+                                    ?: TransactionType.EARNINGS
+
+                                is DataSettlement.SettlementWithdrawal -> it.withdrawal.financeEntity?.financeType
+                                    ?: TransactionType.EARNINGS
+                            }
+                            if (type is TransactionType || it is DataSettlement.SettlementWithdrawal) "Transactions" else type
+                        }.forEach { (key, list) ->
                             // Title part
                             item {
                                 Spacer(modifier = Modifier.height(SPACE))
@@ -489,17 +563,17 @@ fun OverviewScreen(
                                         .fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    val headerText = when (val key = finance.key) {
-                                        is String -> key
+                                    val headerText = when (val k = key) {
+                                        is String -> k
                                         is FinanceCategory -> {
-                                            when (key) {
-                                                GoalType -> "${key.text} Fulfillment"
-                                                is LiabilityType -> "${key.text} Settlements"
-                                                else -> key.text
+                                            when (k) {
+                                                GoalType -> "${k.text} Fulfillment"
+                                                is LiabilityType -> "${k.text} Settlements"
+                                                else -> k.text
                                             }
                                         }
 
-                                        else -> key.toString()
+                                        else -> k.toString()
                                     }
 
                                     Text(
@@ -513,7 +587,10 @@ fun OverviewScreen(
 
                             // Goal part
                             item {
-                                val goals = finance.value.filterIsInstance<FinanceEntity.Goal>()
+                                val goals = list
+                                    .filterIsInstance<DataSettlement.SettlementData>()
+                                    .map { it.financeEntity }
+                                    .filterIsInstance<FinanceEntity.Goal>()
                                     .sortedBy {
                                         it.routine.deadlineDateTime
                                     }
@@ -542,12 +619,14 @@ fun OverviewScreen(
 
                             // Liabilities part
                             item {
-                                val liabilities =
-                                    finance.value.filterIsInstance<FinanceEntity.Liability>()
-                                        .sortedBy {
-                                            it.createdAt
-                                        }
-                                        .limit(10)
+                                val liabilities = list
+                                    .filterIsInstance<DataSettlement.SettlementData>()
+                                    .map { it.financeEntity }
+                                    .filterIsInstance<FinanceEntity.Liability>()
+                                    .sortedBy {
+                                        it.createdAt
+                                    }
+                                    .limit(10)
 
                                 if (liabilities.isNotEmpty()) {
                                     LazyRow(
@@ -576,16 +655,13 @@ fun OverviewScreen(
                                 }
                             }
 
-                            // Transactions part
+                            // Transactions part (now includes withdrawals and adjustments)
                             item {
-                                val transactions =
-                                    finance.value.filterIsInstance<FinanceEntity.Transaction>()
-                                        .sortedByDescending {
-                                            it.createdAt
-                                        }
-                                        .limit(10)
+                                val sortedList = list
+                                    .sortedByDescending { it.createdAt }
+                                    .limit(15)
 
-                                if (transactions.isNotEmpty()) {
+                                if (sortedList.isNotEmpty()) {
                                     Row(
                                         Modifier.fillMaxWidth(),
                                         verticalAlignment = Alignment.CenterVertically,
@@ -603,13 +679,32 @@ fun OverviewScreen(
                                                 )
                                         ) {
                                             item {
-                                                transactions.forEach { transaction ->
-                                                    TransactionCard(
-                                                        modifier = Modifier
-                                                            .padding(end = SPACE)
-                                                            .animateItem(),
-                                                        financeEntity = transaction
-                                                    )
+                                                sortedList.forEach { item ->
+                                                    when (item) {
+                                                        is DataSettlement.SettlementData -> {
+                                                            if (item.financeEntity is FinanceEntity.Transaction) {
+                                                                TransactionCard(
+                                                                    modifier = Modifier
+                                                                        .padding(end = SPACE)
+                                                                        .animateItem(),
+                                                                    financeEntity = item.financeEntity
+                                                                )
+                                                            }
+                                                        }
+
+                                                        is DataSettlement.SettlementWithdrawal -> {
+                                                            WithdrawalCard(
+                                                                modifier = Modifier
+                                                                    .padding(end = SPACE)
+                                                                    .animateItem(),
+                                                                withdrawal = item.withdrawal
+                                                            )
+                                                        }
+
+                                                        is DataSettlement.SettlementAdjust -> {
+                                                            // Optional: show adjustment cards too
+                                                        }
+                                                    }
                                                 }
                                             }
                                         }

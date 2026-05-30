@@ -178,4 +178,26 @@ interface DataStorage {
         orderBy: String? = null,
         orderDirection: Query.Direction? = null
     ): List<FinanceEntity>
+
+    suspend fun addWithdrawal(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        withdrawal: Withdrawal
+    ): Int
+
+    suspend fun updateWithdrawalDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        oldWithdrawal: Withdrawal,
+        newWithdrawal: Withdrawal
+    )
+
+    suspend fun removeWithdrawalDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        withdrawal: Withdrawal
+    )
 }

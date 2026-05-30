@@ -33,6 +33,7 @@ sealed class FinanceEntity {
         override val createdAt: Timestamp = Timestamp.now(),
         override val tagIcon: TagIcon = TagIcon(),
         override val paymentMethod: PaymentMethod = PaymentMethod.CASH,
+        val withdrawal: List<Withdrawal> = emptyList()
     ) : FinanceEntity() {
         override val financeType: FinanceCategory get() = transactionType
     }

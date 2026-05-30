@@ -13,13 +13,7 @@ class GetWeeklyDataUseCase @Inject constructor() {
         dates: List<LocalDate>
     ): List<DataSettlement> {
         return coupleDatasetsWithSettlements(financeEntityList).filter { item ->
-            when (item) {
-                is DataSettlement.SettlementData ->
-                    item.financeEntity.createdAt.toLocalDateTimeUtc().date in dates
-
-                is DataSettlement.SettlementAdjust ->
-                    item.settlement.dateTime.toLocalDateTimeUtc().date in dates
-            }
+            item.createdAt.toLocalDateTimeUtc().date in dates
         }
     }
 }

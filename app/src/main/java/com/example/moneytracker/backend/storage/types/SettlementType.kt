@@ -25,6 +25,13 @@ enum class SettlementType(
         icon = R.drawable.oulined_attain, color = R.color.Attain,
         typeDescription = "Attain your goal"
     ),
+
+    WITHDRAWAL(
+        "Withdrawal",
+        icon = R.drawable.money_transfer, color = R.color.Lent,
+        typeDescription = "Transfer between your accounts"
+    ),
+
     INITIAL(
         "Initial",
         icon = R.drawable.outlined_repay, color = R.color.gray,

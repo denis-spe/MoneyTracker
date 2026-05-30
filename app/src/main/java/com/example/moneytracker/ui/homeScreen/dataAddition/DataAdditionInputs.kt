@@ -648,6 +648,8 @@ fun SettlementField(
 
                 DataType.DEBT -> financeEntityList.filter { it.categoryText == "Debt" }
 
+                DataType.EARNINGS -> financeEntityList.filter { it.categoryText == "Earnings" }
+
                 // Else it's a goal
                 else -> financeEntityList.filter {
                     val now = LocalDateTime.now()
@@ -780,8 +782,19 @@ fun SettlementField(
                                             selectedFinanceEntity.value = finance
                                         },
                                         leadingIcon = {
+                                            val firstFinanceEntity = financeEntityList
+                                                .getOrNull(0)
+                                            val imageId = if (
+                                                firstFinanceEntity != null &&
+                                                firstFinanceEntity is FinanceEntity.Transaction
+                                            ) {
+                                                finance.paymentMethod.icon
+                                            } else {
+                                                finance.tagIcon.icon
+                                            }
+
                                             Image(
-                                                painter = painterResource(finance.tagIcon.icon),
+                                                painter = painterResource(imageId),
                                                 contentDescription = finance.label,
                                                 modifier = Modifier.size(ICON_SIZE)
                                             )

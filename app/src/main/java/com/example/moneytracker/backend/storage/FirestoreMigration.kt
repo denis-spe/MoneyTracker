@@ -2,7 +2,9 @@ package com.example.moneytracker.backend.storage
 
 import android.util.Log
 import com.example.moneytracker.helper.asSettlement
+import com.example.moneytracker.helper.asWithdrawal
 import com.example.moneytracker.helper.settlementToMap
+import com.example.moneytracker.helper.withdrawalToMap
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 
@@ -55,9 +57,10 @@ object FirestoreMigration {
                     .collection(targetCollection)
                     .document(id)
 
-                // 1. Copy document (without the settlement list field)
+                // 1. Copy document (without the list fields)
                 val mutableData = data.toMutableMap()
                 val settlementsRaw = mutableData.remove("settlement") as? List<*>
+                val withdrawalsRaw = mutableData.remove("withdrawal") as? List<*>
                 targetRef.set(mutableData).await()
 
                 // 2. Migrate settlements from list to subcollection
@@ -72,7 +75,19 @@ object FirestoreMigration {
                     }
                 }
 
-                // 3. Copy achievement subcollection if exists
+                // 3. Migrate withdrawals from list to subcollection
+                withdrawalsRaw?.forEach { map ->
+                    if (map is Map<*, *>) {
+                        val withdrawal = map.asWithdrawal()
+                        val finalWithdrawal = withdrawal.copy(userId = userId, datasetId = id)
+                        targetRef.collection("withdrawal")
+                            .document(finalWithdrawal.withdrawalId)
+                            .set(finalWithdrawal.withdrawalToMap)
+                            .await()
+                    }
+                }
+
+                // 4. Copy achievement subcollection if exists
                 val historySnapshot = doc.reference.collection("achievement").get().await()
                 for (historyDoc in historySnapshot.documents) {
                     targetRef.collection("achievement")
@@ -81,8 +96,7 @@ object FirestoreMigration {
                         .await()
                 }
 
-                // 3. Delete old document and its subcollection
-                // Note: Firestore doesn't delete subcollections automatically when deleting parent doc
+                // 5. Delete old document and its subcollection
                 for (historyDoc in historySnapshot.documents) {
                     historyDoc.reference.delete().await()
                 }
@@ -95,37 +109,57 @@ object FirestoreMigration {
     }
 
     suspend fun migrateSettlementsOnly(db: FirebaseFirestore, userId: String) {
-        val collections = listOf("Goal", "Liability")
+        val collections = listOf("Goal", "Liability", "Transaction")
         for (collection in collections) {
             val ref = db.collection("database").document(userId).collection(collection)
             try {
                 val snapshot = ref.get().await()
                 for (doc in snapshot.documents) {
                     val data = doc.data ?: continue
-                    val settlementsRaw = data["settlement"] as? List<*> ?: continue
 
-                    Log.d(TAG, "Migrating settlements for document ${doc.id} in $collection")
-
-                    // Migrate to subcollection
-                    settlementsRaw.forEach { adjObj ->
-                        if (adjObj is Map<*, *>) {
-                            val adj = adjObj.asSettlement()
-                            val finalAdj = adj.copy(userId = userId, datasetId = doc.id)
-                            doc.reference.collection("settlement")
-                                .document(finalAdj.settlementId)
-                                .set(finalAdj.settlementToMap)
-                                .await()
+                    // Migrate settlements
+                    val settlementsRaw = data["settlement"] as? List<*>
+                    if (settlementsRaw != null) {
+                        Log.d(TAG, "Migrating settlements for document ${doc.id} in $collection")
+                        settlementsRaw.forEach { adjObj ->
+                            if (adjObj is Map<*, *>) {
+                                val adj = adjObj.asSettlement()
+                                val finalAdj = adj.copy(userId = userId, datasetId = doc.id)
+                                doc.reference.collection("settlement")
+                                    .document(finalAdj.settlementId)
+                                    .set(finalAdj.settlementToMap)
+                                    .await()
+                            }
                         }
+                        doc.reference.update(
+                            "settlement",
+                            com.google.firebase.firestore.FieldValue.delete()
+                        ).await()
                     }
 
-                    // Remove list field
-                    doc.reference.update(
-                        "settlement",
-                        com.google.firebase.firestore.FieldValue.delete()
-                    ).await()
+                    // Migrate withdrawals
+                    val withdrawalsRaw = data["withdrawal"] as? List<*>
+                    if (withdrawalsRaw != null) {
+                        Log.d(TAG, "Migrating withdrawals for document ${doc.id} in $collection")
+                        withdrawalsRaw.forEach { map ->
+                            if (map is Map<*, *>) {
+                                val withdrawal = map.asWithdrawal()
+                                val finalWithdrawal =
+                                    withdrawal.copy(userId = userId, datasetId = doc.id)
+                                doc.reference.collection("withdrawal")
+                                    .document(finalWithdrawal.withdrawalId)
+                                    .set(finalWithdrawal.withdrawalToMap)
+                                    .await()
+                            }
+                        }
+                        doc.reference.update(
+                            "withdrawal",
+                            com.google.firebase.firestore.FieldValue.delete()
+                        ).await()
+                    }
                 }
             } catch (e: Exception) {
-                Log.e(TAG, "Failed to migrate settlements only for $collection", e)
+                Log.e(TAG, "Failed to migrate sub-collections for $collection", e)
             }
         }
     }

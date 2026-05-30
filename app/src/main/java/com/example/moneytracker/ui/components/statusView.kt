@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.Status
-import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.status
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
@@ -32,49 +31,26 @@ fun StatusView(
     imageSize: Dp = 16.dp,
     fontSize: TextUnit = TextUnit.Unspecified
 ) {
-
-    val status = remember {
-        mutableStateOf(Status.INITIAL)
-    }
-
-    val now = remember {
-        mutableStateOf(LocalDateTime.now())
-    }
+    val status = remember { mutableStateOf(Status.INITIAL) }
+    val now = remember { mutableStateOf(LocalDateTime.now()) }
 
     // Update 'now' every second to track time changes
     LaunchedEffect(Unit) {
         while (true) {
-            delay(1000) // Update every second
+            delay(1000)
             now.value = LocalDateTime.now()
         }
     }
 
-    when (dataSettlement) {
-        is DataSettlement.SettlementAdjust ->
-            LaunchedEffect(
-                dataSettlement.settlement,
-                dataSettlement.settlement.financeEntity,
-                now.value
-            ) {
-                status.value = when (dataSettlement) {
-                    is DataSettlement.SettlementAdjust -> dataSettlement.settlement.financeEntity?.status!!
-                }
-            }
+    LaunchedEffect(dataSettlement, now.value) {
+        status.value = when (dataSettlement) {
+            is DataSettlement.SettlementData -> dataSettlement.financeEntity.status
+            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.financeEntity?.status
+                ?: Status.INITIAL
 
-        is DataSettlement.SettlementData -> {
-            LaunchedEffect(dataSettlement.financeEntity, now.value) {
-                status.value = when (dataSettlement) {
-                    is DataSettlement.SettlementData -> dataSettlement.financeEntity.status
-                }
-            }
+            is DataSettlement.SettlementWithdrawal -> dataSettlement.withdrawal.financeEntity?.status
+                ?: Status.INITIAL
         }
-    }
-
-
-
-    when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.isAmountEqualToSettleAmount()
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.financeEntity?.isAmountEqualToSettleAmount()
     }
 
     if (status.value == Status.INITIAL) {
@@ -95,4 +71,3 @@ fun StatusView(
         )
     }
 }
-

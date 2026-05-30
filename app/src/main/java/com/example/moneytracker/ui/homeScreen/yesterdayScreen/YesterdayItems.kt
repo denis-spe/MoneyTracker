@@ -38,11 +38,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.backend.storage.DataSettlement
-import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
-import com.example.moneytracker.helper.outlinedIcon
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.OnDeleteReceipt
@@ -72,50 +70,21 @@ fun YesterdayItem(
 ) {
     val amount = dataSettlement.addNegativeToAmount
 
-    val label = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.label
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.label
-    }
+    val label = dataSettlement.label
 
-    val description = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.description
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.description
-    }.let {
+    val description = dataSettlement.description.let {
         if (it.length > 16) it.take(20) + "..." else it
     }
 
-    val dateTime = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.createdAt.toLocalDateTimeUtc()
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.dateTime.toLocalDateTimeUtc()
-    }
+    val dateTime = dataSettlement.createdAt.toLocalDateTimeUtc()
 
-    val color = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.colorRes
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.color
-    }.let {
-        colorResource(id = it)
-    }
+    val color = colorResource(id = dataSettlement.colorRes)
 
-    val dataTypeIcon = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.outlinedIcon
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.icon
-    }.let {
-        painterResource(id = it)
-    }
+    val dataTypeIcon = painterResource(id = dataSettlement.icon)
 
-    val tagIcon = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.tagIcon.icon
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.tagIcon.icon
-    }.let {
-        painterResource(id = it)
-    }
+    val tagIcon = dataSettlement.tagIcon?.let { painterResource(id = it.icon) }
 
-    val paymentMethod = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.paymentMethod.icon
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.paymentMethod.icon
-    }.let {
-        painterResource(id = it)
-    }
+    val paymentMethod = painterResource(id = dataSettlement.paymentMethod.icon)
 
     val settlement = if (dataSettlement is DataSettlement.SettlementAdjust)
         dataSettlement.settlement.financeEntity?.label
@@ -128,6 +97,10 @@ fun YesterdayItem(
 
         is DataSettlement.SettlementAdjust -> {
             dataSettlement.settlement.financeEntity?.isAmountEqualToSettleAmount()
+        }
+
+        is DataSettlement.SettlementWithdrawal -> {
+            dataSettlement.withdrawal.financeEntity?.isAmountEqualToSettleAmount()
         }
     }.let {
         if (it == true) {
@@ -234,11 +207,13 @@ fun YesterdayItem(
                             )
 
                             // Tag Image
-                            Image(
-                                painter = tagIcon,
-                                contentDescription = null,
-                                modifier = Modifier.size(ICON_SIZE)
-                            )
+                            tagIcon?.let {
+                                Image(
+                                    painter = it,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(ICON_SIZE)
+                                )
+                            }
 
                             // Payment Method Image
                             Image(
@@ -283,17 +258,21 @@ fun YesterdayItem(
             }
 
             is DataSettlement.SettlementAdjust -> {
-                val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
-                    is FinanceEntity.Transaction -> "TRANSACTION"
-                    is FinanceEntity.Goal -> "GOAL"
-                    is FinanceEntity.Liability -> "LIABILITY"
-                }
                 viewModel.removeSettlementFinance(
-                    dataSettlement.settlement.financeEntity!!.id,
-                    financeEntityType,
+                    dataSettlement.settlement.datasetId,
+                    dataSettlement.financeEntityType,
                     dataSettlement.settlement
                 )
                 userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
+            }
+
+            is DataSettlement.SettlementWithdrawal -> {
+                viewModel.removeWithdrawalFinance(
+                    dataSettlement.withdrawal.datasetId,
+                    dataSettlement.financeEntityType,
+                    dataSettlement.withdrawal
+                )
+                userViewModel.showActionNotification("Withdrawal deleted successfully", Color.Red)
             }
         }
         onShowDialog.value = false

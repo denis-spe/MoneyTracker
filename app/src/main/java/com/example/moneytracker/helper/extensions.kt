@@ -37,6 +37,7 @@ import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
+import com.example.moneytracker.backend.storage.Withdrawal
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.backend.storage.types.TransactionType
@@ -114,6 +115,10 @@ val DataSettlement.addNegativeToAmount: String
                 } else {
                     amount.formatToAmount()
                 }
+            }
+
+            is DataSettlement.SettlementWithdrawal -> {
+                "-${withdrawal.amount.formatToAmount()}"
             }
         }
     }
@@ -395,6 +400,20 @@ val Settlement.isForToday: Boolean
         return today == dataDate
     }
 
+val Withdrawal.isForToday: Boolean
+    get() {
+        val today = LocalDateTime.now().date
+        val dataDate = createdAt.toLocalDateTimeUtc().date
+        return today == dataDate
+    }
+
+val DataSettlement.isForToday: Boolean
+    get() = when (this) {
+        is DataSettlement.SettlementData -> financeEntity.isForToday
+        is DataSettlement.SettlementAdjust -> settlement.isForToday
+        is DataSettlement.SettlementWithdrawal -> withdrawal.isForToday
+    }
+
 /**
  * Check if the dataset is for yesterday.
  */
@@ -451,10 +470,26 @@ val RoutineData.routineToMap: Map<String, Any>
 
 val Achievement.achievementToMap: Map<String, Any>
     get() = mapOf(
+        "achievementId" to achievementId,
+        "userId" to userId,
+        "datasetId" to datasetId,
         "status" to status,
         "totalSettlementAmount" to totalSettlementAmount,
         "startDateTime" to startDateTime,
         "deadlineDateTime" to deadlineDateTime
+    )
+
+val Withdrawal.withdrawalToMap: Map<String, Any>
+    get() = mapOf(
+        "withdrawalId" to withdrawalId,
+        "datasetId" to datasetId,
+        "userId" to userId,
+        "amount" to amount,
+        "label" to label,
+        "description" to description,
+        "createdAt" to createdAt,
+        "toPaymentMethod" to toPaymentMethod,
+        "fromPaymentMethod" to fromPaymentMethod
     )
 
 val Settlement.settlementToMap: Map<String, Any>
@@ -525,7 +560,14 @@ fun Map<*, *>.asAchievement(): Achievement {
         else -> Timestamp(0, 0)
     }
 
+    val achievementId = this["achievementId"] as? String ?: ""
+    val userId = this["userId"] as? String ?: ""
+    val datasetId = this["datasetId"] as? String ?: ""
+
     return Achievement(
+        achievementId = achievementId,
+        userId = userId,
+        datasetId = datasetId,
         status = status.name,
         totalSettlementAmount = totalSettlementAmount,
         startDateTime = startDateTime,
@@ -575,6 +617,84 @@ fun Map<*, *>.asRoutineData(): RoutineData {
         startDateTime = startDateTime,
         deadlineDateTime = deadlineDateTime,
         triggerMillis = triggerMillis
+    )
+}
+
+fun Map<*, *>.asWithdrawal(): Withdrawal {
+    val datasetId = this["datasetId"] as? String ?: ""
+    val amount = (this["amount"] as? Number)?.toDouble()
+        ?: (this["amount"] as? String)?.toDoubleOrNull()
+        ?: 0.0
+    val label = this["label"] as? String ?: ""
+    val description = this["description"] as? String ?: ""
+    val createdAt = when (val dateTimeRaw = this["createdAt"]) {
+        is Timestamp -> dateTimeRaw
+        is Map<*, *> -> {
+            val seconds = (dateTimeRaw["seconds"] as? Number)?.toLong()
+                ?: (dateTimeRaw["seconds"] as? String)?.toLongOrNull()
+                ?: 0L
+            val nanoseconds = (dateTimeRaw["nanoseconds"] as? Number)?.toInt()
+                ?: (dateTimeRaw["nanoseconds"] as? String)?.toIntOrNull()
+                ?: 0
+            Timestamp(seconds, nanoseconds)
+        }
+
+        is Number -> Timestamp(dateTimeRaw.toLong(), 0)
+        is String -> (dateTimeRaw.toLongOrNull()?.let { Timestamp(it, 0) }) ?: Timestamp(0, 0)
+        else -> Timestamp(0, 0)
+    }
+
+    val toPaymentMethod = when (val dt = this["toPaymentMethod"]) {
+        is String -> try {
+            PaymentMethod.valueOf(dt)
+        } catch (_: Exception) {
+            PaymentMethod.CASH
+        }
+
+        is Number -> PaymentMethod.entries.getOrNull(dt.toInt()) ?: PaymentMethod.CASH
+        is Map<*, *> -> {
+            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
+            if (name != null) try {
+                PaymentMethod.valueOf(name)
+            } catch (_: Exception) {
+                PaymentMethod.CASH
+            } else PaymentMethod.CASH
+        }
+
+        else -> PaymentMethod.CASH
+    }
+    val fromPaymentMethod = when (val dt = this["fromPaymentMethod"]) {
+        is String -> try {
+            PaymentMethod.valueOf(dt)
+        } catch (_: Exception) {
+            PaymentMethod.CASH
+        }
+
+        is Number -> PaymentMethod.entries.getOrNull(dt.toInt()) ?: PaymentMethod.CASH
+        is Map<*, *> -> {
+            val name = (dt["name"] ?: dt["value"] ?: dt["text"]) as? String
+            if (name != null) try {
+                PaymentMethod.valueOf(name)
+            } catch (_: Exception) {
+                PaymentMethod.CASH
+            } else PaymentMethod.CASH
+        }
+
+        else -> PaymentMethod.CASH
+    }
+    val withdrawalId = this["withdrawalId"] as? String ?: ""
+    val userId = this["userId"] as? String ?: ""
+
+    return Withdrawal(
+        withdrawalId = withdrawalId,
+        userId = userId,
+        amount = amount,
+        label = label,
+        description = description,
+        createdAt = createdAt,
+        datasetId = datasetId,
+        toPaymentMethod = toPaymentMethod,
+        fromPaymentMethod = fromPaymentMethod
     )
 }
 
@@ -928,7 +1048,7 @@ fun FinanceEntity.isAmountEqualToSettleAmount(): Boolean {
     val totalSettlement = when (this) {
         is FinanceEntity.Goal -> settlement.sumOf { it.amount }
         is FinanceEntity.Liability -> settlement.sumOf { it.amount }
-        is FinanceEntity.Transaction -> 0.0
+        is FinanceEntity.Transaction -> withdrawal.sumOf { it.amount }
     }
     return totalSettlement >= amount
 }
@@ -938,7 +1058,7 @@ val FinanceEntity.remainingAmount: Double
         val totalSettlement = when (this) {
             is FinanceEntity.Goal -> settlement.sumOf { it.amount }
             is FinanceEntity.Liability -> settlement.sumOf { it.amount }
-            is FinanceEntity.Transaction -> 0.0
+            is FinanceEntity.Transaction -> withdrawal.sumOf { it.amount }
         }
         return amount - totalSettlement
     }

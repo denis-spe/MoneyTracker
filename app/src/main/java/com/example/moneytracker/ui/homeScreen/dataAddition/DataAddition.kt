@@ -59,6 +59,7 @@ import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.backend.storage.TagIcon
+import com.example.moneytracker.backend.storage.Withdrawal
 import com.example.moneytracker.backend.storage.types.FinanceCategory
 import com.example.moneytracker.backend.storage.types.GoalType
 import com.example.moneytracker.backend.storage.types.LiabilityType
@@ -360,7 +361,25 @@ fun <T> DataAdditionModelDrawerContent(
                     }
                 }
 
-                else -> Unit
+                SettlementType.WITHDRAWAL -> {
+
+                    WithdrawalInputs(
+                        type = TransactionType.EARNINGS,
+
+                        settlementType = SettlementType.WITHDRAWAL,
+
+
+                        userViewModel = userViewModel,
+
+                        adjustFinance = adjustFinance
+                    ) {
+
+                        viewModel.updateOnAdjustModelBottomSheetShow(false)
+
+                        selection.visible = false
+                    }
+                }
+
             }
         }
     }
@@ -1048,7 +1067,7 @@ fun SettlementDataInputs(
                 }
 
                 val financeEntityType = when (entity) {
-                    is FinanceEntity.Transaction -> "TRANSACTION"
+                    is FinanceEntity.Transaction -> "WITHDRAWAL"
                     is FinanceEntity.Goal -> "GOAL"
                     is FinanceEntity.Liability -> "LIABILITY"
                 }
@@ -1057,6 +1076,188 @@ fun SettlementDataInputs(
                     entity.id,
                     financeEntityType,
                     settlement
+                )
+
+                adjustAmountState.clearText()
+                descriptionState.clearText()
+
+                onDismiss()
+            }
+        }
+    }
+}
+
+
+@Composable
+fun WithdrawalInputs(
+    type: FinanceCategory,
+    settlementType: SettlementType,
+    userViewModel: UserViewModel,
+    adjustFinance: List<FinanceEntity>,
+    onDismiss: () -> Unit
+) {
+    val viewModel: HomeViewModel = hiltViewModel()
+    val financeEntityList = remember(adjustFinance, type) {
+        adjustFinance.filter { it.financeType == type }
+    }
+
+    val scrollState = rememberScrollState()
+
+    val descriptionState = rememberTextFieldState()
+    val adjustAmountState = rememberTextFieldState()
+
+    var wasSuccess by remember { mutableStateOf(State.INITIAL) }
+
+    val selectedFinanceEntity = remember {
+        mutableStateOf<FinanceEntity?>(null)
+    }
+    val selectedPaymentMethod = remember(selectedFinanceEntity.value) {
+        mutableStateOf(
+            selectedFinanceEntity.value?.paymentMethod
+                ?: PaymentMethod.CASH
+        )
+    }
+    val localDateTimeState = remember {
+        mutableStateOf(LocalDateTime.now())
+    }
+
+    val settleAsDouble by remember {
+        derivedStateOf {
+            adjustAmountState.text.toString().toDoubleOrNull()
+        }
+    }
+
+    val color = colorResource(settlementType.color)
+
+    val iconImage = painterResource(settlementType.icon)
+
+    val dataType = when (type) {
+        TransactionType.EARNINGS -> DataType.EARNINGS
+        TransactionType.EXPENSES -> DataType.EXPENSE
+        TransactionType.SAVINGS -> DataType.SAVINGS
+        LiabilityType.LOAN -> DataType.LENT
+        LiabilityType.DEBT -> DataType.DEBT
+        GoalType -> DataType.GOAL
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .imePadding()
+            .verticalScroll(scrollState),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            modifier = Modifier.size(MODEL_DRAWER_ICON_SIZE),
+            painter = iconImage,
+            contentDescription = settlementType.text,
+            tint = color
+        )
+
+        Text(
+            text = settlementType.typeDescription,
+            color = color,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+        SettlementField(
+            sheetVisible = true,
+            datatype = dataType,
+            amountState = adjustAmountState,
+            financeEntityList = financeEntityList,
+            colorResId = settlementType.color,
+            selectedFinanceEntity = selectedFinanceEntity,
+            wasSuccess = remember { mutableStateOf(wasSuccess) }
+        )
+
+        ModelDrawerTextField(
+            state = descriptionState,
+            placeholder = "Note (Optional)",
+            title = "Note",
+            description = "Take a note for the given amount",
+            colorResId = settlementType.color,
+            wasSuccess = null,
+            displayText = rememberSaveable { mutableStateOf("") }
+        )
+
+        DateTimeInput(
+            showTime = remember { mutableStateOf(false) },
+            showDate = remember { mutableStateOf(false) },
+            localDateTimeState = localDateTimeState,
+            colorResId = settlementType.color
+        )
+
+        PaymentMethodDropdown(
+            colorResId = settlementType.color,
+            selectedPaymentMethod = selectedPaymentMethod
+        )
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            ModelDrawerButton(
+                text = "Add",
+                wasSuccess = remember { mutableStateOf(wasSuccess) },
+                colorResId = settlementType.color,
+                filledColor = Color.Transparent,
+                textColor = color
+            ) {
+                val entity = selectedFinanceEntity.value
+                val settleAmount = settleAsDouble
+
+                if (entity == null) {
+                    wasSuccess = State.ERROR
+                    userViewModel.showActionNotification(
+                        when (dataType) {
+                            DataType.LENT -> "Please select a loan to repay"
+                            DataType.DEBT -> "Please select a debt to repay"
+                            else -> "Please select a goal to attain"
+                        },
+                        color = Color.Red.copy(alpha = 0.5f)
+                    )
+                    return@ModelDrawerButton
+                }
+
+                if (settleAmount == null) {
+                    wasSuccess = State.ERROR
+                    userViewModel.showActionNotification(
+                        "Amount cannot be empty",
+                        color = Color.Red.copy(alpha = 0.5f)
+                    )
+                    return@ModelDrawerButton
+                }
+
+                if (
+                    settleAmount > entity.remainingAmount &&
+                    !entity.isStartDateTimeNotEqualToDeadlineDateTime
+                ) {
+                    wasSuccess = State.ERROR
+                    return@ModelDrawerButton
+                }
+
+                val withdrawal = Withdrawal(
+                    amount = settleAmount,
+                    createdAt = localDateTimeState.value.toFirestoreTimestampUtc(),
+                    label = settlementType.text,
+                    description = descriptionState.text.toString(),
+                    toPaymentMethod = selectedPaymentMethod.value,
+                    fromPaymentMethod = selectedPaymentMethod.value
+                )
+
+                val financeEntityType = when (entity) {
+                    is FinanceEntity.Transaction -> "WITHDRAWAL"
+                    is FinanceEntity.Goal -> "GOAL"
+                    is FinanceEntity.Liability -> "LIABILITY"
+                }
+
+                viewModel.addWithdrawalData(
+                    entity.id,
+                    financeEntityType,
+                    withdrawal = withdrawal
                 )
 
                 adjustAmountState.clearText()

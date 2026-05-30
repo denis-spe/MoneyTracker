@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,6 +56,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -71,12 +73,10 @@ import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.DataType
-import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.formatToDateTime
-import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.ui.OnDeleteReceipt
 import com.example.moneytracker.ui.OnUpdate
@@ -830,62 +830,33 @@ fun ItemCard(
     dataSettlement: DataSettlement,
 ) {
 
-    val colorResId = when (dataSettlement) {
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.color
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.colorRes
+    val colorResId = dataSettlement.colorRes
+
+    val labelIcon = dataSettlement.tagIcon.let {
+        painterResource(id = it.icon)
     }
 
-    val labelIcon = when (dataSettlement) {
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.tagIcon.icon
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.tagIcon.icon
-    }.let {
-        painterResource(id = it)
-    }
+    val categoryIcon = painterResource(id = dataSettlement.icon)
 
-    val label = when (dataSettlement) {
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.label
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.label
-    }
+    val label = dataSettlement.label
 
-    val description = when (dataSettlement) {
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.description
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.description
-    }.let {
+    val description = dataSettlement.description.let {
         if (it.length > 20) it.take(20) + "..." else it
     }
 
-    val dateTime = when (dataSettlement) {
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.dateTime
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.createdAt
-    }.formatToDateTime
+    val dateTime = dataSettlement.createdAt.formatToDateTime
 
-    val paymentMethod = when (dataSettlement) {
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.paymentMethod.icon
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.paymentMethod.icon
-    }.let {
-        painterResource(id = it)
-    }
+    val paymentMethod = painterResource(id = dataSettlement.paymentMethod.icon)
 
     val amount = dataSettlement.addNegativeToAmount
 
-    when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.categoryText
+    val settlement = when (dataSettlement) {
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.financeEntity?.label
+        is DataSettlement.SettlementWithdrawal -> dataSettlement.withdrawal.financeEntity?.label
         else -> null
     }
 
-    val settlement = if (dataSettlement is DataSettlement.SettlementAdjust)
-        dataSettlement.settlement.financeEntity?.label
-    else null
-
-    val isAmountEqualWithAdjustAmount = when (dataSettlement) {
-        is DataSettlement.SettlementData -> {
-            dataSettlement.financeEntity.isAmountEqualToSettleAmount()
-        }
-
-        is DataSettlement.SettlementAdjust -> {
-            dataSettlement.settlement.financeEntity?.isAmountEqualToSettleAmount()
-        }
-    }
+    val isAmountEqualWithAdjustAmount = dataSettlement.isAmountEqualWithAdjustAmount
 
     val adjustTextDecoration = if (
         isAmountEqualWithAdjustAmount == true
@@ -896,7 +867,9 @@ fun ItemCard(
     }
 
     val labelTextDecoration = if (
-        isAmountEqualWithAdjustAmount == true && dataSettlement !is DataSettlement.SettlementAdjust
+        isAmountEqualWithAdjustAmount == true &&
+        dataSettlement !is DataSettlement.SettlementAdjust &&
+        dataSettlement !is DataSettlement.SettlementWithdrawal
     ) {
         TextDecoration.LineThrough
     } else {
@@ -965,11 +938,34 @@ fun ItemCard(
                 },
 
                 leadingContent = {
-                    Image(
-                        painter = labelIcon,
-                        contentDescription = "TagIcon",
-                        modifier = Modifier.size(ICON_SIZE)
-                    )
+                    Box(
+                        contentAlignment = Alignment.BottomEnd
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .clip(CircleShape)
+                                .background(color),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Image(
+                                painter = labelIcon,
+                                contentDescription = "TagIcon",
+                                modifier = Modifier
+                                    .size(24.dp)
+                                    .padding(4.dp)
+                            )
+                        }
+
+                        Image(
+                            painter = categoryIcon,
+                            contentDescription = "CategoryIcon",
+                            modifier = Modifier
+                                .size(12.dp)
+                                .clip(CircleShape)
+                                .background(Color.White),
+                        )
+                    }
                 },
 
                 trailingContent = {
@@ -1020,17 +1016,21 @@ fun ItemCard(
             }
 
             is DataSettlement.SettlementAdjust -> {
-                val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
-                    is FinanceEntity.Transaction -> "TRANSACTION"
-                    is FinanceEntity.Goal -> "GOAL"
-                    is FinanceEntity.Liability -> "LIABILITY"
-                }
                 viewModel.removeSettlementFinance(
-                    dataSettlement.settlement.financeEntity!!.id,
-                    financeEntityType,
+                    dataSettlement.settlement.datasetId,
+                    dataSettlement.financeEntityType,
                     dataSettlement.settlement
                 )
                 userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
+            }
+
+            is DataSettlement.SettlementWithdrawal -> {
+                viewModel.removeWithdrawalFinance(
+                    dataSettlement.withdrawal.datasetId,
+                    dataSettlement.financeEntityType,
+                    dataSettlement.withdrawal
+                )
+                userViewModel.showActionNotification("Withdrawal deleted successfully", Color.Red)
             }
         }
         onShowDialog.value = false

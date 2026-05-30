@@ -16,43 +16,23 @@ class GetTodayChartDonutDataUseCase @Inject constructor() {
         context: Context
     ): List<DonutChartData> {
         val coupledData = coupleDatasetsWithSettlements(financeEntityList).filter { item ->
-            when (item) {
-                is DataSettlement.SettlementData -> item.financeEntity.isForToday
-                is DataSettlement.SettlementAdjust -> item.settlement.isForToday
-            }
+            item.isForToday
         }.filterNot {
             when (it) {
                 is DataSettlement.SettlementData -> it.financeEntity is FinanceEntity.Goal
                 is DataSettlement.SettlementAdjust -> it.settlement.settlementType == SettlementType.GOAL_ATTAIN
+                is DataSettlement.SettlementWithdrawal -> false
             }
         }
 
-        val grouped = coupledData.groupBy { item ->
-            when (item) {
-                is DataSettlement.SettlementData -> item.financeEntity.categoryText
-                is DataSettlement.SettlementAdjust -> item.settlement.settlementType.text
-            }
-        }
+        val grouped = coupledData.groupBy { it.text }
 
         return grouped.values.map { list ->
             val firstItem = list.first()
 
-            val colorResId = when (firstItem) {
-                is DataSettlement.SettlementData -> firstItem.financeEntity.colorRes
-                is DataSettlement.SettlementAdjust -> firstItem.settlement.settlementType.color
-            }
-
-            val title = when (firstItem) {
-                is DataSettlement.SettlementData -> firstItem.financeEntity.categoryText
-                is DataSettlement.SettlementAdjust -> firstItem.settlement.settlementType.text
-            }
-
-            val amount = list.sumOf {
-                when (it) {
-                    is DataSettlement.SettlementData -> it.financeEntity.amount
-                    is DataSettlement.SettlementAdjust -> it.settlement.amount
-                }
-            }.toFloat()
+            val colorResId = firstItem.colorRes
+            val title = firstItem.text
+            val amount = list.sumOf { it.amount }.toFloat()
 
             val color = Color(ContextCompat.getColor(context, colorResId))
 

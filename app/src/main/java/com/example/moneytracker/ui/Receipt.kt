@@ -62,6 +62,7 @@ import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
+import com.example.moneytracker.backend.storage.Withdrawal
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.backend.storage.types.TransactionType
@@ -753,16 +754,282 @@ fun SettlementReceipt(
     }
 }
 
+
+@Composable
+fun WithdrawalReceipt(
+    withdrawal: Withdrawal,
+    financeEntity: FinanceEntity,
+    onEdit: () -> Unit = {},
+    onDelete: () -> Unit = {},
+    onClose: () -> Unit = {}
+) {
+    val datetime = withdrawal.createdAt.toLocalDateTimeUtc()
+    val day = datetime.day.addZeroIfLessThenTen
+    val month = datetime.month.name.title
+    val year = datetime.year.addZeroIfLessThenTen
+    val hour = datetime.hour.addZeroIfLessThenTen
+    val minute = datetime.minute.addZeroIfLessThenTen
+    val weekDay = datetime.dayOfWeek.name.title
+
+    val time = "${hour}:${minute}"
+    val date = "$day $month $year"
+
+    val fontSize = 13.sp
+
+    val color = colorResource(SettlementType.WITHDRAWAL.color)
+
+    val textDecoration = if (
+        financeEntity.remainingAmount == 0.0
+    )
+        TextDecoration.LineThrough else
+        TextDecoration.None
+    val title = "Withdrawal"
+    val dataSettlement = DataSettlement.SettlementWithdrawal(withdrawal)
+
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(MaxWidth)
+            .padding(top = 10.dp, bottom = 10.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = title,
+            fontSize = 25.sp,
+            fontWeight = FONT_WEIGHT,
+            color = color
+        )
+        Text(text = "On ${weekDay}, $date", fontSize = fontSize)
+        Text(text = "At $time", fontSize = fontSize)
+
+        DottedDivider(color = color, modifier = Modifier.padding(vertical = 10.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            val label = "Withdrawn: "
+
+            Text(text = label, fontSize = fontSize, fontWeight = FONT_WEIGHT)
+            val labelState = remember { mutableStateOf("") }
+            labelState.value = financeEntity.label
+            Text(
+                text = labelState.value,
+                textDecoration = textDecoration,
+                fontSize = fontSize
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "Amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+            Text(
+                text = withdrawal.amount.formatToAmount(),
+                fontSize = fontSize
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(text = "To payment method:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+            Text(text = withdrawal.toPaymentMethod.text, fontSize = fontSize)
+        }
+
+        val settlements = when (financeEntity) {
+            is FinanceEntity.Goal -> financeEntity.settlement
+            is FinanceEntity.Liability -> financeEntity.settlement
+            is FinanceEntity.Transaction -> emptyList()
+        }
+
+        if (settlements.isNotEmpty()) {
+            val lastPayment = settlements[settlements.size - 1]
+            val date = lastPayment.dateTime.toLocalDateTimeUtc()
+            val day = date.day.addZeroIfLessThenTen
+            val month = date.month.number.addZeroIfLessThenTen
+            val year = date.year
+            val hour = date.hour.addZeroIfLessThenTen
+            val minute = date.minute.addZeroIfLessThenTen
+            val time = "${hour}:${minute}"
+            val dateString = "${day}/${month}/${year}"
+
+
+            Text("")
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Remaining Amount:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = financeEntity.remainingAmount.formatToAmount(), fontSize = fontSize)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Last Payment:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = lastPayment.amount.formatToAmount(), fontSize = fontSize)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Last Payment Date:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = dateString, fontSize = fontSize)
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(text = "Last Payment Time:", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+                Text(text = time, fontSize = fontSize)
+            }
+        }
+
+        if (withdrawal.description.isNotBlank()) {
+            DottedDivider(color = color, modifier = Modifier.padding(vertical = 10.dp))
+
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(text = "Notes", fontSize = fontSize, fontWeight = FONT_WEIGHT)
+
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .heightIn(max = 100.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    item {
+                        Text(
+                            text = withdrawal.description,
+                            fontSize = fontSize,
+                            textAlign = TextAlign.Center
+                        )
+                    }
+                }
+            }
+        }
+
+        if (financeEntity is FinanceEntity.Goal || financeEntity is FinanceEntity.Liability) {
+            if (financeEntity.remainingAmount == 0.0) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 10.dp),
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    StatusView(
+                        dataSettlement,
+                        showImageStatus = true,
+                        imageSize = ICON_SIZE
+                    )
+                }
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(
+                onClick = onEdit,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = "Edit",
+                    tint = color,
+                )
+            }
+
+            IconButton(
+                onClick = onDelete,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Delete,
+                    contentDescription = "Delete",
+                    tint = color,
+                )
+            }
+
+            IconButton(
+                onClick = onClose,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Close,
+                    contentDescription = "Close",
+                    tint = color
+                )
+            }
+        }
+
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 10.dp),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+
+            IconButton(
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors().copy(
+                    containerColor = color.copy(alpha = 0.1f)
+                )
+            ) {
+                Image(
+                    painter = painterResource(financeEntity.tagIcon.icon),
+                    contentDescription = SettlementType.WITHDRAWAL.text,
+                    modifier = Modifier
+                        .size(ICON_SIZE)
+                )
+            }
+
+            IconButton(
+                onClick = {},
+                colors = IconButtonDefaults.iconButtonColors().copy(
+                    containerColor = color.copy(alpha = 0.1f)
+                )
+            ) {
+                Image(
+                    painter = painterResource(withdrawal.toPaymentMethod.icon),
+                    contentDescription = withdrawal.toPaymentMethod.text,
+                    modifier = Modifier
+                        .size(ICON_SIZE)
+                )
+            }
+        }
+    }
+}
+
 @Composable
 fun OnDeleteReceipt(
     dataSettlement: DataSettlement,
     onShowDeleteDialog: MutableState<Boolean>,
     onConfirm: () -> Unit
 ) {
-    val item = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.categoryText
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.text
-    }
+
 
     if (onShowDeleteDialog.value) {
         Dialog(
@@ -783,7 +1050,7 @@ fun OnDeleteReceipt(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            "Are you sure you want to delete this ${item.lowercase()} item?",
+                            "Are you sure you want to delete this ${dataSettlement.text.lowercase()} item?",
                             textAlign = TextAlign.Center
                         )
                     }
@@ -858,40 +1125,21 @@ fun OnUpdate(
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val lazyState = rememberLazyListState()
 
-    val dataTypeText = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.categoryText
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.text
-    }
+    val dataTypeText = dataSettlement.text
+    val colorResId = dataSettlement.colorRes
+    val icon = dataSettlement.icon
 
-    val colorResId = when (dataSettlement) {
-        is DataSettlement.SettlementData -> dataSettlement.financeEntity.colorRes
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.color
-    }
 
-    val icon = when (dataSettlement) {
-        is DataSettlement.SettlementData -> when (val f = dataSettlement.financeEntity) {
-            is FinanceEntity.Transaction -> when (f.transactionType) {
-                TransactionType.EARNINGS -> R.drawable.filled_earnings
-                TransactionType.EXPENSES -> R.drawable.filled_expenditure
-                TransactionType.SAVINGS -> R.drawable.filled_savings
-            }
-
-            is FinanceEntity.Goal -> R.drawable.filled_goal
-            is FinanceEntity.Liability -> when (f.liabilityType) {
-                LiabilityType.DEBT -> R.drawable.filled_debt
-                LiabilityType.LOAN -> R.drawable.filled_lent
-            }
-        }
-
-        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.settlementType.icon
-    }
 
     val description = when (dataSettlement) {
-        is DataSettlement.SettlementData -> "Updating ${dataSettlement.financeEntity.label} " +
-                dataSettlement.financeEntity.categoryText
+        is DataSettlement.SettlementData -> "Update ${dataSettlement.financeEntity.label} " +
+                dataSettlement.text
 
-        is DataSettlement.SettlementAdjust -> "Updating ${dataSettlement.settlement.financeEntity?.label} " +
-                dataSettlement.settlement.settlementType.text
+        is DataSettlement.SettlementAdjust -> "Update ${dataSettlement.settlement.financeEntity?.label} " +
+                dataSettlement.text
+
+        is DataSettlement.SettlementWithdrawal -> "Update ${dataSettlement.withdrawal.financeEntity?.label} " +
+                dataSettlement.text
     }
 
     val color = colorResource(colorResId)
@@ -918,6 +1166,14 @@ fun OnUpdate(
                     onCreatedDateTimeState.value = settlement.dateTime.toLocalDateTimeUtc()
                     tagIconState.value = settlement.tagIcon
                     selectedPaymentMethod.value = settlement.paymentMethod
+                }
+
+                is DataSettlement.SettlementWithdrawal -> {
+                    val settlement = dataSettlement.withdrawal
+                    amountState.setTextAndPlaceCursorAtEnd(settlement.amount.toString())
+                    labelState.setTextAndPlaceCursorAtEnd(settlement.label)
+                    descriptionState.setTextAndPlaceCursorAtEnd(settlement.description)
+                    onCreatedDateTimeState.value = settlement.createdAt.toLocalDateTimeUtc()
                 }
             }
         }
@@ -1212,6 +1468,73 @@ fun OnUpdate(
                                     }
                                 }
 
+                                is DataSettlement.SettlementWithdrawal -> {
+                                    Row(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .animateItem(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        ModelDrawerButton(
+                                            text = "Apply changes",
+                                            wasSuccess = wasSettlementSuccess,
+                                            colorResId = colorResId,
+                                            filledColor = Color.Transparent
+                                        ) {
+                                            if (amountAsDouble != null
+                                                && amountAsDouble
+                                                <= (dataSettlement.withdrawal.financeEntity!!.remainingAmount
+                                                        + dataSettlement.withdrawal.amount)
+                                            ) {
+                                                val withdrawal = dataSettlement.withdrawal
+                                                val financeEntityType =
+                                                    when (withdrawal.financeEntity!!) {
+                                                        is FinanceEntity.Transaction -> "WITHDRAWAL"
+                                                        is FinanceEntity.Goal -> "GOAL"
+                                                        is FinanceEntity.Liability -> "LIABILITY"
+                                                    }
+
+                                                viewModel.updateWithdrawal(
+                                                    withdrawal.financeEntity!!.id,
+                                                    financeEntityType,
+                                                    withdrawal,
+                                                    Withdrawal(
+                                                        datasetId = withdrawal.datasetId,
+                                                        amount = amountAsDouble,
+                                                        label = withdrawal.label,
+                                                        description = descriptionState.text.toString(),
+                                                        createdAt = onCreatedDateTimeState
+                                                            .value.toFirestoreTimestampUtc(),
+                                                    )
+                                                )
+
+
+                                                wasSettlementSuccess.value = State.SUCCESS
+                                                userViewModel.showActionNotification(
+                                                    "Settlement updated successfully",
+                                                    color
+                                                )
+
+                                                // Reset all state
+                                                amountState.clearText()
+                                                labelState.clearText()
+                                                descriptionState.clearText()
+                                                tagIconState.value = TagIcon(
+                                                    "description",
+                                                    R.drawable.description
+                                                )
+
+                                                isUpdateModelBottonOpen.value = false
+                                                onShowDialog.value = false
+
+                                            } else {
+                                                wasSettlementSuccess.value = State.ERROR
+                                            }
+                                        }
+                                    }
+                                }
+
                             }
                         }
                     }
@@ -1227,28 +1550,14 @@ fun OnUpdate(
         // wait for BottomSheet to render first frame
         awaitFrame()
 
-        val amount = when (dataSettlement) {
-            is DataSettlement.SettlementData -> dataSettlement.financeEntity.amount
-            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.amount
-        }
-        val label = if (dataSettlement is DataSettlement.SettlementData) {
-            dataSettlement.financeEntity.label
-        } else ""
+        val amount = dataSettlement.amount
+        val label = dataSettlement.label
 
-        val description = when (dataSettlement) {
-            is DataSettlement.SettlementData -> dataSettlement.financeEntity.description
-            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.description
-        }
+        val description = dataSettlement.description
 
-        val dateTime = when (dataSettlement) {
-            is DataSettlement.SettlementData -> dataSettlement.financeEntity.createdAt
-            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.dateTime
-        }
+        val dateTime = dataSettlement.createdAt
 
-        val tagIcon = when (dataSettlement) {
-            is DataSettlement.SettlementData -> dataSettlement.financeEntity.tagIcon
-            is DataSettlement.SettlementAdjust -> dataSettlement.settlement.tagIcon
-        }
+        val tagIcon = dataSettlement.tagIcon
 
         amountState.setTextAndPlaceCursorAtEnd(amount.toString())
         displayAmountState.value = amount.toString()
@@ -1260,7 +1569,9 @@ fun OnUpdate(
 
         onCreatedDateTimeState.value = dateTime.toLocalDateTimeUtc()
 
-        tagIconState.value = tagIcon
+        tagIcon?.let {
+            tagIconState.value = it
+        }
 
     }
 
@@ -1315,6 +1626,21 @@ fun Receipt(
                             onShowDialog.value = false
                         }
                     }
+
+                    is DataSettlement.SettlementWithdrawal -> {
+                        WithdrawalReceipt(
+                            withdrawal = dataSettlement.withdrawal,
+                            financeEntity = dataSettlement.withdrawal.financeEntity!!,
+                            onEdit = {
+                                isUpdateModelBottonOpen.value = true
+                            },
+                            onDelete = {
+                                onShowDeleteDialog.value = true
+                            }
+                        ) {
+                            onShowDialog.value = false
+                        }
+                    }
                 }
 
             }
@@ -1332,15 +1658,23 @@ fun Receipt(
             }
 
             is DataSettlement.SettlementAdjust -> {
-                val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
-                    is FinanceEntity.Transaction -> "TRANSACTION"
-                    is FinanceEntity.Goal -> "GOAL"
-                    is FinanceEntity.Liability -> "LIABILITY"
-                }
+                val financeEntityType = dataSettlement.financeEntityType ?: ""
+
                 viewModel.removeSettlementFinance(
                     dataSettlement.settlement.financeEntity!!.id,
                     financeEntityType,
                     dataSettlement.settlement
+                )
+                userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
+            }
+
+            is DataSettlement.SettlementWithdrawal -> {
+                val financeEntityType = dataSettlement.financeEntityType ?: ""
+
+                viewModel.removeWithdrawalFinance(
+                    dataSettlement.withdrawal.financeEntity!!.id,
+                    financeEntityType,
+                    dataSettlement.withdrawal
                 )
                 userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
             }

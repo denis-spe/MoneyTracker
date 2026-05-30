@@ -5,11 +5,14 @@ import android.util.Log
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import com.example.moneytracker.helper.achievementToMap
+import com.example.moneytracker.helper.asAchievement
 import com.example.moneytracker.helper.asSettlement
+import com.example.moneytracker.helper.asWithdrawal
 import com.example.moneytracker.helper.settlementToMap
 import com.example.moneytracker.helper.toEpochMilli
 import com.example.moneytracker.helper.toFinance
 import com.example.moneytracker.helper.toMap
+import com.example.moneytracker.helper.withdrawalToMap
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
@@ -69,28 +72,35 @@ class DataStorageImpl(
 
                 val snapshot = query.get().await()
 
-                val finances = snapshot.documents.mapNotNull { doc ->
-                    runCatching {
-                        val entity = doc.data?.toFinance() ?: return@mapNotNull null
+                for (doc in snapshot.documents) {
+                    try {
+                        val entity = doc.data?.toFinance() ?: continue
                         val settlements = doc.reference.collection("settlement").get().await()
                             .documents.mapNotNull { it.data?.asSettlement() }
+                        val withdrawals = doc.reference.collection("withdrawal").get().await()
+                            .documents.mapNotNull { it.data?.asWithdrawal() }
+                        val achievements = doc.reference.collection("achievement").get().await()
+                            .documents.mapNotNull { it.data?.asAchievement() }
 
-                        when (entity) {
-                            is FinanceEntity.Goal -> entity.copy(settlement = settlements)
-                            is FinanceEntity.Liability -> entity.copy(settlement = settlements)
-                            else -> entity
-                        }
-                    }
-                        .onFailure {
-                            Log.e(
-                                "DataStorageImpl",
-                                "Failed to parse item during filtering in $collection",
-                                it
+                        val updatedEntity = when (entity) {
+                            is FinanceEntity.Goal -> entity.copy(
+                                settlement = settlements,
+                                achievement = achievements
                             )
+
+                            is FinanceEntity.Liability -> entity.copy(settlement = settlements)
+                            is FinanceEntity.Transaction -> entity.copy(withdrawal = withdrawals)
                         }
-                        .getOrNull()
+                        results.add(updatedEntity)
+                    } catch (e: Exception) {
+                        if (e is CancellationException) throw e
+                        Log.e(
+                            "DataStorageImpl",
+                            "Failed to parse item during filtering in $collection",
+                            e
+                        )
+                    }
                 }
-                results.addAll(finances)
             }
             results
         } catch (e: Exception) {
@@ -108,13 +118,22 @@ class DataStorageImpl(
         val listeners = mutableListOf<com.google.firebase.firestore.ListenerRegistration>()
         val latestData = mutableMapOf<String, List<FinanceEntity>>()
         var latestSettlements = emptyList<Settlement>()
+        var latestWithdrawal = emptyList<Withdrawal>()
+        var latestAchievements = emptyList<Achievement>()
+
+        // Initialize with empty lists to ensure something is emitted early if requested
+        collections.forEach { latestData[it] = emptyList() }
 
         fun emitCombined() {
             val combined = latestData.values.flatten().map { entity ->
                 when (entity) {
-                    is FinanceEntity.Goal -> entity.copy(settlement = latestSettlements.filter { it.datasetId == entity.id })
+                    is FinanceEntity.Goal -> entity.copy(
+                        settlement = latestSettlements.filter { it.datasetId == entity.id },
+                        achievement = latestAchievements.filter { it.datasetId == entity.id }
+                    )
+
                     is FinanceEntity.Liability -> entity.copy(settlement = latestSettlements.filter { it.datasetId == entity.id })
-                    else -> entity
+                    is FinanceEntity.Transaction -> entity.copy(withdrawal = latestWithdrawal.filter { it.datasetId == entity.id })
                 }
             }
             Log.d("DataStorageImpl", "parsed total count: ${combined.size}")
@@ -177,6 +196,52 @@ class DataStorageImpl(
                 emitCombined()
             }
         listeners.add(settlementListener)
+
+        // Listen to settlements via collection group
+        val withdrawalListener = db.collectionGroup("withdrawal")
+            .whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("DataStorageImpl", "withdrawal collectionGroup listener error", error)
+                    return@addSnapshotListener
+                }
+
+                val withdrawal = snapshot?.documents?.mapNotNull { doc ->
+                    try {
+                        doc.data?.asWithdrawal()
+                    } catch (e: Exception) {
+                        Log.e("DataStorageImpl", "Failed to parse settlement", e)
+                        null
+                    }
+                } ?: emptyList()
+
+                latestWithdrawal = withdrawal
+                emitCombined()
+            }
+        listeners.add(withdrawalListener)
+
+        // Listen to achievements via collection group
+        val achievementListener = db.collectionGroup("achievement")
+            .whereEqualTo("userId", userId)
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    Log.e("DataStorageImpl", "achievement collectionGroup listener error", error)
+                    return@addSnapshotListener
+                }
+
+                val achievements = snapshot?.documents?.mapNotNull { doc ->
+                    try {
+                        doc.data?.asAchievement()
+                    } catch (e: Exception) {
+                        Log.e("DataStorageImpl", "Failed to parse achievement", e)
+                        null
+                    }
+                } ?: emptyList()
+
+                latestAchievements = achievements
+                emitCombined()
+            }
+        listeners.add(achievementListener)
 
         awaitClose {
             listeners.forEach { it.remove() }
@@ -600,6 +665,57 @@ class DataStorageImpl(
         }
     }
 
+    override suspend fun addWithdrawal(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        withdrawal: Withdrawal
+    ) = withContext(Dispatchers.IO) {
+        Log.d("DataStorageImpl", "=== completeRoutine START ===")
+        Log.d("DataStorageImpl", "Inputs: userId=$userId datasetId=$datasetId type=$financeType")
+
+        val docRef = db.collection(COLLECTION_NAME)
+            .document(userId)
+            .collection(getCollectionNameFromType(financeType))
+            .document(datasetId)
+
+        try {
+            val batch = db.batch()
+
+            val withdrawalId = withdrawal.withdrawalId.ifEmpty { UUID.randomUUID().toString() }
+            val finalWithdrawal = withdrawal.copy(
+                withdrawalId = withdrawalId,
+                userId = userId,
+                datasetId = datasetId
+            )
+
+            val withdrawalRef = docRef.collection("withdrawal")
+                .document(withdrawalId)
+
+            batch.set(withdrawalRef, finalWithdrawal.withdrawalToMap)
+
+            Log.d("DataStorageImpl", "Committing batch...")
+
+            batch.commit()
+                .addOnSuccessListener {
+                    Log.d("DataStorageImpl", "✅ Batch success")
+                }
+                .addOnFailureListener {
+                    Log.e("DataStorageImpl", "❌ Batch failed", it)
+                }
+
+            Log.d("DataStorageImpl", "✅ completeRoutine SUCCESS for $datasetId")
+        } catch (e: CancellationException) {
+            Log.w("DataStorageImpl", "completeRoutine CANCELLED for $datasetId", e)
+            throw e
+        } catch (e: Exception) {
+            Log.e("DataStorageImpl", "❌ completeRoutine FAILED for $datasetId", e)
+            throw e
+        } finally {
+            Log.d("DataStorageImpl", "=== completeRoutine END ===")
+        }
+    }
+
 
     override suspend fun addStatus(
         userId: String,
@@ -807,6 +923,37 @@ class DataStorageImpl(
         }
     }
 
+    override suspend fun removeWithdrawalDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        withdrawal: Withdrawal
+    ) {
+        Log.d(
+            "DataStorageImpl",
+            "removeSettlementDataset called: $withdrawal for datasetId=$datasetId userId=$userId type=$financeType"
+        )
+
+        val docRef = db.collection(COLLECTION_NAME)
+            .document(userId)
+            .collection(getCollectionNameFromType(financeType))
+            .document(datasetId)
+
+        try {
+            docRef.collection("withdrawal")
+                .document(withdrawal.datasetId)
+                .delete()
+                .await()
+            Log.d(
+                "DataStorageImpl",
+                "Removed settlement from financeEntity record $datasetId subcollection"
+            )
+        } catch (e: Exception) {
+            Log.e("DataStorageImpl", "Failed to remove settlement", e)
+            throw e
+        }
+    }
+
     override suspend fun updateSettlementDataset(
         userId: String,
         datasetId: String,
@@ -836,6 +983,41 @@ class DataStorageImpl(
             Log.d(
                 "Settlement update",
                 "Updated settlement ${oldSettlement.settlementId} in subcollection"
+            )
+        } catch (e: Exception) {
+            Log.e("DataStorageImpl", "Failed to update settlement", e)
+            throw e
+        }
+    }
+
+    override suspend fun updateWithdrawalDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        oldWithdrawal: Withdrawal,
+        newWithdrawal: Withdrawal
+    ) {
+        Log.d(
+            "DataStorageImpl",
+            "updateSettlementDataset called: $oldWithdrawal for datasetId=$datasetId userId=$userId type=$financeType"
+        )
+
+        val docRef = db.collection(COLLECTION_NAME)
+            .document(userId)
+            .collection(getCollectionNameFromType(financeType))
+            .document(datasetId)
+
+        try {
+            val finalWithdrawal = newWithdrawal.copy(
+                datasetId = datasetId
+            )
+            docRef.collection("withdrawal")
+                .document(oldWithdrawal.datasetId)
+                .set(finalWithdrawal.withdrawalToMap)
+                .await()
+            Log.d(
+                "Settlement update",
+                "Updated settlement ${oldWithdrawal.datasetId} in subcollection"
             )
         } catch (e: Exception) {
             Log.e("DataStorageImpl", "Failed to update settlement", e)
