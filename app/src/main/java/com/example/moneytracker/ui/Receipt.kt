@@ -1570,30 +1570,31 @@ fun OnUpdate(
                                             ) {
                                                 val withdrawal = dataSettlement.withdrawal
                                                 val financeEntityType =
-                                                    when (withdrawal.financeEntity!!) {
-                                                        is FinanceEntity.Transaction -> "WITHDRAWAL"
-                                                        is FinanceEntity.Goal -> "GOAL"
-                                                        is FinanceEntity.Liability -> "LIABILITY"
-                                                    }
+                                                    dataSettlement.financeEntityType
+                                                        ?: "TRANSACTION"
 
                                                 viewModel.updateWithdrawal(
                                                     withdrawal.financeEntity!!.id,
                                                     financeEntityType,
                                                     withdrawal,
                                                     Withdrawal(
+                                                        withdrawalId = withdrawal.withdrawalId,
                                                         datasetId = withdrawal.datasetId,
+                                                        userId = withdrawal.userId,
                                                         amount = amountAsDouble,
                                                         label = withdrawal.label,
                                                         description = descriptionState.text.toString(),
                                                         createdAt = onCreatedDateTimeState
                                                             .value.toFirestoreTimestampUtc(),
+                                                        fromPaymentMethod = fromPaymentMethod.value,
+                                                        toPaymentMethod = toPaymentMethod.value
                                                     )
                                                 )
 
 
                                                 wasSettlementSuccess.value = State.SUCCESS
                                                 userViewModel.showActionNotification(
-                                                    "Settlement updated successfully",
+                                                    "Withdrawal updated successfully",
                                                     color
                                                 )
 
@@ -1757,7 +1758,7 @@ fun Receipt(
                     financeEntityType,
                     dataSettlement.withdrawal
                 )
-                userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
+                userViewModel.showActionNotification("Withdrawal deleted successfully", Color.Red)
             }
         }
         onShowDialog.value = false

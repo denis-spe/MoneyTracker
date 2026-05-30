@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -255,7 +256,7 @@ fun CardForAllItem(
                             modifier = Modifier
                                 .size(12.dp)
                                 .clip(CircleShape)
-                                .background(Color.White),
+                                .background(MaterialTheme.colorScheme.background),
                         )
                     }
                 },

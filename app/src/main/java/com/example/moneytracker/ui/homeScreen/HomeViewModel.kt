@@ -86,6 +86,7 @@ class HomeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState = _uiState.asStateFlow()
 
+
     /*******************
      * BASE FLOWS (Single Source of Truth)
      *******************/
@@ -431,6 +432,15 @@ class HomeViewModel @Inject constructor(
                                 val sDate = s.dateTime.toLocalDateTimeUtc().date
                                 map[sDate] = (map[sDate] ?: 0) + 1
                             }
+
+                            val withdrawal = if (entity is FinanceEntity.Transaction) {
+                                entity.withdrawal
+                            } else emptyList()
+
+                            withdrawal.forEach { s ->
+                                val sDate = s.createdAt.toLocalDateTimeUtc().date
+                                map[sDate] = (map[sDate] ?: 0) + 1
+                            }
                         }
                         map // Return the calculated map
                     }
@@ -539,6 +549,24 @@ class HomeViewModel @Inject constructor(
             filter = Filter.greaterThan("amount", -1)
         )
     }
+
+    // 2. Combine them into a single reactive StateFlow
+    val isDataLoaded: StateFlow<Boolean> = combine(
+        todayFinance,
+        donutChartData,
+        currentAccountBalance,
+        sortedToday
+    ) { finance, donut, balance, sorted ->
+        // Helper to check if a state has finished loading (either successfully or with an error)
+        fun DataState<*>.isTerminal() = this is DataState.Success || this is DataState.Error
+
+        // Evaluates to true only when ALL 4 flows have finished their network requests
+        finance.isTerminal() && donut.isTerminal() && balance.isTerminal() && sorted.isTerminal()
+    }.stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000), // Keeps flow alive for 5s during config changes
+        initialValue = false // Starts as false while data fetches
+    )
 
 
     fun addData(financeEntity: FinanceEntity) = launchWithUid {

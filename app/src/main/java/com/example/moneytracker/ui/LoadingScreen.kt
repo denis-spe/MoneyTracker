@@ -53,6 +53,7 @@ fun LoadingScreen(
     navController: NavController? = null,
     currentUserId: String? = null,
     isSplashScreen: Boolean = false,
+    isDataLoaded: Boolean = true,
     content: @Composable (() -> Unit)? = null
 ) {
     val backgroundColor = if (isSystemInDarkTheme())
@@ -64,12 +65,15 @@ fun LoadingScreen(
 
     // Navigation logic (only if user and navController are provided)
     var navigated by remember { mutableStateOf(false) }
-    val postLoadDelayMs = 500L
+    val postLoadDelayMs = 1500L
 
-    Log.d("LoadingScreen", "LoadingScreen recomposed. User: ${user}, Navigated: $navigated")
+    Log.d(
+        "LoadingScreen",
+        "LoadingScreen recomposed. User: ${user}, Navigated: $navigated, isDataLoaded: $isDataLoaded"
+    )
 
     if (navController != null) {
-        LaunchedEffect(user) {
+        LaunchedEffect(user, isDataLoaded) {
             if (!user) {
                 // User signed out or session lost, go back to startup
                 navController.navigate(StartUpScreenRouter) {
@@ -78,7 +82,7 @@ fun LoadingScreen(
                 return@LaunchedEffect
             }
 
-            if (isSplashScreen && !navigated) {
+            if (isSplashScreen && !navigated && isDataLoaded) {
                 delay(postLoadDelayMs)
                 navController.navigate(HomeScreenRouter(userId = currentUserId ?: "")) {
                     popUpTo(0) { inclusive = true }

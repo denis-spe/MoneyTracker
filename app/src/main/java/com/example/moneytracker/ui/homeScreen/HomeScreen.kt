@@ -26,8 +26,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneytracker.R
-import com.example.moneytracker.backend.storage.DatasetState
-import com.example.moneytracker.ui.LoadingScreen
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
@@ -75,11 +73,6 @@ fun HomeScreen(
 
     val customColors = StewardTheme.colors
 
-    val isLoading = remember(uiState.datasetState, userUiState.isLoading, uiState.datasets) {
-        (uiState.datasetState is DatasetState.Loading && uiState.datasets.isEmpty()) ||
-                (userUiState.isLoading && userState == null)
-    }
-
     LaunchedEffect(Unit) {
         userViewModel.navigationEvents.collect {
             onNavigate?.navigate(StartUpScreenRouter) {
@@ -88,17 +81,6 @@ fun HomeScreen(
                 }
             }
         }
-    }
-
-    if (isLoading) {
-
-        LoadingScreen(
-            user = userState != null,
-            navController = onNavigate,
-            currentUserId = userId
-        )
-
-        return
     }
 
     Box(

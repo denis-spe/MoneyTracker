@@ -3,6 +3,7 @@ package com.example.moneytracker.ui.screenManager
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -24,6 +25,7 @@ import com.example.moneytracker.ui.authScreens.registerScreen.PasswordRegistrati
 import com.example.moneytracker.ui.authScreens.registerScreen.RegisterViewModel
 import com.example.moneytracker.ui.detailScreen.GoalDetailScreen
 import com.example.moneytracker.ui.homeScreen.HomeScreen
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.settings.SettingsScreen
 import com.example.moneytracker.ui.startUpScreen.StartUpScreen
@@ -39,7 +41,7 @@ fun ScreenManager(
     val userViewModel: UserViewModel = hiltViewModel()
 
     val router = if (account.hasUser) {
-        HomeScreenRouter(userId = account.currentUserId)
+        LoadingScreenRouter(userId = account.currentUserId)
     } else {
         StartUpScreenRouter
     }
@@ -54,17 +56,33 @@ fun ScreenManager(
         composable<LoadingScreenRouter> { backStackEntry ->
             val arguments = backStackEntry.toRoute<LoadingScreenRouter>()
             val currentUserId = arguments.userId
+
+            // Collect the user state
             val user by userViewModel.userState.collectAsStateWithLifecycle()
 
-            // 2. Pass the fresh userId to the LoadingScreen
+            // Scoped correctly via Hilt, collecting ONLY the unified state
+            val homeViewModel: HomeViewModel = hiltViewModel()
+            val isDataLoaded by homeViewModel.isDataLoaded.collectAsStateWithLifecycle()
+
+            // Automatically navigate forward once data validation passes
+            LaunchedEffect(isDataLoaded) {
+                if (isDataLoaded) {
+                    navController.navigate(HomeScreenRouter(userId = currentUserId)) {
+                        popUpTo<LoadingScreenRouter> { inclusive = true }
+                    }
+                }
+            }
+
             LoadingScreen(
                 user = user != null,
                 navController = navController,
-                currentUserId = currentUserId, // Use the argument, not the old state
+                currentUserId = currentUserId,
                 isSplashScreen = true,
+                isDataLoaded = isDataLoaded,
                 content = loadingViewModel.content ?: {}
             )
         }
+
         composable<MailScreenRouter> { MailScreen(navController) }
         composable<NamesRegistrationScreenRouter> {
             NamesRegistrationScreen(
@@ -88,8 +106,12 @@ fun ScreenManager(
             LoginScreen(onNavigate = navController)
         }
         composable<HomeScreenRouter> { backStackEntry ->
+            // 1. Extract the type-safe object
+            val arguments = backStackEntry.toRoute<HomeScreenRouter>()
+
             HomeScreen(
-                userId = backStackEntry.arguments?.getString("userId").orEmpty(),
+                // 2. Access the property directly from the object
+                userId = arguments.userId,
                 onNavigate = navController
             )
         }
