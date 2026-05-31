@@ -79,8 +79,8 @@ class HomeViewModel @Inject constructor(
     @param:ApplicationContext private val context: Context
 ) : ViewModel() {
 
-    private companion object {
-        private const val STATE_TIMEOUT = 5_000L
+    companion object {
+        const val STATE_TIMEOUT = 5_000L
     }
 
     private val _uiState = MutableStateFlow(HomeUiState())

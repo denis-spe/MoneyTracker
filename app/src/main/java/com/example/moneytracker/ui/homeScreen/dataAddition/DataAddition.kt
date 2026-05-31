@@ -5,6 +5,7 @@
 
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -1150,11 +1151,10 @@ fun WithdrawalInputs(
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
+        Image(
             modifier = Modifier.size(MODEL_DRAWER_ICON_SIZE),
             painter = iconImage,
             contentDescription = settlementType.text,
-            tint = color
         )
 
         Text(
@@ -1216,7 +1216,7 @@ fun WithdrawalInputs(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(vertical = 18.dp),
             horizontalArrangement = Arrangement.Center
         ) {
             ModelDrawerButton(

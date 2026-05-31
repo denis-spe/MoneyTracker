@@ -28,7 +28,8 @@ enum class SettlementType(
 
     WITHDRAWAL(
         "Withdrawal",
-        icon = R.drawable.money_transfer, color = R.color.Lent,
+        icon = R.drawable.money_transfer,
+        color = R.color.Withdrawal,
         typeDescription = "Transfer between your accounts"
     ),
 

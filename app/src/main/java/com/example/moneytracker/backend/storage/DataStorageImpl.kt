@@ -486,6 +486,23 @@ class DataStorageImpl(
         }
     }
 
+    override suspend fun getCountOfAchievement(
+        userId: String,
+        datasetId: String,
+        financeType: String
+    ): CountAchievement? {
+        return try {
+            countAchievementForDataset(
+                db,
+                userId = userId,
+                datasetId = datasetId,
+                financeType = financeType
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
     /**
      * Get a financeEntity record from the storage
      * @param userId the user id
@@ -538,6 +555,7 @@ class DataStorageImpl(
             }
         }
     }
+
 
     override suspend fun completeRoutine(
         userId: String,

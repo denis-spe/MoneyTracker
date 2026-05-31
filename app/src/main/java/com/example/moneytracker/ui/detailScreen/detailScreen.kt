@@ -28,9 +28,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,11 +40,15 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.CountAchievement
+import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.safePopBackStack
+import com.example.moneytracker.ui.homeScreen.DataState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -53,11 +57,13 @@ fun GoalDetailScreen(
     navController: NavHostController,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
-    val goal by viewModel.goal.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
+    val detailStates by viewModel.detailState.collectAsStateWithLifecycle()
+    val financeEntity = detailStates.financeEntity
+    val countAchievement = detailStates.countAchievement
 
     LaunchedEffect(goalId) {
         viewModel.loadGoal(goalId)
+        viewModel.loadAchievementCounts(goalId)
     }
 
     Scaffold(
@@ -82,38 +88,61 @@ fun GoalDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            if (isLoading) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+            when (financeEntity) {
+                is DataState.Loading if countAchievement is DataState.Loading
+                    -> {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                    return@Surface
                 }
-            } else {
-                goal?.let { currentGoal ->
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        item {
-                            GoalSummaryCard(currentGoal = currentGoal)
-                        }
 
-                        if (currentGoal.achievement.isNotEmpty()) {
+                is DataState.Success if countAchievement is DataState.Success -> {
+
+                    val data = financeEntity.data
+                    val financeEntityData = data as? FinanceEntity.Goal
+                    val countAchievementData = countAchievement.data
+
+                    financeEntityData?.let { currentGoal ->
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
                             item {
-                                Text(
-                                    text = "Achievement History",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                GoalSummaryCard(
+                                    currentGoal = currentGoal,
+                                    countAchievement = countAchievementData
                                 )
                             }
-                            items(currentGoal.achievement) { achievement ->
-                                AchievementItem(achievement = achievement)
+
+                            if (currentGoal.achievement.isNotEmpty()) {
+                                item {
+                                    Text(
+                                        text = "Achievement History",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                                items(currentGoal.achievement) { achievement ->
+                                    AchievementItem(achievement = achievement)
+                                }
                             }
                         }
+                    } ?: run {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Goal not found")
+                        }
                     }
-                } ?: run {
+                }
+
+                else -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Goal not found")
+                        Text("Error")
                     }
                 }
             }
@@ -122,7 +151,10 @@ fun GoalDetailScreen(
 }
 
 @Composable
-fun GoalSummaryCard(currentGoal: com.example.moneytracker.backend.storage.FinanceEntity.Goal) {
+fun GoalSummaryCard(
+    currentGoal: FinanceEntity.Goal,
+    countAchievement: CountAchievement?
+) {
     val totalSettled = currentGoal.settlement.sumOf { it.amount }
     val progress = if (currentGoal.amount > 0) (totalSettled / currentGoal.amount).toFloat() else 0f
 
@@ -144,6 +176,48 @@ fun GoalSummaryCard(currentGoal: com.example.moneytracker.backend.storage.Financ
                     color = Color.Gray
                 )
             }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            countAchievement?.let {
+                val verticalDividerModifier = Modifier
+                    .height(40.dp)
+                    .padding(horizontal = 10.dp)
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(it.achievement.toString())
+                        Text("Achieved")
+                    }
+
+                    VerticalDivider(modifier = verticalDividerModifier)
+
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(it.overdue.toString())
+                        Text("Overdue")
+                    }
+
+                    VerticalDivider(modifier = verticalDividerModifier)
+
+                    Column(
+                        verticalArrangement = Arrangement.Center,
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(it.countAll.toString())
+                        Text("Overall")
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
             Row(
                 modifier = Modifier.fillMaxWidth(),

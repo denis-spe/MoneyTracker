@@ -2,12 +2,18 @@
 package com.example.moneytracker.backend.storage
 
 import android.util.Log
+import com.example.moneytracker.backend.storage.DataStorageImpl.Companion.COLLECTION_NAME
+import com.example.moneytracker.helper.achievementToMap
 import com.example.moneytracker.helper.asSettlement
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.AggregateSource
+import com.google.firebase.firestore.Filter
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -211,21 +217,84 @@ suspend fun countAchievementForDataset(
     userId: String,
     datasetId: String,
     financeType: String
-): Long {
-    return try {
-        val snapshot = db.collection("database")
-            .document(userId)
-            .collection(getCollectionNameFromType(financeType))
-            .document(datasetId)
-            .collection("achievement")
-            .count()
-            .get(com.google.firebase.firestore.AggregateSource.SERVER)
-            .await()
+): CountAchievement = supervisorScope { // Allows independent child exceptions
 
-        snapshot.count
+    val achievementCollection = db.collection("database")
+        .document(userId)
+        .collection(getCollectionNameFromType(financeType))
+        .document(datasetId)
+        .collection("achievement")
+
+    // 1. Fire off the background tasks independently
+    val achievedDeferred = async {
+        achievementCollection
+            .where(Filter.equalTo("status", Status.COMPLETED.name))
+            .count()
+            .get(AggregateSource.SERVER)
+            .await()
+    }
+
+    val overdueDeferred = async {
+        achievementCollection
+            .where(Filter.equalTo("status", Status.OVERDUE.name))
+            .count()
+            .get(AggregateSource.SERVER)
+            .await()
+    }
+
+    val countAllDeferred = async {
+        achievementCollection
+            .count()
+            .get(AggregateSource.SERVER)
+            .await()
+    }
+
+    // 2. Safely extract values inside the try-catch block
+    try {
+        CountAchievement(
+            achievement = achievedDeferred.await().count,
+            overdue = overdueDeferred.await().count,
+            countAll = countAllDeferred.await().count
+        )
     } catch (e: Exception) {
         Log.e("AchievementCount", "Failed to count status history", e)
-        0L
+        CountAchievement() // Returns empty fallback object on failure
+    }
+}
+
+suspend fun updateAchievementDataset(
+    db: FirebaseFirestore,
+    userId: String,
+    datasetId: String,
+    financeType: String,
+    oldWithdrawal: Achievement,
+    newWithdrawal: Achievement
+) {
+    Log.d(
+        "DataStorageImpl",
+        "updateSettlementDataset called: $oldWithdrawal for datasetId=$datasetId userId=$userId type=$financeType"
+    )
+
+    val docRef = db.collection(COLLECTION_NAME)
+        .document(userId)
+        .collection(getCollectionNameFromType(financeType))
+        .document(datasetId)
+
+    try {
+        val finalWithdrawal = newWithdrawal.copy(
+            datasetId = datasetId
+        )
+        docRef.collection("withdrawal")
+            .document(oldWithdrawal.achievementId)
+            .set(finalWithdrawal.achievementToMap)
+            .await()
+        Log.d(
+            "Achievement update",
+            "Updated Achievement ${oldWithdrawal.achievementId} in subcollection"
+        )
+    } catch (e: Exception) {
+        Log.e("DataStorageImpl", "Failed to update withdrawal", e)
+        throw e
     }
 }
 

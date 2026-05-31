@@ -675,6 +675,12 @@ fun SettlementField(
     remember { MutableInteractionSource() }
     val keyboardController = LocalSoftwareKeyboardController.current
     val showCustomKeyboard = remember { mutableStateOf(false) }
+    val icon = when (datatype) {
+        DataType.GOAL -> R.drawable.achievement
+        DataType.DEBT -> R.drawable.repay
+        DataType.LENT -> R.drawable.repay
+        else -> R.drawable.withdrawal
+    }
 
     val color = if (wasSuccess.value == State.ERROR)
         colorResource(R.color.error_color)
@@ -709,11 +715,7 @@ fun SettlementField(
                         val title = when (datatype) {
                             DataType.GOAL -> "Attain"
                             DataType.LENT -> "Refund"
-                            else -> "Repayment"
-                        }
-                        val icon = when (datatype) {
-                            DataType.GOAL -> R.drawable.achievement
-                            else -> R.drawable.repay
+                            else -> "Withdraw Amount"
                         }
 
                         Row(
@@ -735,7 +737,7 @@ fun SettlementField(
                         val desc = when (datatype) {
                             DataType.GOAL -> "Attain your goal"
                             DataType.LENT -> "Refund of loan payment"
-                            else -> "Payback the debt which is owed"
+                            else -> "Add amount to transfer between accounts"
                         }
                         Text(desc)
                     }
@@ -922,7 +924,8 @@ fun SettlementField(
             val dataTypeText = when (datatype) {
                 DataType.GOAL -> "Attain the goal"
                 DataType.LENT -> "Loan repayment"
-                else -> "Payback the debt"
+                DataType.DEBT -> "Payback the debt"
+                else -> "Amount to transfer"
             }
 
             Text(dataTypeText, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
@@ -938,10 +941,7 @@ fun SettlementField(
         leadingContent = {
             Image(
                 painter = painterResource(
-                    id = when (datatype) {
-                        DataType.GOAL -> R.drawable.achievement
-                        else -> R.drawable.repay
-                    }
+                    id = icon
                 ),
                 contentDescription = "Calendar",
                 modifier = Modifier.size(ICON_SIZE)

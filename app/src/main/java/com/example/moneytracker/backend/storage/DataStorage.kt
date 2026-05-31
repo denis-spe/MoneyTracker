@@ -200,4 +200,10 @@ interface DataStorage {
         financeType: String,
         withdrawal: Withdrawal
     )
+
+    suspend fun getCountOfAchievement(
+        userId: String,
+        datasetId: String,
+        financeType: String
+    ): CountAchievement?
 }

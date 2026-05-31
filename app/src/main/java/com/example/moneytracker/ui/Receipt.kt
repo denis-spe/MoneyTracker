@@ -1259,13 +1259,12 @@ fun OnUpdate(
                 ) {
                     val color = colorResource(id = colorResId)
 
-                    Icon(
+                    Image(
                         modifier = Modifier
                             .size(MODEL_DRAWER_ICON_SIZE)
                             .padding(end = 5.dp),
                         painter = painterResource(id = icon),
                         contentDescription = dataTypeText,
-                        tint = color
                     )
 
                     Text(description, color = color, fontWeight = FONT_WEIGHT)
@@ -1406,6 +1405,9 @@ fun OnUpdate(
                             when (dataSettlement) {
                                 is DataSettlement.SettlementData -> {
                                     ModelDrawerButton(
+                                        modifier = Modifier.padding(
+                                            vertical = 10.dp
+                                        ),
                                         text = "Apply changes",
                                         wasSuccess = wasSuccess,
                                         colorResId = colorResId,
@@ -1485,6 +1487,9 @@ fun OnUpdate(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
+                                            .padding(
+                                                vertical = 10.dp
+                                            )
                                             .animateItem(),
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically
@@ -1553,6 +1558,9 @@ fun OnUpdate(
                                     Row(
                                         modifier = Modifier
                                             .fillMaxWidth()
+                                            .padding(
+                                                vertical = 10.dp
+                                            )
                                             .animateItem(),
                                         horizontalArrangement = Arrangement.Center,
                                         verticalAlignment = Alignment.CenterVertically
