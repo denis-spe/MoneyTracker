@@ -8,11 +8,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataStorage
+import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.listenToAchievement
+import com.example.moneytracker.backend.storage.listenToSettlementForDataset
 import com.example.moneytracker.ui.homeScreen.DataState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -28,56 +33,42 @@ class DetailViewModel @Inject constructor(
 
     fun loadGoal(goalId: String) {
         viewModelScope.launch {
-            // 1. Instantly switch the state to Loading
-            _detailState.update { currentState ->
-                currentState.copy(financeEntity = DataState.Loading)
-            }
+            _detailState.update { it.copy(financeEntity = DataState.Loading) }
 
-            try {
-                // 2. Fetch your data asynchronously
-                val entity = storage.getDataset(
-                    userId = account.currentUserId,
-                    datasetId = goalId,
-                    financeType = "GOAL"
-                )
+            val userId = account.currentUserId
+            val financeType = "GOAL"
 
-                // 3. Update state with Success and pass the fresh data
-                _detailState.update { currentState ->
-                    currentState.copy(financeEntity = DataState.Success(entity))
+            // Combine Goal, Settlements, and Achievements into a single live stream
+            combine(
+                storage.listenToDataset(userId, goalId, financeType),
+                listenToSettlementForDataset(storage.db, userId, goalId, financeType),
+                listenToAchievement(storage.db, userId, goalId, financeType)
+            ) { entity, settlements, achievements ->
+                when (entity) {
+                    is FinanceEntity.Goal -> entity.copy(
+                        settlement = settlements,
+                        achievement = achievements
+                    )
+
+                    else -> entity
                 }
-            } catch (e: Exception) {
-                // 4. Catch unexpected errors so your screen doesn't freeze in a loading loop
-                _detailState.update { currentState ->
-                    currentState.copy(financeEntity = DataState.Error(e))
-                }
+            }.collectLatest { updatedEntity ->
+                _detailState.update { it.copy(financeEntity = DataState.Success(updatedEntity)) }
             }
         }
     }
 
     fun loadAchievementCounts(goalId: String) {
         viewModelScope.launch {
-            // 1. Instantly switch the state to Loading
-            _detailState.update { currentState ->
-                currentState.copy(countAchievement = DataState.Loading)
-            }
+            _detailState.update { it.copy(countAchievement = DataState.Loading) }
 
-            try {
-                // 2. Fetch your data asynchronously
-                val countAchievement = storage.getCountOfAchievement(
-                    userId = account.currentUserId,
-                    datasetId = goalId,
-                    financeType = "GOAL"
-                )
-
-                // 3. Update state with Success and pass the fresh data
-                _detailState.update { currentState ->
-                    currentState.copy(countAchievement = DataState.Success(countAchievement))
-                }
-            } catch (e: Exception) {
-                // 4. Catch unexpected errors so your screen doesn't freeze in a loading loop
-                _detailState.update { currentState ->
-                    currentState.copy(countAchievement = DataState.Error(e))
-                }
+            storage.listenToCountAchievement(
+                userId = account.currentUserId,
+                datasetId = goalId,
+                financeType = "GOAL"
+            ).collectLatest { countAchievement ->
+                android.util.Log.d("DetailViewModel", "Real-time counts: $countAchievement")
+                _detailState.update { it.copy(countAchievement = DataState.Success(countAchievement)) }
             }
         }
     }

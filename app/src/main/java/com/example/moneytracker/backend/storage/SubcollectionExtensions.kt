@@ -59,6 +59,9 @@ suspend fun loadAchievementForDataset(
             try {
                 val data = doc.data ?: return@mapNotNull null
                 Achievement(
+                    achievementId = doc.id,
+                    userId = userId,
+                    datasetId = datasetId,
                     status = (data["status"] as? String) ?: "",
                     totalSettlementAmount = (data["totalSettlementAmount"] as? Number)?.toDouble()
                         ?: 0.0,
@@ -108,6 +111,9 @@ fun listenToAchievement(
                     val data = doc.data ?: return@mapNotNull null
                     try {
                         Achievement(
+                            achievementId = doc.id,
+                            userId = userId,
+                            datasetId = datasetId,
                             status = (data["status"] as? String) ?: "",
                             totalSettlementAmount = (data["totalSettlementAmount"] as? Number)?.toDouble()
                                 ?: 0.0,
@@ -164,6 +170,9 @@ suspend fun getLatestAchievementForDataset(
         val data = doc.data ?: return null
 
         Achievement(
+            achievementId = doc.id,
+            userId = userId,
+            datasetId = datasetId,
             status = (data["status"] as? String) ?: "",
             totalSettlementAmount = (data["totalSettlementAmount"] as? Number)?.toDouble() ?: 0.0,
             startDateTime = (data["startDateTime"] as? Timestamp) ?: Timestamp.now(),
@@ -209,6 +218,42 @@ suspend fun loadSettlementForDataset(
 }
 
 /**
+ * Listen to real-time settlement updates for a specific dataset
+ */
+fun listenToSettlementForDataset(
+    db: FirebaseFirestore,
+    userId: String,
+    datasetId: String,
+    financeType: String
+): Flow<List<Settlement>> = callbackFlow {
+    val registration = db.collection("database")
+        .document(userId)
+        .collection(getCollectionNameFromType(financeType))
+        .document(datasetId)
+        .collection("settlement")
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("SettlementListener", "Settlement listener error", error)
+                close(error)
+                return@addSnapshotListener
+            }
+
+            val settlements = snapshot?.documents?.mapNotNull { doc ->
+                try {
+                    doc.data?.asSettlement()
+                } catch (e: Exception) {
+                    Log.e("SettlementListener", "Failed to parse settlement", e)
+                    null
+                }
+            } ?: emptyList()
+
+            trySend(settlements)
+        }
+
+    awaitClose { registration.remove() }
+}
+
+/**
  * Count the number of status history entries for a dataset
  * Useful for analytics or pagination
  */
@@ -225,41 +270,75 @@ suspend fun countAchievementForDataset(
         .document(datasetId)
         .collection("achievement")
 
-    // 1. Fire off the background tasks independently
-    val achievedDeferred = async {
-        achievementCollection
-            .where(Filter.equalTo("status", Status.COMPLETED.name))
-            .count()
-            .get(AggregateSource.SERVER)
-            .await()
-    }
+    // We first try to get counts from the server.
+    // If UNAVAILABLE (offline), we fall back to a manual count from the CACHE.
 
-    val overdueDeferred = async {
-        achievementCollection
-            .where(Filter.equalTo("status", Status.OVERDUE.name))
-            .count()
-            .get(AggregateSource.SERVER)
-            .await()
-    }
+    val result = try {
+        val achievedDeferred = async {
+            achievementCollection
+                .where(Filter.equalTo("status", Status.COMPLETED.name))
+                .count()
+                .get(AggregateSource.SERVER)
+                .await()
+        }
 
-    val countAllDeferred = async {
-        achievementCollection
-            .count()
-            .get(AggregateSource.SERVER)
-            .await()
-    }
+        val overdueDeferred = async {
+            achievementCollection
+                .where(Filter.equalTo("status", Status.OVERDUE.name))
+                .count()
+                .get(AggregateSource.SERVER)
+                .await()
+        }
 
-    // 2. Safely extract values inside the try-catch block
-    try {
+        val countAllDeferred = async {
+            achievementCollection
+                .count()
+                .get(AggregateSource.SERVER)
+                .await()
+        }
+        
         CountAchievement(
             achievement = achievedDeferred.await().count,
             overdue = overdueDeferred.await().count,
             countAll = countAllDeferred.await().count
         )
     } catch (e: Exception) {
-        Log.e("AchievementCount", "Failed to count status history", e)
-        CountAchievement() // Returns empty fallback object on failure
+        Log.w(
+            "AchievementCount",
+            "Server count failed for $datasetId, falling back to cache count...",
+            e
+        )
+
+        // Manual fallback: Load documents from cache and count them
+        try {
+            // First, try a simple get(CACHE) to see if we can get anything
+            val snapshot =
+                achievementCollection.get(com.google.firebase.firestore.Source.CACHE).await()
+            val documents = snapshot.documents
+
+            Log.d(
+                "AchievementCount",
+                "Cache fallback found ${documents.size} documents for $datasetId"
+            )
+
+            val achieved =
+                documents.count { (it.data?.get("status") as? String) == Status.COMPLETED.name }
+            val overdue =
+                documents.count { (it.data?.get("status") as? String) == Status.OVERDUE.name }
+
+            CountAchievement(
+                achievement = achieved.toLong(),
+                overdue = overdue.toLong(),
+                countAll = documents.size.toLong()
+            )
+        } catch (cacheEx: Exception) {
+            Log.e("AchievementCount", "Cache fallback failed for $datasetId", cacheEx)
+            CountAchievement()
+        }
     }
+
+    Log.d("AchievementCount", "Final counts for $datasetId: $result")
+    return@supervisorScope result
 }
 
 suspend fun updateAchievementDataset(
@@ -267,12 +346,12 @@ suspend fun updateAchievementDataset(
     userId: String,
     datasetId: String,
     financeType: String,
-    oldWithdrawal: Achievement,
-    newWithdrawal: Achievement
+    oldAchievement: Achievement,
+    newAchievement: Achievement
 ) {
     Log.d(
-        "DataStorageImpl",
-        "updateSettlementDataset called: $oldWithdrawal for datasetId=$datasetId userId=$userId type=$financeType"
+        "AchievementUpdate",
+        "updateAchievementDataset called: $oldAchievement for datasetId=$datasetId userId=$userId type=$financeType"
     )
 
     val docRef = db.collection(COLLECTION_NAME)
@@ -281,19 +360,45 @@ suspend fun updateAchievementDataset(
         .document(datasetId)
 
     try {
-        val finalWithdrawal = newWithdrawal.copy(
+        val finalAchievement = newAchievement.copy(
+            achievementId = oldAchievement.achievementId,
+            userId = userId,
             datasetId = datasetId
         )
-        docRef.collection("withdrawal")
-            .document(oldWithdrawal.achievementId)
-            .set(finalWithdrawal.achievementToMap)
+        docRef.collection("achievement")
+            .document(oldAchievement.achievementId)
+            .set(finalAchievement.achievementToMap)
             .await()
         Log.d(
-            "Achievement update",
-            "Updated Achievement ${oldWithdrawal.achievementId} in subcollection"
+            "AchievementUpdate",
+            "Updated Achievement ${oldAchievement.achievementId} in subcollection"
         )
     } catch (e: Exception) {
-        Log.e("DataStorageImpl", "Failed to update withdrawal", e)
+        Log.e("AchievementUpdate", "Failed to update achievement", e)
+        throw e
+    }
+}
+
+suspend fun removeAchievementDataset(
+    db: FirebaseFirestore,
+    userId: String,
+    datasetId: String,
+    financeType: String,
+    achievement: Achievement
+) {
+    val docRef = db.collection(COLLECTION_NAME)
+        .document(userId)
+        .collection(getCollectionNameFromType(financeType))
+        .document(datasetId)
+
+    try {
+        docRef.collection("achievement")
+            .document(achievement.achievementId)
+            .delete()
+            .await()
+        Log.d("AchievementDelete", "Deleted achievement ${achievement.achievementId}")
+    } catch (e: Exception) {
+        Log.e("AchievementDelete", "Failed to delete achievement", e)
         throw e
     }
 }

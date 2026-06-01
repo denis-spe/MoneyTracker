@@ -1,6 +1,8 @@
 // Praise the LORD of God, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.homeScreen.todayScreen.statArea
 
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
@@ -28,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.RichTooltip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -62,7 +65,6 @@ import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.shimmerEffect
-import com.example.moneytracker.ui.components.charts.InsightBar
 import kotlinx.coroutines.launch
 
 
@@ -173,16 +175,26 @@ fun Insights(
                         textAlign = TextAlign.Center
                     )
                 }
-                InsightBar(
-                    percentage.toFloat(),
+                val animatedProgress = remember { Animatable(0f) }
+                LaunchedEffect(percentage) {
+                    animatedProgress.animateTo(
+                        targetValue = percentage.toFloat().coerceIn(0f, 1f),
+                        animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
+                    )
+                }
+
+                LinearProgressIndicator(
+                    progress = { animatedProgress.value },
                     modifier = Modifier
                         .fillMaxWidth(0.6f)
+                        .height(15.dp)
                         .padding(vertical = 4.dp)
+                        .clip(RoundedCornerShape(4.dp))
                         .clickable {
                             coroutineScope.launch { tooltipState.show() }
                         },
                     color = colorResource(colorResId),
-                    barColor = colorResource(barColorResId).copy(alpha = 0.3f)
+                    trackColor = colorResource(barColorResId).copy(alpha = 0.3f)
                 )
             }
         }

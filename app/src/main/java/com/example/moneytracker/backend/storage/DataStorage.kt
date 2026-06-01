@@ -206,4 +206,31 @@ interface DataStorage {
         datasetId: String,
         financeType: String
     ): CountAchievement?
+
+    fun listenToDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String
+    ): Flow<FinanceEntity?>
+
+    fun listenToCountAchievement(
+        userId: String,
+        datasetId: String,
+        financeType: String
+    ): Flow<CountAchievement>
+
+    suspend fun updateAchievementDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        oldAchievement: Achievement,
+        newAchievement: Achievement
+    )
+
+    suspend fun removeAchievementDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        achievement: Achievement
+    )
 }

@@ -23,6 +23,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -556,6 +557,70 @@ class DataStorageImpl(
         }
     }
 
+    override fun listenToDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String
+    ): Flow<FinanceEntity?> = callbackFlow {
+        val docRef = db.collection(COLLECTION_NAME)
+            .document(userId)
+            .collection(getCollectionNameFromType(financeType))
+            .document(datasetId)
+
+        val registration = docRef.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("DataStorageImpl", "Error listening to dataset $datasetId", error)
+                close(error)
+                return@addSnapshotListener
+            }
+
+            val entity = snapshot?.data?.toFinance()
+            if (entity == null) {
+                trySend(null)
+                return@addSnapshotListener
+            }
+
+            // We need to combine this with settlements and achievements
+            // For simplicity in this implementation, we will use the existing flows if possible
+            // or just trigger a refresh. But a better way is to combine them.
+
+            launch {
+                // Collect one-time for now or create a nested listener
+                // A better approach is to use combine() in the ViewModel
+                trySend(entity)
+            }
+        }
+
+        awaitClose { registration.remove() }
+    }
+
+    override fun listenToCountAchievement(
+        userId: String,
+        datasetId: String,
+        financeType: String
+    ): Flow<CountAchievement> = callbackFlow {
+        val achievementCollection = db.collection(COLLECTION_NAME)
+            .document(userId)
+            .collection(getCollectionNameFromType(financeType))
+            .document(datasetId)
+            .collection("achievement")
+
+        val registration = achievementCollection.addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("DataStorageImpl", "Error listening to counts for $datasetId", error)
+                return@addSnapshotListener
+            }
+
+            launch {
+                // When subcollection changes, recalculate counts
+                val counts = countAchievementForDataset(db, userId, datasetId, financeType)
+                trySend(counts)
+            }
+        }
+
+        awaitClose { registration.remove() }
+    }
+
 
     override suspend fun completeRoutine(
         userId: String,
@@ -1041,6 +1106,38 @@ class DataStorageImpl(
             Log.e("DataStorageImpl", "Failed to update withdrawal", e)
             throw e
         }
+    }
+
+    override suspend fun updateAchievementDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        oldAchievement: Achievement,
+        newAchievement: Achievement
+    ) {
+        updateAchievementDataset(
+            db,
+            userId = userId,
+            datasetId = datasetId,
+            financeType = financeType,
+            oldAchievement = oldAchievement,
+            newAchievement = newAchievement
+        )
+    }
+
+    override suspend fun removeAchievementDataset(
+        userId: String,
+        datasetId: String,
+        financeType: String,
+        achievement: Achievement
+    ) {
+        removeAchievementDataset(
+            db,
+            userId = userId,
+            datasetId = datasetId,
+            financeType = financeType,
+            achievement = achievement
+        )
     }
 
     companion object {

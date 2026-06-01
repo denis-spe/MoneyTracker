@@ -17,11 +17,14 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -52,6 +55,12 @@ fun YesterdayScreen(
         containerColor = userColor.copy(0.4f)
     )
 
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
+    val blendedColor = remember(userColor, surfaceColor) {
+        userColor.copy(alpha = 0.4f).compositeOver(surfaceColor)
+    }
+
     LazyColumn(
         modifier = Modifier
             .padding(paddingValues)
@@ -62,23 +71,17 @@ fun YesterdayScreen(
         item {
             Card(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 10.dp),
-                colors = cardColor,
+                    .fillMaxSize(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = blendedColor)
             ) {
-                Column(
+                YesterdayStatArea(
                     modifier = Modifier
-                        .padding(10.dp)
-                        .fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    YesterdayStatArea(
-                        modifier = Modifier.fillMaxWidth(),
-                        chartData = yesterdayChartDataState,
-                        stats = yesterdayStatsDataState
-                    )
-                }
+                        .fillMaxWidth()
+                        .padding(10.dp),
+                    chartData = yesterdayChartDataState,
+                    stats = yesterdayStatsDataState
+                )
             }
         }
 

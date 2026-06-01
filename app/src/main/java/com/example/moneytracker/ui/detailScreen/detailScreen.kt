@@ -1,6 +1,14 @@
 // Bless be the  names of LORD of hosts and of his JESUS CHRIST
 package com.example.moneytracker.ui.detailScreen
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,6 +18,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -32,11 +41,13 @@ import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -88,61 +99,84 @@ fun GoalDetailScreen(
                 .fillMaxSize()
                 .padding(paddingValues)
         ) {
-            when (financeEntity) {
-                is DataState.Loading if countAchievement is DataState.Loading
-                    -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        CircularProgressIndicator()
-                    }
-                    return@Surface
-                }
-
-                is DataState.Success if countAchievement is DataState.Success -> {
-
-                    val data = financeEntity.data
-                    val financeEntityData = data as? FinanceEntity.Goal
-                    val countAchievementData = countAchievement.data
-
-                    financeEntityData?.let { currentGoal ->
-                        LazyColumn(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .padding(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            item {
-                                GoalSummaryCard(
-                                    currentGoal = currentGoal,
-                                    countAchievement = countAchievementData
-                                )
-                            }
-
-                            if (currentGoal.achievement.isNotEmpty()) {
-                                item {
-                                    Text(
-                                        text = "Achievement History",
-                                        style = MaterialTheme.typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                items(currentGoal.achievement) { achievement ->
-                                    AchievementItem(achievement = achievement)
-                                }
-                            }
-                        }
-                    } ?: run {
+            AnimatedContent(
+                targetState = financeEntity,
+                transitionSpec = {
+                    fadeIn(animationSpec = tween(500)) togetherWith fadeOut(
+                        animationSpec = tween(
+                            500
+                        )
+                    )
+                },
+                label = "GoalDetailContent"
+            ) { state ->
+                when (state) {
+                    is DataState.Loading -> {
                         Box(
                             modifier = Modifier.fillMaxSize(),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text("Goal not found")
+                            CircularProgressIndicator()
                         }
                     }
-                }
 
-                else -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                        Text("Error")
+                    is DataState.Success -> {
+                        val currentGoal = state.data as? FinanceEntity.Goal
+                        if (currentGoal != null) {
+                            val countAchievementData = if (countAchievement is DataState.Success) {
+                                countAchievement.data
+                            } else {
+                                null
+                            }
+
+                            LazyColumn(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                item {
+                                    GoalSummaryCard(
+                                        currentGoal = currentGoal,
+                                        countAchievement = countAchievementData
+                                    )
+                                }
+
+                                if (currentGoal.achievement.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            text = "Achievement History",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    items(
+                                        items = currentGoal.achievement,
+                                        key = { it.achievementId.ifEmpty { it.startDateTime.toString() } }
+                                    ) { achievement ->
+                                        Box(modifier = Modifier.animateItem()) {
+                                            AchievementItem(achievement = achievement)
+                                        }
+                                    }
+                                }
+                            }
+                        } else {
+                            Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Text("Goal not found")
+                            }
+                        }
+                    }
+
+                    is DataState.Error -> {
+                        Box(
+                            modifier = Modifier.fillMaxSize(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Error: ${state.exception.message}")
+                        }
                     }
                 }
             }
@@ -156,7 +190,18 @@ fun GoalSummaryCard(
     countAchievement: CountAchievement?
 ) {
     val totalSettled = currentGoal.settlement.sumOf { it.amount }
-    val progress = if (currentGoal.amount > 0) (totalSettled / currentGoal.amount).toFloat() else 0f
+    val targetAmount = currentGoal.amount
+
+    val animatedSettled = remember { Animatable(0f) }
+    LaunchedEffect(totalSettled) {
+        animatedSettled.animateTo(
+            targetValue = totalSettled.toFloat(),
+            animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
+        )
+    }
+
+    val currentAnimatedProgress =
+        if (targetAmount > 0) (animatedSettled.value / targetAmount).toFloat() else 0f
 
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -164,11 +209,21 @@ fun GoalSummaryCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = currentGoal.label,
-                style = MaterialTheme.typography.headlineSmall,
-                fontWeight = FontWeight.Bold
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(3.dp)
+            ) {
+                Image(
+                    painter = painterResource(currentGoal.tagIcon.icon),
+                    contentDescription = currentGoal.tagIcon.name,
+                    modifier = Modifier.size(24.dp)
+                )
+                Text(
+                    text = currentGoal.label,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+            }
             if (currentGoal.description.isNotEmpty()) {
                 Text(
                     text = currentGoal.description,
@@ -192,7 +247,10 @@ fun GoalSummaryCard(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(it.achievement.toString())
+                        Text(
+                            it.achievement.toString(),
+                            fontWeight = FontWeight.Bold
+                        )
                         Text("Achieved")
                     }
 
@@ -202,7 +260,10 @@ fun GoalSummaryCard(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(it.overdue.toString())
+                        Text(
+                            it.overdue.toString(),
+                            fontWeight = FontWeight.Bold
+                        )
                         Text("Overdue")
                     }
 
@@ -212,7 +273,10 @@ fun GoalSummaryCard(
                         verticalArrangement = Arrangement.Center,
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text(it.countAll.toString())
+                        Text(
+                            it.countAll.toString(),
+                            fontWeight = FontWeight.Bold
+                        )
                         Text("Overall")
                     }
                 }
@@ -224,11 +288,12 @@ fun GoalSummaryCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(text = "Target: ${currentGoal.amount.formatToAmount()}")
-                Text(text = "Settled: ${totalSettled.formatToAmount()}")
+                Text(text = "Settled: ${animatedSettled.value.toDouble().formatToAmount()}")
             }
             Spacer(modifier = Modifier.height(8.dp))
+
             LinearProgressIndicator(
-                progress = { progress.coerceIn(0f, 1f) },
+                progress = { currentAnimatedProgress.coerceIn(0f, 1f) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
@@ -238,7 +303,7 @@ fun GoalSummaryCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "${(progress * 100).toInt()}% achieved",
+                text = "${(currentAnimatedProgress * 100).toInt()}% achieved",
                 style = MaterialTheme.typography.bodySmall,
                 modifier = Modifier.align(Alignment.End)
             )

@@ -14,6 +14,7 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -21,6 +22,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.shimmerEffect
@@ -445,7 +447,11 @@ fun YesterdayStatArea(
                     }
                 )
             ) {
-                Text("Stat")
+                Text(
+                    "Stat",
+                    fontWeight = FontWeight.Bold,
+                    style = typography.titleMedium
+                )
             }
             TextButton(
                 onClick = {
@@ -464,7 +470,11 @@ fun YesterdayStatArea(
                     }
                 )
             ) {
-                Text("Chart")
+                Text(
+                    "Chart",
+                    fontWeight = FontWeight.Bold,
+                    style = typography.titleMedium
+                )
             }
         }
 
