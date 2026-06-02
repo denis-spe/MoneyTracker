@@ -7,42 +7,81 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.input.rememberTextFieldState
+import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddTask
 import androidx.compose.material.icons.filled.Adjust
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.outlined.DoDisturbOn
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.shimmerEffect
+import com.example.moneytracker.helper.toTimestamp
+import com.example.moneytracker.ui.detailScreen.DetailViewModel
+import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.theme.StewardTheme
+import kotlinx.datetime.LocalDateTime
+import network.chaintech.kmp_date_time_picker.utils.now
 
 private val FLOAT_BUTTON_SIZE = 45.dp
 
@@ -171,6 +210,390 @@ fun ModelDrawerButton(
                 fontSize = fontSize,
                 fontWeight = FONT_WEIGHT
             )
+        }
+    }
+}
+
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddGoalAttained(
+    color: Color,
+    goalId: String,
+    viewModel: DetailViewModel = hiltViewModel()
+) {
+    val showDialog = remember { mutableStateOf(false) }
+    val detailState by viewModel.detailState.collectAsState()
+    val goal = (detailState.financeEntity as? DataState.Success)?.data as? FinanceEntity.Goal
+
+    // States for the dialog
+    val amountState = rememberTextFieldState()
+    val amountDisplay = remember { mutableStateOf("0.0") }
+    val labelState = rememberTextFieldState()
+    val labelDisplay = remember { mutableStateOf("") }
+    val descriptionState = rememberTextFieldState()
+    val descriptionDisplay = remember { mutableStateOf("") }
+    val paymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
+    val dateTime = remember { mutableStateOf(LocalDateTime.now()) }
+    val tagIcon = remember { mutableStateOf(TagIcon("", R.drawable.oulined_attain)) }
+
+    val showDatePicker = remember { mutableStateOf(false) }
+    val showTimePicker = remember { mutableStateOf(false) }
+
+    // Initialize values if goal is ready
+    LaunchedEffect(showDialog.value, goal) {
+        if (showDialog.value && goal != null) {
+            labelState.setTextAndPlaceCursorAtEnd(goal.label)
+            labelDisplay.value = goal.label
+            tagIcon.value = goal.tagIcon
+        }
+    }
+
+    IconButton(
+        onClick = { showDialog.value = true },
+        colors = IconButtonDefaults.iconButtonColors().copy(containerColor = color)
+    ) {
+        Icon(imageVector = Icons.Default.AddTask, contentDescription = "Add Attain")
+    }
+
+    if (showDialog.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog.value = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = BottomSheetDefaults.ContainerColor.copy(alpha = 0.98f),
+            modifier = Modifier.statusBarsPadding()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.9f)
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Add Goal Attainment",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.Attain),
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                ModelDrawerAmountField(
+                    state = amountState,
+                    displayState = amountDisplay,
+                    placeholder = "0.0",
+                    colorResId = R.color.Attain
+                )
+
+                ModelDrawerTextField(
+                    title = "Label",
+                    state = labelState,
+                    displayText = labelDisplay,
+                    placeholder = "Achievement Label",
+                    colorResId = R.color.Attain
+                )
+
+                ModelDrawerTextField(
+                    title = "Description",
+                    state = descriptionState,
+                    displayText = descriptionDisplay,
+                    placeholder = "Details...",
+                    colorResId = R.color.Attain
+                )
+
+                PaymentMethodDropdown(
+                    colorResId = R.color.Attain,
+                    selectedPaymentMethod = paymentMethod
+                )
+
+                DateTimeInput(
+                    showTime = showTimePicker,
+                    showDate = showDatePicker,
+                    localDateTimeState = dateTime,
+                    colorResId = R.color.Attain
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ModelDrawerButton(
+                        text = "Save Achievement",
+                        colorResId = R.color.Attain,
+                        filledColor = colorResource(R.color.Attain),
+                        textColor = Color.White
+                    ) {
+                        viewModel.addGoalAttainment(
+                            goalId = goalId,
+                            amount = amountDisplay.value.toDoubleOrNull() ?: 0.0,
+                            label = labelDisplay.value,
+                            description = descriptionDisplay.value,
+                            paymentMethod = paymentMethod.value,
+                            dateTime = dateTime.value.toTimestamp(),
+                            tagIcon = tagIcon.value
+                        )
+                        showDialog.value = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditGoal(
+    color: Color,
+    goalId: String,
+    viewModel: DetailViewModel = hiltViewModel()
+) {
+    val showDialog = remember { mutableStateOf(false) }
+    val detailState by viewModel.detailState.collectAsState()
+    val goal = (detailState.financeEntity as? DataState.Success)?.data as? FinanceEntity.Goal
+
+    val labelState = rememberTextFieldState()
+    val labelDisplay = remember { mutableStateOf("") }
+    val descriptionState = rememberTextFieldState()
+    val descriptionDisplay = remember { mutableStateOf("") }
+    val tagIcon = remember { mutableStateOf(TagIcon("", R.drawable.initial)) }
+
+    LaunchedEffect(showDialog.value, goal) {
+        if (showDialog.value && goal != null) {
+            labelState.setTextAndPlaceCursorAtEnd(goal.label)
+            labelDisplay.value = goal.label
+            descriptionState.setTextAndPlaceCursorAtEnd(goal.description)
+            descriptionDisplay.value = goal.description
+            tagIcon.value = goal.tagIcon
+        }
+    }
+
+    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = color)) {
+        OutlinedIconButton(onClick = { showDialog.value = true }) {
+            Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Goal")
+        }
+    }
+
+    if (showDialog.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog.value = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = BottomSheetDefaults.ContainerColor.copy(alpha = 0.98f),
+            modifier = Modifier.statusBarsPadding()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.8f)
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Text(
+                    "Edit Goal Details",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.Goal),
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+
+                ModelDrawerTextField(
+                    title = "Label",
+                    state = labelState,
+                    displayText = labelDisplay,
+                    placeholder = "Goal Title",
+                    colorResId = R.color.Goal
+                )
+
+                ModelDrawerTextField(
+                    title = "Description",
+                    state = descriptionState,
+                    displayText = descriptionDisplay,
+                    placeholder = "Notes...",
+                    colorResId = R.color.Goal
+                )
+
+                ModelDrawerTag(
+                    colorResId = R.color.Goal,
+                    title = "Icon",
+                    iconState = tagIcon
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ModelDrawerButton(
+                        text = "Update Goal",
+                        colorResId = R.color.Goal,
+                        filledColor = colorResource(R.color.Goal),
+                        textColor = Color.White
+                    ) {
+                        viewModel.updateGoalInfo(
+                            goalId = goalId,
+                            label = labelDisplay.value,
+                            description = descriptionDisplay.value,
+                            tagIcon = tagIcon.value
+                        )
+                        showDialog.value = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditAchievementAmount(
+    color: Color,
+    achievement: com.example.moneytracker.backend.storage.Achievement,
+    viewModel: DetailViewModel = hiltViewModel()
+) {
+    val showDialog = remember { mutableStateOf(false) }
+
+    val amountState = rememberTextFieldState(achievement.totalSettlementAmount.toString())
+    val amountDisplay = remember { mutableStateOf(achievement.totalSettlementAmount.toString()) }
+
+    IconButton(
+        onClick = { showDialog.value = true }
+    ) {
+        Icon(
+            imageVector = Icons.Default.Edit,
+            contentDescription = "Edit Amount",
+            tint = color,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+
+    if (showDialog.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog.value = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = BottomSheetDefaults.ContainerColor.copy(alpha = 0.98f),
+            modifier = Modifier.statusBarsPadding()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .fillMaxHeight(0.6f)
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    "Edit Achievement Amount",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = color,
+                    modifier = Modifier.padding(top = 16.dp)
+                )
+
+                HorizontalDivider()
+
+                ModelDrawerAmountField(
+                    state = amountState,
+                    displayState = amountDisplay,
+                    placeholder = "0.0",
+                    colorResId = R.color.Attain
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 24.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ModelDrawerButton(
+                        text = "Update Amount",
+                        colorResId = R.color.Attain,
+                        filledColor = color,
+                        textColor = Color.White
+                    ) {
+                        val newAmount = amountDisplay.value.toDoubleOrNull()
+                            ?: achievement.totalSettlementAmount
+                        viewModel.updateAchievementAmount(achievement, newAmount)
+                        showDialog.value = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteAchievementButton(
+    achievement: com.example.moneytracker.backend.storage.Achievement,
+    viewModel: DetailViewModel = hiltViewModel()
+) {
+    var showConfirm by remember { mutableStateOf(false) }
+
+    IconButton(
+        onClick = { showConfirm = true }
+    ) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = "Delete Achievement",
+            tint = colorResource(R.color.error_color),
+            modifier = Modifier.size(20.dp)
+        )
+    }
+
+    if (showConfirm) {
+        Dialog(
+            onDismissRequest = { showConfirm = false }
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Delete Achievement?",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "This action cannot be undone. Are you sure you want to delete this record?",
+                        textAlign = TextAlign.Center
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        TextButton(onClick = { showConfirm = false }) {
+                            Text("Cancel")
+                        }
+                        TextButton(
+                            onClick = {
+                                viewModel.deleteAchievement(achievement)
+                                showConfirm = false
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = colorResource(R.color.error_color)
+                            )
+                        ) {
+                            Text("Delete", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
         }
     }
 }

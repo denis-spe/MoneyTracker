@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,12 +37,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,6 +54,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -60,6 +65,10 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.safePopBackStack
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.example.moneytracker.ui.homeScreen.dataAddition.AddGoalAttained
+import com.example.moneytracker.ui.homeScreen.dataAddition.DeleteAchievementButton
+import com.example.moneytracker.ui.homeScreen.dataAddition.EditAchievementAmount
+import com.example.moneytracker.ui.homeScreen.dataAddition.EditGoal
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -71,6 +80,14 @@ fun GoalDetailScreen(
     val detailStates by viewModel.detailState.collectAsStateWithLifecycle()
     val financeEntity = detailStates.financeEntity
     val countAchievement = detailStates.countAchievement
+    val attainColor = colorResource(R.color.Attain)
+    val goalColor = colorResource(R.color.Goal)
+
+    var selectedAchievement by remember {
+        mutableStateOf<com.example.moneytracker.backend.storage.Achievement?>(
+            null
+        )
+    }
 
     LaunchedEffect(goalId) {
         viewModel.loadGoal(goalId)
@@ -90,6 +107,17 @@ fun GoalDetailScreen(
                             contentDescription = "Back"
                         )
                     }
+                },
+                actions = {
+                    EditGoal(
+                        color = goalColor.copy(0.3f),
+                        goalId = goalId
+                    )
+
+                    AddGoalAttained(
+                        color = attainColor.copy(0.3f),
+                        goalId = goalId
+                    )
                 }
             )
         }
@@ -155,7 +183,10 @@ fun GoalDetailScreen(
                                         key = { it.achievementId.ifEmpty { it.startDateTime.toString() } }
                                     ) { achievement ->
                                         Box(modifier = Modifier.animateItem()) {
-                                            AchievementItem(achievement = achievement)
+                                            AchievementItem(
+                                                achievement = achievement,
+                                                onClick = { selectedAchievement = achievement }
+                                            )
                                         }
                                     }
                                 }
@@ -181,6 +212,13 @@ fun GoalDetailScreen(
                 }
             }
         }
+    }
+
+    selectedAchievement?.let { achievement ->
+        AchievementDetailDialog(
+            achievement = achievement,
+            onDismiss = { selectedAchievement = null }
+        )
     }
 }
 
@@ -312,9 +350,14 @@ fun GoalSummaryCard(
 }
 
 @Composable
-fun AchievementItem(achievement: com.example.moneytracker.backend.storage.Achievement) {
+fun AchievementItem(
+    achievement: com.example.moneytracker.backend.storage.Achievement,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
                 alpha = 0.5f
@@ -350,5 +393,88 @@ fun AchievementItem(achievement: com.example.moneytracker.backend.storage.Achiev
                 color = Color.Gray
             )
         }
+    }
+}
+
+@Composable
+fun AchievementDetailDialog(
+    achievement: com.example.moneytracker.backend.storage.Achievement,
+    onDismiss: () -> Unit
+) {
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.fillMaxWidth(0.95f),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Achievement Details",
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DetailRow(
+                        label = "Status",
+                        value = achievement.status,
+                        valueColor = if (achievement.status == "COMPLETED") colorResource(id = R.color.success_complete) else colorResource(
+                            id = R.color.error_color
+                        )
+                    )
+                    DetailRow(
+                        label = "Amount",
+                        value = achievement.totalSettlementAmount.formatToAmount()
+                    )
+                    DetailRow(label = "Start", value = achievement.startDateTime.formatToDateTime)
+                    DetailRow(
+                        label = "Deadline",
+                        value = achievement.deadlineDateTime.formatToDateTime
+                    )
+                }
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    EditAchievementAmount(
+                        color = if (achievement.status == "COMPLETED")
+                            colorResource(id = R.color.success_complete)
+                        else colorResource(id = R.color.error_color),
+                        achievement = achievement
+                    )
+
+                    DeleteAchievementButton(achievement = achievement)
+                }
+
+                TextButton(onClick = onDismiss) {
+                    Text("Close")
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecified) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+        Text(
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold,
+            color = valueColor
+        )
     }
 }

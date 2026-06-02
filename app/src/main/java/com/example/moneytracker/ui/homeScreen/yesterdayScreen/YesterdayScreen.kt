@@ -72,7 +72,7 @@ fun YesterdayScreen(
             Card(
                 modifier = Modifier
                     .fillMaxSize(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = blendedColor)
             ) {
                 YesterdayStatArea(

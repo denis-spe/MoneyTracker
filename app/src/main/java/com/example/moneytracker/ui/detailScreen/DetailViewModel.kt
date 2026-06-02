@@ -9,9 +9,15 @@ import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Settlement
+import com.example.moneytracker.backend.storage.Status
+import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.backend.storage.listenToAchievement
 import com.example.moneytracker.backend.storage.listenToSettlementForDataset
+import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.google.firebase.Timestamp
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,6 +26,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.util.UUID
 import javax.inject.Inject
 
 @HiltViewModel
@@ -55,6 +62,106 @@ class DetailViewModel @Inject constructor(
             }.collectLatest { updatedEntity ->
                 _detailState.update { it.copy(financeEntity = DataState.Success(updatedEntity)) }
             }
+        }
+    }
+
+    fun addGoalAttainment(
+        goalId: String,
+        amount: Double,
+        label: String,
+        description: String,
+        paymentMethod: PaymentMethod,
+        dateTime: Timestamp,
+        tagIcon: TagIcon
+    ) {
+        viewModelScope.launch {
+            val settlement = Settlement(
+                settlementId = UUID.randomUUID().toString(),
+                amount = amount,
+                label = label,
+                description = description,
+                dateTime = dateTime,
+                tagIcon = tagIcon,
+                settlementType = SettlementType.GOAL_ATTAIN,
+                paymentMethod = paymentMethod,
+                userId = account.currentUserId,
+                datasetId = goalId
+            )
+            storage.addSettlementDataset(
+                userId = account.currentUserId,
+                datasetId = goalId,
+                financeType = "GOAL",
+                settlement = settlement
+            )
+        }
+    }
+
+    fun updateGoalInfo(
+        goalId: String,
+        label: String,
+        description: String,
+        tagIcon: TagIcon
+    ) {
+        viewModelScope.launch {
+            val currentState = _detailState.value.financeEntity
+            if (currentState is DataState.Success && currentState.data is FinanceEntity.Goal) {
+                val oldGoal = currentState.data
+                val newGoal = oldGoal.copy(
+                    label = label,
+                    description = description,
+                    tagIcon = tagIcon
+                )
+                storage.updateDataset(
+                    userId = account.currentUserId,
+                    oldFinanceEntity = oldGoal,
+                    newFinanceEntity = newGoal
+                )
+            }
+        }
+    }
+
+    fun updateAchievementAmount(
+        achievement: com.example.moneytracker.backend.storage.Achievement,
+        newAmount: Double
+    ) {
+        viewModelScope.launch {
+            // Get target amount from current goal state
+            val currentGoal =
+                (_detailState.value.financeEntity as? DataState.Success)?.data as? FinanceEntity.Goal
+            val targetAmount = currentGoal?.amount ?: 0.0
+
+            // Determine status based on whether new amount reaches target
+            val newStatus = if (newAmount >= targetAmount) {
+                Status.COMPLETED.name
+            } else {
+                Status.OVERDUE.name
+            }
+
+            val updatedAchievement = achievement.copy(
+                totalSettlementAmount = newAmount,
+                status = newStatus
+            )
+
+            storage.updateAchievementDataset(
+                userId = achievement.userId,
+                datasetId = achievement.datasetId,
+                financeType = "GOAL",
+                oldAchievement = achievement,
+                newAchievement = updatedAchievement
+            )
+        }
+    }
+
+    fun deleteAchievement(
+        achievement: com.example.moneytracker.backend.storage.Achievement
+    ) {
+        viewModelScope.launch {
+            storage.removeAchievementDataset(
+                userId = achievement.userId,
+                datasetId = achievement.datasetId,
+                financeType = "GOAL",
+                achievement = achievement
+            )
         }
     }
 
