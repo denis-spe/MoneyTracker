@@ -1293,7 +1293,6 @@ fun OnUpdate(
                                 state = amountState,
                                 placeholder = "0.0",
                                 colorResId = colorResId,
-                                showInRow = true,
                                 wasSuccess = wasSuccess,
                                 displayState = displayAmountState
                             )

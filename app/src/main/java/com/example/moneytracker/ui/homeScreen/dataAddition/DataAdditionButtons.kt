@@ -2,12 +2,12 @@
 package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
@@ -33,9 +33,9 @@ import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
@@ -60,6 +60,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
@@ -69,6 +70,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
+import com.example.moneytracker.backend.storage.Achievement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.TagIcon
@@ -266,34 +268,29 @@ fun AddGoalAttained(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.9f)
                     .imePadding()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    "Add Goal Attainment",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.Attain),
-                    modifier = Modifier.padding(top = 16.dp)
+                Icon(
+                    painter = painterResource(R.drawable.oulined_attain),
+                    contentDescription = "Attain",
+                    tint = colorResource(R.color.Attain)
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text(
+                    "Add Goal Attainment",
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.Attain),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
 
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
                     placeholder = "0.0",
-                    colorResId = R.color.Attain
-                )
-
-                ModelDrawerTextField(
-                    title = "Label",
-                    state = labelState,
-                    displayText = labelDisplay,
-                    placeholder = "Achievement Label",
                     colorResId = R.color.Attain
                 )
 
@@ -305,11 +302,6 @@ fun AddGoalAttained(
                     colorResId = R.color.Attain
                 )
 
-                PaymentMethodDropdown(
-                    colorResId = R.color.Attain,
-                    selectedPaymentMethod = paymentMethod
-                )
-
                 DateTimeInput(
                     showTime = showTimePicker,
                     showDate = showDatePicker,
@@ -317,17 +309,21 @@ fun AddGoalAttained(
                     colorResId = R.color.Attain
                 )
 
+                PaymentMethodDropdown(
+                    colorResId = R.color.Attain,
+                    selectedPaymentMethod = paymentMethod
+                )
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 24.dp),
+                        .padding(vertical = 10.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     ModelDrawerButton(
-                        text = "Save Achievement",
+                        text = "Add Attainment",
                         colorResId = R.color.Attain,
-                        filledColor = colorResource(R.color.Attain),
-                        textColor = Color.White
+                        textColor = colorResource(R.color.Attain)
                     ) {
                         viewModel.addGoalAttainment(
                             goalId = goalId,
@@ -389,21 +385,23 @@ fun EditGoal(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.8f)
                     .imePadding()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                Text(
-                    "Edit Goal Details",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = colorResource(R.color.Goal),
-                    modifier = Modifier.padding(top = 16.dp)
+                Image(
+                    painter = painterResource(R.drawable.tag_goal),
+                    contentDescription = "Goal",
+                    modifier = Modifier.size(30.dp)
                 )
 
-                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+                Text(
+                    "Edit Goal Details",
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(R.color.Goal),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
 
                 ModelDrawerTextField(
                     title = "Label",
@@ -430,7 +428,7 @@ fun EditGoal(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 24.dp),
+                        .padding(vertical = 10.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
                     ModelDrawerButton(
@@ -456,22 +454,30 @@ fun EditGoal(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditAchievementAmount(
-    color: Color,
-    achievement: com.example.moneytracker.backend.storage.Achievement,
+    achievement: Achievement,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
     val amountState = rememberTextFieldState(achievement.totalSettlementAmount.toString())
     val amountDisplay = remember { mutableStateOf(achievement.totalSettlementAmount.toString()) }
+    val color = remember(
+        achievement.status
+    ) {
+        if (achievement.status == "COMPLETED") R.color.success_complete
+        else R.color.error_color
+    }
+    val getColor = colorResource(color)
 
-    IconButton(
-        onClick = { showDialog.value = true }
+
+    OutlinedIconButton(
+        onClick = { showDialog.value = true },
+        border = BorderStroke(1.dp, getColor)
     ) {
         Icon(
             imageVector = Icons.Default.Edit,
             contentDescription = "Edit Amount",
-            tint = color,
+            tint = getColor,
             modifier = Modifier.size(20.dp)
         )
     }
@@ -486,40 +492,45 @@ fun EditAchievementAmount(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .fillMaxHeight(0.6f)
                     .imePadding()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Text(
-                    "Edit Achievement Amount",
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = color,
-                    modifier = Modifier.padding(top = 16.dp)
+
+                Image(
+                    painter = painterResource(R.drawable.achievement),
+                    contentDescription = "achievement",
+                    modifier = Modifier.size(30.dp)
                 )
 
-                HorizontalDivider()
+                Text(
+                    "Edit Achievement Amount",
+                    fontWeight = FontWeight.Bold,
+                    color = getColor,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
 
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
                     placeholder = "0.0",
-                    colorResId = R.color.Attain
+                    colorResId = color,
+                    roundedCornerShape = RoundedCornerShape(20.dp)
                 )
 
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 24.dp),
+                        .padding(vertical = 10.dp),
                     horizontalArrangement = Arrangement.Center
                 ) {
+
                     ModelDrawerButton(
                         text = "Update Amount",
-                        colorResId = R.color.Attain,
-                        filledColor = color,
-                        textColor = Color.White
+                        colorResId = color,
+                        filledColor = getColor.copy(0.2f),
+                        textColor = getColor
                     ) {
                         val newAmount = amountDisplay.value.toDoubleOrNull()
                             ?: achievement.totalSettlementAmount
@@ -534,18 +545,21 @@ fun EditAchievementAmount(
 
 @Composable
 fun DeleteAchievementButton(
-    achievement: com.example.moneytracker.backend.storage.Achievement,
+    achievement: Achievement,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     var showConfirm by remember { mutableStateOf(false) }
 
-    IconButton(
-        onClick = { showConfirm = true }
+    FilledIconButton(
+        onClick = { showConfirm = true },
+        colors = IconButtonDefaults.filledIconButtonColors().copy(
+            containerColor = colorResource(R.color.error_color)
+        )
     ) {
         Icon(
             imageVector = Icons.Default.Delete,
             contentDescription = "Delete Achievement",
-            tint = colorResource(R.color.error_color),
+            tint = MaterialTheme.colorScheme.background,
             modifier = Modifier.size(20.dp)
         )
     }
@@ -578,7 +592,10 @@ fun DeleteAchievementButton(
                         horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         TextButton(onClick = { showConfirm = false }) {
-                            Text("Cancel")
+                            Text(
+                                "Cancel",
+                                color = StewardTheme.colors.onSurfaceText
+                            )
                         }
                         TextButton(
                             onClick = {

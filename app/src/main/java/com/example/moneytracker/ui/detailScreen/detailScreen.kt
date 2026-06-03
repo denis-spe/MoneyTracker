@@ -69,6 +69,7 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.AddGoalAttained
 import com.example.moneytracker.ui.homeScreen.dataAddition.DeleteAchievementButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.EditAchievementAmount
 import com.example.moneytracker.ui.homeScreen.dataAddition.EditGoal
+import com.example.moneytracker.ui.theme.StewardTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -401,6 +402,10 @@ fun AchievementDetailDialog(
     achievement: com.example.moneytracker.backend.storage.Achievement,
     onDismiss: () -> Unit
 ) {
+    val status by remember {
+        mutableStateOf(achievement.status)
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Card(
             modifier = Modifier.fillMaxWidth(0.95f),
@@ -424,8 +429,8 @@ fun AchievementDetailDialog(
                 ) {
                     DetailRow(
                         label = "Status",
-                        value = achievement.status,
-                        valueColor = if (achievement.status == "COMPLETED") colorResource(id = R.color.success_complete) else colorResource(
+                        value = status,
+                        valueColor = if (status == "COMPLETED") colorResource(id = R.color.success_complete) else colorResource(
                             id = R.color.error_color
                         )
                     )
@@ -441,14 +446,13 @@ fun AchievementDetailDialog(
                 }
 
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+
                     EditAchievementAmount(
-                        color = if (achievement.status == "COMPLETED")
-                            colorResource(id = R.color.success_complete)
-                        else colorResource(id = R.color.error_color),
                         achievement = achievement
                     )
 
@@ -456,7 +460,10 @@ fun AchievementDetailDialog(
                 }
 
                 TextButton(onClick = onDismiss) {
-                    Text("Close")
+                    Text(
+                        "Close",
+                        color = StewardTheme.colors.onSurfaceText
+                    )
                 }
             }
         }

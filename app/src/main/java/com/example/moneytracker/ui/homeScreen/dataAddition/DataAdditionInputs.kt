@@ -78,6 +78,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -414,7 +415,7 @@ fun ModelDrawerAmountField(
     placeholder: String,
     colorResId: Int,
     shape: Shape = CircleShape,
-    showInRow: Boolean = false,
+    roundedCornerShape: RoundedCornerShape? = null,
     wasSuccess: MutableState<State>? = null,
     displayState: MutableState<String>,
 ) {
@@ -579,9 +580,12 @@ fun ModelDrawerAmountField(
         }
     }
 
+    val modifier = if (roundedCornerShape != null)
+        MODIFIER_DRAWER.clip(roundedCornerShape) else MODIFIER_DRAWER
+
 
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = modifier
             .height(height)
             .clickable {
                 showCustomKeyboard.value = true
