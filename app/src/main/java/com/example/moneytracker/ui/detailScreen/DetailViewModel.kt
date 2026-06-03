@@ -38,6 +38,44 @@ class DetailViewModel @Inject constructor(
     private val _detailState = MutableStateFlow(DetailStates())
     val detailState: StateFlow<DetailStates> = _detailState.asStateFlow()
 
+    fun loadTransaction(transactionId: String) {
+        viewModelScope.launch {
+            _detailState.update { it.copy(financeEntity = DataState.Loading) }
+
+            val userId = account.currentUserId
+            val financeType = "TRANSACTION"
+
+            storage.listenToDataset(userId, transactionId, financeType)
+                .collectLatest { updatedEntity ->
+                    _detailState.update { it.copy(financeEntity = DataState.Success(updatedEntity)) }
+                }
+        }
+    }
+
+    fun loadLiability(liabilityId: String) {
+        viewModelScope.launch {
+            _detailState.update { it.copy(financeEntity = DataState.Loading) }
+
+            val userId = account.currentUserId
+            val financeType = "LIABILITY"
+
+            combine(
+                storage.listenToDataset(userId, liabilityId, financeType),
+                listenToSettlementForDataset(storage.db, userId, liabilityId, financeType)
+            ) { entity, settlements ->
+                when (entity) {
+                    is FinanceEntity.Liability -> entity.copy(
+                        settlement = settlements
+                    )
+
+                    else -> entity
+                }
+            }.collectLatest { updatedEntity ->
+                _detailState.update { it.copy(financeEntity = DataState.Success(updatedEntity)) }
+            }
+        }
+    }
+
     fun loadGoal(goalId: String) {
         viewModelScope.launch {
             _detailState.update { it.copy(financeEntity = DataState.Loading) }
@@ -120,6 +158,78 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    fun updateTransactionInfo(
+        transactionId: String,
+        label: String,
+        description: String,
+        tagIcon: TagIcon
+    ) {
+        viewModelScope.launch {
+            val currentState = _detailState.value.financeEntity
+            if (currentState is DataState.Success && currentState.data is FinanceEntity.Transaction) {
+                val oldTransaction = currentState.data
+                val newTransaction = oldTransaction.copy(
+                    label = label,
+                    description = description,
+                    tagIcon = tagIcon
+                )
+                storage.updateDataset(
+                    userId = account.currentUserId,
+                    oldFinanceEntity = oldTransaction,
+                    newFinanceEntity = newTransaction
+                )
+            }
+        }
+    }
+
+    fun deleteTransaction(transactionId: String) {
+        viewModelScope.launch {
+            val currentState = _detailState.value.financeEntity
+            if (currentState is DataState.Success && currentState.data is FinanceEntity.Transaction) {
+                storage.removeDataset(
+                    userId = account.currentUserId,
+                    financeEntity = currentState.data
+                )
+            }
+        }
+    }
+
+    fun updateLiabilityInfo(
+        liabilityId: String,
+        label: String,
+        description: String,
+        tagIcon: TagIcon
+    ) {
+        viewModelScope.launch {
+            val currentState = _detailState.value.financeEntity
+            if (currentState is DataState.Success && currentState.data is FinanceEntity.Liability) {
+                val oldLiability = currentState.data
+                val newLiability = oldLiability.copy(
+                    label = label,
+                    description = description,
+                    tagIcon = tagIcon
+                )
+                storage.updateDataset(
+                    userId = account.currentUserId,
+                    oldFinanceEntity = oldLiability,
+                    newFinanceEntity = newLiability
+                )
+            }
+        }
+    }
+
+    fun deleteLiability(liabilityId: String) {
+        viewModelScope.launch {
+            val currentState = _detailState.value.financeEntity
+            if (currentState is DataState.Success && currentState.data is FinanceEntity.Liability) {
+                storage.removeDataset(
+                    userId = account.currentUserId,
+                    financeEntity = currentState.data
+                )
+            }
+        }
+    }
+
     fun updateAchievementAmount(
         achievement: com.example.moneytracker.backend.storage.Achievement,
         newAmount: Double
@@ -161,6 +271,38 @@ class DetailViewModel @Inject constructor(
                 datasetId = achievement.datasetId,
                 financeType = "GOAL",
                 achievement = achievement
+            )
+        }
+    }
+
+    fun addLiabilitySettlement(
+        liabilityId: String,
+        amount: Double,
+        label: String,
+        description: String,
+        paymentMethod: PaymentMethod,
+        dateTime: Timestamp,
+        tagIcon: TagIcon,
+        settlementType: SettlementType
+    ) {
+        viewModelScope.launch {
+            val settlement = Settlement(
+                settlementId = UUID.randomUUID().toString(),
+                amount = amount,
+                label = label,
+                description = description,
+                dateTime = dateTime,
+                tagIcon = tagIcon,
+                settlementType = settlementType,
+                paymentMethod = paymentMethod,
+                userId = account.currentUserId,
+                datasetId = liabilityId
+            )
+            storage.addSettlementDataset(
+                userId = account.currentUserId,
+                datasetId = liabilityId,
+                financeType = "LIABILITY",
+                settlement = settlement
             )
         }
     }

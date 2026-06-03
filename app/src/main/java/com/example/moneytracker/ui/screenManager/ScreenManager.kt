@@ -24,6 +24,8 @@ import com.example.moneytracker.ui.authScreens.registerScreen.NamesRegistrationS
 import com.example.moneytracker.ui.authScreens.registerScreen.PasswordRegistrationScreen
 import com.example.moneytracker.ui.authScreens.registerScreen.RegisterViewModel
 import com.example.moneytracker.ui.detailScreen.GoalDetailScreen
+import com.example.moneytracker.ui.detailScreen.SettlementDetailScreen
+import com.example.moneytracker.ui.detailScreen.TransactionDetailScreen
 import com.example.moneytracker.ui.homeScreen.HomeScreen
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.loading.LoadingViewModel
@@ -128,6 +130,22 @@ fun ScreenManager(
             val goalId = arguments.goalId
             GoalDetailScreen(
                 goalId = goalId,
+                navController = navController,
+            )
+        }
+        composable<TransactionDetailScreenRouter> { backStackEntry ->
+            val arguments = backStackEntry.toRoute<TransactionDetailScreenRouter>()
+            val transactionId = arguments.transactionId
+            TransactionDetailScreen(
+                transactionId = transactionId,
+                navController = navController,
+            )
+        }
+        composable<LiabilityDetailScreenRouter> { backStackEntry ->
+            val arguments = backStackEntry.toRoute<LiabilityDetailScreenRouter>()
+            val liabilityId = arguments.liabilityId
+            SettlementDetailScreen(
+                liabilityId = liabilityId,
                 navController = navController,
             )
         }

@@ -33,3 +33,9 @@ object SettingsScreenRouter
 @Serializable
 data class FulfillmentDetailScreenRouter(val goalId: String)
 
+@Serializable
+data class TransactionDetailScreenRouter(val transactionId: String)
+
+@Serializable
+data class LiabilityDetailScreenRouter(val liabilityId: String)
+

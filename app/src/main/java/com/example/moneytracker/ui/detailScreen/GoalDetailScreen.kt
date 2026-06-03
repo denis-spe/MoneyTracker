@@ -470,18 +470,3 @@ fun AchievementDetailDialog(
     }
 }
 
-@Composable
-fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecified) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        Text(text = label, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
-        Text(
-            text = value,
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold,
-            color = valueColor
-        )
-    }
-}

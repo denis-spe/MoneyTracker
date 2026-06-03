@@ -74,6 +74,7 @@ import com.example.moneytracker.backend.storage.Achievement
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.TagIcon
+import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.helper.toTimestamp
@@ -194,7 +195,7 @@ fun ModelDrawerButton(
                 AsyncImage(
                     model = icon,
                     contentDescription = text,
-                    modifier = Modifier.size(ICON_SIZE)
+                    modifier = Modifier.size(MODEL_DRAWER_ICON_SIZE)
                 )
 
                 Spacer(modifier = Modifier.width(ButtonDefaults.IconSpacing))
@@ -608,6 +609,518 @@ fun DeleteAchievementButton(
                         ) {
                             Text("Delete", fontWeight = FontWeight.Bold)
                         }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditTransaction(
+    color: Color,
+    transactionId: String,
+    viewModel: DetailViewModel = hiltViewModel()
+) {
+    val showDialog = remember { mutableStateOf(false) }
+    val detailState by viewModel.detailState.collectAsState()
+    val transaction =
+        (detailState.financeEntity as? DataState.Success)?.data as? FinanceEntity.Transaction
+
+    val labelState = rememberTextFieldState()
+    val labelDisplay = remember { mutableStateOf("") }
+    val descriptionState = rememberTextFieldState()
+    val descriptionDisplay = remember { mutableStateOf("") }
+    val tagIcon = remember { mutableStateOf(TagIcon("", R.drawable.initial)) }
+
+    LaunchedEffect(showDialog.value, transaction) {
+        if (showDialog.value && transaction != null) {
+            labelState.setTextAndPlaceCursorAtEnd(transaction.label)
+            labelDisplay.value = transaction.label
+            descriptionState.setTextAndPlaceCursorAtEnd(transaction.description)
+            descriptionDisplay.value = transaction.description
+            tagIcon.value = transaction.tagIcon
+        }
+    }
+
+    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = color)) {
+        OutlinedIconButton(onClick = { showDialog.value = true }) {
+            Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Transaction")
+        }
+    }
+
+    if (showDialog.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog.value = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = BottomSheetDefaults.ContainerColor.copy(alpha = 0.98f),
+            modifier = Modifier.statusBarsPadding()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Image(
+                    painter = painterResource(
+                        if (transaction != null) transaction.transactionType.filledIcon else R.drawable.initial
+                    ),
+                    contentDescription = "Transaction",
+                    modifier = Modifier.size(30.dp)
+                )
+
+                Text(
+                    "Edit Transaction Details",
+                    fontWeight = FontWeight.Bold,
+                    color = color,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                ModelDrawerTextField(
+                    title = "Label",
+                    state = labelState,
+                    displayText = labelDisplay,
+                    placeholder = "Transaction Title",
+                    colorResId = transaction?.transactionType?.color ?: R.color.Earnings
+                )
+
+                ModelDrawerTextField(
+                    title = "Description",
+                    state = descriptionState,
+                    displayText = descriptionDisplay,
+                    placeholder = "Notes...",
+                    colorResId = transaction?.transactionType?.color ?: R.color.Earnings
+                )
+
+                ModelDrawerTag(
+                    colorResId = transaction?.transactionType?.color ?: R.color.Earnings,
+                    title = "Icon",
+                    iconState = tagIcon
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ModelDrawerButton(
+                        text = "Update Transaction",
+                        colorResId = transaction?.transactionType?.color ?: R.color.Earnings,
+                        filledColor = color,
+                        textColor = Color.White
+                    ) {
+                        viewModel.updateTransactionInfo(
+                            transactionId = transactionId,
+                            label = labelDisplay.value,
+                            description = descriptionDisplay.value,
+                            tagIcon = tagIcon.value
+                        )
+                        showDialog.value = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteTransactionButton(
+    transaction: FinanceEntity.Transaction,
+    viewModel: DetailViewModel = hiltViewModel(),
+    onDeleteSuccess: () -> Unit = {}
+) {
+    var showConfirm by remember { mutableStateOf(false) }
+    transaction.transactionType.color
+
+    FilledIconButton(
+        onClick = { showConfirm = true },
+        colors = IconButtonDefaults.filledIconButtonColors().copy(
+            containerColor = colorResource(R.color.error_color)
+        )
+    ) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = "Delete Transaction",
+            tint = MaterialTheme.colorScheme.background,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+
+    if (showConfirm) {
+        Dialog(
+            onDismissRequest = { showConfirm = false }
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Delete Transaction?",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "This action cannot be undone. Are you sure you want to delete this transaction: \"${transaction.label}\"?",
+                        textAlign = TextAlign.Center
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        TextButton(onClick = { showConfirm = false }) {
+                            Text(
+                                "Cancel",
+                                color = StewardTheme.colors.onSurfaceText
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                viewModel.deleteTransaction(transaction.id)
+                                showConfirm = false
+                                onDeleteSuccess()
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = colorResource(R.color.error_color)
+                            )
+                        ) {
+                            Text("Delete", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditLiability(
+    color: Color,
+    liabilityId: String,
+    viewModel: DetailViewModel = hiltViewModel()
+) {
+    val showDialog = remember { mutableStateOf(false) }
+    val detailState by viewModel.detailState.collectAsState()
+    val liability =
+        (detailState.financeEntity as? DataState.Success)?.data as? FinanceEntity.Liability
+
+    val labelState = rememberTextFieldState()
+    val labelDisplay = remember { mutableStateOf("") }
+    val descriptionState = rememberTextFieldState()
+    val descriptionDisplay = remember { mutableStateOf("") }
+    val tagIcon = remember { mutableStateOf(TagIcon("", R.drawable.initial)) }
+
+    LaunchedEffect(showDialog.value, liability) {
+        if (showDialog.value && liability != null) {
+            labelState.setTextAndPlaceCursorAtEnd(liability.label)
+            labelDisplay.value = liability.label
+            descriptionState.setTextAndPlaceCursorAtEnd(liability.description)
+            descriptionDisplay.value = liability.description
+            tagIcon.value = liability.tagIcon
+        }
+    }
+
+    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = color)) {
+        OutlinedIconButton(onClick = { showDialog.value = true }) {
+            Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Liability")
+        }
+    }
+
+    if (showDialog.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog.value = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = BottomSheetDefaults.ContainerColor.copy(alpha = 0.98f),
+            modifier = Modifier.statusBarsPadding()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Image(
+                    painter = painterResource(
+                        if (liability != null) liability.liabilityType.filledIcon else R.drawable.initial
+                    ),
+                    contentDescription = "Liability",
+                    modifier = Modifier.size(30.dp)
+                )
+
+                Text(
+                    "Edit Liability Details",
+                    fontWeight = FontWeight.Bold,
+                    color = color,
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                ModelDrawerTextField(
+                    title = "Label",
+                    state = labelState,
+                    displayText = labelDisplay,
+                    placeholder = "Liability Title",
+                    colorResId = liability?.liabilityType?.color ?: R.color.Debt
+                )
+
+                ModelDrawerTextField(
+                    title = "Description",
+                    state = descriptionState,
+                    displayText = descriptionDisplay,
+                    placeholder = "Notes...",
+                    colorResId = liability?.liabilityType?.color ?: R.color.Debt
+                )
+
+                ModelDrawerTag(
+                    colorResId = liability?.liabilityType?.color ?: R.color.Debt,
+                    title = "Icon",
+                    iconState = tagIcon
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ModelDrawerButton(
+                        text = "Update Liability",
+                        colorResId = liability?.liabilityType?.color ?: R.color.Debt,
+                        filledColor = color,
+                        textColor = Color.White
+                    ) {
+                        viewModel.updateLiabilityInfo(
+                            liabilityId = liabilityId,
+                            label = labelDisplay.value,
+                            description = descriptionDisplay.value,
+                            tagIcon = tagIcon.value
+                        )
+                        showDialog.value = false
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteLiabilityButton(
+    liability: FinanceEntity.Liability,
+    viewModel: DetailViewModel = hiltViewModel(),
+    onDeleteSuccess: () -> Unit = {}
+) {
+    var showConfirm by remember { mutableStateOf(false) }
+
+    FilledIconButton(
+        onClick = { showConfirm = true },
+        colors = IconButtonDefaults.filledIconButtonColors().copy(
+            containerColor = colorResource(R.color.error_color)
+        )
+    ) {
+        Icon(
+            imageVector = Icons.Default.Delete,
+            contentDescription = "Delete Liability",
+            tint = MaterialTheme.colorScheme.background,
+            modifier = Modifier.size(20.dp)
+        )
+    }
+
+    if (showConfirm) {
+        Dialog(
+            onDismissRequest = { showConfirm = false }
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    Text(
+                        "Delete Liability?",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "This action cannot be undone. Are you sure you want to delete this liability: \"${liability.label}\"?",
+                        textAlign = TextAlign.Center
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        TextButton(onClick = { showConfirm = false }) {
+                            Text(
+                                "Cancel",
+                                color = StewardTheme.colors.onSurfaceText
+                            )
+                        }
+                        TextButton(
+                            onClick = {
+                                viewModel.deleteLiability(liability.id)
+                                showConfirm = false
+                                onDeleteSuccess()
+                            },
+                            colors = ButtonDefaults.textButtonColors(
+                                contentColor = colorResource(R.color.error_color)
+                            )
+                        ) {
+                            Text("Delete", fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddSettlement(
+    color: Color,
+    liabilityId: String,
+    liability: FinanceEntity.Liability,
+    viewModel: DetailViewModel = hiltViewModel()
+) {
+    val showDialog = remember { mutableStateOf(false) }
+
+    // Settlement form states
+    val amountState = rememberTextFieldState()
+    val amountDisplay = remember { mutableStateOf("0.0") }
+    val labelState = rememberTextFieldState()
+    val labelDisplay = remember { mutableStateOf("") }
+    val descriptionState = rememberTextFieldState()
+    val descriptionDisplay = remember { mutableStateOf("") }
+    val paymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
+    val dateTime = remember { mutableStateOf(LocalDateTime.now()) }
+    val tagIcon = remember { mutableStateOf(TagIcon("", R.drawable.initial)) }
+
+    val showDatePicker = remember { mutableStateOf(false) }
+    val showTimePicker = remember { mutableStateOf(false) }
+
+    // Determine settlement type based on liability type
+    val settlementType = remember(liability.liabilityType) {
+        when (liability.liabilityType) {
+            com.example.moneytracker.backend.storage.types.LiabilityType.DEBT -> SettlementType.DEBT_REPAY
+            com.example.moneytracker.backend.storage.types.LiabilityType.LOAN -> SettlementType.LENT_REPAY
+        }
+    }
+
+    IconButton(
+        onClick = { showDialog.value = true },
+        colors = IconButtonDefaults.iconButtonColors().copy(containerColor = color)
+    ) {
+        Icon(imageVector = Icons.Default.Add, contentDescription = "Add Settlement")
+    }
+
+    if (showDialog.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog.value = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = BottomSheetDefaults.ContainerColor.copy(alpha = 0.98f),
+            modifier = Modifier.statusBarsPadding()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    painter = painterResource(settlementType.icon),
+                    contentDescription = settlementType.text,
+                    tint = colorResource(settlementType.color),
+                    modifier = Modifier.size(30.dp)
+                )
+
+                Text(
+                    "Add ${settlementType.text}",
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(settlementType.color),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                Text(
+                    settlementType.typeDescription,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                ModelDrawerAmountField(
+                    state = amountState,
+                    displayState = amountDisplay,
+                    placeholder = "0.0",
+                    colorResId = settlementType.color
+                )
+
+                ModelDrawerTextField(
+                    title = "Label",
+                    state = labelState,
+                    displayText = labelDisplay,
+                    placeholder = settlementType.text,
+                    colorResId = settlementType.color
+                )
+
+                ModelDrawerTextField(
+                    title = "Description",
+                    state = descriptionState,
+                    displayText = descriptionDisplay,
+                    placeholder = "Details (Optional)",
+                    colorResId = settlementType.color
+                )
+
+                DateTimeInput(
+                    showTime = showTimePicker,
+                    showDate = showDatePicker,
+                    localDateTimeState = dateTime,
+                    colorResId = settlementType.color
+                )
+
+                PaymentMethodDropdown(
+                    colorResId = settlementType.color,
+                    selectedPaymentMethod = paymentMethod
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ModelDrawerButton(
+                        text = "Add ${settlementType.text}",
+                        colorResId = settlementType.color,
+                        textColor = colorResource(settlementType.color)
+                    ) {
+                        viewModel.addLiabilitySettlement(
+                            liabilityId = liabilityId,
+                            amount = amountDisplay.value.toDoubleOrNull() ?: 0.0,
+                            label = labelDisplay.value.ifEmpty { settlementType.text },
+                            description = descriptionDisplay.value,
+                            paymentMethod = paymentMethod.value,
+                            dateTime = dateTime.value.toTimestamp(),
+                            tagIcon = tagIcon.value,
+                            settlementType = settlementType
+                        )
+                        showDialog.value = false
                     }
                 }
             }

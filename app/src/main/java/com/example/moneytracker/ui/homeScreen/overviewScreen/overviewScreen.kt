@@ -70,6 +70,8 @@ import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.screenManager.FulfillmentDetailScreenRouter
+import com.example.moneytracker.ui.screenManager.LiabilityDetailScreenRouter
+import com.example.moneytracker.ui.screenManager.TransactionDetailScreenRouter
 import com.example.moneytracker.ui.usecase.coupleDatasetsWithSettlements
 
 private val SPACE = 10.dp
@@ -645,7 +647,9 @@ fun OverviewScreen(
                                                         )
                                                         .clickable {
                                                             onNavigate?.navigate(
-                                                                FulfillmentDetailScreenRouter(goalId = liability.id),
+                                                                LiabilityDetailScreenRouter(
+                                                                    liabilityId = liability.id
+                                                                ),
                                                             )
                                                         }
                                                 )
@@ -686,7 +690,14 @@ fun OverviewScreen(
                                                                 TransactionCard(
                                                                     modifier = Modifier
                                                                         .padding(end = SPACE)
-                                                                        .animateItem(),
+                                                                        .animateItem()
+                                                                        .clickable {
+                                                                            onNavigate?.navigate(
+                                                                                TransactionDetailScreenRouter(
+                                                                                    transactionId = item.financeEntity.id
+                                                                                )
+                                                                            )
+                                                                        },
                                                                     financeEntity = item.financeEntity
                                                                 )
                                                             }
@@ -696,7 +707,14 @@ fun OverviewScreen(
                                                             WithdrawalCard(
                                                                 modifier = Modifier
                                                                     .padding(end = SPACE)
-                                                                    .animateItem(),
+                                                                    .animateItem()
+                                                                    .clickable {
+                                                                        onNavigate?.navigate(
+                                                                            TransactionDetailScreenRouter(
+                                                                                transactionId = item.withdrawal.withdrawalId
+                                                                            )
+                                                                        )
+                                                                    },
                                                                 withdrawal = item.withdrawal
                                                             )
                                                         }
