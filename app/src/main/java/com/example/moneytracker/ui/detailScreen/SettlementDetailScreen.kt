@@ -59,6 +59,9 @@ import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.safePopBackStack
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.example.moneytracker.ui.homeScreen.dataAddition.AddSettlement
+import com.example.moneytracker.ui.homeScreen.dataAddition.DeleteLiabilityButton
+import com.example.moneytracker.ui.homeScreen.dataAddition.EditLiability
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -83,6 +86,29 @@ fun SettlementDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
+                        )
+                    }
+                },
+                actions = {
+                    val currentLiability =
+                        (financeEntity as? DataState.Success)?.data as? FinanceEntity.Liability
+                    if (currentLiability != null) {
+                        val color = colorResource(id = currentLiability.liabilityType.color)
+
+                        EditLiability(
+                            color = color.copy(alpha = 0.3f),
+                            liabilityId = liabilityId
+                        )
+
+                        DeleteLiabilityButton(
+                            liability = currentLiability,
+                            onDeleteSuccess = { navController.safePopBackStack() }
+                        )
+
+                        AddSettlement(
+                            color = color.copy(alpha = 0.3f),
+                            liabilityId = liabilityId,
+                            liability = currentLiability
                         )
                     }
                 }
@@ -219,6 +245,14 @@ fun LiabilitySummaryCard(liability: FinanceEntity.Liability) {
             DetailRow(label = "Started", value = liability.createdAt.formatToDateTime)
             DetailRow(label = "Method", value = liability.paymentMethod.text)
 
+            if (liability.liabilityType == LiabilityType.DEBT) {
+                DetailRow(
+                    label = "Received",
+                    value = if (liability.isAmountReceived) "Yes" else "No",
+                    valueColor = if (liability.isAmountReceived) colorResource(id = R.color.success_complete) else Color.Gray
+                )
+            }
+
             Spacer(modifier = Modifier.height(16.dp))
             LinearProgressIndicator(
                 progress = { progress.coerceIn(0f, 1f) },
@@ -263,9 +297,9 @@ fun SettlementItem(settlement: Settlement) {
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = settlement.dateTime.formatToDateTime,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray
+                    text = settlement.label.ifEmpty { settlement.dateTime.formatToDateTime },
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     text = settlement.amount.formatToAmount(),
@@ -273,11 +307,19 @@ fun SettlementItem(settlement: Settlement) {
                     fontWeight = FontWeight.Bold
                 )
             }
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Date: ${settlement.dateTime.formatToDateTime}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
             if (settlement.description.isNotEmpty()) {
                 Text(
                     text = settlement.description,
                     style = MaterialTheme.typography.bodySmall,
-                    modifier = Modifier.padding(top = 4.dp)
+                    color = Color.Gray
                 )
             }
         }

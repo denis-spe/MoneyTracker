@@ -13,8 +13,10 @@ import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.TagIcon
+import com.example.moneytracker.backend.storage.Withdrawal
 import com.example.moneytracker.backend.storage.listenToAchievement
 import com.example.moneytracker.backend.storage.listenToSettlementForDataset
+import com.example.moneytracker.backend.storage.listenToWithdrawalForDataset
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.google.firebase.Timestamp
@@ -45,10 +47,20 @@ class DetailViewModel @Inject constructor(
             val userId = account.currentUserId
             val financeType = "TRANSACTION"
 
-            storage.listenToDataset(userId, transactionId, financeType)
-                .collectLatest { updatedEntity ->
-                    _detailState.update { it.copy(financeEntity = DataState.Success(updatedEntity)) }
+            combine(
+                storage.listenToDataset(userId, transactionId, financeType),
+                listenToWithdrawalForDataset(storage.db, userId, transactionId, financeType)
+            ) { entity, withdrawals ->
+                when (entity) {
+                    is FinanceEntity.Transaction -> entity.copy(
+                        withdrawal = withdrawals
+                    )
+
+                    else -> entity
                 }
+            }.collectLatest { updatedEntity ->
+                _detailState.update { it.copy(financeEntity = DataState.Success(updatedEntity)) }
+            }
         }
     }
 
@@ -198,7 +210,8 @@ class DetailViewModel @Inject constructor(
         liabilityId: String,
         label: String,
         description: String,
-        tagIcon: TagIcon
+        tagIcon: TagIcon,
+        isAmountReceived: Boolean
     ) {
         viewModelScope.launch {
             val currentState = _detailState.value.financeEntity
@@ -207,7 +220,8 @@ class DetailViewModel @Inject constructor(
                 val newLiability = oldLiability.copy(
                     label = label,
                     description = description,
-                    tagIcon = tagIcon
+                    tagIcon = tagIcon,
+                    isAmountReceived = isAmountReceived
                 )
                 storage.updateDataset(
                     userId = account.currentUserId,
@@ -303,6 +317,36 @@ class DetailViewModel @Inject constructor(
                 datasetId = liabilityId,
                 financeType = "LIABILITY",
                 settlement = settlement
+            )
+        }
+    }
+
+    fun addWithdrawal(
+        datasetId: String,
+        amount: Double,
+        label: String,
+        description: String,
+        toPaymentMethod: PaymentMethod,
+        fromPaymentMethod: PaymentMethod,
+        dateTime: Timestamp
+    ) {
+        viewModelScope.launch {
+            val withdrawal = Withdrawal(
+                withdrawalId = UUID.randomUUID().toString(),
+                datasetId = datasetId,
+                userId = account.currentUserId,
+                amount = amount,
+                label = label,
+                description = description,
+                createdAt = dateTime,
+                toPaymentMethod = toPaymentMethod,
+                fromPaymentMethod = fromPaymentMethod
+            )
+            storage.addWithdrawal(
+                userId = account.currentUserId,
+                datasetId = datasetId,
+                financeType = "TRANSACTION",
+                withdrawal = withdrawal
             )
         }
     }

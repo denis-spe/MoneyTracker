@@ -19,7 +19,13 @@ class GetCurrentAmountUseCase @Inject constructor() {
                 if (entity.paymentMethod == method) {
                     when (entity.financeType.text) {
                         "Earnings",
-                        "Debt" -> incoming += entity.amount
+                        "Debt" -> {
+                            if (entity is FinanceEntity.Liability && !entity.isAmountReceived) {
+                                return@forEach
+                            }
+
+                            incoming += entity.amount
+                        }
 
                         "Expense",
                         "Lent",

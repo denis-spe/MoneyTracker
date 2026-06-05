@@ -89,8 +89,9 @@ fun TransactionCard(
     val paymentMethod = financeEntity.paymentMethod
 
     Card(
-        modifier = modifier
+        modifier = Modifier
             .clip(RoundedCornerShape(50))
+            .then(modifier)
     ) {
         Row(
             modifier = Modifier
@@ -683,13 +684,12 @@ fun OverviewScreen(
                                                 )
                                         ) {
                                             item {
-                                                sortedList.forEach { item ->
+                                                sortedList.forEachIndexed { index, item ->
                                                     when (item) {
                                                         is DataSettlement.SettlementData -> {
                                                             if (item.financeEntity is FinanceEntity.Transaction) {
                                                                 TransactionCard(
                                                                     modifier = Modifier
-                                                                        .padding(end = SPACE)
                                                                         .animateItem()
                                                                         .clickable {
                                                                             onNavigate?.navigate(
@@ -700,6 +700,13 @@ fun OverviewScreen(
                                                                         },
                                                                     financeEntity = item.financeEntity
                                                                 )
+
+                                                                if (index < sortedList.size - 1)
+                                                                    Spacer(
+                                                                        modifier = Modifier.width(
+                                                                            SPACE
+                                                                        )
+                                                                    )
                                                             }
                                                         }
 

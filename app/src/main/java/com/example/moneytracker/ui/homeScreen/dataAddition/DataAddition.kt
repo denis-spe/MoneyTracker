@@ -500,6 +500,16 @@ fun FinancialDataInput(
 
     val color = colorResource(type.color)
 
+    val isAmountReceived = remember {
+        mutableStateOf(false)
+    }
+    val topModifier = Modifier.clip(
+        RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+    )
+    val bottomModifier = Modifier.clip(
+        RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -537,7 +547,8 @@ fun FinancialDataInput(
             wasSuccess = null,
             displayState = rememberSaveable {
                 mutableStateOf("")
-            }
+            },
+            containerModifier = topModifier,
         )
 
         ModelDrawerTextField(
@@ -575,8 +586,18 @@ fun FinancialDataInput(
             showTime = remember { mutableStateOf(false) },
             showDate = remember { mutableStateOf(false) },
             localDateTimeState = creationDateTime,
-            colorResId = type.color
+            colorResId = type.color,
+            timeContainerModifier = if (type == LiabilityType.DEBT) Modifier
+            else bottomModifier
         )
+
+        if (type == LiabilityType.DEBT) {
+            WasAmountReceived(
+                containerModifier = bottomModifier,
+                color = colorResource(type.color),
+                isAmountReceived = isAmountReceived
+            )
+        }
 
         PaymentMethodDropdown(
             colorResId = type.color,
@@ -654,7 +675,8 @@ fun FinancialDataInput(
                             description = descriptionState.text.toString(),
                             createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
                             tagIcon = tagState.value,
-                            paymentMethod = paymentMethod.value
+                            paymentMethod = paymentMethod.value,
+                            isAmountReceived = if (type == LiabilityType.DEBT) isAmountReceived.value else false
                         )
                     }
 
@@ -728,6 +750,13 @@ fun GoalDataInput(
 
     val color = colorResource(GoalType.color)
 
+    val topModifier = Modifier.clip(
+        RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+    )
+    val bottomModifier = Modifier.clip(
+        RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
+    )
+
     LaunchedEffect(amountState.text, labelState.text) {
         if (wasSuccess == State.ERROR) {
             wasSuccess = State.INITIAL
@@ -761,7 +790,8 @@ fun GoalDataInput(
             placeholder = "0.0",
             colorResId = GoalType.color,
             wasSuccess = remember { mutableStateOf(wasSuccess) },
-            displayState = rememberSaveable { mutableStateOf("") }
+            displayState = rememberSaveable { mutableStateOf("") },
+            containerModifier = topModifier
         )
 
         ModelDrawerTextField(
@@ -803,7 +833,8 @@ fun GoalDataInput(
             dataType = DataType.GOAL,
             startLocalDateTimeState = localDateTimeState,
             endLocalDateTimeState = endLocalDateTimeState,
-            goalDateTimeWarningState = goalDateTimeWarningState
+            goalDateTimeWarningState = goalDateTimeWarningState,
+            containerModifier = bottomModifier
         )
 
         PaymentMethodDropdown(
@@ -943,6 +974,12 @@ fun SettlementDataInputs(
     }
 
     val color = colorResource(settlementType.color)
+    val topModifier = Modifier.clip(
+        RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+    )
+    val bottomModifier = Modifier.clip(
+        RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
+    )
 
     val iconImage = painterResource(settlementType.icon)
 
@@ -983,7 +1020,8 @@ fun SettlementDataInputs(
             financeEntityList = financeEntityList,
             colorResId = settlementType.color,
             selectedFinanceEntity = selectedFinanceEntity,
-            wasSuccess = remember { mutableStateOf(wasSuccess) }
+            wasSuccess = remember { mutableStateOf(wasSuccess) },
+            containerModifier = topModifier
         )
 
         ModelDrawerTextField(
@@ -1000,7 +1038,8 @@ fun SettlementDataInputs(
             showTime = remember { mutableStateOf(false) },
             showDate = remember { mutableStateOf(false) },
             localDateTimeState = localDateTimeState,
-            colorResId = settlementType.color
+            colorResId = settlementType.color,
+            timeContainerModifier = bottomModifier
         )
 
         PaymentMethodDropdown(

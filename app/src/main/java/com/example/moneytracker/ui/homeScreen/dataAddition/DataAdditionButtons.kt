@@ -3,6 +3,7 @@ package com.example.moneytracker.ui.homeScreen.dataAddition
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +40,7 @@ import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedButton
@@ -329,7 +331,7 @@ fun AddGoalAttained(
                         viewModel.addGoalAttainment(
                             goalId = goalId,
                             amount = amountDisplay.value.toDoubleOrNull() ?: 0.0,
-                            label = labelDisplay.value,
+                            label = "Attained",
                             description = descriptionDisplay.value,
                             paymentMethod = paymentMethod.value,
                             dateTime = dateTime.value.toTimestamp(),
@@ -517,7 +519,6 @@ fun EditAchievementAmount(
                     displayState = amountDisplay,
                     placeholder = "0.0",
                     colorResId = color,
-                    roundedCornerShape = RoundedCornerShape(20.dp)
                 )
 
                 Row(
@@ -820,6 +821,7 @@ fun EditLiability(
     val descriptionState = rememberTextFieldState()
     val descriptionDisplay = remember { mutableStateOf("") }
     val tagIcon = remember { mutableStateOf(TagIcon("", R.drawable.initial)) }
+    val isAmountReceived = remember { mutableStateOf(false) }
 
     LaunchedEffect(showDialog.value, liability) {
         if (showDialog.value && liability != null) {
@@ -828,6 +830,7 @@ fun EditLiability(
             descriptionState.setTextAndPlaceCursorAtEnd(liability.description)
             descriptionDisplay.value = liability.description
             tagIcon.value = liability.tagIcon
+            isAmountReceived.value = liability.isAmountReceived
         }
     }
 
@@ -889,6 +892,36 @@ fun EditLiability(
                     iconState = tagIcon
                 )
 
+                if (liability?.liabilityType == com.example.moneytracker.backend.storage.types.LiabilityType.DEBT) {
+                    ListItem(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp)
+                            .clickable {
+                                isAmountReceived.value = !isAmountReceived.value
+                            },
+                        headlineContent = {
+                            Text(
+                                "Amount Received",
+                                style = MaterialTheme.typography.bodyLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                        },
+                        supportingContent = {
+                            Text(
+                                if (isAmountReceived.value) "Yes" else "No",
+                                color = if (isAmountReceived.value) colorResource(R.color.success_complete) else Color.Gray
+                            )
+                        },
+                        trailingContent = {
+                            androidx.compose.material3.Switch(
+                                checked = isAmountReceived.value,
+                                onCheckedChange = { isAmountReceived.value = it }
+                            )
+                        }
+                    )
+                }
+
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -905,7 +938,8 @@ fun EditLiability(
                             liabilityId = liabilityId,
                             label = labelDisplay.value,
                             description = descriptionDisplay.value,
-                            tagIcon = tagIcon.value
+                            tagIcon = tagIcon.value,
+                            isAmountReceived = isAmountReceived.value
                         )
                         showDialog.value = false
                     }
@@ -1127,3 +1161,149 @@ fun AddSettlement(
         }
     }
 }
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddWithdrawal(
+    color: Color,
+    transactionId: String,
+    viewModel: DetailViewModel = hiltViewModel()
+) {
+    val showDialog = remember { mutableStateOf(false) }
+
+    // Withdrawal form states
+    val amountState = rememberTextFieldState()
+    val amountDisplay = remember { mutableStateOf("0.0") }
+    val labelState = rememberTextFieldState()
+    val labelDisplay = remember { mutableStateOf("") }
+    val descriptionState = rememberTextFieldState()
+    val descriptionDisplay = remember { mutableStateOf("") }
+    val toPaymentMethod = remember { mutableStateOf(PaymentMethod.CREDIT_CARD) }
+    val fromPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
+    val dateTime = remember { mutableStateOf(LocalDateTime.now()) }
+
+    val showDatePicker = remember { mutableStateOf(false) }
+    val showTimePicker = remember { mutableStateOf(false) }
+
+    val withdrawalType = SettlementType.WITHDRAWAL
+
+    IconButton(
+        onClick = { showDialog.value = true },
+        colors = IconButtonDefaults.iconButtonColors().copy(containerColor = color)
+    ) {
+        Icon(imageVector = Icons.Default.Add, contentDescription = "Add Withdrawal")
+    }
+
+    if (showDialog.value) {
+        ModalBottomSheet(
+            onDismissRequest = { showDialog.value = false },
+            sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+            containerColor = BottomSheetDefaults.ContainerColor.copy(alpha = 0.98f),
+            modifier = Modifier.statusBarsPadding()
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .imePadding()
+                    .verticalScroll(rememberScrollState()),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Image(
+                    painter = painterResource(withdrawalType.icon),
+                    contentDescription = withdrawalType.text,
+                    modifier = Modifier.size(30.dp)
+                )
+
+                Text(
+                    "Add ${withdrawalType.text}",
+                    fontWeight = FontWeight.Bold,
+                    color = colorResource(withdrawalType.color),
+                    modifier = Modifier.padding(top = 2.dp)
+                )
+
+                Text(
+                    withdrawalType.typeDescription,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+
+                ModelDrawerAmountField(
+                    state = amountState,
+                    displayState = amountDisplay,
+                    placeholder = "0.0",
+                    colorResId = withdrawalType.color
+                )
+
+                ModelDrawerTextField(
+                    title = "Label",
+                    state = labelState,
+                    displayText = labelDisplay,
+                    placeholder = withdrawalType.text,
+                    colorResId = withdrawalType.color
+                )
+
+                ModelDrawerTextField(
+                    title = "Description",
+                    state = descriptionState,
+                    displayText = descriptionDisplay,
+                    placeholder = "Details (Optional)",
+                    colorResId = withdrawalType.color
+                )
+
+                DateTimeInput(
+                    showTime = showTimePicker,
+                    showDate = showDatePicker,
+                    localDateTimeState = dateTime,
+                    colorResId = withdrawalType.color
+                )
+
+                Text(
+                    "From account",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colorResource(withdrawalType.color)
+                )
+                PaymentMethodDropdown(
+                    colorResId = withdrawalType.color,
+                    selectedPaymentMethod = fromPaymentMethod
+                )
+
+                Text(
+                    "To account",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = colorResource(withdrawalType.color)
+                )
+                PaymentMethodDropdown(
+                    colorResId = withdrawalType.color,
+                    selectedPaymentMethod = toPaymentMethod
+                )
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 10.dp),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    ModelDrawerButton(
+                        text = "Add ${withdrawalType.text}",
+                        colorResId = withdrawalType.color,
+                        textColor = colorResource(withdrawalType.color)
+                    ) {
+                        viewModel.addWithdrawal(
+                            datasetId = transactionId,
+                            amount = amountDisplay.value.toDoubleOrNull() ?: 0.0,
+                            label = labelDisplay.value.ifEmpty { withdrawalType.text },
+                            description = descriptionDisplay.value,
+                            toPaymentMethod = toPaymentMethod.value,
+                            fromPaymentMethod = fromPaymentMethod.value,
+                            dateTime = dateTime.value.toTimestamp()
+                        )
+                        showDialog.value = false
+                    }
+                }
+            }
+        }
+    }
+}
+

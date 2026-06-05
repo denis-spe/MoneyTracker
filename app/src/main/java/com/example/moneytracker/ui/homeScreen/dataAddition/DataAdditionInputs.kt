@@ -56,6 +56,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
@@ -78,7 +79,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -138,19 +138,13 @@ import java.util.Locale
 
 
 const val MaxWidth = 0.7f
-val BOTTOM_SHEET_PADDING = 10.dp
-private val MODIFIER_DRAWER = Modifier
-    .fillMaxWidth()
-    .padding(vertical = 2.dp, horizontal = 13.dp)
-private val INNER_MODIFIER_DRAWER = Modifier
-    .fillMaxWidth()
-    .padding(start = 10.dp, end = 10.dp)
 private val SHAPE = RoundedCornerShape(30.dp)
 private val DIALOG_CARD_MODIFIER = Modifier.fillMaxWidth(0.95f)
 private val AMOUNT_FONT_SIZE = 20.sp
 
 @Composable
 fun ModelDrawerTag(
+    containerModifier: Modifier = Modifier,
     colorResId: Int,
     title: String,
     iconState: MutableState<TagIcon>,
@@ -161,7 +155,10 @@ fun ModelDrawerTag(
     val onDialogShow = remember { mutableStateOf(false) }
 
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
             .height(height)
             .clickable {
                 onDialogShow.value = true
@@ -203,7 +200,7 @@ fun ModelDrawerTag(
 
 @Composable
 fun ModelDrawerTextField(
-    modifier: Modifier = Modifier,
+    containerModifier: Modifier = Modifier,
     title: String = "",
     description: String = "",
     state: TextFieldState,
@@ -214,7 +211,6 @@ fun ModelDrawerTextField(
     wasSuccess: MutableState<State>? = null,
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.SingleLine,
 ) {
-    val modifier = modifier.fillMaxWidth(MaxWidth)
     val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
     val color = if (isError)
         colorResource(R.color.error_color) else
@@ -267,8 +263,8 @@ fun ModelDrawerTextField(
                     HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
 
                     OutlinedTextField(
-                        modifier = modifier
-                            .fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth(MaxWidth)
                             .focusRequester(focusRequester)
                             .padding(
                                 vertical = 5.dp,
@@ -375,7 +371,10 @@ fun ModelDrawerTextField(
     }
 
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
             .height(height)
             .clickable {
                 onDialogShow.value = true
@@ -410,16 +409,14 @@ fun ModelDrawerTextField(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ModelDrawerAmountField(
-    modifier: Modifier = Modifier,
+    containerModifier: Modifier = Modifier,
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
     shape: Shape = CircleShape,
-    roundedCornerShape: RoundedCornerShape? = null,
     wasSuccess: MutableState<State>? = null,
     displayState: MutableState<String>,
 ) {
-    modifier.fillMaxWidth(MaxWidth)
     val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
     val color = if (isError)
         colorResource(R.color.error_color) else
@@ -487,7 +484,7 @@ fun ModelDrawerAmountField(
                             }
                         ) {
                             OutlinedTextField(
-                                modifier = modifier
+                                modifier = Modifier
                                     .focusRequester(focusRequester)
                                     .onFocusChanged {
                                         if (it.isFocused) {
@@ -580,12 +577,12 @@ fun ModelDrawerAmountField(
         }
     }
 
-    val modifier = if (roundedCornerShape != null)
-        MODIFIER_DRAWER.clip(roundedCornerShape) else MODIFIER_DRAWER
-
 
     ListItem(
-        modifier = modifier
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
             .height(height)
             .clickable {
                 showCustomKeyboard.value = true
@@ -620,7 +617,7 @@ fun SettlementField(
     financeEntityList: List<FinanceEntity>,
     colorResId: Int,
     selectedFinanceEntity: MutableState<FinanceEntity?>,
-    modifier: Modifier = Modifier,
+    containerModifier: Modifier = Modifier,
     wasSuccess: MutableState<State>
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -915,7 +912,10 @@ fun SettlementField(
     }
 
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
             .height(height)
             .clickable {
                 showCustomKeyboard.value = true
@@ -1048,6 +1048,7 @@ fun RepeatableInputComponent(
 
 @Composable
 fun RepeatableTransaction(
+    containerModifier: Modifier = Modifier,
     repeatByState: MutableState<RoutineData>,
     dataType: DataType,
     goalDateTimeWarningState: MutableState<GoalWarning>,
@@ -1243,7 +1244,10 @@ fun RepeatableTransaction(
 
 
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
             .height(height)
             .clickable {
                 onDialogShow.value = true
@@ -1619,6 +1623,8 @@ fun DoubleTimePickerComponent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateTimeInput(
+    dateContainerModifier: Modifier = Modifier,
+    timeContainerModifier: Modifier = Modifier,
     showTime: MutableState<Boolean>,
     showDate: MutableState<Boolean>,
     localDateTimeState: MutableState<LocalDateTime>,
@@ -1641,7 +1647,10 @@ fun DateTimeInput(
     Display the date
     */
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(dateContainerModifier)
             .height(height)
             .clickable {
                 showDate.value = true
@@ -1674,7 +1683,10 @@ fun DateTimeInput(
     Display the time
      */
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(timeContainerModifier)
             .height(height)
             .clickable {
                 showTime.value = true
@@ -1750,6 +1762,7 @@ fun DateTimeInput(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateTimeRange(
+    containerModifier: Modifier = Modifier,
     startLocalDateTimeState: MutableState<LocalDateTime>,
     endLocalDateTimeState: MutableState<LocalDateTime>,
     colorResId: Int,
@@ -1789,7 +1802,10 @@ fun DateTimeRange(
      Display the time
      */
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
             .height(height)
             .clickable {
                 isTimeDialogOpen.value = true
@@ -1829,7 +1845,10 @@ fun DateTimeRange(
      Display the starting date
      */
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
             .height(height)
             .clickable {
                 isPresentStartDateDialogOpen.value = true
@@ -1859,7 +1878,10 @@ fun DateTimeRange(
      Display the deadline date
      */
     ListItem(
-        modifier = MODIFIER_DRAWER
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
             .height(height)
             .clickable {
                 isPresentEndDateDialogOpen.value = true
@@ -1959,4 +1981,51 @@ fun DateTimeRange(
             isTimeDialogOpen.value = false
         }
     }
+}
+
+@Composable
+fun WasAmountReceived(
+    containerModifier: Modifier = Modifier,
+    isAmountReceived: MutableState<Boolean>,
+    color: Color,
+) {
+    ListItem(
+        colors = ListItemDefaults.colors().copy(
+            containerColor = color.copy(alpha = 0.1f)
+        ),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .then(containerModifier)
+            .clickable {
+                isAmountReceived.value = !isAmountReceived.value
+            },
+        headlineContent = {
+            Text(
+                "Amount Received",
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Bold,
+                color = color
+            )
+        },
+        supportingContent = {
+            Text(
+                if (isAmountReceived.value) "Yes" else "No",
+                color = if (isAmountReceived.value) color else Color.Gray,
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+        },
+        trailingContent = {
+            androidx.compose.material3.Switch(
+                checked = isAmountReceived.value,
+                onCheckedChange = { isAmountReceived.value = it },
+                colors = SwitchDefaults.colors().copy(
+                    checkedBorderColor = color.copy(alpha = 0.5f),
+                    checkedThumbColor = color,
+                    checkedTrackColor = color.copy(alpha = 0.5f)
+                )
+            )
+        }
+    )
 }

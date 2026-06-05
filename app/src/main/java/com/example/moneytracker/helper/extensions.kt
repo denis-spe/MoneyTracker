@@ -469,6 +469,7 @@ fun FinanceEntity.toMap(): Map<String, Any> {
         is FinanceEntity.Liability -> {
             baseMap["financeType"] = "LIABILITY"
             baseMap["liabilityType"] = liabilityType.name
+            baseMap["isAmountReceived"] = isAmountReceived
         }
     }
     return baseMap
@@ -504,8 +505,8 @@ val Withdrawal.withdrawalToMap: Map<String, Any>
         "label" to label,
         "description" to description,
         "createdAt" to createdAt,
-        "toPaymentMethod" to toPaymentMethod,
-        "fromPaymentMethod" to fromPaymentMethod
+        "toPaymentMethod" to toPaymentMethod.name,
+        "fromPaymentMethod" to fromPaymentMethod.name
     )
 
 val Settlement.settlementToMap: Map<String, Any>
@@ -939,7 +940,8 @@ fun Map<*, *>.toFinance(): FinanceEntity {
                 description = description,
                 createdAt = createdAt,
                 tagIcon = tagIcon,
-                paymentMethod = paymentMethod
+                paymentMethod = paymentMethod,
+                withdrawal = this.toWithdrawal()
             )
         }
 
@@ -968,6 +970,7 @@ fun Map<*, *>.toFinance(): FinanceEntity {
             } else {
                 if (dataTypeStr == "DEBT") LiabilityType.DEBT else LiabilityType.LOAN
             }
+            val isAmountReceived = this["isAmountReceived"] as? Boolean ?: false
             FinanceEntity.Liability(
                 id = id,
                 liabilityType = liabilityType,
@@ -977,6 +980,7 @@ fun Map<*, *>.toFinance(): FinanceEntity {
                 createdAt = createdAt,
                 tagIcon = tagIcon,
                 paymentMethod = paymentMethod,
+                isAmountReceived = isAmountReceived,
                 settlement = this.toSettlement()
             )
         }
@@ -1017,6 +1021,12 @@ val CharSequence.eval: Double
             0.0
         }
     }
+
+fun Map<*, *>.toWithdrawal(): List<Withdrawal> {
+    return (this["withdrawal"] as? List<*>)
+        ?.mapNotNull { (it as? Map<*, *>)?.asWithdrawal() }
+        ?: emptyList()
+}
 
 fun Map<*, *>.toSettlement(): List<Settlement> {
     return (this["settlement"] as? List<*>)

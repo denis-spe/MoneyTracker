@@ -524,6 +524,7 @@ class DataStorageImpl(
             val entity = snapshot.data?.toFinance() ?: return null
             val settlements = loadSettlementForDataset(db, userId, datasetId, financeType)
             val achievements = loadAchievementForDataset(db, userId, datasetId, financeType)
+            val withdrawals = loadWithdrawalForDataset(db, userId, datasetId, financeType)
 
             when (entity) {
                 is FinanceEntity.Goal -> entity.copy(
@@ -531,7 +532,7 @@ class DataStorageImpl(
                     achievement = achievements
                 )
                 is FinanceEntity.Liability -> entity.copy(settlement = settlements)
-                else -> entity
+                is FinanceEntity.Transaction -> entity.copy(withdrawal = withdrawals)
             }
         } catch (e: Exception) {
             try {
@@ -541,6 +542,8 @@ class DataStorageImpl(
                     loadSettlementForDataset(db, userId, datasetId, financeType, Source.CACHE)
                 val achievements =
                     loadAchievementForDataset(db, userId, datasetId, financeType, Source.CACHE)
+                val withdrawals =
+                    loadWithdrawalForDataset(db, userId, datasetId, financeType, Source.CACHE)
 
                 when (entity) {
                     is FinanceEntity.Goal -> entity.copy(
@@ -548,7 +551,7 @@ class DataStorageImpl(
                         achievement = achievements
                     )
                     is FinanceEntity.Liability -> entity.copy(settlement = settlements)
-                    else -> entity
+                    is FinanceEntity.Transaction -> entity.copy(withdrawal = withdrawals)
                 }
             } catch (cacheException: Exception) {
                 if (e is FirebaseFirestoreException) throw e

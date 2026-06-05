@@ -46,10 +46,16 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.PaymentMethod
+import com.example.moneytracker.backend.storage.Withdrawal
+import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.safePopBackStack
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.example.moneytracker.ui.homeScreen.dataAddition.AddWithdrawal
+import com.example.moneytracker.ui.homeScreen.dataAddition.DeleteTransactionButton
+import com.example.moneytracker.ui.homeScreen.dataAddition.EditTransaction
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -75,6 +81,33 @@ fun TransactionDetailScreen(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
                         )
+                    }
+                },
+                actions = {
+                    val currentTransaction =
+                        (financeEntity as? DataState.Success)?.data as? FinanceEntity.Transaction
+                    if (currentTransaction != null) {
+                        val color = colorResource(id = currentTransaction.transactionType.color)
+
+                        EditTransaction(
+                            color = color.copy(alpha = 0.3f),
+                            transactionId = transactionId
+                        )
+
+                        DeleteTransactionButton(
+                            transaction = currentTransaction,
+                            onDeleteSuccess = { navController.safePopBackStack() }
+                        )
+
+                        if (
+                            currentTransaction.transactionType == TransactionType.EARNINGS &&
+                            currentTransaction.paymentMethod == PaymentMethod.CREDIT_CARD
+                        ) {
+                            AddWithdrawal(
+                                color = color.copy(alpha = 0.3f),
+                                transactionId = transactionId
+                            )
+                        }
                     }
                 }
             )
@@ -150,12 +183,66 @@ fun TransactionContent(transaction: FinanceEntity.Transaction) {
         if (transaction.withdrawal.isNotEmpty()) {
             item {
                 Text(
-                    text = "Transfer History",
+                    text = "Withdrawal History",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
             }
-            // items(transaction.withdrawal) { withdrawal -> ... }
+            items(transaction.withdrawal.size) { index ->
+                val withdrawal = transaction.withdrawal[index]
+                // Ensure financeEntity is set for WithdrawalCard to work
+                withdrawal.financeEntity = transaction
+                WithdrawalItem(
+                    withdrawal = withdrawal
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun WithdrawalItem(
+    withdrawal: Withdrawal
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Image(
+                        painter = painterResource(id = withdrawal.toPaymentMethod.icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.size(8.dp))
+                    Text(
+                        text = withdrawal.label,
+                        style = MaterialTheme.typography.bodyLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Text(
+                    text = withdrawal.amount.formatToAmount(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = withdrawal.description.ifEmpty { "No description" },
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
         }
     }
 }
@@ -172,25 +259,31 @@ fun TransactionSummaryCard(transaction: FinanceEntity.Transaction) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Image(
-                    painter = painterResource(transaction.tagIcon.icon),
-                    contentDescription = null,
-                    modifier = Modifier.size(32.dp)
-                )
-                Column {
-                    Text(
-                        text = transaction.label,
-                        style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Image(
+                        painter = painterResource(transaction.tagIcon.icon),
+                        contentDescription = null,
+                        modifier = Modifier.size(32.dp)
                     )
-                    Text(
-                        text = transaction.transactionType.text,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = color,
-                        fontWeight = FontWeight.Bold
-                    )
+                    Column {
+                        Text(
+                            text = transaction.label,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = transaction.transactionType.text,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = color,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
                 }
             }
 

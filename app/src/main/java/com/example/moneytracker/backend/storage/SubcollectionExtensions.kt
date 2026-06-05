@@ -5,6 +5,7 @@ import android.util.Log
 import com.example.moneytracker.backend.storage.DataStorageImpl.Companion.COLLECTION_NAME
 import com.example.moneytracker.helper.achievementToMap
 import com.example.moneytracker.helper.asSettlement
+import com.example.moneytracker.helper.asWithdrawal
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.AggregateSource
 import com.google.firebase.firestore.Filter
@@ -248,6 +249,75 @@ fun listenToSettlementForDataset(
             } ?: emptyList()
 
             trySend(settlements)
+        }
+
+    awaitClose { registration.remove() }
+}
+
+/**
+ * Load withdrawals for a specific dataset
+ */
+suspend fun loadWithdrawalForDataset(
+    db: FirebaseFirestore,
+    userId: String,
+    datasetId: String,
+    financeType: String,
+    source: com.google.firebase.firestore.Source = com.google.firebase.firestore.Source.DEFAULT
+): List<Withdrawal> {
+    return try {
+        val snapshot = db.collection("database")
+            .document(userId)
+            .collection(getCollectionNameFromType(financeType))
+            .document(datasetId)
+            .collection("withdrawal")
+            .get(source)
+            .await()
+
+        snapshot.documents.mapNotNull { doc ->
+            try {
+                (doc.data ?: return@mapNotNull null).asWithdrawal()
+            } catch (e: Exception) {
+                Log.e("WithdrawalLoad", "Failed to parse withdrawal entry", e)
+                null
+            }
+        }
+    } catch (e: Exception) {
+        Log.e("WithdrawalLoad", "Failed to load withdrawals", e)
+        emptyList()
+    }
+}
+
+/**
+ * Listen to real-time withdrawal updates for a specific dataset
+ */
+fun listenToWithdrawalForDataset(
+    db: FirebaseFirestore,
+    userId: String,
+    datasetId: String,
+    financeType: String
+): Flow<List<Withdrawal>> = callbackFlow {
+    val registration = db.collection("database")
+        .document(userId)
+        .collection(getCollectionNameFromType(financeType))
+        .document(datasetId)
+        .collection("withdrawal")
+        .addSnapshotListener { snapshot, error ->
+            if (error != null) {
+                Log.e("WithdrawalListener", "Withdrawal listener error", error)
+                close(error)
+                return@addSnapshotListener
+            }
+
+            val withdrawals = snapshot?.documents?.mapNotNull { doc ->
+                try {
+                    doc.data?.asWithdrawal()
+                } catch (e: Exception) {
+                    Log.e("WithdrawalListener", "Failed to parse withdrawal", e)
+                    null
+                }
+            } ?: emptyList()
+
+            trySend(withdrawals)
         }
 
     awaitClose { registration.remove() }

@@ -1284,7 +1284,7 @@ fun OnUpdate(
                                 .animateItem()
                         ) {
                             ModelDrawerAmountField(
-                                modifier = Modifier.clip(
+                                containerModifier = Modifier.clip(
                                     RoundedCornerShape(
                                         topStart = 5.dp,
                                         topEnd = 5.dp
