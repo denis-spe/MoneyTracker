@@ -711,19 +711,19 @@ fun OverviewScreen(
                                                         }
 
                                                         is DataSettlement.SettlementWithdrawal -> {
-                                                            WithdrawalCard(
-                                                                modifier = Modifier
-                                                                    .padding(end = SPACE)
-                                                                    .animateItem()
-                                                                    .clickable {
-                                                                        onNavigate?.navigate(
-                                                                            TransactionDetailScreenRouter(
-                                                                                transactionId = item.withdrawal.withdrawalId
-                                                                            )
-                                                                        )
-                                                                    },
-                                                                withdrawal = item.withdrawal
-                                                            )
+//                                                            WithdrawalCard(
+//                                                                modifier = Modifier
+//                                                                    .padding(end = SPACE)
+//                                                                    .animateItem()
+//                                                                    .clickable {
+//                                                                        onNavigate?.navigate(
+//                                                                            TransactionDetailScreenRouter(
+//                                                                                transactionId = item.withdrawal.withdrawalId
+//                                                                            )
+//                                                                        )
+//                                                                    },
+//                                                                withdrawal = item.withdrawal
+//                                                            )
                                                         }
 
                                                         is DataSettlement.SettlementAdjust -> {

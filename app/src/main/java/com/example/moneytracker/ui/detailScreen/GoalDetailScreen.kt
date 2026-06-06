@@ -65,10 +65,6 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.safePopBackStack
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.homeScreen.dataAddition.AddGoalAttained
-import com.example.moneytracker.ui.homeScreen.dataAddition.DeleteAchievementButton
-import com.example.moneytracker.ui.homeScreen.dataAddition.EditAchievementAmount
-import com.example.moneytracker.ui.homeScreen.dataAddition.EditGoal
 import com.example.moneytracker.ui.theme.StewardTheme
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -111,12 +107,12 @@ fun GoalDetailScreen(
                 },
                 actions = {
                     EditGoal(
-                        color = goalColor.copy(0.3f),
+                        color = goalColor,
                         goalId = goalId
                     )
 
                     AddGoalAttained(
-                        color = attainColor.copy(0.3f),
+                        color = attainColor,
                         goalId = goalId
                     )
                 }

@@ -47,7 +47,6 @@ import com.example.moneytracker.backend.storage.types.TransactionType
 import com.google.firebase.Timestamp
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.toInstant
 import kotlinx.datetime.toJavaLocalDateTime
 import kotlinx.datetime.toKotlinLocalDateTime
 import net.objecthunter.exp4j.ExpressionBuilder
@@ -1171,9 +1170,3 @@ val LocalDateTime.formattedTime: String
         val minute = this.minute.addZeroIfLessThenTen
         return "$hour:$minute"
     }
-
-@OptIn(kotlin.time.ExperimentalTime::class)
-fun LocalDateTime.toTimestamp(): Timestamp {
-    val instant = this.toInstant(kotlinx.datetime.TimeZone.UTC)
-    return Timestamp(instant.epochSeconds, instant.nanosecondsOfSecond)
-}

@@ -3,11 +3,14 @@
 package com.example.moneytracker.ui.detailScreen
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.Animatable
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -39,6 +42,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -59,9 +65,7 @@ import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.safePopBackStack
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.homeScreen.dataAddition.AddSettlement
-import com.example.moneytracker.ui.homeScreen.dataAddition.DeleteLiabilityButton
-import com.example.moneytracker.ui.homeScreen.dataAddition.EditLiability
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,7 +100,7 @@ fun SettlementDetailScreen(
                         val color = colorResource(id = currentLiability.liabilityType.color)
 
                         EditLiability(
-                            color = color.copy(alpha = 0.3f),
+                            color = color,
                             liabilityId = liabilityId
                         )
 
@@ -106,7 +110,7 @@ fun SettlementDetailScreen(
                         )
 
                         AddSettlement(
-                            color = color.copy(alpha = 0.3f),
+                            color = color,
                             liabilityId = liabilityId,
                             liability = currentLiability
                         )
@@ -171,6 +175,8 @@ fun SettlementDetailScreen(
 
 @Composable
 fun LiabilityContent(liability: FinanceEntity.Liability) {
+    var selectedSettlement by remember { mutableStateOf<Settlement?>(null) }
+
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
@@ -190,9 +196,20 @@ fun LiabilityContent(liability: FinanceEntity.Liability) {
                 )
             }
             items(liability.settlement) { settlement ->
-                SettlementItem(settlement)
+                SettlementItem(
+                    settlement = settlement,
+                    onClick = { selectedSettlement = settlement }
+                )
             }
         }
+    }
+
+    selectedSettlement?.let { settlement ->
+        SettlementDetailDialog(
+            settlement = settlement,
+            financeType = "LIABILITY",
+            onDismiss = { selectedSettlement = null }
+        )
     }
 }
 
@@ -201,6 +218,15 @@ fun LiabilitySummaryCard(liability: FinanceEntity.Liability) {
     val totalSettled = liability.settlement.sumOf { it.amount }
     val remaining = liability.remainingAmount
     val progress = if (liability.amount > 0) (totalSettled / liability.amount).toFloat() else 0f
+
+    val animatedProgress = remember { Animatable(0f) }
+    LaunchedEffect(progress) {
+        animatedProgress.animateTo(
+            targetValue = progress.coerceIn(0f, 1f),
+            animationSpec = tween<Float>(durationMillis = 1000, easing = FastOutSlowInEasing)
+        )
+    }
+
     val color = colorResource(id = liability.liabilityType.color)
 
     Card(
@@ -255,13 +281,21 @@ fun LiabilitySummaryCard(liability: FinanceEntity.Liability) {
 
             Spacer(modifier = Modifier.height(16.dp))
             LinearProgressIndicator(
-                progress = { progress.coerceIn(0f, 1f) },
+                progress = { animatedProgress.value },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(8.dp)
                     .clip(RoundedCornerShape(4.dp)),
                 color = color,
                 trackColor = color.copy(alpha = 0.2f)
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "${(progress * 100).toInt()}% settled",
+                style = MaterialTheme.typography.bodySmall,
+                modifier = Modifier.align(Alignment.End),
+                color = color
             )
 
             if (liability.description.isNotEmpty()) {
@@ -283,9 +317,14 @@ fun LiabilitySummaryCard(liability: FinanceEntity.Liability) {
 }
 
 @Composable
-fun SettlementItem(settlement: Settlement) {
+fun SettlementItem(
+    settlement: Settlement,
+    onClick: () -> Unit
+) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
         )

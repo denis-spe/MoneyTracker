@@ -18,6 +18,7 @@ import com.example.moneytracker.backend.storage.listenToAchievement
 import com.example.moneytracker.backend.storage.listenToSettlementForDataset
 import com.example.moneytracker.backend.storage.listenToWithdrawalForDataset
 import com.example.moneytracker.backend.storage.types.SettlementType
+import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.google.firebase.Timestamp
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -28,6 +29,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.LocalDateTime
 import java.util.UUID
 import javax.inject.Inject
 
@@ -150,7 +152,8 @@ class DetailViewModel @Inject constructor(
         goalId: String,
         label: String,
         description: String,
-        tagIcon: TagIcon
+        tagIcon: TagIcon,
+        localDate: LocalDateTime
     ) {
         viewModelScope.launch {
             val currentState = _detailState.value.financeEntity
@@ -159,7 +162,8 @@ class DetailViewModel @Inject constructor(
                 val newGoal = oldGoal.copy(
                     label = label,
                     description = description,
-                    tagIcon = tagIcon
+                    tagIcon = tagIcon,
+                    createdAt = localDate.toFirestoreTimestampUtc()
                 )
                 storage.updateDataset(
                     userId = account.currentUserId,
@@ -174,7 +178,10 @@ class DetailViewModel @Inject constructor(
         transactionId: String,
         label: String,
         description: String,
-        tagIcon: TagIcon
+        tagIcon: TagIcon,
+        amount: Double,
+        paymentMethod: PaymentMethod,
+        localDate: LocalDateTime
     ) {
         viewModelScope.launch {
             val currentState = _detailState.value.financeEntity
@@ -183,8 +190,12 @@ class DetailViewModel @Inject constructor(
                 val newTransaction = oldTransaction.copy(
                     label = label,
                     description = description,
-                    tagIcon = tagIcon
+                    tagIcon = tagIcon,
+                    amount = amount,
+                    paymentMethod = paymentMethod,
+                    createdAt = localDate.toFirestoreTimestampUtc()
                 )
+
                 storage.updateDataset(
                     userId = account.currentUserId,
                     oldFinanceEntity = oldTransaction,
@@ -211,7 +222,9 @@ class DetailViewModel @Inject constructor(
         label: String,
         description: String,
         tagIcon: TagIcon,
-        isAmountReceived: Boolean
+        isAmountReceived: Boolean,
+        localDate: LocalDateTime,
+        amount: Double
     ) {
         viewModelScope.launch {
             val currentState = _detailState.value.financeEntity
@@ -221,7 +234,9 @@ class DetailViewModel @Inject constructor(
                     label = label,
                     description = description,
                     tagIcon = tagIcon,
-                    isAmountReceived = isAmountReceived
+                    isAmountReceived = isAmountReceived,
+                    createdAt = localDate.toFirestoreTimestampUtc(),
+                    amount = amount
                 )
                 storage.updateDataset(
                     userId = account.currentUserId,
@@ -345,6 +360,74 @@ class DetailViewModel @Inject constructor(
             storage.addWithdrawal(
                 userId = account.currentUserId,
                 datasetId = datasetId,
+                financeType = "TRANSACTION",
+                withdrawal = withdrawal
+            )
+        }
+    }
+
+    fun updateSettlement(
+        financeType: String,
+        oldSettlement: Settlement,
+        newAmount: Double,
+        newDescription: String
+    ) {
+        viewModelScope.launch {
+            val newSettlement = oldSettlement.copy(
+                amount = newAmount,
+                description = newDescription
+            )
+            storage.updateSettlementDataset(
+                userId = account.currentUserId,
+                datasetId = oldSettlement.datasetId,
+                financeType = financeType,
+                oldSettlement = oldSettlement,
+                newSettlement = newSettlement
+            )
+        }
+    }
+
+    fun deleteSettlement(
+        financeType: String,
+        settlement: Settlement
+    ) {
+        viewModelScope.launch {
+            storage.removeSettlementDataset(
+                userId = account.currentUserId,
+                datasetId = settlement.datasetId,
+                financeType = financeType,
+                settlement = settlement
+            )
+        }
+    }
+
+    fun updateWithdrawal(
+        oldWithdrawal: Withdrawal,
+        newAmount: Double,
+        newDescription: String
+    ) {
+        viewModelScope.launch {
+            val newWithdrawal = oldWithdrawal.copy(
+                amount = newAmount,
+                description = newDescription
+            )
+            storage.updateWithdrawalDataset(
+                userId = account.currentUserId,
+                datasetId = oldWithdrawal.datasetId,
+                financeType = "TRANSACTION",
+                oldWithdrawal = oldWithdrawal,
+                newWithdrawal = newWithdrawal
+            )
+        }
+    }
+
+    fun deleteWithdrawal(
+        withdrawal: Withdrawal
+    ) {
+        viewModelScope.launch {
+            storage.removeWithdrawalDataset(
+                userId = account.currentUserId,
+                datasetId = withdrawal.datasetId,
                 financeType = "TRANSACTION",
                 withdrawal = withdrawal
             )

@@ -19,7 +19,13 @@ class GetTodayChartDonutDataUseCase @Inject constructor() {
             item.isForToday
         }.filterNot {
             when (it) {
-                is DataSettlement.SettlementData -> it.financeEntity is FinanceEntity.Goal
+                is DataSettlement.SettlementData -> {
+                    val entity = it.financeEntity
+                    (entity is FinanceEntity.Goal) ||
+                            (entity is FinanceEntity.Liability &&
+                                    entity.liabilityType == com.example.moneytracker.backend.storage.types.LiabilityType.DEBT &&
+                                    !entity.isAmountReceived)
+                }
                 is DataSettlement.SettlementAdjust -> it.settlement.settlementType == SettlementType.GOAL_ATTAIN
                 is DataSettlement.SettlementWithdrawal -> true
             }

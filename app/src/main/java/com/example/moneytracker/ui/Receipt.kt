@@ -8,12 +8,10 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,15 +22,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
-import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
@@ -74,6 +68,7 @@ import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.ui.components.DeleteDialog
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
@@ -87,7 +82,6 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTag
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTextField
 import com.example.moneytracker.ui.homeScreen.dataAddition.PaymentMethodDropdown
-import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
@@ -95,6 +89,7 @@ import kotlinx.datetime.number
 import kotlinx.datetime.toJavaLocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.time.temporal.ChronoUnit
+import kotlin.time.Duration.Companion.milliseconds
 
 private val ICON_SIZE = 25.dp
 
@@ -271,7 +266,7 @@ fun FinanceReceipt(
                 )
 
                 if (delayMillis > 0) {
-                    delay(delayMillis)
+                    delay(delayMillis.milliseconds)
                     adjustStatue.value = financeEntity.status
                 } else {
                     adjustStatue.value = financeEntity.status
@@ -1080,77 +1075,12 @@ fun OnDeleteReceipt(
     onShowDeleteDialog: MutableState<Boolean>,
     onConfirm: () -> Unit
 ) {
-
-
-    if (onShowDeleteDialog.value) {
-        Dialog(
-            onDismissRequest = {
-                onShowDeleteDialog.value = false
-            }
-        ) {
-            Card {
-                Column(
-                    modifier = Modifier.padding(top = 20.dp, bottom = 20.dp)
-                ) {
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 3.dp, end = 3.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            "Are you sure you want to delete this ${dataSettlement.text.lowercase()} item?",
-                            textAlign = TextAlign.Center
-                        )
-                    }
-
-                    HorizontalDivider(modifier = Modifier.padding(top = 10.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(top = 10.dp),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Button(
-                            onClick = {
-                                onShowDeleteDialog.value = false
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Gray.copy(0.2f)
-                            )
-                        ) {
-                            Text(
-                                "Cancel",
-                                fontWeight = FontWeight.Bold,
-                                style = typography.titleMedium,
-                                color = StewardTheme.colors.accentContent
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.width(10.dp))
-
-                        Button(
-                            onClick = onConfirm,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = colorResource(R.color.error_color)
-                            )
-                        ) {
-                            Text(
-                                "Delete",
-                                fontWeight = FontWeight.Bold,
-                                style = typography.titleMedium,
-                                color = StewardTheme.colors.accentContent
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
+    DeleteDialog(
+        showDialog = onShowDeleteDialog,
+        title = "Delete ${dataSettlement.text}?",
+        paragraph = "Are you sure you want to delete this ${dataSettlement.text.lowercase()} item? This action cannot be undone.",
+        onConfirm = onConfirm
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -1578,7 +1508,6 @@ fun OnUpdate(
                                                 val withdrawal = dataSettlement.withdrawal
                                                 val financeEntityType =
                                                     dataSettlement.financeEntityType
-                                                        ?: "TRANSACTION"
 
                                                 viewModel.updateWithdrawal(
                                                     withdrawal.financeEntity!!.id,
