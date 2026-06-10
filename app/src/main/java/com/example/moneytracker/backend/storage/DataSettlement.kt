@@ -82,6 +82,26 @@ sealed class DataSettlement {
             is SettlementWithdrawal -> SettlementType.WITHDRAWAL.icon
         }
 
+    val outlineIcon: Int
+        get() = when (this) {
+            is SettlementData -> when (val f = financeEntity) {
+                is FinanceEntity.Transaction -> when (f.transactionType) {
+                    TransactionType.EARNINGS -> R.drawable.outline_earnings
+                    TransactionType.EXPENSES -> R.drawable.outline_expenditure
+                    TransactionType.SAVINGS -> R.drawable.outline_savings
+                }
+
+                is FinanceEntity.Goal -> R.drawable.outlined_goal
+                is FinanceEntity.Liability -> when (f.liabilityType) {
+                    LiabilityType.DEBT -> R.drawable.outline_debt
+                    LiabilityType.LOAN -> R.drawable.outline_lent
+                }
+            }
+
+            is SettlementAdjust -> settlement.settlementType.outlineIcon
+            is SettlementWithdrawal -> SettlementType.WITHDRAWAL.icon
+        }
+
     val createdAt: Timestamp
         get() = when (this) {
             is SettlementData -> financeEntity.createdAt

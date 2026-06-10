@@ -45,6 +45,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -90,6 +91,31 @@ fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecifie
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold,
             color = valueColor
+        )
+    }
+}
+
+@Composable
+fun DetailNote(
+    title: String,
+    note: String
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(2.dp)
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray
+        )
+
+        Text(
+            text = note,
+            style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
+            textAlign = TextAlign.Center
         )
     }
 }
@@ -397,9 +423,24 @@ fun EditSettlementAmount(
     val amountDisplay = remember { mutableStateOf(settlement.amount.toString()) }
     val descriptionState = rememberTextFieldState(settlement.description)
     val descriptionDisplay = remember { mutableStateOf(settlement.description) }
+    val localDateState = remember { mutableStateOf(settlement.dateTime.toLocalDateTimeUtc()) }
 
     val colorRes = settlement.settlementType.color
     val getColor = colorResource(colorRes)
+
+    val topModifier = Modifier.clip(
+        RoundedCornerShape(
+            topStart = 10.dp,
+            topEnd = 10.dp
+        )
+    )
+    val bottomModifier = Modifier.clip(
+        RoundedCornerShape(
+            bottomStart = 10.dp,
+            bottomEnd = 10.dp
+        )
+    )
+
 
     OutlinedIconButton(
         onClick = { showDialog.value = true },
@@ -426,7 +467,7 @@ fun EditSettlementAmount(
                     .imePadding()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
 
                 Icon(
@@ -448,8 +489,7 @@ fun EditSettlementAmount(
                     displayState = amountDisplay,
                     placeholder = "0.0",
                     colorResId = colorRes,
-                    containerModifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                    containerModifier = topModifier
                 )
 
                 ModelDrawerTextField(
@@ -457,7 +497,15 @@ fun EditSettlementAmount(
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Details...",
-                    colorResId = colorRes
+                    colorResId = colorRes,
+                )
+
+                DateTimeInput(
+                    showTime = remember { mutableStateOf(false) },
+                    showDate = remember { mutableStateOf(false) },
+                    localDateTimeState = localDateState,
+                    colorResId = colorRes,
+                    timeContainerModifier = bottomModifier
                 )
 
                 Row(
@@ -478,7 +526,8 @@ fun EditSettlementAmount(
                             financeType = financeType,
                             oldSettlement = settlement,
                             newAmount = newAmount,
-                            newDescription = descriptionDisplay.value
+                            newDescription = descriptionDisplay.value,
+                            localDate = localDateState.value.toFirestoreTimestampUtc()
                         )
                         showDialog.value = false
                     }
@@ -545,12 +594,12 @@ fun SettlementDetailDialog(
                     )
                     DetailRow(
                         label = "Payment",
-                        value = settlement.paymentMethod.name
+                        value = settlement.paymentMethod.text
                     )
                     if (settlement.description.isNotEmpty()) {
-                        DetailRow(
-                            label = "Notes",
-                            value = settlement.description
+                        DetailNote(
+                            title = "Notes",
+                            note = settlement.description
                         )
                     }
                 }

@@ -8,34 +8,46 @@ enum class SettlementType(
     val text: String,
     val color: Int,
     val icon: Int,
+    val outlineIcon: Int,
     val typeDescription: String,
 ) {
     DEBT_REPAY(
         "Payback",
-        icon = R.drawable.outlined_repay, color = R.color.RepayDebt,
+        icon = R.drawable.filled_repay,
+        outlineIcon = R.drawable.outlined_repay,
+        color = R.color.RepayDebt,
         typeDescription = "Payback your debt"
     ),
+
     LENT_REPAY(
         "Refund",
-        icon = R.drawable.outlined_repay, color = R.color.RepayLoan,
+        icon = R.drawable.filled_repay,
+        outlineIcon = R.drawable.outlined_repay,
+        color = R.color.RepayLoan,
         typeDescription = "Refund your loan"
     ),
+
     GOAL_ATTAIN(
-        "Goal Attain",
-        icon = R.drawable.oulined_attain, color = R.color.Attain,
-        typeDescription = "Attain your goal"
+        "Attain",
+        icon = R.drawable.filled_goal,
+        outlineIcon = R.drawable.filled_attain,
+        color = R.color.RepayLoan,
+        typeDescription = "Refund your loan"
     ),
 
     WITHDRAWAL(
         "Withdrawal",
-        icon = R.drawable.money_transfer,
+        icon = R.drawable.filled_withdrawal,
+        outlineIcon = R.drawable.outline_withdrawal,
         color = R.color.Withdrawal,
         typeDescription = "Transfer between your accounts"
     ),
 
     INITIAL(
         "Initial",
-        icon = R.drawable.outlined_repay, color = R.color.gray,
+        icon = R.drawable.filled_repay,
+        outlineIcon = R.drawable.outlined_repay,
+        color = R.color.gray,
         typeDescription = "Initial"
     ),
 }

@@ -671,8 +671,8 @@ fun FulfillmentInsightPager(financeEntityList: List<FinanceEntity>) {
         }
 
         if (items.size > 1) {
-            Spacer(modifier = Modifier.height(8.dp))
             Row(
+                modifier = Modifier.padding(vertical = 10.dp),
                 horizontalArrangement = Arrangement.Center,
                 verticalAlignment = Alignment.CenterVertically
             ) {

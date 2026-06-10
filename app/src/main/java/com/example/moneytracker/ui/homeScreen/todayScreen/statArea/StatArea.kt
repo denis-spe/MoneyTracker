@@ -3,7 +3,6 @@
 // And with all your strength and love your neighbor as your self.
 package com.example.moneytracker.ui.homeScreen.todayScreen.statArea
 
-import android.content.res.Configuration
 import android.util.Log
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateIntAsState
@@ -16,13 +15,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -48,7 +47,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -399,33 +397,20 @@ fun CurrentAmountBalanceSection(
     }
 }
 
-@Composable
-fun StatArea(
-    modifier: Modifier = Modifier,
+fun LazyListScope.statArea(
     donutChartDataCollection: DataState<List<DonutChartData>>,
     fulfillmentFinanceEntityList: DataState<List<FinanceEntity>>,
     currentAmountBalance: DataState<Map<String, Double>>,
 ) {
-    val pagerState = rememberPagerState { 2 }
-    val scope = rememberCoroutineScope()
     val idx = listOf(21, 3212)
 
-    val configuration = LocalConfiguration.current
-    val isLandscape = configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-    val iconSize = if (isLandscape) 100.dp else 27.dp
+    item {
+        val pagerState = rememberPagerState { 2 }
+        val scope = rememberCoroutineScope()
 
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(vertical = 8.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
         Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .weight(0.2f),
+                .fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             when (currentAmountBalance) {
@@ -448,7 +433,6 @@ fun StatArea(
                                 imageVector = Icons.Default.DonutLarge,
                                 contentDescription = "Donut chart",
                                 modifier = Modifier
-                                    .size(iconSize)
                                     .padding(3.dp)
                             )
                         }
@@ -470,7 +454,6 @@ fun StatArea(
                                 imageVector = Icons.Default.QueryStats,
                                 contentDescription = "Donut chart",
                                 modifier = Modifier
-                                    .size(iconSize)
                                     .padding(3.dp)
                             )
                         }
@@ -515,8 +498,7 @@ fun StatArea(
                     // Chart Area
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                            .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         Column(
@@ -555,8 +537,7 @@ fun StatArea(
                     // Current account Area
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
+                            .fillMaxWidth(),
                         contentAlignment = Alignment.Center
                     ) {
                         CurrentAmountBalanceSection(currentAmountBalance)
@@ -565,12 +546,14 @@ fun StatArea(
             }
         }
 
+    }
 
 
+
+    item {
         // Pager Area
         Box(
             modifier = Modifier
-                .weight(0.5f)
                 .fillMaxWidth(),
             contentAlignment = Alignment.TopCenter
         ) {

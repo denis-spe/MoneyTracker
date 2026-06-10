@@ -370,12 +370,14 @@ class DetailViewModel @Inject constructor(
         financeType: String,
         oldSettlement: Settlement,
         newAmount: Double,
-        newDescription: String
+        newDescription: String,
+        localDate: Timestamp
     ) {
         viewModelScope.launch {
             val newSettlement = oldSettlement.copy(
                 amount = newAmount,
-                description = newDescription
+                description = newDescription,
+                dateTime = localDate
             )
             storage.updateSettlementDataset(
                 userId = account.currentUserId,

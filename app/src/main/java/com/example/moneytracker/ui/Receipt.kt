@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -75,7 +76,6 @@ import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.dataAddition.MAX_LABEL_LENGTH
-import com.example.moneytracker.ui.homeScreen.dataAddition.MODEL_DRAWER_ICON_SIZE
 import com.example.moneytracker.ui.homeScreen.dataAddition.MaxWidth
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerAmountField
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerButton
@@ -1180,24 +1180,31 @@ fun OnUpdate(
                 verticalArrangement = Arrangement.Center
             ) {
 
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 10.dp),
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
                 ) {
                     val color = colorResource(id = colorResId)
 
                     Image(
                         modifier = Modifier
-                            .size(MODEL_DRAWER_ICON_SIZE)
+                            .size(30.dp)
                             .padding(end = 5.dp),
                         painter = painterResource(id = icon),
                         contentDescription = dataTypeText,
+                        colorFilter = ColorFilter.tint(color)
                     )
 
-                    Text(description, color = color, fontWeight = FONT_WEIGHT)
+                    Text(
+                        text = dataTypeText,
+                        color = color,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Text(description, color = Color.Gray, fontWeight = FONT_WEIGHT)
                 }
 
                 LazyColumn(

@@ -21,6 +21,7 @@ class GetCurrentAmountUseCase @Inject constructor() {
                         "Earnings",
                         "Debt" -> {
                             if (entity is FinanceEntity.Liability && !entity.isAmountReceived) {
+                                outgoing += entity.settlement.sumOf { it.amount }
                                 return@forEach
                             }
 
