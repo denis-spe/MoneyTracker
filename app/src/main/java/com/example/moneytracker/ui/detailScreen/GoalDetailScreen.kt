@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -61,6 +62,7 @@ import androidx.navigation.NavHostController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.CountAchievement
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.safePopBackStack
@@ -86,6 +88,10 @@ fun GoalDetailScreen(
         )
     }
 
+    var selectedSettlement by remember {
+        mutableStateOf<Settlement?>(null)
+    }
+
     LaunchedEffect(goalId) {
         viewModel.loadGoal(goalId)
         viewModel.loadAchievementCounts(goalId)
@@ -104,17 +110,6 @@ fun GoalDetailScreen(
                             contentDescription = "Back"
                         )
                     }
-                },
-                actions = {
-                    EditGoal(
-                        color = goalColor,
-                        goalId = goalId
-                    )
-
-                    AddGoalAttained(
-                        color = attainColor,
-                        goalId = goalId
-                    )
                 }
             )
         }
@@ -167,6 +162,51 @@ fun GoalDetailScreen(
                                     )
                                 }
 
+                                item {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        EditGoal(
+                                            color = goalColor,
+                                            goalId = goalId,
+                                            label = "Edit Goal",
+                                            detailButtonType = DetailButtonType.OUTLINE
+                                        )
+
+                                        Spacer(modifier = Modifier.width(8.dp))
+
+                                        AddGoalAttained(
+                                            color = attainColor,
+                                            goalId = goalId,
+                                            label = "Add Attain",
+                                            detailButtonType = DetailButtonType.FILLED
+                                        )
+                                    }
+                                }
+
+                                if (currentGoal.settlement.isNotEmpty()) {
+                                    item {
+                                        Text(
+                                            text = "Attainment History",
+                                            style = MaterialTheme.typography.titleMedium,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                    items(
+                                        items = currentGoal.settlement,
+                                        key = { it.settlementId.ifEmpty { it.dateTime.toString() } }
+                                    ) { settlement ->
+                                        Box(modifier = Modifier.animateItem()) {
+                                            SettlementItem(
+                                                settlement = settlement,
+                                                onClick = { selectedSettlement = settlement }
+                                            )
+                                        }
+                                    }
+                                }
+
                                 if (currentGoal.achievement.isNotEmpty()) {
                                     item {
                                         Text(
@@ -215,6 +255,14 @@ fun GoalDetailScreen(
         AchievementDetailDialog(
             achievement = achievement,
             onDismiss = { selectedAchievement = null }
+        )
+    }
+
+    selectedSettlement?.let { settlement ->
+        SettlementDetailDialog(
+            settlement = settlement,
+            financeType = "GOAL",
+            onDismiss = { selectedSettlement = null }
         )
     }
 }

@@ -1,7 +1,6 @@
 // Glory to the LORD our GOD
 package com.example.moneytracker.backend.storage
 
-import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.types.FinanceCategory
 import com.example.moneytracker.backend.storage.types.GoalType
 import com.example.moneytracker.backend.storage.types.LiabilityType
@@ -66,13 +65,5 @@ sealed class FinanceEntity {
         val settlement: List<Settlement> = emptyList(),
     ) : FinanceEntity() {
         override val financeType: FinanceCategory get() = liabilityType
-    }
-
-    companion object {
-        const val GOAL_TEXT = "Goal"
-        val GOAL_COLOR = R.color.Goal
-        val GOAL_OUTLINED_ICON = R.drawable.outlined_goal
-        val GOAL_FILLED_ICON = R.drawable.filled_goal
-        const val GOAL_DESCRIPTION = "Set your financial goals and track your progress"
     }
 }

@@ -15,11 +15,11 @@
     <color name="Debt">#FF2467DB</color>
     <color name="Lent">#FFF77F00</color>
     <color name="Withdrawal">#EDBF4FD7</color>
-    <color name="Savings">#5FD5BC</color>
-    <color name="RepayLoan">#FFDD6031</color>
+    <color name="Savings">#CDDC39</color>
+    <color name="RepayLoan">#97D3C8</color>
     <color name="RepayDebt">#FF006E90</color>
     <color name="Goal">#FF8AA29E</color>
-    <color name="Attain">#65AAC7</color>
+    <color name="Attain">#FF67E0A3</color>
     <color name="gray">#FF808080</color>
     <color name="success_complete">#FF00C853</color>
 </resources>

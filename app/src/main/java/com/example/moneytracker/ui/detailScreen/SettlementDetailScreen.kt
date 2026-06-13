@@ -10,7 +10,6 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -92,29 +92,6 @@ fun SettlementDetailScreen(
                             contentDescription = "Back"
                         )
                     }
-                },
-                actions = {
-                    val currentLiability =
-                        (financeEntity as? DataState.Success)?.data as? FinanceEntity.Liability
-                    if (currentLiability != null) {
-                        val color = colorResource(id = currentLiability.liabilityType.color)
-
-                        EditLiability(
-                            color = color,
-                            liabilityId = liabilityId
-                        )
-
-                        DeleteLiabilityButton(
-                            liability = currentLiability,
-                            onDeleteSuccess = { navController.safePopBackStack() }
-                        )
-
-                        AddSettlement(
-                            color = color,
-                            liabilityId = liabilityId,
-                            liability = currentLiability
-                        )
-                    }
                 }
             )
         }
@@ -148,7 +125,11 @@ fun SettlementDetailScreen(
                     is DataState.Success -> {
                         val liability = state.data as? FinanceEntity.Liability
                         if (liability != null) {
-                            LiabilityContent(liability)
+                            LiabilityContent(
+                                liability = liability,
+                                liabilityId = liabilityId,
+                                onDeleteSuccess = { navController.safePopBackStack() }
+                            )
                         } else {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
@@ -174,7 +155,11 @@ fun SettlementDetailScreen(
 }
 
 @Composable
-fun LiabilityContent(liability: FinanceEntity.Liability) {
+fun LiabilityContent(
+    liability: FinanceEntity.Liability,
+    liabilityId: String,
+    onDeleteSuccess: () -> Unit
+) {
     var selectedSettlement by remember { mutableStateOf<Settlement?>(null) }
 
     LazyColumn(
@@ -185,6 +170,42 @@ fun LiabilityContent(liability: FinanceEntity.Liability) {
     ) {
         item {
             LiabilitySummaryCard(liability)
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val color = colorResource(id = liability.liabilityType.color)
+
+                EditLiability(
+                    color = color,
+                    liabilityId = liabilityId,
+                    label = "Edit",
+                    detailButtonType = DetailButtonType.ICON_TEXT
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                DeleteLiabilityButton(
+                    liability = liability,
+                    onDeleteSuccess = onDeleteSuccess,
+                    label = "Delete",
+                    detailButtonType = DetailButtonType.ICON_TEXT
+                )
+
+                Spacer(modifier = Modifier.width(8.dp))
+
+                AddSettlement(
+                    color = color,
+                    liabilityId = liabilityId,
+                    liability = liability,
+                    label = "Settlement",
+                    detailButtonType = DetailButtonType.ICON_TEXT
+                )
+            }
         }
 
         if (liability.settlement.isNotEmpty()) {
@@ -268,7 +289,12 @@ fun LiabilitySummaryCard(liability: FinanceEntity.Liability) {
                 value = remaining.formatToAmount(),
                 valueColor = if (remaining > 0) color else colorResource(id = R.color.success_complete)
             )
-            DetailRow(label = "Started", value = liability.createdAt.formatToDateTime)
+            DetailRow(
+                label = when (liability.liabilityType) {
+                    LiabilityType.DEBT -> "Deposited At"
+                    LiabilityType.LOAN -> "Lent At"
+                }, value = liability.createdAt.formatToDateTime
+            )
             DetailRow(label = "Method", value = liability.paymentMethod.text)
 
             if (liability.liabilityType == LiabilityType.DEBT) {
@@ -310,55 +336,6 @@ fun LiabilitySummaryCard(liability: FinanceEntity.Liability) {
                 Text(
                     text = liability.description,
                     style = MaterialTheme.typography.bodyMedium
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun SettlementItem(
-    settlement: Settlement,
-    onClick: () -> Unit
-) {
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable(onClick = onClick),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-        )
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = settlement.label.ifEmpty { settlement.dateTime.formatToDateTime },
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(
-                    text = settlement.amount.formatToAmount(),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-            Spacer(modifier = Modifier.height(4.dp))
-            HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = "Date: ${settlement.dateTime.formatToDateTime}",
-                style = MaterialTheme.typography.bodySmall,
-                color = Color.Gray
-            )
-            if (settlement.description.isNotEmpty()) {
-                Text(
-                    text = settlement.description,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray
                 )
             }
         }

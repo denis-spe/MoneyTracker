@@ -16,7 +16,7 @@ enum class LiabilityType(
         outlinedIcon = R.drawable.outline_debt,
         filledIcon = R.drawable.filled_debt,
         tagIconRes = R.drawable.debt,
-        typeDescription = "Set your debts which you are owed"
+        typeDescription = "Manage your debts"
     ),
     LOAN(
         text = "Lent",
@@ -24,6 +24,6 @@ enum class LiabilityType(
         outlinedIcon = R.drawable.outline_lent,
         filledIcon = R.drawable.filled_lent,
         tagIconRes = R.drawable.lent,
-        typeDescription = "Post your amount which you lent"
+        typeDescription = "Recover your funds"
     )
 }

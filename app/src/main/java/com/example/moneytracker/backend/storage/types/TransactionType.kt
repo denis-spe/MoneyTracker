@@ -16,7 +16,7 @@ enum class TransactionType(
         outlinedIcon = R.drawable.outline_earnings,
         filledIcon = R.drawable.filled_earnings,
         tagIconRes = R.drawable.earnings,
-        typeDescription = "Top up your earnings"
+        typeDescription = "Boost your revenue"
     ),
     SAVINGS(
         text = "Savings",
@@ -24,7 +24,7 @@ enum class TransactionType(
         outlinedIcon = R.drawable.outline_savings,
         filledIcon = R.drawable.filled_savings,
         tagIconRes = R.drawable.savings,
-        typeDescription = "Put a time for your savings"
+        typeDescription = "Grow your wealth"
     ),
     EXPENSES(
         text = "Expense",
@@ -32,6 +32,6 @@ enum class TransactionType(
         outlinedIcon = R.drawable.outline_expenditure,
         filledIcon = R.drawable.filled_expenditure,
         tagIconRes = R.drawable.expense,
-        typeDescription = "Add your expenses"
+        typeDescription = "Track your spending"
     )
 }

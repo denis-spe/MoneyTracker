@@ -3,30 +3,42 @@ package com.example.moneytracker.ui.detailScreen
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.input.rememberTextFieldState
 import androidx.compose.foundation.text.input.setTextAndPlaceCursorAtEnd
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.AddTask
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedIconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -42,6 +54,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -62,7 +75,7 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
-import com.example.moneytracker.ui.components.DeleteButton
+import com.example.moneytracker.ui.components.DeleteDialog
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerAmountField
@@ -74,6 +87,48 @@ import com.example.moneytracker.ui.homeScreen.dataAddition.WasAmountReceived
 import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
+
+@Composable
+fun SettlementItem(
+    settlement: Settlement,
+    onClick: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        )
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = settlement.label.ifEmpty { settlement.dateTime.formatToDateTime },
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = settlement.amount.formatToAmount(),
+                    style = MaterialTheme.typography.bodyLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Date: ${settlement.dateTime.formatToDateTime}",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray
+            )
+        }
+    }
+}
 
 @Composable
 fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecified) {
@@ -93,6 +148,146 @@ fun DetailRow(label: String, value: String, valueColor: Color = Color.Unspecifie
             color = valueColor
         )
     }
+}
+
+enum class DetailButtonType {
+    OUTLINE, FILLED, ICON_TEXT, ICON_ONLY
+}
+
+@Composable
+fun DetailButton(
+    modifier: Modifier = Modifier,
+    label: String,
+    icon: ImageVector,
+    containerColor: Color,
+    contentColor: Color,
+    detailButtonType: DetailButtonType,
+    onClick: () -> Unit
+) {
+    when (detailButtonType) {
+        DetailButtonType.OUTLINE -> {
+            OutlinedButton(
+                onClick = onClick,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = contentColor
+                ),
+                border = BorderStroke(1.dp, containerColor),
+                modifier = modifier,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = contentColor
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = label,
+                    color = contentColor
+                )
+            }
+        }
+
+        DetailButtonType.FILLED -> {
+            Button(
+                onClick = onClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = containerColor,
+                    contentColor = contentColor
+                ),
+                modifier = modifier,
+                shape = RoundedCornerShape(10.dp)
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = contentColor
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = label,
+                    color = contentColor
+                )
+            }
+        }
+
+        DetailButtonType.ICON_TEXT -> {
+            TextButton(
+                onClick = onClick,
+                shape = RoundedCornerShape(5.dp)
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(35.dp)
+                            .border(1.dp, containerColor, CircleShape),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = label,
+                            tint = contentColor,
+                            modifier = Modifier.padding(5.dp)
+                        )
+                    }
+
+                    Text(
+                        text = label,
+                        color = contentColor
+                    )
+                }
+            }
+        }
+
+        DetailButtonType.ICON_ONLY -> {
+            OutlinedIconButton(
+                onClick = onClick,
+                colors = IconButtonDefaults.outlinedIconButtonColors(
+                    contentColor = contentColor
+                ),
+                border = BorderStroke(1.dp, containerColor),
+                modifier = modifier
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = label,
+                    tint = contentColor
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun DeleteButton(
+    title: String,
+    paragraph: String,
+    label: String,
+    containerColor: Color = colorResource(R.color.error_color),
+    contentColor: Color = Color.White,
+    detailButtonType: DetailButtonType = DetailButtonType.OUTLINE,
+    onConfirm: () -> Unit,
+) {
+    val showDialog = remember { mutableStateOf(false) }
+
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Delete,
+        containerColor = containerColor,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) contentColor else containerColor,
+        detailButtonType = detailButtonType,
+        onClick = { showDialog.value = true }
+    )
+
+    DeleteDialog(
+        showDialog = showDialog,
+        title = title,
+        paragraph = paragraph,
+        onConfirm = onConfirm
+    )
 }
 
 @Composable
@@ -125,6 +320,8 @@ fun DetailNote(
 fun AddGoalAttained(
     color: Color,
     goalId: String,
+    label: String = "Attainment",
+    detailButtonType: DetailButtonType = DetailButtonType.FILLED,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val showDialog = remember { mutableStateOf(false) }
@@ -166,13 +363,14 @@ fun AddGoalAttained(
         }
     }
 
-    IconButton(
-        onClick = { showDialog.value = true },
-        colors = IconButtonDefaults.iconButtonColors().copy(
-            containerColor = color
-        )
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Add,
+        containerColor = color,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else color,
+        detailButtonType = detailButtonType
     ) {
-        Icon(imageVector = Icons.Default.AddTask, contentDescription = "Add Attain")
+        showDialog.value = true
     }
 
     if (showDialog.value) {
@@ -231,7 +429,7 @@ fun AddGoalAttained(
                 PaymentMethodDropdown(
                     colorResId = R.color.Attain,
                     selectedPaymentMethod = paymentMethod
-                )
+                ) 
 
                 Row(
                     modifier = Modifier
@@ -266,6 +464,8 @@ fun AddGoalAttained(
 fun EditGoal(
     color: Color,
     goalId: String,
+    label: String = "Edit",
+    detailButtonType: DetailButtonType = DetailButtonType.FILLED,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val showDialog = remember { mutableStateOf(false) }
@@ -306,17 +506,14 @@ fun EditGoal(
         }
     }
 
-    MaterialTheme(colorScheme = MaterialTheme.colorScheme.copy(primary = color)) {
-        OutlinedIconButton(
-            onClick = { showDialog.value = true },
-            border = BorderStroke(1.dp, color),
-        ) {
-            Icon(
-                imageVector = Icons.Default.Edit,
-                contentDescription = "Edit Goal",
-                tint = color
-            )
-        }
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Edit,
+        containerColor = color,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else color,
+        detailButtonType = detailButtonType
+    ) {
+        showDialog.value = true
     }
 
     if (showDialog.value) {
@@ -415,7 +612,10 @@ fun EditGoal(
 fun EditSettlementAmount(
     settlement: Settlement,
     financeType: String,
-    viewModel: DetailViewModel = hiltViewModel()
+    label: String = "Edit",
+    detailButtonType: DetailButtonType = DetailButtonType.ICON_ONLY,
+    viewModel: DetailViewModel = hiltViewModel(),
+    onUpdateSuccess: () -> Unit = {}
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
@@ -441,17 +641,14 @@ fun EditSettlementAmount(
         )
     )
 
-
-    OutlinedIconButton(
-        onClick = { showDialog.value = true },
-        border = BorderStroke(1.dp, getColor)
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Edit,
+        containerColor = getColor,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else getColor,
+        detailButtonType = detailButtonType
     ) {
-        Icon(
-            imageVector = Icons.Default.Edit,
-            contentDescription = "Edit Settlement",
-            tint = getColor,
-            modifier = Modifier.size(20.dp)
-        )
+        showDialog.value = true
     }
 
     if (showDialog.value) {
@@ -530,6 +727,7 @@ fun EditSettlementAmount(
                             localDate = localDateState.value.toFirestoreTimestampUtc()
                         )
                         showDialog.value = false
+                        onUpdateSuccess()
                     }
                 }
             }
@@ -546,6 +744,8 @@ fun DeleteSettlementButton(
     DeleteButton(
         title = "Delete ${settlement.settlementType.text}?",
         paragraph = "This action cannot be undone. Are you sure you want to delete this record?",
+        label = "Delete",
+        detailButtonType = DetailButtonType.ICON_ONLY,
         onConfirm = {
             viewModel.deleteSettlement(financeType, settlement)
         }
@@ -559,10 +759,10 @@ fun SettlementDetailDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        androidx.compose.material3.Card(
+        Card(
             modifier = Modifier.fillMaxWidth(0.95f),
             shape = RoundedCornerShape(16.dp),
-            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -611,7 +811,8 @@ fun SettlementDetailDialog(
                 ) {
                     EditSettlementAmount(
                         settlement = settlement,
-                        financeType = financeType
+                        financeType = financeType,
+                        onUpdateSuccess = onDismiss
                     )
                     DeleteSettlementButton(
                         settlement = settlement,
@@ -634,6 +835,8 @@ fun SettlementDetailDialog(
 @Composable
 fun EditWithdrawalAmount(
     withdrawal: Withdrawal,
+    label: String = "Edit",
+    detailButtonType: DetailButtonType = DetailButtonType.ICON_ONLY,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val showDialog = remember { mutableStateOf(false) }
@@ -646,16 +849,14 @@ fun EditWithdrawalAmount(
     val colorRes = SettlementType.WITHDRAWAL.color
     val getColor = colorResource(colorRes)
 
-    OutlinedIconButton(
-        onClick = { showDialog.value = true },
-        border = BorderStroke(1.dp, getColor)
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Edit,
+        containerColor = getColor,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else getColor,
+        detailButtonType = detailButtonType
     ) {
-        Icon(
-            imageVector = Icons.Default.Edit,
-            contentDescription = "Edit Withdrawal",
-            tint = getColor,
-            modifier = Modifier.size(20.dp)
-        )
+        showDialog.value = true
     }
 
     if (showDialog.value) {
@@ -740,6 +941,8 @@ fun DeleteWithdrawalButton(
     DeleteButton(
         title = "Delete Withdrawal?",
         paragraph = "This action cannot be undone. Are you sure you want to delete this record?",
+        label = "Delete",
+        detailButtonType = DetailButtonType.ICON_ONLY,
         onConfirm = {
             viewModel.deleteWithdrawal(withdrawal)
         }
@@ -752,10 +955,10 @@ fun WithdrawalDetailDialog(
     onDismiss: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
-        androidx.compose.material3.Card(
+        Card(
             modifier = Modifier.fillMaxWidth(0.95f),
             shape = RoundedCornerShape(16.dp),
-            colors = androidx.compose.material3.CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
         ) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -773,10 +976,6 @@ fun WithdrawalDetailDialog(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     DetailRow(
-                        label = "Label",
-                        value = withdrawal.label.ifEmpty { "Withdrawal" }
-                    )
-                    DetailRow(
                         label = "Amount",
                         value = withdrawal.amount.formatToAmount(),
                         valueColor = colorResource(SettlementType.WITHDRAWAL.color)
@@ -787,11 +986,11 @@ fun WithdrawalDetailDialog(
                     )
                     DetailRow(
                         label = "From",
-                        value = withdrawal.fromPaymentMethod.name
+                        value = withdrawal.fromPaymentMethod.text
                     )
                     DetailRow(
                         label = "To",
-                        value = withdrawal.toPaymentMethod.name
+                        value = withdrawal.toPaymentMethod.text
                     )
                     if (withdrawal.description.isNotEmpty()) {
                         DetailRow(
@@ -829,6 +1028,8 @@ fun WithdrawalDetailDialog(
 @Composable
 fun EditAchievementAmount(
     achievement: Achievement,
+    label: String = "Edit",
+    detailButtonType: DetailButtonType = DetailButtonType.ICON_ONLY,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val showDialog = remember { mutableStateOf(false) }
@@ -844,16 +1045,14 @@ fun EditAchievementAmount(
     val getColor = colorResource(color)
 
 
-    OutlinedIconButton(
-        onClick = { showDialog.value = true },
-        border = BorderStroke(1.dp, getColor)
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Edit,
+        containerColor = getColor,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else getColor,
+        detailButtonType = detailButtonType
     ) {
-        Icon(
-            imageVector = Icons.Default.Edit,
-            contentDescription = "Edit Amount",
-            tint = getColor,
-            modifier = Modifier.size(20.dp)
-        )
+        showDialog.value = true
     }
 
     if (showDialog.value) {
@@ -926,6 +1125,8 @@ fun DeleteAchievementButton(
     DeleteButton(
         title = "Delete Achievement?",
         paragraph = "This action cannot be undone. Are you sure you want to delete this record?",
+        label = "Delete",
+        detailButtonType = DetailButtonType.ICON_ONLY,
         onConfirm = {
             viewModel.deleteAchievement(achievement)
         }
@@ -937,6 +1138,8 @@ fun DeleteAchievementButton(
 fun EditTransaction(
     color: Color,
     transactionId: String,
+    label: String = "Edit",
+    detailButtonType: DetailButtonType = DetailButtonType.FILLED,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val showDialog = remember { mutableStateOf(false) }
@@ -985,15 +1188,14 @@ fun EditTransaction(
         }
     }
 
-    OutlinedIconButton(
-        onClick = { showDialog.value = true },
-        border = BorderStroke(1.dp, color)
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Edit,
+        containerColor = color,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else color,
+        detailButtonType = detailButtonType
     ) {
-        Icon(
-            imageVector = Icons.Default.Edit,
-            contentDescription = "Edit Transaction",
-            tint = color
-        )
+        showDialog.value = true
     }
 
 
@@ -1017,7 +1219,12 @@ fun EditTransaction(
                         transaction?.transactionType?.filledIcon ?: R.drawable.initial
                     ),
                     contentDescription = "Transaction",
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(30.dp),
+                    colorFilter = ColorFilter.tint(
+                        colorResource(
+                            transaction?.transactionType?.color ?: R.color.Earnings
+                        )
+                    )
                 )
 
                 Text(
@@ -1102,12 +1309,16 @@ fun EditTransaction(
 @Composable
 fun DeleteTransactionButton(
     transaction: FinanceEntity.Transaction,
+    label: String = "Delete",
+    detailButtonType: DetailButtonType = DetailButtonType.OUTLINE,
     viewModel: DetailViewModel = hiltViewModel(),
     onDeleteSuccess: () -> Unit = {}
 ) {
     DeleteButton(
         title = "Delete Transaction?",
         paragraph = "This action cannot be undone. Are you sure you want to delete this transaction: \"${transaction.label}\"?",
+        label = label,
+        detailButtonType = detailButtonType,
         onConfirm = {
             viewModel.deleteTransaction(transaction.id)
             onDeleteSuccess()
@@ -1120,6 +1331,8 @@ fun DeleteTransactionButton(
 fun EditLiability(
     color: Color,
     liabilityId: String,
+    label: String = "Edit",
+    detailButtonType: DetailButtonType = DetailButtonType.FILLED,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val showDialog = remember { mutableStateOf(false) }
@@ -1165,12 +1378,14 @@ fun EditLiability(
         }
     }
 
-    OutlinedIconButton(
-        onClick = { showDialog.value = true },
-        border = BorderStroke(1.dp, color),
-        colors = IconButtonDefaults.iconButtonColors().copy(contentColor = color)
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Edit,
+        containerColor = color,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else color,
+        detailButtonType = detailButtonType
     ) {
-        Icon(imageVector = Icons.Default.Edit, contentDescription = "Edit Liability")
+        showDialog.value = true
     }
 
     if (showDialog.value) {
@@ -1290,12 +1505,16 @@ fun EditLiability(
 @Composable
 fun DeleteLiabilityButton(
     liability: FinanceEntity.Liability,
+    label: String = "Delete",
+    detailButtonType: DetailButtonType = DetailButtonType.OUTLINE,
     viewModel: DetailViewModel = hiltViewModel(),
     onDeleteSuccess: () -> Unit = {}
 ) {
     DeleteButton(
         title = "Delete Liability?",
         paragraph = "This action cannot be undone. Are you sure you want to delete this liability: \"${liability.label}\"?",
+        label = label,
+        detailButtonType = detailButtonType,
         onConfirm = {
             viewModel.deleteLiability(liability.id)
             onDeleteSuccess()
@@ -1309,6 +1528,8 @@ fun AddSettlement(
     color: Color,
     liabilityId: String,
     liability: FinanceEntity.Liability,
+    label: String = "Add Settlement",
+    detailButtonType: DetailButtonType = DetailButtonType.FILLED,
     viewModel: DetailViewModel = hiltViewModel()
 ) {
     val showDialog = remember { mutableStateOf(false) }
@@ -1345,13 +1566,16 @@ fun AddSettlement(
         }
     }
 
-    IconButton(
-        onClick = { showDialog.value = true },
-        colors = IconButtonDefaults.iconButtonColors().copy(
-            containerColor = colorResource(settlementType.color)
-        )
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Add,
+        containerColor = colorResource(settlementType.color),
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else colorResource(
+            settlementType.color
+        ),
+        detailButtonType = detailButtonType
     ) {
-        Icon(imageVector = Icons.Default.Add, contentDescription = "Add Settlement")
+        showDialog.value = true
     }
 
     if (showDialog.value) {
@@ -1453,6 +1677,8 @@ fun AddSettlement(
 fun AddWithdrawal(
     color: Color,
     transactionId: String,
+    label: String = "Add Withdrawal",
+    detailButtonType: DetailButtonType = DetailButtonType.FILLED,
     viewModel: DetailViewModel = hiltViewModel(),
     currentPaymentMethod: PaymentMethod
 ) {
@@ -1479,11 +1705,14 @@ fun AddWithdrawal(
 
     val withdrawalType = SettlementType.WITHDRAWAL
 
-    IconButton(
-        onClick = { showDialog.value = true },
-        colors = IconButtonDefaults.iconButtonColors().copy(containerColor = color)
+    DetailButton(
+        label = label,
+        icon = Icons.Default.Add,
+        containerColor = color,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else color,
+        detailButtonType = detailButtonType
     ) {
-        Icon(imageVector = Icons.Default.Add, contentDescription = "Add Withdrawal")
+        showDialog.value = true
     }
 
     if (showDialog.value) {
@@ -1504,7 +1733,10 @@ fun AddWithdrawal(
                 Image(
                     painter = painterResource(withdrawalType.icon),
                     contentDescription = withdrawalType.text,
-                    modifier = Modifier.size(30.dp)
+                    modifier = Modifier.size(30.dp),
+                    colorFilter = ColorFilter.tint(
+                        colorResource(withdrawalType.color)
+                    )
                 )
 
                 Text(

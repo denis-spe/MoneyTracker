@@ -4,7 +4,6 @@
 // =====
 
 package com.example.moneytracker.ui.homeScreen.dataAddition
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.Immutable
@@ -45,6 +45,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -80,7 +81,7 @@ import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
 
-val MODEL_DRAWER_ICON_SIZE = 25.dp
+val MODEL_DRAWER_ICON_SIZE = 30.dp
 val FONT_WEIGHT = FontWeight.Bold
 const val MAX_LABEL_LENGTH = 15
 
@@ -116,6 +117,8 @@ fun DataAdditionModelDrawer(
                 alpha = 0.97f
             ),
 
+            dragHandle = null,
+
             modifier = Modifier.statusBarsPadding()
         ) {
 
@@ -146,6 +149,8 @@ fun DataAdditionModelDrawer(
             containerColor = BottomSheetDefaults.ContainerColor.copy(
                 alpha = 0.97f
             ),
+
+            dragHandle = null,
 
             modifier = Modifier.statusBarsPadding()
         ) {
@@ -214,10 +219,18 @@ fun <T> DataAdditionModelDrawerContent(
                 else -> R.color.error_color
             }
 
+            val painter = when (item) {
+                is FinanceCategory -> item.filledIcon
+                is SettlementType -> item.icon
+                else -> R.drawable.initial
+            }
+
             DrawerItem(
                 text = text,
                 description = description,
-                color = color
+                color = color,
+                isItemLast = item == entries.last(),
+                painter = painter
             ) {
                 selection.visible = true
                 selection.selected = item
@@ -235,9 +248,10 @@ fun <T> DataAdditionModelDrawerContent(
 
             sheetState = rememberModalBottomSheetState(
                 skipPartiallyExpanded = true
-            )
-        ) {
+            ),
 
+            dragHandle = null
+        ) {
             when (val clicked = selection.selected) {
 
                 is TransactionType -> {
@@ -336,7 +350,6 @@ fun <T> DataAdditionModelDrawerContent(
 
                         adjustFinance = adjustFinance
                     ) {
-
                         viewModel.updateOnAdjustModelBottomSheetShow(false)
 
                         selection.visible = false
@@ -391,6 +404,8 @@ private fun DrawerItem(
     text: String,
     description: String,
     color: Int,
+    painter: Int,
+    isItemLast: Boolean = false,
     onClick: () -> Unit
 ) {
 
@@ -413,6 +428,15 @@ private fun DrawerItem(
                 )
             },
 
+            leadingContent = {
+                Image(
+                    painter = painterResource(painter),
+                    contentDescription = text,
+                    colorFilter = ColorFilter.tint(colorResource(color)),
+                    modifier = Modifier.size(MODEL_DRAWER_ICON_SIZE)
+                )
+            },
+
             supportingContent = {
 
                 Text(
@@ -432,9 +456,11 @@ private fun DrawerItem(
             }
         )
 
-        HorizontalDivider(
-            color = Color.LightGray.copy(alpha = 0.4f)
-        )
+        if (!isItemLast) {
+            HorizontalDivider(
+                color = Color.LightGray.copy(alpha = 0.4f)
+            )
+        }
     }
 }
 
@@ -514,6 +540,7 @@ fun FinancialDataInput(
         modifier = Modifier
             .fillMaxWidth()
             .imePadding()
+            .padding(vertical = 16.dp)
             .verticalScroll(scrollState),
 
         horizontalAlignment = Alignment.CenterHorizontally
@@ -529,6 +556,7 @@ fun FinancialDataInput(
 
             tint = color
         )
+
 
         Text(
             text = type.typeDescription,
@@ -607,93 +635,108 @@ fun FinancialDataInput(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(top = 16.dp),
 
             horizontalArrangement = Arrangement.Center
         ) {
 
-            ModelDrawerButton(
-                text = buttonText,
-
-                wasSuccess = null,
-
-                colorResId = type.color,
-
-                filledColor = color,
-
-                textColor = Color.White
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
             ) {
+                ModelDrawerButton(
+                    text = buttonText,
 
-                val label = labelState.text.toString()
+                    wasSuccess = null,
 
-                if (
-                    amountAsDouble == null ||
-                    label.isBlank()
+                    colorResId = type.color,
+
+                    filledColor = color,
+
+                    textColor = Color.White
                 ) {
 
-                    uiState = uiState.copy(
-                        isError = true
-                    )
+                    val label = labelState.text.toString()
 
-                    userViewModel.showActionNotification(
-                        if (amountAsDouble == null && label.isBlank()) {
-                            "Amount and label cannot be empty"
-                        } else if (amountAsDouble == null) {
-                            "Amount cannot be empty"
-                        } else {
-                            "Label cannot be empty"
-                        },
-                        color = Color.Red.copy(alpha = 0.5f)
-                    )
+                    if (
+                        amountAsDouble == null ||
+                        label.isBlank()
+                    ) {
 
-                    return@ModelDrawerButton
-                }
-
-                val entity = when (type) {
-
-                    is TransactionType -> {
-
-                        FinanceEntity.Transaction(
-                            id = UUID.randomUUID().toString(),
-                            transactionType = type,
-                            amount = amountAsDouble!!,
-                            label = label,
-                            description = descriptionState.text.toString(),
-                            createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
-                            tagIcon = tagState.value,
-                            paymentMethod = paymentMethod.value
+                        uiState = uiState.copy(
+                            isError = true
                         )
+
+                        userViewModel.showActionNotification(
+                            if (amountAsDouble == null && label.isBlank()) {
+                                "Amount and label cannot be empty"
+                            } else if (amountAsDouble == null) {
+                                "Amount cannot be empty"
+                            } else {
+                                "Label cannot be empty"
+                            },
+                            color = Color.Red.copy(alpha = 0.5f)
+                        )
+
+                        return@ModelDrawerButton
                     }
 
-                    is LiabilityType -> {
+                    val entity = when (type) {
 
-                        FinanceEntity.Liability(
-                            id = UUID.randomUUID().toString(),
-                            liabilityType = type,
-                            amount = amountAsDouble!!,
-                            label = label,
-                            description = descriptionState.text.toString(),
-                            createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
-                            tagIcon = tagState.value,
-                            paymentMethod = paymentMethod.value,
-                            isAmountReceived = if (type == LiabilityType.DEBT) isAmountReceived.value else false
-                        )
+                        is TransactionType -> {
+
+                            FinanceEntity.Transaction(
+                                id = UUID.randomUUID().toString(),
+                                transactionType = type,
+                                amount = amountAsDouble!!,
+                                label = label,
+                                description = descriptionState.text.toString(),
+                                createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
+                                tagIcon = tagState.value,
+                                paymentMethod = paymentMethod.value
+                            )
+                        }
+
+                        is LiabilityType -> {
+
+                            FinanceEntity.Liability(
+                                id = UUID.randomUUID().toString(),
+                                liabilityType = type,
+                                amount = amountAsDouble!!,
+                                label = label,
+                                description = descriptionState.text.toString(),
+                                createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
+                                tagIcon = tagState.value,
+                                paymentMethod = paymentMethod.value,
+                                isAmountReceived = if (type == LiabilityType.DEBT) isAmountReceived.value else false
+                            )
+                        }
+
+                        else -> return@ModelDrawerButton
                     }
 
-                    else -> return@ModelDrawerButton
+                    viewModel.addData(entity)
+
+                    amountState.clearText()
+                    labelState.clearText()
+                    descriptionState.clearText()
+
+                    onDismiss()
+
+                    userViewModel.launchSnackBarHostState(
+                        "$label was added successfully"
+                    )
                 }
 
-                viewModel.addData(entity)
-
-                amountState.clearText()
-                labelState.clearText()
-                descriptionState.clearText()
-
-                onDismiss()
-
-                userViewModel.launchSnackBarHostState(
-                    "$label was added successfully"
-                )
+                TextButton(
+                    onClick = onDismiss
+                ) {
+                    Text(
+                        text = "Cancel",
+                        color = colorResource(type.color),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -767,15 +810,18 @@ fun GoalDataInput(
         modifier = Modifier
             .fillMaxWidth()
             .imePadding()
+            .padding(vertical = 16.dp)
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Icon(
             modifier = Modifier.size(MODEL_DRAWER_ICON_SIZE),
             painter = painterResource(GoalType.filledIcon),
             contentDescription = GoalType.text,
             tint = color
         )
+
 
         Text(
             text = GoalType.typeDescription,
@@ -845,90 +891,104 @@ fun GoalDataInput(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(top = 16.dp),
             horizontalArrangement = Arrangement.Center
         ) {
-            ModelDrawerButton(
-                text = buttonText,
-                wasSuccess = remember { mutableStateOf(wasSuccess) },
-                colorResId = GoalType.color,
-                filledColor = color,
-                textColor = Color.White
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val amount = amountAsDouble
-                val label = labelState.text.toString()
-
-                if (amount == null || label.isBlank()) {
-                    wasSuccess = State.ERROR
-                    userViewModel.showActionNotification(
-                        if (amount == null && label.isBlank()) {
-                            "Amount and label cannot be empty"
-                        } else if (amount == null) {
-                            "Amount cannot be empty"
-                        } else {
-                            "Label cannot be empty"
-                        },
-                        color = Color.Red.copy(alpha = 0.5f)
-                    )
-                    return@ModelDrawerButton
-                }
-
-                if (goalDateTimeWarningState.value == GoalWarning.INITIAL) {
-                    goalDateTimeWarningState.value = GoalWarning.ERROR
-                    return@ModelDrawerButton
-                }
-
-                if (
-                    endLocalDateTimeState.value <= localDateTimeState.value ||
-                    goalDateTimeWarningState.value == GoalWarning.ERROR
+                ModelDrawerButton(
+                    text = buttonText,
+                    wasSuccess = remember { mutableStateOf(wasSuccess) },
+                    colorResId = GoalType.color,
+                    filledColor = color,
+                    textColor = Color.White
                 ) {
-                    wasSuccess = State.ERROR
-                    return@ModelDrawerButton
+                    val amount = amountAsDouble
+                    val label = labelState.text.toString()
+
+                    if (amount == null || label.isBlank()) {
+                        wasSuccess = State.ERROR
+                        userViewModel.showActionNotification(
+                            if (amount == null && label.isBlank()) {
+                                "Amount and label cannot be empty"
+                            } else if (amount == null) {
+                                "Amount cannot be empty"
+                            } else {
+                                "Label cannot be empty"
+                            },
+                            color = Color.Red.copy(alpha = 0.5f)
+                        )
+                        return@ModelDrawerButton
+                    }
+
+                    if (goalDateTimeWarningState.value == GoalWarning.INITIAL) {
+                        goalDateTimeWarningState.value = GoalWarning.ERROR
+                        return@ModelDrawerButton
+                    }
+
+                    if (
+                        endLocalDateTimeState.value <= localDateTimeState.value ||
+                        goalDateTimeWarningState.value == GoalWarning.ERROR
+                    ) {
+                        wasSuccess = State.ERROR
+                        return@ModelDrawerButton
+                    }
+
+                    val isLongRoutine = routineData.value.routine in listOf(
+                        Routine.EveryDay,
+                        Routine.Weekly,
+                        Routine.Monthly,
+                        Routine.Yearly,
+                        Routine.SpecifyDayOfTheWeek
+                    )
+
+                    val normalizedStart =
+                        if (isLongRoutine) localDateTimeState.value.toMidnight()
+                        else localDateTimeState.value
+
+                    val normalizedEnd =
+                        if (isLongRoutine) endLocalDateTimeState.value.toMidnight()
+                        else endLocalDateTimeState.value
+
+                    val routine = routineData.value.copy(
+                        startDateTime = normalizedStart.toFirestoreTimestampUtc(),
+                        deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc(),
+                        triggerMillis = normalizedEnd.toFirestoreTimestampUtc().toEpochMilli()
+                    )
+
+                    val entity = FinanceEntity.Goal(
+                        id = UUID.randomUUID().toString(),
+                        amount = amount,
+                        label = label,
+                        description = descriptionState.text.toString(),
+                        createdAt = normalizedStart.toFirestoreTimestampUtc(),
+                        tagIcon = tagIconState.value,
+                        paymentMethod = paymentMethod.value,
+                        routine = routine
+                    )
+
+                    viewModel.addData(entity)
+                    viewModel.beginTheWork(entity)
+
+                    amountState.clearText()
+                    labelState.clearText()
+                    descriptionState.clearText()
+                    tagIconState.value = tagIcon
+                    goalDateTimeWarningState.value = GoalWarning.INITIAL
+
+                    onDismiss()
                 }
-
-                val isLongRoutine = routineData.value.routine in listOf(
-                    Routine.EveryDay,
-                    Routine.Weekly,
-                    Routine.Monthly,
-                    Routine.Yearly,
-                    Routine.SpecifyDayOfTheWeek
-                )
-
-                val normalizedStart =
-                    if (isLongRoutine) localDateTimeState.value.toMidnight()
-                    else localDateTimeState.value
-
-                val normalizedEnd =
-                    if (isLongRoutine) endLocalDateTimeState.value.toMidnight()
-                    else endLocalDateTimeState.value
-
-                val routine = routineData.value.copy(
-                    startDateTime = normalizedStart.toFirestoreTimestampUtc(),
-                    deadlineDateTime = normalizedEnd.toFirestoreTimestampUtc(),
-                    triggerMillis = normalizedEnd.toFirestoreTimestampUtc().toEpochMilli()
-                )
-
-                val entity = FinanceEntity.Goal(
-                    id = UUID.randomUUID().toString(),
-                    amount = amount,
-                    label = label,
-                    description = descriptionState.text.toString(),
-                    createdAt = normalizedStart.toFirestoreTimestampUtc(),
-                    tagIcon = tagIconState.value,
-                    paymentMethod = paymentMethod.value,
-                    routine = routine
-                )
-
-                viewModel.addData(entity)
-                viewModel.beginTheWork(entity)
-
-                amountState.clearText()
-                labelState.clearText()
-                descriptionState.clearText()
-                tagIconState.value = tagIcon
-                goalDateTimeWarningState.value = GoalWarning.INITIAL
-
-                onDismiss()
+                TextButton(
+                    onClick = onDismiss
+                ) {
+                    Text(
+                        text = "Cancel",
+                        color = colorResource(GoalType.color),
+                        fontWeight = FontWeight.Medium
+                    )
+                }
             }
         }
     }
@@ -996,9 +1056,11 @@ fun SettlementDataInputs(
         modifier = Modifier
             .fillMaxWidth()
             .imePadding()
+            .padding(vertical = 16.dp)
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Icon(
             modifier = Modifier.size(MODEL_DRAWER_ICON_SIZE),
             painter = iconImage,
@@ -1050,78 +1112,93 @@ fun SettlementDataInputs(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp),
+                .padding(top = 16.dp),
             horizontalArrangement = Arrangement.Center
         ) {
-            ModelDrawerButton(
-                text = "Add",
-                wasSuccess = remember { mutableStateOf(wasSuccess) },
-                colorResId = settlementType.color,
-                filledColor = Color.Transparent,
-                textColor = color
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val entity = selectedFinanceEntity.value
-                val settleAmount = settleAsDouble
-
-                if (entity == null) {
-                    wasSuccess = State.ERROR
-                    userViewModel.showActionNotification(
-                        when (dataType) {
-                            DataType.LENT -> "Please select a loan to repay"
-                            DataType.DEBT -> "Please select a debt to repay"
-                            else -> "Please select a goal to attain"
-                        },
-                        color = Color.Red.copy(alpha = 0.5f)
-                    )
-                    return@ModelDrawerButton
-                }
-
-                if (settleAmount == null) {
-                    wasSuccess = State.ERROR
-                    userViewModel.showActionNotification(
-                        "Amount cannot be empty",
-                        color = Color.Red.copy(alpha = 0.5f)
-                    )
-                    return@ModelDrawerButton
-                }
-
-                if (
-                    settleAmount > entity.remainingAmount &&
-                    !entity.isStartDateTimeNotEqualToDeadlineDateTime
+                ModelDrawerButton(
+                    text = "Add",
+                    wasSuccess = remember { mutableStateOf(wasSuccess) },
+                    colorResId = settlementType.color,
+                    filledColor = Color.Transparent,
+                    textColor = color
                 ) {
-                    wasSuccess = State.ERROR
-                    return@ModelDrawerButton
+                    val entity = selectedFinanceEntity.value
+                    val settleAmount = settleAsDouble
+
+                    if (entity == null) {
+                        wasSuccess = State.ERROR
+                        userViewModel.showActionNotification(
+                            when (dataType) {
+                                DataType.LENT -> "Please select a loan to repay"
+                                DataType.DEBT -> "Please select a debt to repay"
+                                else -> "Please select a goal to attain"
+                            },
+                            color = Color.Red.copy(alpha = 0.5f)
+                        )
+                        return@ModelDrawerButton
+                    }
+
+                    if (settleAmount == null) {
+                        wasSuccess = State.ERROR
+                        userViewModel.showActionNotification(
+                            "Amount cannot be empty",
+                            color = Color.Red.copy(alpha = 0.5f)
+                        )
+                        return@ModelDrawerButton
+                    }
+
+                    if (
+                        settleAmount > entity.remainingAmount &&
+                        !entity.isStartDateTimeNotEqualToDeadlineDateTime
+                    ) {
+                        wasSuccess = State.ERROR
+                        return@ModelDrawerButton
+                    }
+
+                    val settlement = Settlement(
+                        settlementId = UUID.randomUUID().toString(),
+                        amount = settleAmount,
+                        dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
+                        label = settlementType.text,
+                        description = descriptionState.text.toString(),
+                        tagIcon = entity.tagIcon,
+                        paymentMethod = selectedPaymentMethod.value,
+                        settlementType = settlementType
+                    ).apply {
+                        financeEntity = entity
+                    }
+
+                    val financeEntityType = when (entity) {
+                        is FinanceEntity.Transaction -> "TRANSACTION"
+                        is FinanceEntity.Goal -> "GOAL"
+                        is FinanceEntity.Liability -> "LIABILITY"
+                    }
+
+                    viewModel.addSettlementData(
+                        entity.id,
+                        financeEntityType,
+                        settlement
+                    )
+
+                    adjustAmountState.clearText()
+                    descriptionState.clearText()
+
+                    onDismiss()
+                }
+                TextButton(
+                    onClick = onDismiss
+                ) {
+                    Text(
+                        text = "Cancel",
+                        color = colorResource(settlementType.color),
+                        fontWeight = FontWeight.Medium
+                    )
                 }
 
-                val settlement = Settlement(
-                    settlementId = UUID.randomUUID().toString(),
-                    amount = settleAmount,
-                    dateTime = localDateTimeState.value.toFirestoreTimestampUtc(),
-                    label = settlementType.text,
-                    description = descriptionState.text.toString(),
-                    tagIcon = entity.tagIcon,
-                    paymentMethod = selectedPaymentMethod.value,
-                    settlementType = settlementType
-                ).apply {
-                    financeEntity = entity
-                }
-
-                val financeEntityType = when (entity) {
-                    is FinanceEntity.Transaction -> "TRANSACTION"
-                    is FinanceEntity.Goal -> "GOAL"
-                    is FinanceEntity.Liability -> "LIABILITY"
-                }
-
-                viewModel.addSettlementData(
-                    entity.id,
-                    financeEntityType,
-                    settlement
-                )
-
-                adjustAmountState.clearText()
-                descriptionState.clearText()
-
-                onDismiss()
             }
         }
     }
@@ -1187,14 +1264,18 @@ fun WithdrawalInputs(
         modifier = Modifier
             .fillMaxWidth()
             .imePadding()
+            .padding(vertical = 16.dp)
             .verticalScroll(scrollState),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
+
         Image(
             modifier = Modifier.size(MODEL_DRAWER_ICON_SIZE),
             painter = iconImage,
             contentDescription = settlementType.text,
+            colorFilter = ColorFilter.tint(color)
         )
+
 
         Text(
             text = settlementType.typeDescription,
@@ -1255,63 +1336,78 @@ fun WithdrawalInputs(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 18.dp),
+                .padding(top = 16.dp),
             horizontalArrangement = Arrangement.Center
         ) {
-            ModelDrawerButton(
-                text = "Add",
-                wasSuccess = remember { mutableStateOf(wasSuccess) },
-                colorResId = settlementType.color,
-                filledColor = Color.Transparent,
-                textColor = color
+            Column(
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                val entity = selectedFinanceEntity.value
-                val settleAmount = settleAsDouble
+                ModelDrawerButton(
+                    text = "Add",
+                    wasSuccess = remember { mutableStateOf(wasSuccess) },
+                    colorResId = settlementType.color,
+                    filledColor = Color.Transparent,
+                    textColor = color
+                ) {
+                    val entity = selectedFinanceEntity.value
+                    val settleAmount = settleAsDouble
 
-                if (entity == null) {
-                    wasSuccess = State.ERROR
-                    userViewModel.showActionNotification(
-                        "Please select a transaction",
-                        color = Color.Red.copy(alpha = 0.5f)
+                    if (entity == null) {
+                        wasSuccess = State.ERROR
+                        userViewModel.showActionNotification(
+                            "Please select a transaction",
+                            color = Color.Red.copy(alpha = 0.5f)
+                        )
+                        return@ModelDrawerButton
+                    }
+
+                    if (settleAmount == null) {
+                        wasSuccess = State.ERROR
+                        userViewModel.showActionNotification(
+                            "Amount cannot be empty",
+                            color = Color.Red.copy(alpha = 0.5f)
+                        )
+                        return@ModelDrawerButton
+                    }
+
+                    val withdrawal = Withdrawal(
+                        withdrawalId = UUID.randomUUID().toString(),
+                        amount = settleAmount,
+                        createdAt = localDateTimeState.value.toFirestoreTimestampUtc(),
+                        label = settlementType.text,
+                        description = descriptionState.text.toString(),
+                        toPaymentMethod = toPaymentMethod.value,
+                        fromPaymentMethod = fromPaymentMethod.value
                     )
-                    return@ModelDrawerButton
-                }
 
-                if (settleAmount == null) {
-                    wasSuccess = State.ERROR
-                    userViewModel.showActionNotification(
-                        "Amount cannot be empty",
-                        color = Color.Red.copy(alpha = 0.5f)
+                    val financeEntityType = when (entity) {
+                        is FinanceEntity.Transaction -> "TRANSACTION"
+                        is FinanceEntity.Goal -> "GOAL"
+                        is FinanceEntity.Liability -> "LIABILITY"
+                    }
+
+                    viewModel.addWithdrawalData(
+                        entity.id,
+                        financeEntityType,
+                        withdrawal = withdrawal
                     )
-                    return@ModelDrawerButton
+
+                    adjustAmountState.clearText()
+                    descriptionState.clearText()
+
+                    onDismiss()
                 }
 
-                val withdrawal = Withdrawal(
-                    withdrawalId = UUID.randomUUID().toString(),
-                    amount = settleAmount,
-                    createdAt = localDateTimeState.value.toFirestoreTimestampUtc(),
-                    label = settlementType.text,
-                    description = descriptionState.text.toString(),
-                    toPaymentMethod = toPaymentMethod.value,
-                    fromPaymentMethod = fromPaymentMethod.value
-                )
-
-                val financeEntityType = when (entity) {
-                    is FinanceEntity.Transaction -> "TRANSACTION"
-                    is FinanceEntity.Goal -> "GOAL"
-                    is FinanceEntity.Liability -> "LIABILITY"
+                TextButton(
+                    onClick = onDismiss
+                ) {
+                    Text(
+                        text = "Cancel",
+                        color = color,
+                        fontWeight = FontWeight.Medium
+                    )
                 }
-
-                viewModel.addWithdrawalData(
-                    entity.id,
-                    financeEntityType,
-                    withdrawal = withdrawal
-                )
-
-                adjustAmountState.clearText()
-                descriptionState.clearText()
-
-                onDismiss()
             }
         }
     }

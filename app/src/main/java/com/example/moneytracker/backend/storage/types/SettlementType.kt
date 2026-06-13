@@ -21,8 +21,8 @@ enum class SettlementType(
 
     LENT_REPAY(
         "Refund",
-        icon = R.drawable.filled_repay,
-        outlineIcon = R.drawable.outlined_repay,
+        icon = R.drawable.filled_refund,
+        outlineIcon = R.drawable.outlined_refund,
         color = R.color.RepayLoan,
         typeDescription = "Refund your loan"
     ),
@@ -31,8 +31,8 @@ enum class SettlementType(
         "Attain",
         icon = R.drawable.filled_goal,
         outlineIcon = R.drawable.filled_attain,
-        color = R.color.RepayLoan,
-        typeDescription = "Refund your loan"
+        color = R.color.Attain,
+        typeDescription = "Attain your goal"
     ),
 
     WITHDRAWAL(

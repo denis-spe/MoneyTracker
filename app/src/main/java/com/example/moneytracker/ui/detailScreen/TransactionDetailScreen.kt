@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -86,38 +87,8 @@ fun TransactionDetailScreen(
                     IconButton(onClick = { navController.safePopBackStack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = "Back" 
                         )
-                    }
-                },
-                actions = {
-                    val currentTransaction =
-                        (financeEntity as? DataState.Success)?.data as? FinanceEntity.Transaction
-                    if (currentTransaction != null) {
-                        val color = colorResource(id = currentTransaction.transactionType.color)
-                        val withdrawalColor = colorResource(
-                            R.color.Withdrawal
-                        )
-
-                        EditTransaction(
-                            color = color,
-                            transactionId = transactionId
-                        )
-
-                        DeleteTransactionButton(
-                            transaction = currentTransaction,
-                            onDeleteSuccess = { navController.safePopBackStack() }
-                        )
-
-                        if (
-                            currentTransaction.transactionType == TransactionType.EARNINGS
-                        ) {
-                            AddWithdrawal(
-                                color = withdrawalColor,
-                                transactionId = transactionId,
-                                currentPaymentMethod = currentTransaction.paymentMethod,
-                            )
-                        }
                     }
                 }
             )
@@ -152,7 +123,11 @@ fun TransactionDetailScreen(
                     is DataState.Success -> {
                         val transaction = state.data as? FinanceEntity.Transaction
                         if (transaction != null) {
-                            TransactionContent(transaction)
+                            TransactionContent(
+                                transaction = transaction,
+                                transactionId = transactionId,
+                                onDeleteSuccess = { navController.safePopBackStack() }
+                            )
                         } else {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
@@ -178,7 +153,11 @@ fun TransactionDetailScreen(
 }
 
 @Composable
-fun TransactionContent(transaction: FinanceEntity.Transaction) {
+fun TransactionContent(
+    transaction: FinanceEntity.Transaction,
+    transactionId: String,
+    onDeleteSuccess: () -> Unit
+) {
     var selectedWithdrawal by remember { mutableStateOf<Withdrawal?>(null) }
 
     LazyColumn(
@@ -189,6 +168,60 @@ fun TransactionContent(transaction: FinanceEntity.Transaction) {
     ) {
         item {
             TransactionSummaryCard(transaction)
+        }
+
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                val color = colorResource(id = transaction.transactionType.color)
+                val withdrawalColor = colorResource(R.color.Withdrawal)
+
+                if (transaction.transactionType == TransactionType.EARNINGS) {
+                    EditTransaction(
+                        color = color,
+                        transactionId = transactionId,
+                        label = "Edit",
+                        detailButtonType = DetailButtonType.ICON_TEXT
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    DeleteTransactionButton(
+                        transaction = transaction,
+                        onDeleteSuccess = onDeleteSuccess,
+                        label = "Delete",
+                        detailButtonType = DetailButtonType.ICON_TEXT
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+                    AddWithdrawal(
+                        color = withdrawalColor,
+                        transactionId = transactionId,
+                        currentPaymentMethod = transaction.paymentMethod,
+                        label = "Withdrawal",
+                        detailButtonType = DetailButtonType.ICON_TEXT
+                    )
+                } else {
+                    EditTransaction(
+                        color = color,
+                        transactionId = transactionId,
+                        label = "Edit",
+                        detailButtonType = DetailButtonType.OUTLINE
+                    )
+
+                    Spacer(modifier = Modifier.width(8.dp))
+
+                    DeleteTransactionButton(
+                        transaction = transaction,
+                        onDeleteSuccess = onDeleteSuccess,
+                        label = "Delete",
+                        detailButtonType = DetailButtonType.FILLED
+                    )
+                }
+            }
         }
 
         // If there are withdrawals/transfers related to this transaction
@@ -243,7 +276,7 @@ fun WithdrawalItem(
                     Image(
                         painter = painterResource(id = withdrawal.toPaymentMethod.icon),
                         contentDescription = null,
-                        modifier = Modifier.size(24.dp)
+                        modifier = Modifier.size(24.dp),
                     )
                     Spacer(modifier = Modifier.size(8.dp))
                     Text(
@@ -262,7 +295,7 @@ fun WithdrawalItem(
             HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = withdrawal.description.ifEmpty { "No description" },
+                text = withdrawal.createdAt.formatToDateTime,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray
             )
@@ -283,7 +316,7 @@ fun TransactionSummaryCard(transaction: FinanceEntity.Transaction) {
     LaunchedEffect(progress) {
         animatedProgress.animateTo(
             targetValue = progress.coerceIn(0f, 1f),
-            animationSpec = tween<Float>(durationMillis = 1000, easing = FastOutSlowInEasing)
+            animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing)
         )
     }
 
@@ -330,7 +363,7 @@ fun TransactionSummaryCard(transaction: FinanceEntity.Transaction) {
                 value = transaction.amount.formatToAmount(),
                 valueColor = color
             )
-            DetailRow(label = "Date", value = transaction.createdAt.formatToDateTime)
+            DetailRow(label = "Created At", value = transaction.createdAt.formatToDateTime)
             DetailRow(label = "Method", value = transaction.paymentMethod.text)
             if (transaction.transactionType == TransactionType.EARNINGS && transaction.withdrawal.isNotEmpty()) {
                 DetailRow(

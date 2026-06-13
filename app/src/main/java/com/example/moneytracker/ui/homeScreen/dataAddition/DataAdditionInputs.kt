@@ -157,7 +157,7 @@ fun ModelDrawerTag(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .height(height)
             .clickable {
@@ -373,7 +373,7 @@ fun ModelDrawerTextField(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .height(height)
             .clickable {
@@ -581,7 +581,7 @@ fun ModelDrawerAmountField(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .height(height)
             .clickable {
@@ -914,7 +914,7 @@ fun SettlementField(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .height(height)
             .clickable {
@@ -1246,7 +1246,7 @@ fun RepeatableTransaction(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .height(height)
             .clickable {
@@ -1291,7 +1291,9 @@ fun PaymentMethodDropdown(
     val color = colorResource(id = colorResId)
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING),
         horizontalArrangement = Arrangement.Center,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -1685,7 +1687,7 @@ fun DateTimeInput(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(timeContainerModifier)
             .height(height)
             .clickable {
@@ -1804,7 +1806,7 @@ fun DateTimeRange(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .height(height)
             .clickable {
@@ -1847,7 +1849,7 @@ fun DateTimeRange(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .height(height)
             .clickable {
@@ -1880,8 +1882,8 @@ fun DateTimeRange(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
             .then(containerModifier)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .height(height)
             .clickable {
                 isPresentEndDateDialogOpen.value = true
@@ -1995,7 +1997,7 @@ fun WasAmountReceived(
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 2.dp, horizontal = 13.dp)
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .clickable {
                 isAmountReceived.value = !isAmountReceived.value

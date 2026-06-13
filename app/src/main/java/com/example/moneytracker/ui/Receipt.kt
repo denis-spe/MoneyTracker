@@ -1204,7 +1204,7 @@ fun OnUpdate(
                         fontWeight = FontWeight.Bold
                     )
 
-                    Text(description, color = Color.Gray, fontWeight = FONT_WEIGHT)
+                    Text(description, color = Color.Gray, fontSize = 12.sp)
                 }
 
                 LazyColumn(
@@ -1323,6 +1323,13 @@ fun OnUpdate(
                             PaymentMethodDropdown(
                                 colorResId = colorResId,
                                 selectedPaymentMethod = toPaymentMethod
+                            )
+                        }
+                    } else {
+                        item {
+                            PaymentMethodDropdown(
+                                colorResId = colorResId,
+                                selectedPaymentMethod = selectedPaymentMethod
                             )
                         }
                     }
@@ -1460,7 +1467,7 @@ fun OnUpdate(
                                                             .value.toFirestoreTimestampUtc(),
                                                         tagIcon = tagIconState.value,
                                                         settlementType = settlement.settlementType,
-                                                        paymentMethod = settlement.paymentMethod
+                                                        paymentMethod = selectedPaymentMethod.value
                                                     )
                                                 )
 
