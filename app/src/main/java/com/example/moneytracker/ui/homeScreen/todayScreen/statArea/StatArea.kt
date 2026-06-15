@@ -8,6 +8,7 @@ import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.snapping.SnapPosition
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,11 +29,13 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountBalanceWallet
+import androidx.compose.material.icons.filled.Balance
 import androidx.compose.material.icons.filled.DonutLarge
-import androidx.compose.material.icons.filled.QueryStats
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Text
 import androidx.compose.material3.VerticalDivider
@@ -233,13 +236,37 @@ fun DonutChartPager(
 @Composable
 fun DonutChartShimmer() {
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp),
         contentAlignment = Alignment.Center
     ) {
         Box(
             modifier = Modifier
                 .shimmerEffect(shape = CircleShape, size = 150.dp)
         )
+        Box(
+            modifier = Modifier
+                .size(110.dp)
+                .background(MaterialTheme.colorScheme.background, CircleShape)
+        )
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier.shimmerEffect(
+                    shape = RoundedCornerShape(40),
+                    width = 60.dp,
+                    height = 18.dp
+                )
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Box(
+                modifier = Modifier.shimmerEffect(
+                    shape = RoundedCornerShape(40),
+                    width = 80.dp,
+                    height = 20.dp
+                )
+            )
+        }
     }
 }
 
@@ -262,40 +289,62 @@ fun CurrentAmountBalanceSection(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
-                    Row {
-                        Box(
-                            modifier = Modifier.shimmerEffect(
-                                shape = RoundedCornerShape(40),
-                                width = 150.dp,
-                                height = 25.dp
-                            )
+                    Box(
+                        modifier = Modifier.shimmerEffect(
+                            shape = RoundedCornerShape(40),
+                            width = 150.dp,
+                            height = 25.dp
                         )
-                    }
+                    )
 
-                    Spacer(modifier = Modifier.height(3.dp))
+                    Spacer(modifier = Modifier.size(10.dp))
 
                     Row {
-                        listOf(1, 2).forEach { _ ->
+                        listOf(1, 2).forEachIndexed { index, _ ->
                             Column(
-                                modifier = Modifier.padding(5.dp),
+                                modifier = Modifier
+                                    .padding(top = 5.dp),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
                             ) {
-                                Box(
-                                    modifier = Modifier.shimmerEffect(
-                                        shape = RoundedCornerShape(40),
-                                        width = 60.dp,
-                                        height = 20.dp
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.shimmerEffect(
+                                            shape = CircleShape,
+                                            size = 25.dp
+                                        )
                                     )
-                                )
+                                    Box(
+                                        modifier = Modifier.shimmerEffect(
+                                            shape = RoundedCornerShape(40),
+                                            width = 60.dp,
+                                            height = 20.dp
+                                        )
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(5.dp))
 
                                 Box(
-                                    modifier = Modifier.shimmerEffect(
-                                        shape = RoundedCornerShape(40),
-                                        width = 80.dp,
-                                        height = 20.dp
+                                    modifier = Modifier
+                                        .width(120.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier.shimmerEffect(
+                                            shape = RoundedCornerShape(40),
+                                            width = 80.dp,
+                                            height = 23.dp
+                                        )
                                     )
-                                )
+                                }
+                            }
+
+                            if (index == 0) {
+                                VerticalDivider(modifier = Modifier.height(50.dp))
                             }
                         }
                     }
@@ -397,15 +446,192 @@ fun CurrentAmountBalanceSection(
     }
 }
 
+@Composable
+fun LiabilityBalanceSection(
+    liabilityBalance: DataState<Map<String, Double>>
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        when (liabilityBalance) {
+            is DataState.Loading -> {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Box(
+                        modifier = Modifier.shimmerEffect(
+                            shape = RoundedCornerShape(40),
+                            width = 150.dp,
+                            height = 25.dp
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.size(10.dp))
+
+                    Row {
+                        listOf(1, 2).forEachIndexed { index, _ ->
+                            Column(
+                                modifier = Modifier
+                                    .padding(top = 5.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Box(
+                                        modifier = Modifier.shimmerEffect(
+                                            shape = CircleShape,
+                                            size = 25.dp
+                                        )
+                                    )
+                                    Box(
+                                        modifier = Modifier.shimmerEffect(
+                                            shape = RoundedCornerShape(40),
+                                            width = 60.dp,
+                                            height = 20.dp
+                                        )
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(5.dp))
+
+                                Box(
+                                    modifier = Modifier
+                                        .width(120.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Box(
+                                        modifier = Modifier.shimmerEffect(
+                                            shape = RoundedCornerShape(40),
+                                            width = 80.dp,
+                                            height = 23.dp
+                                        )
+                                    )
+                                }
+                            }
+
+                            if (index == 0) {
+                                VerticalDivider(modifier = Modifier.height(50.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            is DataState.Success -> {
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(150.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        "Unpaid Liabilities",
+                        style = typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    Spacer(modifier = Modifier.size(10.dp))
+
+                    Row {
+                        liabilityBalance.data.forEach { (accountName, amount) ->
+                            Column(
+                                modifier = Modifier
+
+                                    .padding(top = 5.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    Image(
+                                        painter = painterResource(
+                                            id = when (accountName) {
+                                                "Debt" -> R.drawable.filled_debt
+                                                "Lent" -> R.drawable.filled_lent
+                                                else -> R.drawable.steward
+                                            }
+                                        ),
+                                        modifier = Modifier.size(25.dp),
+
+                                        contentDescription = accountName
+                                    )
+                                    Text(
+                                        accountName,
+                                        style = typography.titleMedium
+                                    )
+                                }
+
+                                var enabled by remember { mutableStateOf(false) }
+                                LaunchedEffect(amount) {
+                                    enabled = true
+                                }
+                                val animatedAmount: Int by animateIntAsState(
+                                    targetValue = if (enabled) amount.toInt() else 0,
+                                    label = "LiabilityBalanceAnimation",
+                                    animationSpec = tween(1000, easing = LinearEasing)
+                                )
+
+                                val sign = if (animatedAmount < 0) "-" else ""
+                                val symbol = getCurrencySymbol()
+                                Column(
+                                    modifier = Modifier
+                                        .width(120.dp),
+                                    verticalArrangement = Arrangement.Center,
+                                    horizontalAlignment = Alignment.CenterHorizontally
+                                ) {
+                                    Text(
+                                        text = "$sign$symbol ${
+                                            animatedAmount.toDouble().formatValueOnly()
+                                        }",
+                                        style = typography.labelLarge,
+                                        fontFamily = FontFamily(
+                                            Font(
+                                                R.font.digital
+                                            )
+                                        ),
+                                        fontSize = 23.sp,
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                }
+                            }
+
+                            if (accountName != "Lent") {
+                                VerticalDivider(modifier = Modifier.height(50.dp))
+                            }
+                        }
+                    }
+                }
+            }
+
+            is DataState.Error -> {}
+        }
+    }
+}
+
 fun LazyListScope.statArea(
     donutChartDataCollection: DataState<List<DonutChartData>>,
     fulfillmentFinanceEntityList: DataState<List<FinanceEntity>>,
     currentAmountBalance: DataState<Map<String, Double>>,
+    liabilityBalance: DataState<Map<String, Double>>,
 ) {
-    val idx = listOf(21, 3212)
+    val idx = listOf(21, 3212, 123)
 
     item {
-        val pagerState = rememberPagerState { 2 }
+        val pagerState = rememberPagerState { 3 }
         val scope = rememberCoroutineScope()
 
         Box(
@@ -451,8 +677,29 @@ fun LazyListScope.statArea(
                             shape = CircleShape
                         ) {
                             Icon(
-                                imageVector = Icons.Default.QueryStats,
-                                contentDescription = "Donut chart",
+                                imageVector = Icons.Default.AccountBalanceWallet,
+                                contentDescription = "Current amount",
+                                modifier = Modifier
+                                    .padding(3.dp)
+                            )
+                        }
+
+                        IconButton(
+                            onClick = {
+                                scope.launch {
+                                    pagerState.animateScrollToPage(2)
+                                }
+                            },
+                            colors = IconButtonDefaults.iconButtonColors().copy(
+                                containerColor = if (pagerState.currentPage == 2)
+                                    StewardTheme.colors.secondarySurface else
+                                    Color.Unspecified
+                            ),
+                            shape = CircleShape
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Balance,
+                                contentDescription = "Liabilities",
                                 modifier = Modifier
                                     .padding(3.dp)
                             )
@@ -461,20 +708,31 @@ fun LazyListScope.statArea(
                 }
 
                 is DataState.Loading -> {
-                    Row {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(2.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Box(
                             modifier = Modifier.shimmerEffect(
                                 shape = CircleShape,
                                 size = 40.dp
                             )
                         )
-                        Spacer(modifier = Modifier.width(2.dp))
+
                         Box(
                             modifier = Modifier.shimmerEffect(
                                 shape = CircleShape,
                                 size = 40.dp
                             )
                         )
+
+                        Box(
+                            modifier = Modifier.shimmerEffect(
+                                shape = CircleShape,
+                                size = 40.dp
+                            )
+                        )
+
                     }
                 }
 
@@ -492,8 +750,8 @@ fun LazyListScope.statArea(
             userScrollEnabled = true,
             // Prevent unnecessary page recreation
             key = { idx[it] },
-        ) {
-            when (pagerState.currentPage) {
+        ) { page ->
+            when (page) {
                 0 -> {
                     // Chart Area
                     Box(
@@ -504,7 +762,8 @@ fun LazyListScope.statArea(
                         Column(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(150.dp),
+                                .height(150.dp)
+                                .padding(top = 5.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -541,6 +800,17 @@ fun LazyListScope.statArea(
                         contentAlignment = Alignment.Center
                     ) {
                         CurrentAmountBalanceSection(currentAmountBalance)
+                    }
+                }
+
+                2 -> {
+                    // Liability Area
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        LiabilityBalanceSection(liabilityBalance)
                     }
                 }
             }

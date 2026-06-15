@@ -98,12 +98,15 @@ class RoutineWorker @AssistedInject constructor(
             Log.d(TAG, "Normalized now: $normalizedNow")
             Log.d(TAG, "Calling completeRoutine()...")
 
+            val expiredDeadline = dataset.routine.deadlineDateTime
+
             dataStorage.completeRoutine(
                 userId = userId,
                 datasetId = datasetId,
                 financeType = financeType,
                 newDateTime = normalizedNow,
                 nextDeadline = nextDeadline,
+                previousDeadline = expiredDeadline
             )
 
             Log.d(TAG, "Returned from completeRoutine()")

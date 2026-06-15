@@ -529,7 +529,7 @@ fun FulfillmentInsightPager(financeEntityList: List<FinanceEntity>) {
             contentAlignment = Alignment.Center
         ) {
             Insights(
-                label = "No Active Items",
+                label = "No Objective",
                 firstFinancial = 0.0,
                 secondFinancial = 0.0,
                 colorResId = R.color.Attain,
@@ -707,24 +707,40 @@ fun FulfillmentInsightPagerShimmer() {
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Shimmer for label
-            Box(
-                modifier = Modifier
-                    .padding(bottom = 4.dp)
-                    .shimmerEffect(
-                        shape = RoundedCornerShape(50),
-                        width = 100.dp,
-                        height = 20.dp
-                    )
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
+                // Shimmer for icon
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                        .shimmerEffect(
+                            shape = CircleShape,
+                            width = 20.dp,
+                            height = 20.dp
+                        )
+                )
 
-            // Shimmer for label
+                // Shimmer for label
+                Box(
+                    modifier = Modifier
+                        .padding(bottom = 4.dp)
+                        .shimmerEffect(
+                            shape = RoundedCornerShape(50),
+                            width = 80.dp,
+                            height = 15.dp
+                        )
+                )
+            }
+
+            // Shimmer for Progress
             Box(
                 modifier = Modifier
                     .shimmerEffect(
                         shape = RoundedCornerShape(50),
-                        width = 200.dp,
-                        height = 20.dp
+                        width = 220.dp,
+                        height = 10.dp
                     )
             )
 
@@ -741,7 +757,7 @@ fun FulfillmentInsightPagerShimmer() {
                         .shimmerEffect(
                             shape = RoundedCornerShape(50),
                             width = 25.dp,
-                            height = 20.dp
+                            height = 15.dp
                         )
                 )
 
@@ -751,7 +767,7 @@ fun FulfillmentInsightPagerShimmer() {
                         .shimmerEffect(
                             shape = RoundedCornerShape(50),
                             width = 25.dp,
-                            height = 20.dp
+                            height = 15.dp
                         )
                 )
 
@@ -761,7 +777,7 @@ fun FulfillmentInsightPagerShimmer() {
                         .shimmerEffect(
                             shape = RoundedCornerShape(50),
                             width = 25.dp,
-                            height = 20.dp
+                            height = 15.dp
                         )
                 )
             }

@@ -21,6 +21,7 @@ import com.example.moneytracker.ui.usecase.GetAdjustFinanceUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentAmountUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentDateUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentWeekUseCase
+import com.example.moneytracker.ui.usecase.GetLiabilityBalanceUseCase
 import com.example.moneytracker.ui.usecase.GetTodayChartDonutDataUseCase
 import com.example.moneytracker.ui.usecase.GetWeeklyDataUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayChartDataUseCase
@@ -72,6 +73,7 @@ class HomeViewModel @Inject constructor(
     private val getYesterdayFinanceUseCase: GetYesterdayFinanceUseCase,
     private val getCurrentAmountUseCase: GetCurrentAmountUseCase,
     private val getAdjustFinanceUseCase: GetAdjustFinanceUseCase,
+    private val getLiabilityBalanceUseCase: GetLiabilityBalanceUseCase,
     private val getTodayChartDonutDataUseCase: GetTodayChartDonutDataUseCase,
     private val getYesterdayChartDataUseCase: GetYesterdayChartDataUseCase,
     private val getYesterdayStatsUseCase: GetYesterdayStatsUseCase,
@@ -253,6 +255,26 @@ class HomeViewModel @Inject constructor(
                 try {
                     val balance = withContext(Dispatchers.Default) {
                         getCurrentAmountUseCase(datasets)
+                    }
+                    emit(DataState.Success(balance))
+                } catch (e: Exception) {
+                    emit(DataState.Error(e))
+                }
+            }
+        }
+        .stateIn(
+            viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT),
+            initialValue = DataState.Loading
+        )
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val liabilityBalance: StateFlow<DataState<Map<String, Double>>> = datasetsFlow
+        .flatMapLatest { datasets ->
+            flow {
+                emit(DataState.Loading)
+                try {
+                    val balance = withContext(Dispatchers.Default) {
+                        getLiabilityBalanceUseCase(datasets)
                     }
                     emit(DataState.Success(balance))
                 } catch (e: Exception) {

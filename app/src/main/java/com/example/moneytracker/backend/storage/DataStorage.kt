@@ -162,6 +162,7 @@ interface DataStorage {
         financeType: String,
         newDateTime: Timestamp,
         nextDeadline: Timestamp,
+        previousDeadline: Timestamp
     )
 
     /**

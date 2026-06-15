@@ -36,6 +36,7 @@ fun TodayScreen(
     userViewModel: UserViewModel,
     datasetWithAdjust: DataState<List<DataSettlement>>,
     currentAmountBalance: DataState<Map<String, Double>>,
+    liabilityBalance: DataState<Map<String, Double>>,
 ) {
 
     LazyColumn(
@@ -48,7 +49,8 @@ fun TodayScreen(
         statArea(
             donutChartDataCollection = donutChartDataCollection,
             fulfillmentFinanceEntityList = fulfillmentFinanceEntityList,
-            currentAmountBalance = currentAmountBalance
+            currentAmountBalance = currentAmountBalance,
+            liabilityBalance = liabilityBalance
         )
 
         stickyHeader {

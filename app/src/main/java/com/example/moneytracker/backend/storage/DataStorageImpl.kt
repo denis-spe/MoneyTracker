@@ -631,6 +631,7 @@ class DataStorageImpl(
         financeType: String,
         newDateTime: Timestamp,
         nextDeadline: Timestamp,
+        previousDeadline: Timestamp
     ) = withContext(Dispatchers.IO) {
         Log.d("DataStorageImpl", "=== completeRoutine START ===")
         Log.d("DataStorageImpl", "Inputs: userId=$userId datasetId=$datasetId type=$financeType")
@@ -704,8 +705,8 @@ class DataStorageImpl(
             val achievement = Achievement(
                 status = status.name,
                 totalSettlementAmount = totalSettlementAmount,
-                startDateTime = newDateTime,
-                deadlineDateTime = nextDeadline
+                startDateTime = previousDeadline,
+                deadlineDateTime = newDateTime
             )
 
             val achievementId = UUID.randomUUID().toString()
