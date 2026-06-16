@@ -62,6 +62,19 @@ sealed class DataSettlement {
                 ?: TagIcon(name = "Withdrawal", icon = R.drawable.initial)
         }
 
+    val affectCurrentAccount: Boolean
+        get() = when (this) {
+            is SettlementData -> when (financeEntity) {
+                is FinanceEntity.Transaction -> financeEntity.affectCurrentAccount
+                is FinanceEntity.Goal -> false
+                is FinanceEntity.Liability -> financeEntity.affectCurrentAccount
+            }
+
+            is SettlementAdjust -> settlement.affectCurrentAccount
+            is SettlementWithdrawal -> withdrawal.affectCurrentAccount
+        }
+
+
     val icon: Int
         get() = when (this) {
             is SettlementData -> when (val f = financeEntity) {

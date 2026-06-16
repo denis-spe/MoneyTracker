@@ -13,6 +13,7 @@ data class Withdrawal(
     val label: String = "",
     val description: String = "",
     val createdAt: Timestamp = Timestamp.now(),
+    val affectCurrentAccount: Boolean = false,
     val toPaymentMethod: PaymentMethod = PaymentMethod.CASH,
     val fromPaymentMethod: PaymentMethod = PaymentMethod.CREDIT_CARD
 ) {

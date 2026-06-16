@@ -17,7 +17,8 @@ data class Settlement(
     val settlementType: SettlementType,
     val paymentMethod: PaymentMethod,
     val userId: String = "",
-    val datasetId: String = ""
+    val datasetId: String = "",
+    val affectCurrentAccount: Boolean = false,
 ) {
     @Exclude
     var financeEntity: FinanceEntity? = null

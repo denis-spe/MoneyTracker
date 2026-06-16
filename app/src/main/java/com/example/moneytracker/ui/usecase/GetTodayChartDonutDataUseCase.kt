@@ -24,7 +24,7 @@ class GetTodayChartDonutDataUseCase @Inject constructor() {
                     (entity is FinanceEntity.Goal) ||
                             (entity is FinanceEntity.Liability &&
                                     entity.liabilityType == com.example.moneytracker.backend.storage.types.LiabilityType.DEBT &&
-                                    !entity.isAmountReceived)
+                                    !entity.affectCurrentAccount)
                 }
                 is DataSettlement.SettlementAdjust -> it.settlement.settlementType == SettlementType.GOAL_ATTAIN
                 is DataSettlement.SettlementWithdrawal -> true

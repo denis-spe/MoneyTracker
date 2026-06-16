@@ -458,6 +458,7 @@ fun FinanceEntity.toMap(): Map<String, Any> {
         is FinanceEntity.Transaction -> {
             baseMap["financeType"] = "TRANSACTION"
             baseMap["transactionType"] = transactionType.name
+            baseMap["affectCurrentAccount"] = affectCurrentAccount
         }
 
         is FinanceEntity.Goal -> {
@@ -468,7 +469,7 @@ fun FinanceEntity.toMap(): Map<String, Any> {
         is FinanceEntity.Liability -> {
             baseMap["financeType"] = "LIABILITY"
             baseMap["liabilityType"] = liabilityType.name
-            baseMap["isAmountReceived"] = isAmountReceived
+            baseMap["affectCurrentAccount"] = affectCurrentAccount
         }
     }
     return baseMap
@@ -505,7 +506,8 @@ val Withdrawal.withdrawalToMap: Map<String, Any>
         "description" to description,
         "createdAt" to createdAt,
         "toPaymentMethod" to toPaymentMethod.name,
-        "fromPaymentMethod" to fromPaymentMethod.name
+        "fromPaymentMethod" to fromPaymentMethod.name,
+        "affectCurrentAccount" to affectCurrentAccount
     )
 
 val Settlement.settlementToMap: Map<String, Any>
@@ -519,7 +521,8 @@ val Settlement.settlementToMap: Map<String, Any>
         "paymentMethod" to paymentMethod.name,
         "settlementType" to settlementType.name,
         "userId" to userId,
-        "datasetId" to datasetId
+        "datasetId" to datasetId,
+        "affectCurrentAccount" to affectCurrentAccount
     )
 
 val Status.statusToMap: Map<String, Any>
@@ -969,7 +972,7 @@ fun Map<*, *>.toFinance(): FinanceEntity {
             } else {
                 if (dataTypeStr == "DEBT") LiabilityType.DEBT else LiabilityType.LOAN
             }
-            val isAmountReceived = this["isAmountReceived"] as? Boolean ?: false
+            val affectCurrentAccount = this["affectCurrentAccount"] as? Boolean ?: false
             FinanceEntity.Liability(
                 id = id,
                 liabilityType = liabilityType,
@@ -979,20 +982,25 @@ fun Map<*, *>.toFinance(): FinanceEntity {
                 createdAt = createdAt,
                 tagIcon = tagIcon,
                 paymentMethod = paymentMethod,
-                isAmountReceived = isAmountReceived,
+                affectCurrentAccount = affectCurrentAccount,
                 settlement = this.toSettlement()
             )
         }
 
-        else -> FinanceEntity.Transaction(
-            id = id,
-            amount = amount,
-            label = label,
-            description = description,
-            createdAt = createdAt,
-            tagIcon = tagIcon,
-            paymentMethod = paymentMethod
-        )
+        else -> {
+            val affectCurrentAccount = this["affectCurrentAccount"] as? Boolean ?: false
+
+            FinanceEntity.Transaction(
+                id = id,
+                amount = amount,
+                label = label,
+                description = description,
+                createdAt = createdAt,
+                tagIcon = tagIcon,
+                paymentMethod = paymentMethod,
+                affectCurrentAccount = affectCurrentAccount,
+            )
+        }
     }
 }
 

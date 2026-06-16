@@ -73,17 +73,19 @@ import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
+import com.example.moneytracker.helper.formatValueOnly
+import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.DeleteDialog
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.example.moneytracker.ui.homeScreen.dataAddition.AffectCurrentAccount
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerAmountField
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerButton
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTag
 import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTextField
 import com.example.moneytracker.ui.homeScreen.dataAddition.PaymentMethodDropdown
-import com.example.moneytracker.ui.homeScreen.dataAddition.WasAmountReceived
 import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
@@ -330,7 +332,8 @@ fun AddGoalAttained(
 
     // States for the dialog
     val amountState = rememberTextFieldState()
-    val amountDisplay = remember { mutableStateOf("0.0") }
+    val remainingAmount = goal?.remainingAmount ?: 0.0
+    val amountDisplay = remember { mutableStateOf(remainingAmount.toString()) }
     val labelState = rememberTextFieldState()
     val labelDisplay = remember { mutableStateOf("") }
     val descriptionState = rememberTextFieldState()
@@ -405,7 +408,7 @@ fun AddGoalAttained(
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
-                    placeholder = "0.0",
+                    placeholder = remainingAmount.formatValueOnly(),
                     colorResId = R.color.Attain,
                     containerModifier = topModifier
                 )
@@ -1339,16 +1342,17 @@ fun EditLiability(
     val detailState by viewModel.detailState.collectAsState()
     val liability =
         (detailState.financeEntity as? DataState.Success)?.data as? FinanceEntity.Liability
+            ?: return
 
     val labelState = rememberTextFieldState()
     val labelDisplay = remember { mutableStateOf("") }
     val amountState = rememberTextFieldState()
-    val amountDisplay = remember { mutableStateOf("0.0") }
+    val amountDisplay = remember { mutableStateOf(liability.amount.toString()) }
     val descriptionState = rememberTextFieldState()
     val descriptionDisplay = remember { mutableStateOf("") }
     val tagIcon = remember { mutableStateOf(TagIcon("", R.drawable.initial)) }
     val localDateState = remember { mutableStateOf(LocalDateTime.now()) }
-    val isAmountReceived = remember { mutableStateOf(false) }
+    val affectCurrentAccountState = remember { mutableStateOf(false) }
 
     val topModifier = Modifier.clip(
         RoundedCornerShape(
@@ -1365,16 +1369,14 @@ fun EditLiability(
 
 
     LaunchedEffect(showDialog.value, liability) {
-        if (showDialog.value && liability != null) {
+        if (showDialog.value) {
             labelState.setTextAndPlaceCursorAtEnd(liability.label)
             labelDisplay.value = liability.label
             descriptionState.setTextAndPlaceCursorAtEnd(liability.description)
             descriptionDisplay.value = liability.description
             tagIcon.value = liability.tagIcon
-            amountState.setTextAndPlaceCursorAtEnd(liability.amount.toString())
-            amountDisplay.value = liability.amount.toString()
             localDateState.value = liability.createdAt.toLocalDateTimeUtc()
-            isAmountReceived.value = liability.isAmountReceived
+            affectCurrentAccountState.value = liability.affectCurrentAccount
         }
     }
 
@@ -1405,14 +1407,14 @@ fun EditLiability(
             ) {
                 Image(
                     painter = painterResource(
-                        liability?.liabilityType?.filledIcon ?: R.drawable.initial
+                        liability.liabilityType.filledIcon
                     ),
                     contentDescription = "Liability",
                     modifier = Modifier.size(30.dp),
                     colorFilter = ColorFilter
                         .tint(
                             colorResource(
-                                liability?.liabilityType?.color ?: R.color.Debt
+                                liability.liabilityType.color
                             )
                         )
                 )
@@ -1427,8 +1429,8 @@ fun EditLiability(
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
-                    placeholder = "0.0",
-                    colorResId = liability?.liabilityType?.color ?: R.color.Debt,
+                    placeholder = liability.amount.toString(),
+                    colorResId = liability.liabilityType.color,
                     containerModifier = topModifier
                 )
 
@@ -1437,7 +1439,7 @@ fun EditLiability(
                     state = labelState,
                     displayText = labelDisplay,
                     placeholder = "Liability Title",
-                    colorResId = liability?.liabilityType?.color ?: R.color.Debt
+                    colorResId = liability.liabilityType.color
                 )
 
                 ModelDrawerTextField(
@@ -1445,31 +1447,31 @@ fun EditLiability(
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Notes...",
-                    colorResId = liability?.liabilityType?.color ?: R.color.Debt
+                    colorResId = liability.liabilityType.color
                 )
 
                 DateTimeInput(
                     showTime = remember { mutableStateOf(false) },
                     showDate = remember { mutableStateOf(false) },
                     localDateTimeState = localDateState,
-                    colorResId = liability?.liabilityType?.color ?: R.color.Debt
+                    colorResId = liability.liabilityType.color
                 )
 
                 ModelDrawerTag(
-                    colorResId = liability?.liabilityType?.color ?: R.color.Debt,
+                    colorResId = liability.liabilityType.color,
                     title = "Icon",
                     iconState = tagIcon,
-                    containerModifier = if (liability?.liabilityType == LiabilityType.DEBT) Modifier
-                    else bottomModifier
                 )
 
-                if (liability?.liabilityType == LiabilityType.DEBT) {
-                    WasAmountReceived(
-                        containerModifier = bottomModifier,
-                        isAmountReceived = isAmountReceived,
-                        color = colorResource(liability.liabilityType.color)
-                    )
-                }
+                AffectCurrentAccount(
+                    label = when (liability.liabilityType) {
+                        LiabilityType.DEBT -> "Was Amount Received"
+                        LiabilityType.LOAN -> "Was Amount Paid"
+                    },
+                    containerModifier = bottomModifier,
+                    affectCurrentAccountState = affectCurrentAccountState,
+                    color = colorResource(liability.liabilityType.color)
+                )
 
                 Row(
                     modifier = Modifier
@@ -1479,9 +1481,9 @@ fun EditLiability(
                 ) {
                     ModelDrawerButton(
                         text = "Update Liability",
-                        colorResId = liability?.liabilityType?.color ?: R.color.Debt,
+                        colorResId = liability.liabilityType.color,
                         filledColor = colorResource(
-                            liability?.liabilityType?.color ?: R.color.Debt
+                            liability.liabilityType.color
                         ),
                         textColor = Color.White
                     ) {
@@ -1490,7 +1492,7 @@ fun EditLiability(
                             label = labelDisplay.value,
                             description = descriptionDisplay.value,
                             tagIcon = tagIcon.value,
-                            isAmountReceived = isAmountReceived.value,
+                            isAmountReceived = affectCurrentAccountState.value,
                             localDate = localDateState.value,
                             amount = amountDisplay.value.toDoubleOrNull() ?: 0.0
                         )
@@ -1536,7 +1538,8 @@ fun AddSettlement(
 
     // Settlement form states
     val amountState = rememberTextFieldState()
-    val amountDisplay = remember { mutableStateOf("0.0") }
+    val remainingAmountState = remember { mutableStateOf(liability.remainingAmount) }
+    val amountDisplay = remember { mutableStateOf(remainingAmountState.value.toString()) }
     val descriptionState = rememberTextFieldState()
     val descriptionDisplay = remember { mutableStateOf("") }
     val paymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
@@ -1617,7 +1620,7 @@ fun AddSettlement(
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
-                    placeholder = "0.0",
+                    placeholder = remainingAmountState.value.formatValueOnly(),
                     colorResId = settlementType.color,
                     containerModifier = topModifier
                 )

@@ -234,7 +234,7 @@ class DetailViewModel @Inject constructor(
                     label = label,
                     description = description,
                     tagIcon = tagIcon,
-                    isAmountReceived = isAmountReceived,
+                    affectCurrentAccount = isAmountReceived,
                     createdAt = localDate.toFirestoreTimestampUtc(),
                     amount = amount
                 )

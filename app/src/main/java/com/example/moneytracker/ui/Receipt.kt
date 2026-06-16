@@ -73,6 +73,7 @@ import com.example.moneytracker.ui.components.DeleteDialog
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.dataAddition.AffectCurrentAccount
 import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
 import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.dataAddition.MAX_LABEL_LENGTH
@@ -1107,6 +1108,7 @@ fun OnUpdate(
     val toPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val fromPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val lazyState = rememberLazyListState()
+    val affectCurrentAccount = remember { mutableStateOf(dataSettlement.affectCurrentAccount) }
 
     val dataTypeText = dataSettlement.text
     val colorResId = dataSettlement.colorRes
@@ -1126,6 +1128,12 @@ fun OnUpdate(
     }
 
     val color = colorResource(colorResId)
+    val topModifier = Modifier.clip(
+        RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+    )
+    val bottomModifier = Modifier.clip(
+        RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
+    )
 
     LaunchedEffect(dataSettlement, isUpdateModelBottonOpen.value) {
         if (isUpdateModelBottonOpen.value) {
@@ -1162,6 +1170,18 @@ fun OnUpdate(
                 }
             }
         }
+    }
+
+    val isAffectCurrentAccount = when (dataSettlement) {
+        is DataSettlement.SettlementData -> {
+            dataSettlement.affectCurrentAccount && dataSettlement.financeEntityType != "GOAL"
+        }
+
+        is DataSettlement.SettlementAdjust -> {
+            dataSettlement.affectCurrentAccount
+        }
+
+        else -> false
     }
 
     if (isUpdateModelBottonOpen.value) {
@@ -1220,19 +1240,16 @@ fun OnUpdate(
                             modifier = Modifier
                                 .animateItem()
                         ) {
-                            ModelDrawerAmountField(
-                                containerModifier = Modifier.clip(
-                                    RoundedCornerShape(
-                                        topStart = 5.dp,
-                                        topEnd = 5.dp
-                                    )
-                                ),
-                                state = amountState,
-                                placeholder = "0.0",
-                                colorResId = colorResId,
-                                wasSuccess = wasSuccess,
-                                displayState = displayAmountState
-                            )
+                            if (dataSettlement.financeEntityType != "GOAL") {
+                                ModelDrawerAmountField(
+                                    containerModifier = topModifier,
+                                    state = amountState,
+                                    placeholder = "0.0",
+                                    colorResId = colorResId,
+                                    wasSuccess = wasSuccess,
+                                    displayState = displayAmountState,
+                                )
+                            }
                         }
                     }
 
@@ -1250,7 +1267,9 @@ fun OnUpdate(
                                     colorResId = colorResId,
                                     wasSuccess = wasSuccess,
                                     textLength = MAX_LABEL_LENGTH,
-                                    displayText = displayLabel
+                                    displayText = displayLabel,
+                                    containerModifier = if (dataSettlement.financeEntityType == "GOAL")
+                                        Modifier else topModifier
                                 )
                             }
                         }
@@ -1296,8 +1315,58 @@ fun OnUpdate(
                                 showTime = showTime,
                                 showDate = showDate,
                                 localDateTimeState = onCreatedDateTimeState,
-                                colorResId = colorResId
+                                colorResId = colorResId,
+                                timeContainerModifier = if (dataSettlement.financeEntityType == "GOAL") Modifier else bottomModifier,
                             )
+                        }
+                    }
+
+                    item(6544) {
+                        // Show affectCurrentAccount.
+                        Column(
+                            modifier = Modifier.animateItem()
+                        ) {
+                            when (dataSettlement) {
+                                is DataSettlement.SettlementData -> {
+                                    if (dataSettlement.affectCurrentAccount && dataSettlement.financeEntityType != "GOAL") {
+                                        AffectCurrentAccount(
+                                            label = when (dataSettlement.financeEntity) {
+                                                is FinanceEntity.Transaction -> "Affect current account"
+                                                is FinanceEntity.Goal -> ""
+                                                is FinanceEntity.Liability -> when (dataSettlement.financeEntity.liabilityType) {
+                                                    LiabilityType.DEBT -> "Was Amount Received"
+                                                    LiabilityType.LOAN -> "Was Amount Paid"
+                                                }
+                                            },
+                                            color = colorResource(colorResId),
+                                            affectCurrentAccountState = affectCurrentAccount,
+                                            containerModifier = bottomModifier
+                                        )
+                                    }
+                                }
+
+                                is DataSettlement.SettlementAdjust -> {
+                                    if (dataSettlement.affectCurrentAccount && dataSettlement.financeEntityType != "GOAL") {
+                                        AffectCurrentAccount(
+                                            label = "Affect current account",
+                                            color = colorResource(colorResId),
+                                            affectCurrentAccountState = affectCurrentAccount,
+                                            containerModifier = bottomModifier
+                                        )
+                                    }
+                                }
+
+                                else -> {
+                                    if (dataSettlement.affectCurrentAccount) {
+                                        AffectCurrentAccount(
+                                            label = "Affect current account",
+                                            color = colorResource(colorResId),
+                                            affectCurrentAccountState = affectCurrentAccount,
+                                            containerModifier = bottomModifier
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -1370,7 +1439,8 @@ fun OnUpdate(
                                                     description = descriptionState.text.toString(),
                                                     createdAt = normalizedStart.toFirestoreTimestampUtc(),
                                                     tagIcon = tagIconState.value,
-                                                    paymentMethod = selectedPaymentMethod.value
+                                                    paymentMethod = selectedPaymentMethod.value,
+                                                    affectCurrentAccount = affectCurrentAccount.value
                                                 )
 
                                                 is FinanceEntity.Goal -> finance.copy(
@@ -1388,7 +1458,8 @@ fun OnUpdate(
                                                     description = descriptionState.text.toString(),
                                                     createdAt = normalizedStart.toFirestoreTimestampUtc(),
                                                     tagIcon = tagIconState.value,
-                                                    paymentMethod = selectedPaymentMethod.value
+                                                    paymentMethod = selectedPaymentMethod.value,
+                                                    affectCurrentAccount = affectCurrentAccount.value
                                                 )
                                             }
 

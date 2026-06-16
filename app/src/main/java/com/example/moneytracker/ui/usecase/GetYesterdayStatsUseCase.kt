@@ -39,7 +39,7 @@ class GetYesterdayStatsUseCase @Inject constructor() {
                         is FinanceEntity.Liability -> {
                             when (finance.liabilityType) {
                                 LiabilityType.DEBT -> {
-                                    if (finance.isAmountReceived) {
+                                    if (finance.affectCurrentAccount) {
                                         debts += finance.amount
                                     }
                                 }

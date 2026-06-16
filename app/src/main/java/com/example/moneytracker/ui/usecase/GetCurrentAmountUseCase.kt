@@ -15,27 +15,35 @@ class GetCurrentAmountUseCase @Inject constructor() {
             var outgoing = 0.0
 
             financeEntityList.forEach { entity ->
-                // Process the main entity if it matches the payment method
+                // 1. Process the main entity principal if it matches the method
                 if (entity.paymentMethod == method) {
-                    when (entity.financeType.text) {
-                        "Earnings",
-                        "Debt" -> {
-                            if (entity is FinanceEntity.Liability && !entity.isAmountReceived) {
-                                outgoing += entity.settlement.sumOf { it.amount }
-                                return@forEach
+                    when (entity) {
+                        is FinanceEntity.Liability -> {
+                            if (entity.affectCurrentAccount) {
+                                if (entity.liabilityType.text == "Debt") {
+                                    // Debt: Income only if we actually received the money
+                                    incoming += entity.amount
+                                } else {
+                                    // Lent: Money left our account
+                                    outgoing += entity.amount
+                                }
                             }
-
-                            incoming += entity.amount
                         }
 
-                        "Expense",
-                        "Lent",
-                        "Savings",
-                        "Withdrawal" -> outgoing += entity.amount
+                        is FinanceEntity.Transaction -> {
+                            if (entity.affectCurrentAccount) {
+                                if (entity.financeType.text == "Earnings") incoming += entity.amount
+                                else outgoing += entity.amount
+                            }
+                        }
+
+                        is FinanceEntity.Goal -> {
+                            // Goals don't have a principal amount that leaves the account immediately
+                        }
                     }
                 }
 
-                // Process settlements within the entity
+                // 2. Process settlements within the entity
                 val settlements = when (entity) {
                     is FinanceEntity.Goal -> entity.settlement
                     is FinanceEntity.Liability -> entity.settlement
@@ -43,7 +51,7 @@ class GetCurrentAmountUseCase @Inject constructor() {
                 }
 
                 settlements.forEach { settlement ->
-                    if (settlement.paymentMethod == method) {
+                    if (settlement.paymentMethod == method && settlement.affectCurrentAccount) {
                         when (settlement.settlementType.text) {
                             "Refund" -> incoming += settlement.amount
                             "Payback",
@@ -59,6 +67,7 @@ class GetCurrentAmountUseCase @Inject constructor() {
                 }
 
                 withdrawals.forEach { withdrawal ->
+                    if (!withdrawal.affectCurrentAccount) return@forEach
                     if (withdrawal.fromPaymentMethod == method) {
                         outgoing += withdrawal.amount
                     }

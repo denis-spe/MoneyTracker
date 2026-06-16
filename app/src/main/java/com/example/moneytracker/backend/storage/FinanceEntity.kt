@@ -32,7 +32,8 @@ sealed class FinanceEntity {
         override val createdAt: Timestamp = Timestamp.now(),
         override val tagIcon: TagIcon = TagIcon(),
         override val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val withdrawal: List<Withdrawal> = emptyList()
+        val withdrawal: List<Withdrawal> = emptyList(),
+        val affectCurrentAccount: Boolean = false
     ) : FinanceEntity() {
         override val financeType: FinanceCategory get() = transactionType
     }
@@ -61,7 +62,7 @@ sealed class FinanceEntity {
         override val createdAt: Timestamp = Timestamp.now(),
         override val tagIcon: TagIcon = TagIcon(),
         override val paymentMethod: PaymentMethod = PaymentMethod.CASH,
-        val isAmountReceived: Boolean = false,
+        val affectCurrentAccount: Boolean = false,
         val settlement: List<Settlement> = emptyList(),
     ) : FinanceEntity() {
         override val financeType: FinanceCategory get() = liabilityType

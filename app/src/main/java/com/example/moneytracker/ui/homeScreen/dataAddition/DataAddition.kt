@@ -526,8 +526,8 @@ fun FinancialDataInput(
 
     val color = colorResource(type.color)
 
-    val isAmountReceived = remember {
-        mutableStateOf(false)
+    val affectCurrentAccountState = remember {
+        mutableStateOf(true)
     }
     val topModifier = Modifier.clip(
         RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
@@ -557,15 +557,17 @@ fun FinancialDataInput(
             tint = color
         )
 
+        Text(
+            text = type.text,
+            color = color,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
+        )
 
         Text(
             text = type.typeDescription,
-
-            color = color,
-
-            fontWeight = FontWeight.Medium,
-
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(bottom = 8.dp)
         )
 
         ModelDrawerAmountField(
@@ -615,15 +617,25 @@ fun FinancialDataInput(
             showDate = remember { mutableStateOf(false) },
             localDateTimeState = creationDateTime,
             colorResId = type.color,
-            timeContainerModifier = if (type == LiabilityType.DEBT) Modifier
-            else bottomModifier
+            timeContainerModifier = if (type != GoalType) topModifier else bottomModifier
         )
 
-        if (type == LiabilityType.DEBT) {
-            WasAmountReceived(
+        if (type != GoalType) {
+            AffectCurrentAccount(
+                label = when (type) {
+                    is TransactionType -> "Affect current account"
+                    is LiabilityType -> {
+                        when (type) {
+                            LiabilityType.DEBT -> "Was Amount Received"
+                            LiabilityType.LOAN -> "Affect current account"
+                        }
+                    }
+
+                    else -> ""
+                },
                 containerModifier = bottomModifier,
                 color = colorResource(type.color),
-                isAmountReceived = isAmountReceived
+                affectCurrentAccountState = affectCurrentAccountState
             )
         }
 
@@ -708,7 +720,7 @@ fun FinancialDataInput(
                                 createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
                                 tagIcon = tagState.value,
                                 paymentMethod = paymentMethod.value,
-                                isAmountReceived = if (type == LiabilityType.DEBT) isAmountReceived.value else false
+                                affectCurrentAccount = if (type == LiabilityType.DEBT) affectCurrentAccountState.value else false
                             )
                         }
 
@@ -824,11 +836,16 @@ fun GoalDataInput(
 
 
         Text(
-            text = GoalType.typeDescription,
+            text = GoalType.text,
             color = color,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        Text(
+            text = GoalType.typeDescription,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
 
         ModelDrawerAmountField(
@@ -1032,6 +1049,9 @@ fun SettlementDataInputs(
             adjustAmountState.text.toString().toDoubleOrNull()
         }
     }
+    val affectCurrentAccountState = remember {
+        mutableStateOf(true)
+    }
 
     val color = colorResource(settlementType.color)
     val topModifier = Modifier.clip(
@@ -1068,11 +1088,18 @@ fun SettlementDataInputs(
             tint = color
         )
 
+
         Text(
-            text = settlementType.typeDescription,
+            text = settlementType.text,
             color = color,
             fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(vertical = 8.dp)
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(top = 8.dp)
+        )
+
+        Text(
+            text = settlementType.typeDescription,
+            modifier = Modifier.padding(bottom = 8.dp)
         )
 
         SettlementField(
@@ -1103,6 +1130,25 @@ fun SettlementDataInputs(
             colorResId = settlementType.color,
             timeContainerModifier = bottomModifier
         )
+
+        if (type != GoalType) {
+            AffectCurrentAccount(
+                label = when (type) {
+                    is TransactionType -> "Affect current account"
+                    is LiabilityType -> {
+                        when (type) {
+                            LiabilityType.DEBT -> "Was Amount Received"
+                            LiabilityType.LOAN -> "Was Amount Paid"
+                        }
+                    }
+
+                    else -> ""
+                },
+                containerModifier = bottomModifier,
+                color = colorResource(settlementType.color),
+                affectCurrentAccountState = affectCurrentAccountState
+            )
+        }
 
         PaymentMethodDropdown(
             colorResId = settlementType.color,
@@ -1259,6 +1305,12 @@ fun WithdrawalInputs(
         LiabilityType.DEBT -> DataType.DEBT
         GoalType -> DataType.GOAL
     }
+    val topModifier = Modifier.clip(
+        RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
+    )
+    val bottomModifier = Modifier.clip(
+        RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
+    )
 
     Column(
         modifier = Modifier
@@ -1291,7 +1343,8 @@ fun WithdrawalInputs(
             financeEntityList = financeEntityList,
             colorResId = settlementType.color,
             selectedFinanceEntity = selectedFinanceEntity,
-            wasSuccess = remember { mutableStateOf(wasSuccess) }
+            wasSuccess = remember { mutableStateOf(wasSuccess) },
+            containerModifier = topModifier
         )
 
         ModelDrawerTextField(
@@ -1308,7 +1361,8 @@ fun WithdrawalInputs(
             showTime = remember { mutableStateOf(false) },
             showDate = remember { mutableStateOf(false) },
             localDateTimeState = localDateTimeState,
-            colorResId = settlementType.color
+            colorResId = settlementType.color,
+            timeContainerModifier = bottomModifier
         )
 
         Text(

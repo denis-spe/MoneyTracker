@@ -300,8 +300,8 @@ fun LiabilitySummaryCard(liability: FinanceEntity.Liability) {
             if (liability.liabilityType == LiabilityType.DEBT) {
                 DetailRow(
                     label = "Received",
-                    value = if (liability.isAmountReceived) "Yes" else "No",
-                    valueColor = if (liability.isAmountReceived) colorResource(id = R.color.success_complete) else Color.Gray
+                    value = if (liability.affectCurrentAccount) "Yes" else "No",
+                    valueColor = if (liability.affectCurrentAccount) colorResource(id = R.color.success_complete) else Color.Gray
                 )
             }
 

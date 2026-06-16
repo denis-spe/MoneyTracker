@@ -441,7 +441,7 @@ fun ModelDrawerAmountField(
         Dialog(
             onDismissRequest = {
                 onDialogShow.value = false
-                state.setTextAndPlaceCursorAtEnd(displayState.value)
+//                state.setTextAndPlaceCursorAtEnd(displayState.value)
             },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
@@ -568,7 +568,7 @@ fun ModelDrawerAmountField(
                             },
                             onCancel = {
                                 onDialogShow.value = false
-                                state.setTextAndPlaceCursorAtEnd(displayState.value)
+//                                state.setTextAndPlaceCursorAtEnd(displayState.value)
                             }
                         )
                     }
@@ -1986,9 +1986,10 @@ fun DateTimeRange(
 }
 
 @Composable
-fun WasAmountReceived(
+fun AffectCurrentAccount(
+    label: String,
     containerModifier: Modifier = Modifier,
-    isAmountReceived: MutableState<Boolean>,
+    affectCurrentAccountState: MutableState<Boolean>,
     color: Color,
 ) {
     ListItem(
@@ -2000,11 +2001,11 @@ fun WasAmountReceived(
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .then(containerModifier)
             .clickable {
-                isAmountReceived.value = !isAmountReceived.value
+                affectCurrentAccountState.value = !affectCurrentAccountState.value
             },
         headlineContent = {
             Text(
-                "Amount Received",
+                label,
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold,
                 color = color
@@ -2012,16 +2013,16 @@ fun WasAmountReceived(
         },
         supportingContent = {
             Text(
-                if (isAmountReceived.value) "Yes" else "No",
-                color = if (isAmountReceived.value) color else Color.Gray,
+                if (affectCurrentAccountState.value) "Yes" else "No",
+                color = if (affectCurrentAccountState.value) color else Color.Gray,
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold
             )
         },
         trailingContent = {
             androidx.compose.material3.Switch(
-                checked = isAmountReceived.value,
-                onCheckedChange = { isAmountReceived.value = it },
+                checked = affectCurrentAccountState.value,
+                onCheckedChange = { affectCurrentAccountState.value = it },
                 colors = SwitchDefaults.colors().copy(
                     checkedBorderColor = color.copy(alpha = 0.5f),
                     checkedThumbColor = color,
