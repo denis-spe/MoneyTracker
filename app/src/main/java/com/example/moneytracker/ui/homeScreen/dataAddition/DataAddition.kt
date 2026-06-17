@@ -51,6 +51,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.R
@@ -562,12 +563,11 @@ fun FinancialDataInput(
             color = color,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp)
         )
 
         Text(
             text = type.typeDescription,
-            modifier = Modifier.padding(bottom = 8.dp)
+            color = Color.Gray, fontSize = 12.sp
         )
 
         ModelDrawerAmountField(
@@ -840,12 +840,11 @@ fun GoalDataInput(
             color = color,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp)
         )
 
         Text(
             text = GoalType.typeDescription,
-            modifier = Modifier.padding(bottom = 8.dp)
+            color = Color.Gray, fontSize = 12.sp
         )
 
         ModelDrawerAmountField(
@@ -1094,12 +1093,11 @@ fun SettlementDataInputs(
             color = color,
             fontWeight = FontWeight.Medium,
             textAlign = TextAlign.Center,
-            modifier = Modifier.padding(top = 8.dp)
         )
 
         Text(
             text = settlementType.typeDescription,
-            modifier = Modifier.padding(bottom = 8.dp)
+            color = Color.Gray, fontSize = 12.sp
         )
 
         SettlementField(
@@ -1328,12 +1326,16 @@ fun WithdrawalInputs(
             colorFilter = ColorFilter.tint(color)
         )
 
+        Text(
+            text = settlementType.text,
+            color = color,
+            fontWeight = FontWeight.Medium,
+            textAlign = TextAlign.Center,
+        )
 
         Text(
             text = settlementType.typeDescription,
-            color = color,
-            fontWeight = FontWeight.Medium,
-            modifier = Modifier.padding(vertical = 8.dp)
+            color = Color.Gray, fontSize = 12.sp
         )
 
         SettlementField(

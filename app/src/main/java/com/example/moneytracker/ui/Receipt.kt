@@ -1108,7 +1108,8 @@ fun OnUpdate(
     val toPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val fromPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val lazyState = rememberLazyListState()
-    val affectCurrentAccount = remember { mutableStateOf(dataSettlement.affectCurrentAccount) }
+    val affectCurrentAccount =
+        rememberSaveable { mutableStateOf(dataSettlement.affectCurrentAccount) }
 
     val dataTypeText = dataSettlement.text
     val colorResId = dataSettlement.colorRes
@@ -1137,52 +1138,58 @@ fun OnUpdate(
 
     LaunchedEffect(dataSettlement, isUpdateModelBottonOpen.value) {
         if (isUpdateModelBottonOpen.value) {
+            // wait for BottomSheet to render first frame
+            awaitFrame()
+
             when (dataSettlement) {
                 is DataSettlement.SettlementData -> {
                     val finance = dataSettlement.financeEntity
                     amountState.setTextAndPlaceCursorAtEnd(finance.amount.toString())
+                    displayAmountState.value = finance.amount.toString()
                     labelState.setTextAndPlaceCursorAtEnd(finance.label)
+                    displayLabel.value = finance.label
                     descriptionState.setTextAndPlaceCursorAtEnd(finance.description)
                     onCreatedDateTimeState.value = finance.createdAt.toLocalDateTimeUtc()
 
                     tagIconState.value = finance.tagIcon
                     selectedPaymentMethod.value = finance.paymentMethod
+                    affectCurrentAccount.value =
+                        finance is FinanceEntity.Transaction && finance.affectCurrentAccount ||
+                                finance is FinanceEntity.Liability && finance.affectCurrentAccount
                 }
 
                 is DataSettlement.SettlementAdjust -> {
                     val settlement = dataSettlement.settlement
                     amountState.setTextAndPlaceCursorAtEnd(settlement.amount.toString())
+                    displayAmountState.value = settlement.amount.toString()
                     labelState.setTextAndPlaceCursorAtEnd(settlement.label)
+                    displayLabel.value = settlement.label
                     descriptionState.setTextAndPlaceCursorAtEnd(settlement.description)
                     onCreatedDateTimeState.value = settlement.dateTime.toLocalDateTimeUtc()
                     tagIconState.value = settlement.tagIcon
                     selectedPaymentMethod.value = settlement.paymentMethod
+                    affectCurrentAccount.value = settlement.affectCurrentAccount
                 }
 
                 is DataSettlement.SettlementWithdrawal -> {
                     val withdrawal = dataSettlement.withdrawal
                     amountState.setTextAndPlaceCursorAtEnd(withdrawal.amount.toString())
+                    displayAmountState.value = withdrawal.amount.toString()
                     labelState.setTextAndPlaceCursorAtEnd(withdrawal.label)
+                    displayLabel.value = withdrawal.label
                     descriptionState.setTextAndPlaceCursorAtEnd(withdrawal.description)
                     onCreatedDateTimeState.value = withdrawal.createdAt.toLocalDateTimeUtc()
                     fromPaymentMethod.value = withdrawal.fromPaymentMethod
                     toPaymentMethod.value = withdrawal.toPaymentMethod
+                    affectCurrentAccount.value = withdrawal.affectCurrentAccount
                 }
             }
         }
     }
 
-    val isAffectCurrentAccount = when (dataSettlement) {
-        is DataSettlement.SettlementData -> {
-            dataSettlement.affectCurrentAccount && dataSettlement.financeEntityType != "GOAL"
-        }
-
-        is DataSettlement.SettlementAdjust -> {
-            dataSettlement.affectCurrentAccount
-        }
-
-        else -> false
-    }
+    val showAffectCurrentAccount =
+        !(dataSettlement is DataSettlement.SettlementData && dataSettlement.financeEntityType == "GOAL") &&
+                !(dataSettlement is DataSettlement.SettlementAdjust && dataSettlement.financeEntityType == "GOAL")
 
     if (isUpdateModelBottonOpen.value) {
         ModalBottomSheet(
@@ -1321,51 +1328,18 @@ fun OnUpdate(
                         }
                     }
 
-                    item(6544) {
-                        // Show affectCurrentAccount.
-                        Column(
-                            modifier = Modifier.animateItem()
-                        ) {
-                            when (dataSettlement) {
-                                is DataSettlement.SettlementData -> {
-                                    if (dataSettlement.affectCurrentAccount && dataSettlement.financeEntityType != "GOAL") {
-                                        AffectCurrentAccount(
-                                            label = when (dataSettlement.financeEntity) {
-                                                is FinanceEntity.Transaction -> "Affect current account"
-                                                is FinanceEntity.Goal -> ""
-                                                is FinanceEntity.Liability -> when (dataSettlement.financeEntity.liabilityType) {
-                                                    LiabilityType.DEBT -> "Was Amount Received"
-                                                    LiabilityType.LOAN -> "Was Amount Paid"
-                                                }
-                                            },
-                                            color = colorResource(colorResId),
-                                            affectCurrentAccountState = affectCurrentAccount,
-                                            containerModifier = bottomModifier
-                                        )
-                                    }
-                                }
-
-                                is DataSettlement.SettlementAdjust -> {
-                                    if (dataSettlement.affectCurrentAccount && dataSettlement.financeEntityType != "GOAL") {
-                                        AffectCurrentAccount(
-                                            label = "Affect current account",
-                                            color = colorResource(colorResId),
-                                            affectCurrentAccountState = affectCurrentAccount,
-                                            containerModifier = bottomModifier
-                                        )
-                                    }
-                                }
-
-                                else -> {
-                                    if (dataSettlement.affectCurrentAccount) {
-                                        AffectCurrentAccount(
-                                            label = "Affect current account",
-                                            color = colorResource(colorResId),
-                                            affectCurrentAccountState = affectCurrentAccount,
-                                            containerModifier = bottomModifier
-                                        )
-                                    }
-                                }
+                    if (showAffectCurrentAccount) {
+                        item(6544) {
+                            // Show affectCurrentAccount.
+                            Column(
+                                modifier = Modifier.animateItem()
+                            ) {
+                                AffectCurrentAccount(
+                                    label = "Affect current account",
+                                    color = colorResource(colorResId),
+                                    affectCurrentAccountState = affectCurrentAccount,
+                                    containerModifier = bottomModifier
+                                )
                             }
                         }
                     }
@@ -1529,16 +1503,14 @@ fun OnUpdate(
                                                     settlement.financeEntity!!.id,
                                                     financeEntityType,
                                                     settlement,
-                                                    Settlement(
-                                                        settlementId = settlement.settlementId,
+                                                    settlement.copy(
                                                         amount = amountAsDouble,
-                                                        label = settlement.label,
                                                         description = descriptionState.text.toString(),
                                                         dateTime = onCreatedDateTimeState
                                                             .value.toFirestoreTimestampUtc(),
                                                         tagIcon = tagIconState.value,
-                                                        settlementType = settlement.settlementType,
-                                                        paymentMethod = selectedPaymentMethod.value
+                                                        paymentMethod = selectedPaymentMethod.value,
+                                                        affectCurrentAccount = affectCurrentAccount.value
                                                     )
                                                 )
 
@@ -1598,17 +1570,14 @@ fun OnUpdate(
                                                     withdrawal.financeEntity!!.id,
                                                     financeEntityType,
                                                     withdrawal,
-                                                    Withdrawal(
-                                                        withdrawalId = withdrawal.withdrawalId,
-                                                        datasetId = withdrawal.datasetId,
-                                                        userId = withdrawal.userId,
+                                                    withdrawal.copy(
                                                         amount = amountAsDouble,
-                                                        label = withdrawal.label,
                                                         description = descriptionState.text.toString(),
                                                         createdAt = onCreatedDateTimeState
                                                             .value.toFirestoreTimestampUtc(),
                                                         fromPaymentMethod = fromPaymentMethod.value,
-                                                        toPaymentMethod = toPaymentMethod.value
+                                                        toPaymentMethod = toPaymentMethod.value,
+                                                        affectCurrentAccount = affectCurrentAccount.value
                                                     )
                                                 )
 
@@ -1647,36 +1616,6 @@ fun OnUpdate(
     }
 
 
-    LaunchedEffect(isUpdateModelBottonOpen.value) {
-        if (!isUpdateModelBottonOpen.value) return@LaunchedEffect
-
-        // wait for BottomSheet to render first frame
-        awaitFrame()
-
-        val amount = dataSettlement.amount
-        val label = dataSettlement.label
-
-        val description = dataSettlement.description
-
-        val dateTime = dataSettlement.createdAt
-
-        val tagIcon = dataSettlement.tagIcon
-
-        amountState.setTextAndPlaceCursorAtEnd(amount.toString())
-        displayAmountState.value = amount.toString()
-
-        labelState.setTextAndPlaceCursorAtEnd(label)
-        displayLabel.value = label
-
-        descriptionState.setTextAndPlaceCursorAtEnd(description)
-
-        onCreatedDateTimeState.value = dateTime.toLocalDateTimeUtc()
-
-        tagIcon?.let {
-            tagIconState.value = it
-        }
-
-    }
 
 }
 
@@ -1761,7 +1700,7 @@ fun Receipt(
             }
 
             is DataSettlement.SettlementAdjust -> {
-                val financeEntityType = dataSettlement.financeEntityType ?: ""
+                val financeEntityType = dataSettlement.financeEntityType
 
                 viewModel.removeSettlementFinance(
                     dataSettlement.settlement.financeEntity!!.id,
@@ -1772,7 +1711,7 @@ fun Receipt(
             }
 
             is DataSettlement.SettlementWithdrawal -> {
-                val financeEntityType = dataSettlement.financeEntityType ?: ""
+                val financeEntityType = dataSettlement.financeEntityType
 
                 viewModel.removeWithdrawalFinance(
                     dataSettlement.withdrawal.financeEntity!!.id,

@@ -17,8 +17,6 @@ import com.example.moneytracker.helper.rescheduleDeadline
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
-import com.example.moneytracker.helper.toMidnight
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestoreException
 import dagger.assisted.Assisted
 import dagger.assisted.AssistedInject
@@ -80,33 +78,18 @@ class RoutineWorker @AssistedInject constructor(
 
             Log.d(TAG, "Current status: $currentStatus")
             Log.d(TAG, "Progress: $formatProgress%")
-
-            val now = Timestamp.now()
-            val normalizedNow = if (dataset.routine.routine in listOf(
-                    Routine.EveryDay,
-                    Routine.Weekly,
-                    Routine.Monthly,
-                    Routine.Yearly,
-                    Routine.SpecifyDayOfTheWeek
-                )
-            ) {
-                now.toLocalDateTimeUtc().toMidnight().toFirestoreTimestampUtc()
-            } else {
-                now
-            }
-
-            Log.d(TAG, "Normalized now: $normalizedNow")
             Log.d(TAG, "Calling completeRoutine()...")
 
             val expiredDeadline = dataset.routine.deadlineDateTime
+            val currentStart = dataset.routine.startDateTime
 
             dataStorage.completeRoutine(
                 userId = userId,
                 datasetId = datasetId,
                 financeType = financeType,
-                newDateTime = normalizedNow,
+                newDateTime = expiredDeadline,
                 nextDeadline = nextDeadline,
-                previousDeadline = expiredDeadline
+                previousDeadline = currentStart
             )
 
             Log.d(TAG, "Returned from completeRoutine()")

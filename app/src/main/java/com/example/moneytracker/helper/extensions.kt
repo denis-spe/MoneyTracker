@@ -703,6 +703,7 @@ fun Map<*, *>.asWithdrawal(): Withdrawal {
     }
     val withdrawalId = this["withdrawalId"] as? String ?: ""
     val userId = this["userId"] as? String ?: ""
+    val affectCurrentAccount = this["affectCurrentAccount"] as? Boolean ?: false
 
     return Withdrawal(
         withdrawalId = withdrawalId,
@@ -713,7 +714,8 @@ fun Map<*, *>.asWithdrawal(): Withdrawal {
         createdAt = createdAt,
         datasetId = datasetId,
         toPaymentMethod = toPaymentMethod,
-        fromPaymentMethod = fromPaymentMethod
+        fromPaymentMethod = fromPaymentMethod,
+        affectCurrentAccount = affectCurrentAccount
     )
 }
 
@@ -786,6 +788,7 @@ fun Map<*, *>.asSettlement(): Settlement {
     val settlementId = this["settlementId"] as? String ?: ""
     val userId = this["userId"] as? String ?: ""
     val datasetId = this["datasetId"] as? String ?: ""
+    val affectCurrentAccount = this["affectCurrentAccount"] as? Boolean ?: false
 
     return Settlement(
         amount = amount,
@@ -797,7 +800,8 @@ fun Map<*, *>.asSettlement(): Settlement {
         settlementType = settlementType,
         settlementId = settlementId,
         userId = userId,
-        datasetId = datasetId
+        datasetId = datasetId,
+        affectCurrentAccount = affectCurrentAccount
     )
 }
 
@@ -934,6 +938,7 @@ fun Map<*, *>.toFinance(): FinanceEntity {
                     else -> TransactionType.EARNINGS
                 }
             }
+            val affectCurrentAccount = this["affectCurrentAccount"] as? Boolean ?: false
             FinanceEntity.Transaction(
                 id = id,
                 transactionType = transactionType,
@@ -943,7 +948,8 @@ fun Map<*, *>.toFinance(): FinanceEntity {
                 createdAt = createdAt,
                 tagIcon = tagIcon,
                 paymentMethod = paymentMethod,
-                withdrawal = this.toWithdrawal()
+                withdrawal = this.toWithdrawal(),
+                affectCurrentAccount = affectCurrentAccount
             )
         }
 

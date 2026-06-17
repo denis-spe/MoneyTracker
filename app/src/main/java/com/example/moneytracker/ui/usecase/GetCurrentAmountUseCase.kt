@@ -45,7 +45,7 @@ class GetCurrentAmountUseCase @Inject constructor() {
 
                 // 2. Process settlements within the entity
                 val settlements = when (entity) {
-                    is FinanceEntity.Goal -> entity.settlement
+                    is FinanceEntity.Goal -> emptyList() // Goal attainments don't affect current account balance
                     is FinanceEntity.Liability -> entity.settlement
                     is FinanceEntity.Transaction -> emptyList()
                 }
