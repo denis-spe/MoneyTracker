@@ -705,7 +705,8 @@ fun FinancialDataInput(
                                 description = descriptionState.text.toString(),
                                 createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
                                 tagIcon = tagState.value,
-                                paymentMethod = paymentMethod.value
+                                paymentMethod = paymentMethod.value,
+                                affectCurrentAccount = affectCurrentAccountState.value
                             )
                         }
 
@@ -720,7 +721,7 @@ fun FinancialDataInput(
                                 createdAt = creationDateTime.value.toFirestoreTimestampUtc(),
                                 tagIcon = tagState.value,
                                 paymentMethod = paymentMethod.value,
-                                affectCurrentAccount = if (type == LiabilityType.DEBT) affectCurrentAccountState.value else false
+                                affectCurrentAccount = affectCurrentAccountState.value
                             )
                         }
 
@@ -1211,7 +1212,8 @@ fun SettlementDataInputs(
                         description = descriptionState.text.toString(),
                         tagIcon = entity.tagIcon,
                         paymentMethod = selectedPaymentMethod.value,
-                        settlementType = settlementType
+                        settlementType = settlementType,
+                        affectCurrentAccount = affectCurrentAccountState.value
                     ).apply {
                         financeEntity = entity
                     }
@@ -1291,6 +1293,10 @@ fun WithdrawalInputs(
         }
     }
 
+    val affectCurrentAccountState = remember {
+        mutableStateOf(true)
+    }
+
     val color = colorResource(settlementType.color)
 
     val iconImage = painterResource(settlementType.icon)
@@ -1364,7 +1370,14 @@ fun WithdrawalInputs(
             showDate = remember { mutableStateOf(false) },
             localDateTimeState = localDateTimeState,
             colorResId = settlementType.color,
-            timeContainerModifier = bottomModifier
+            timeContainerModifier = topModifier
+        )
+
+        AffectCurrentAccount(
+            label = "Affect current account",
+            containerModifier = bottomModifier,
+            color = color,
+            affectCurrentAccountState = affectCurrentAccountState
         )
 
         Text(
@@ -1434,7 +1447,8 @@ fun WithdrawalInputs(
                         label = settlementType.text,
                         description = descriptionState.text.toString(),
                         toPaymentMethod = toPaymentMethod.value,
-                        fromPaymentMethod = fromPaymentMethod.value
+                        fromPaymentMethod = fromPaymentMethod.value,
+                        affectCurrentAccount = affectCurrentAccountState.value
                     )
 
                     val financeEntityType = when (entity) {
@@ -1468,3 +1482,4 @@ fun WithdrawalInputs(
         }
     }
 }
+
