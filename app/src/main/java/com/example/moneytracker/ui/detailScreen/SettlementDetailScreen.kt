@@ -199,10 +199,16 @@ fun LiabilityContent(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 AddSettlement(
-                    color = color,
+                    color = when (liability.liabilityType) {
+                        LiabilityType.DEBT -> colorResource(id = R.color.RepayDebt)
+                        LiabilityType.LOAN -> colorResource(id = R.color.RepayLoan)
+                    },
                     liabilityId = liabilityId,
                     liability = liability,
-                    label = "Settlement",
+                    label = when (liability.liabilityType) {
+                        LiabilityType.DEBT -> "Payback"
+                        LiabilityType.LOAN -> "Refund"
+                    },
                     detailButtonType = DetailButtonType.ICON_TEXT
                 )
             }

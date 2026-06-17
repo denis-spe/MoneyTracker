@@ -54,7 +54,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -461,11 +463,30 @@ fun AchievementDetailDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Achievement Details",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Image(
+                        painter = painterResource(R.drawable.achievement),
+                        contentDescription = "Achievement",
+                        modifier = Modifier.size(30.dp)
+                    )
+
+                    Text(
+                        text = "Achievement Details",
+                        color = if (status == "COMPLETED") colorResource(id = R.color.success_complete) else colorResource(
+                            id = R.color.error_color
+                        ),
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Text(
+                        text = "View achievement records",
+                        color = Color.Gray, fontSize = 12.sp
+                    )
+                }
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -500,7 +521,10 @@ fun AchievementDetailDialog(
                         achievement = achievement
                     )
 
-                    DeleteAchievementButton(achievement = achievement)
+                    DeleteAchievementButton(
+                        achievement = achievement,
+                        onDismiss = onDismiss
+                    )
                 }
 
                 TextButton(onClick = onDismiss) {

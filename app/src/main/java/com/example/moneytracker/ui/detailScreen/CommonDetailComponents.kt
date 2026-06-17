@@ -60,6 +60,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.example.moneytracker.R
@@ -398,10 +399,15 @@ fun AddGoalAttained(
                 )
 
                 Text(
-                    "Add Goal Attainment",
-                    fontWeight = FontWeight.Bold,
+                    text = "Attain",
                     color = colorResource(R.color.Attain),
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    text = "Attain your goal",
+                    color = Color.Gray, fontSize = 12.sp
                 )
 
 
@@ -541,11 +547,17 @@ fun EditGoal(
                 )
 
                 Text(
-                    "Edit Goal Details",
-                    fontWeight = FontWeight.Bold,
+                    text = "Goal",
                     color = colorResource(R.color.Goal),
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
                 )
+
+                Text(
+                    text = "Edit Goal Details",
+                    color = Color.Gray, fontSize = 12.sp
+                )
+                
 
                 ModelDrawerTextField(
                     title = "Label",
@@ -678,10 +690,15 @@ fun EditSettlementAmount(
                 )
 
                 Text(
-                    "Edit ${settlement.settlementType.text} Details",
-                    fontWeight = FontWeight.Bold,
+                    text = "Edit ${settlement.settlementType.text} Details",
                     color = getColor,
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    text = "Modify the amount and details",
+                    color = Color.Gray, fontSize = 12.sp
                 )
 
                 ModelDrawerAmountField(
@@ -772,20 +789,34 @@ fun SettlementDetailDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "${settlement.settlementType.text} Details",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(settlement.settlementType.icon),
+                        contentDescription = settlement.settlementType.text,
+                        tint = colorResource(settlement.settlementType.color),
+                        modifier = Modifier.size(30.dp)
+                    )
+
+                    Text(
+                        text = "${settlement.settlementType.text} Details",
+                        color = colorResource(settlement.settlementType.color),
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Text(
+                        text = "View settlement details",
+                        color = Color.Gray, fontSize = 12.sp
+                    )
+                }
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    DetailRow(
-                        label = "Label",
-                        value = settlement.label.ifEmpty { settlement.settlementType.text }
-                    )
                     DetailRow(
                         label = "Amount",
                         value = settlement.amount.formatToAmount(),
@@ -886,10 +917,15 @@ fun EditWithdrawalAmount(
                 )
 
                 Text(
-                    "Edit Withdrawal Details",
-                    fontWeight = FontWeight.Bold,
+                    text = "Edit Withdrawal Details",
                     color = getColor,
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    text = "Modify withdrawal amount and details",
+                    color = Color.Gray, fontSize = 12.sp
                 )
 
                 ModelDrawerAmountField(
@@ -968,11 +1004,29 @@ fun WithdrawalDetailDialog(
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Withdrawal Details",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(SettlementType.WITHDRAWAL.icon),
+                        contentDescription = "Withdrawal",
+                        tint = colorResource(SettlementType.WITHDRAWAL.color),
+                        modifier = Modifier.size(30.dp)
+                    )
+
+                    Text(
+                        text = "Withdrawal Details",
+                        color = colorResource(SettlementType.WITHDRAWAL.color),
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Text(
+                        text = "View withdrawal details",
+                        color = Color.Gray, fontSize = 12.sp
+                    )
+                }
 
                 Column(
                     modifier = Modifier.fillMaxWidth(),
@@ -1081,10 +1135,15 @@ fun EditAchievementAmount(
                 )
 
                 Text(
-                    "Edit Achievement Amount",
-                    fontWeight = FontWeight.Bold,
+                    text = "Achievement",
                     color = getColor,
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    text = "Edit Achievement Amount",
+                    color = Color.Gray, fontSize = 12.sp
                 )
 
                 ModelDrawerAmountField(
@@ -1123,7 +1182,8 @@ fun EditAchievementAmount(
 @Composable
 fun DeleteAchievementButton(
     achievement: Achievement,
-    viewModel: DetailViewModel = hiltViewModel()
+    viewModel: DetailViewModel = hiltViewModel(),
+    onDismiss: () -> Unit
 ) {
     DeleteButton(
         title = "Delete Achievement?",
@@ -1132,6 +1192,7 @@ fun DeleteAchievementButton(
         detailButtonType = DetailButtonType.ICON_ONLY,
         onConfirm = {
             viewModel.deleteAchievement(achievement)
+            onDismiss()
         }
     )
 }
@@ -1231,10 +1292,15 @@ fun EditTransaction(
                 )
 
                 Text(
-                    "Edit Transaction Details",
-                    fontWeight = FontWeight.Bold,
+                    text = "Edit Transaction Details",
                     color = color,
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    text = "Modify transaction details",
+                    color = Color.Gray, fontSize = 12.sp
                 )
 
                 ModelDrawerAmountField(
@@ -1420,10 +1486,15 @@ fun EditLiability(
                 )
 
                 Text(
-                    "Edit Liability Details",
-                    fontWeight = FontWeight.Bold,
+                    text = "Edit Liability Details",
                     color = color,
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
+                )
+
+                Text(
+                    text = "Modify liability details",
+                    color = Color.Gray, fontSize = 12.sp
                 )
 
                 ModelDrawerAmountField(
@@ -1572,10 +1643,8 @@ fun AddSettlement(
     DetailButton(
         label = label,
         icon = Icons.Default.Add,
-        containerColor = colorResource(settlementType.color),
-        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else colorResource(
-            settlementType.color
-        ),
+        containerColor = color,
+        contentColor = if (detailButtonType == DetailButtonType.FILLED) Color.White else color,
         detailButtonType = detailButtonType
     ) {
         showDialog.value = true
@@ -1604,17 +1673,15 @@ fun AddSettlement(
                 )
 
                 Text(
-                    "Add ${settlementType.text}",
-                    fontWeight = FontWeight.Bold,
+                    text = "Add ${settlementType.text}",
                     color = colorResource(settlementType.color),
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
                 )
 
                 Text(
-                    settlementType.typeDescription,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    text = settlementType.typeDescription,
+                    color = Color.Gray, fontSize = 12.sp
                 )
 
                 ModelDrawerAmountField(
@@ -1743,17 +1810,15 @@ fun AddWithdrawal(
                 )
 
                 Text(
-                    "Add ${withdrawalType.text}",
-                    fontWeight = FontWeight.Bold,
+                    text = "Add ${withdrawalType.text}",
                     color = colorResource(withdrawalType.color),
-                    modifier = Modifier.padding(top = 2.dp)
+                    fontWeight = FontWeight.Medium,
+                    textAlign = TextAlign.Center,
                 )
 
                 Text(
-                    withdrawalType.typeDescription,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(horizontal = 16.dp)
+                    text = withdrawalType.typeDescription,
+                    color = Color.Gray, fontSize = 12.sp
                 )
 
                 ModelDrawerAmountField(
