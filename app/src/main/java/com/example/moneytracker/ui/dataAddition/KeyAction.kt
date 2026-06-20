@@ -1,5 +1,5 @@
 // Glory be to the name LORD our GOD and to his son Jesus
-package com.example.moneytracker.ui.homeScreen.dataAddition
+package com.example.moneytracker.ui.dataAddition
 
 import androidx.compose.foundation.text.input.KeyboardActionHandler
 

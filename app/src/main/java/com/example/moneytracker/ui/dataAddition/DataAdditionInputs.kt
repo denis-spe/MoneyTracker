@@ -1,5 +1,5 @@
 // Praise be the LORD, For the LORD is good and his mercy endures forever
-package com.example.moneytracker.ui.homeScreen.dataAddition
+package com.example.moneytracker.ui.dataAddition
 
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -56,6 +57,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -144,7 +146,7 @@ private val AMOUNT_FONT_SIZE = 20.sp
 
 @Composable
 fun ModelDrawerTag(
-    containerModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     colorResId: Int,
     title: String,
     iconState: MutableState<TagIcon>,
@@ -158,7 +160,7 @@ fun ModelDrawerTag(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
-            .then(containerModifier)
+            .then(modifier)
             .height(height)
             .clickable {
                 onDialogShow.value = true
@@ -199,15 +201,238 @@ fun ModelDrawerTag(
 }
 
 @Composable
-fun ModelDrawerTextField(
-    containerModifier: Modifier = Modifier,
+fun ModelDrawerDescriptionTextField(
+    modifier: Modifier = Modifier,
     title: String = "",
     description: String = "",
     state: TextFieldState,
     displayText: MutableState<String>,
     placeholder: String,
     colorResId: Int,
-    textLength: Int? = null,
+    textLength: Int = 300, 
+    wasSuccess: MutableState<State>? = null,
+    lineLimits: TextFieldLineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 8),
+) {
+    val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
+    val color = if (isError)
+        colorResource(R.color.error_color) else
+        colorResource(id = colorResId)
+    val height = integerResource(R.integer.textFieldAndButtonHeight).dp
+    val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
+    val modifiedPlaceholder = if (isError)
+        "Fill the Label" else placeholder
+
+    val onDialogShow = remember { mutableStateOf(false) }
+    val optionsTitle = if (title == "Label") "Required" else
+        "Optional"
+    val focusRequester = remember { FocusRequester() }
+
+    if (onDialogShow.value) {
+        LaunchedEffect(Unit) {
+            focusRequester.requestFocus()
+        }
+
+        Dialog(
+            onDismissRequest = {
+                state.setTextAndPlaceCursorAtEnd(displayText.value)
+                onDialogShow.value = false
+            },
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(0.8f)
+            ) {
+                Column(
+                    modifier = Modifier.padding(top = 10.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Image(
+                            painter = painterResource(
+                                id = R.drawable.note
+                            ),
+                            contentDescription = "Note",
+                            modifier = Modifier.size(ICON_SIZE)
+                        )
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(title, fontSize = fontSize, fontWeight = FontWeight.Bold)
+                    }
+                    Text(description, textAlign = TextAlign.Center)
+
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+
+                    OutlinedTextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 320.dp)
+                            .focusRequester(focusRequester)
+                            .padding(
+                                vertical = 5.dp,
+                                horizontal = 5.dp
+                            ),
+                        state = state,
+                        lineLimits = lineLimits,
+                        placeholder = {
+                            Text(
+                                text = modifiedPlaceholder,
+                                color = color,
+                                fontSize = fontSize
+                            )
+                        },
+                        colors = OutlinedTextFieldDefaults.colors().copy(
+                            focusedTextColor = color,
+                            unfocusedTextColor = color.copy(alpha = 0.5f),
+                            cursorColor = color,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent,
+                        ),
+                        textStyle = TextStyle(
+                            color = color,
+                            fontSize = fontSize
+                        ),
+                        keyboardOptions = KeyboardOptions(
+                            imeAction = ImeAction.Done
+                        ),
+                        onKeyboardAction = KeyAction {
+                            if (state.text.isNotEmpty()) {
+                                onDialogShow.value = false
+                                displayText.value = state.text.toString()
+                            }
+                        },
+                        shape = SHAPE,
+                        inputTransformation = InputTransformation.maxLength(textLength)
+                    )
+
+                    Row(
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 2.dp, bottom = 5.dp)
+                    ) {
+                        if (state.text.isNotEmpty()) {
+                            OutlinedButton(
+                                onClick = {
+                                    state.setTextAndPlaceCursorAtEnd("")
+                                },
+                                colors = ButtonDefaults.outlinedButtonColors().copy(
+                                    contentColor = color
+                                ),
+                                border = BorderStroke(1.dp, color)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+
+                                    contentDescription = "clear text"
+                                )
+
+                                Text(
+                                    "Clear",
+                                    color = color,
+                                    fontSize = fontSize
+                                )
+                            }
+                        }
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceEvenly,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 10.dp, bottom = 10.dp)
+                    ) {
+                        TextButton(
+                            onClick = {
+                                state.setTextAndPlaceCursorAtEnd(displayText.value)
+                                onDialogShow.value = false
+                            }
+                        ) {
+                            Text(
+                                "Cancel", fontSize = fontSize,
+                                color = color,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+
+                        Text(
+                            "|",
+                            color = color,
+                            modifier = Modifier.padding(horizontal = 2.dp)
+                        )
+
+                        TextButton(
+                            onClick = {
+                                if (state.text.isNotEmpty()) {
+                                    onDialogShow.value = false
+                                    displayText.value = state.text.toString()
+                                }
+                            }
+                        ) {
+                            Text(
+                                "OK",
+                                fontSize = fontSize,
+                                color = color,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+
+            }
+        }
+    }
+
+    ListItem(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
+            .then(modifier)
+            .height(height)
+            .clickable {
+                onDialogShow.value = true
+            },
+        colors = ListItemDefaults.colors().copy(containerColor = color.copy(alpha = 0.1f)),
+        leadingContent = {
+            Image(
+                painter = painterResource(
+                    id = if (title == "Label") R.drawable.label
+                    else R.drawable.note
+                ),
+                contentDescription = "labelOrNote",
+                modifier = Modifier.size(ICON_SIZE)
+            )
+        },
+
+        headlineContent = {
+            Text(title, fontSize = fontSize, fontWeight = FONT_WEIGHT, color = color)
+        },
+
+        trailingContent = {
+            val textValue = if (displayText.value.length > MAX_LABEL_LENGTH)
+                displayText.value.take(MAX_LABEL_LENGTH) + "..." else
+                (displayText.value.ifEmpty { optionsTitle })
+
+            Text(textValue, color = color, fontSize = fontSize)
+        }
+    )
+}
+
+@Composable
+fun ModelDrawerLabelTextField(
+    modifier: Modifier = Modifier,
+    title: String = "",
+    description: String = "",
+    state: TextFieldState,
+    displayText: MutableState<String>,
+    placeholder: String,
+    colorResId: Int,
+    textLength: Int = 16,
     wasSuccess: MutableState<State>? = null,
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.SingleLine,
 ) {
@@ -250,10 +475,10 @@ fun ModelDrawerTextField(
                     ) {
                         Image(
                             painter = painterResource(
-                                id = if (title == "Label") R.drawable.label
-                                else R.drawable.note
+                                id = R.drawable.tag
                             ),
-                            contentDescription = "LabelOrNote"
+                            contentDescription = "Label",
+                            modifier = Modifier.size(ICON_SIZE)
                         )
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(title, fontSize = fontSize, fontWeight = FontWeight.Bold)
@@ -317,9 +542,7 @@ fun ModelDrawerTextField(
                             }
                         },
                         shape = SHAPE,
-                        inputTransformation = if (textLength != null)
-                            InputTransformation.maxLength(textLength) else
-                            null
+                        inputTransformation = InputTransformation.maxLength(textLength)
                     )
 
                     Row(
@@ -374,7 +597,7 @@ fun ModelDrawerTextField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
-            .then(containerModifier)
+            .then(modifier)
             .height(height)
             .clickable {
                 onDialogShow.value = true
@@ -409,7 +632,7 @@ fun ModelDrawerTextField(
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun ModelDrawerAmountField(
-    containerModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     state: TextFieldState,
     placeholder: String,
     colorResId: Int,
@@ -582,7 +805,7 @@ fun ModelDrawerAmountField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
-            .then(containerModifier)
+            .then(modifier)
             .height(height)
             .clickable {
                 showCustomKeyboard.value = true
@@ -2020,7 +2243,7 @@ fun AffectCurrentAccount(
             )
         },
         trailingContent = {
-            androidx.compose.material3.Switch(
+            Switch(
                 checked = affectCurrentAccountState.value,
                 onCheckedChange = { affectCurrentAccountState.value = it },
                 colors = SwitchDefaults.colors().copy(

@@ -78,10 +78,10 @@ import com.example.moneytracker.ui.Receipt
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.components.Swipe
+import com.example.moneytracker.ui.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
-import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.theme.StewardTheme
 
 private val spacerWith = 14.dp

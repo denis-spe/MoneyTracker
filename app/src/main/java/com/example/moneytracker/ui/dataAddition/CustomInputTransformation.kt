@@ -1,5 +1,5 @@
 // Bless be the name of LORD
-package com.example.moneytracker.ui.homeScreen.dataAddition
+package com.example.moneytracker.ui.dataAddition
 
 import androidx.compose.foundation.text.input.InputTransformation
 import androidx.compose.foundation.text.input.TextFieldBuffer

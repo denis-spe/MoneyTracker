@@ -3,7 +3,7 @@
 // For the LORD is good and his mercy endures forever
 // =====
 
-package com.example.moneytracker.ui.homeScreen.dataAddition
+package com.example.moneytracker.ui.dataAddition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -578,10 +578,10 @@ fun FinancialDataInput(
             displayState = rememberSaveable {
                 mutableStateOf("")
             },
-            containerModifier = topModifier,
+            modifier = topModifier,
         )
 
-        ModelDrawerTextField(
+        ModelDrawerLabelTextField(
             state = labelState,
             title = "Label",
             description = "Add a label",
@@ -600,7 +600,7 @@ fun FinancialDataInput(
             iconState = tagState
         )
 
-        ModelDrawerTextField(
+        ModelDrawerDescriptionTextField(
             state = descriptionState,
             placeholder = "Note (Optional)",
             title = "Note",
@@ -854,10 +854,10 @@ fun GoalDataInput(
             colorResId = GoalType.color,
             wasSuccess = remember { mutableStateOf(wasSuccess) },
             displayState = rememberSaveable { mutableStateOf("") },
-            containerModifier = topModifier
+            modifier = topModifier
         )
 
-        ModelDrawerTextField(
+        ModelDrawerLabelTextField(
             state = labelState,
             title = "Label",
             description = "Add a label for the given amount",
@@ -874,7 +874,7 @@ fun GoalDataInput(
             iconState = tagIconState
         )
 
-        ModelDrawerTextField(
+        ModelDrawerDescriptionTextField(
             state = descriptionState,
             placeholder = "Note (Optional)",
             title = "Note",
@@ -1112,7 +1112,7 @@ fun SettlementDataInputs(
             containerModifier = topModifier
         )
 
-        ModelDrawerTextField(
+        ModelDrawerDescriptionTextField(
             state = descriptionState,
             placeholder = "Note (Optional)",
             title = "Note",
@@ -1355,7 +1355,7 @@ fun WithdrawalInputs(
             containerModifier = topModifier
         )
 
-        ModelDrawerTextField(
+        ModelDrawerDescriptionTextField(
             state = descriptionState,
             placeholder = "Note (Optional)",
             title = "Note",

@@ -23,7 +23,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.helper.shimmerEffect
-import com.example.moneytracker.ui.homeScreen.dataAddition.ICON_SIZE
+import com.example.moneytracker.ui.dataAddition.ICON_SIZE
 
 
 private val SPACE = 10.dp

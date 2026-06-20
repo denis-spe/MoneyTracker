@@ -1,5 +1,5 @@
 // Bless is he who comes in the name of LORD.
-package com.example.moneytracker.ui.homeScreen.dataAddition
+package com.example.moneytracker.ui.dataAddition
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring

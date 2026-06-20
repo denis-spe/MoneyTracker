@@ -79,17 +79,19 @@ import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.DeleteDialog
+import com.example.moneytracker.ui.dataAddition.AffectCurrentAccount
+import com.example.moneytracker.ui.dataAddition.DateTimeInput
+import com.example.moneytracker.ui.dataAddition.ModelDrawerAmountField
+import com.example.moneytracker.ui.dataAddition.ModelDrawerButton
+import com.example.moneytracker.ui.dataAddition.ModelDrawerDescriptionTextField
+import com.example.moneytracker.ui.dataAddition.ModelDrawerLabelTextField
+import com.example.moneytracker.ui.dataAddition.ModelDrawerTag
+import com.example.moneytracker.ui.dataAddition.PaymentMethodDropdown
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.homeScreen.dataAddition.AffectCurrentAccount
-import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
-import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerAmountField
-import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerButton
-import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTag
-import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTextField
-import com.example.moneytracker.ui.homeScreen.dataAddition.PaymentMethodDropdown
 import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
+
 
 @Composable
 fun SettlementItem(
@@ -416,11 +418,12 @@ fun AddGoalAttained(
                     displayState = amountDisplay,
                     placeholder = remainingAmount.formatValueOnly(),
                     colorResId = R.color.Attain,
-                    containerModifier = topModifier
+                    modifier = topModifier
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerDescriptionTextField(
                     title = "Description",
+                    description = "Take a note",
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Details...",
@@ -557,19 +560,20 @@ fun EditGoal(
                     text = "Edit Goal Details",
                     color = Color.Gray, fontSize = 12.sp
                 )
-                
 
-                ModelDrawerTextField(
+
+                ModelDrawerLabelTextField(
                     title = "Label",
                     state = labelState,
                     displayText = labelDisplay,
                     placeholder = "Goal Title",
                     colorResId = R.color.Goal,
-                    containerModifier = topModifier
+                    modifier = topModifier
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerDescriptionTextField(
                     title = "Description",
+                    description = "Take a note",
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Notes...",
@@ -587,7 +591,7 @@ fun EditGoal(
                     colorResId = R.color.Goal,
                     title = "Icon",
                     iconState = tagIcon,
-                    containerModifier = bottomModifier
+                    modifier = bottomModifier
                 )
 
                 PaymentMethodDropdown(
@@ -639,6 +643,8 @@ fun EditSettlementAmount(
     val descriptionState = rememberTextFieldState(settlement.description)
     val descriptionDisplay = remember { mutableStateOf(settlement.description) }
     val localDateState = remember { mutableStateOf(settlement.dateTime.toLocalDateTimeUtc()) }
+    val affectCurrentAccount = remember { mutableStateOf(false) }
+
 
     val colorRes = settlement.settlementType.color
     val getColor = colorResource(colorRes)
@@ -706,11 +712,12 @@ fun EditSettlementAmount(
                     displayState = amountDisplay,
                     placeholder = "0.0",
                     colorResId = colorRes,
-                    containerModifier = topModifier
+                    modifier = topModifier
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerDescriptionTextField(
                     title = "Description",
+                    description = "Take a note",
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Details...",
@@ -722,7 +729,17 @@ fun EditSettlementAmount(
                     showDate = remember { mutableStateOf(false) },
                     localDateTimeState = localDateState,
                     colorResId = colorRes,
-                    timeContainerModifier = bottomModifier
+                )
+
+                AffectCurrentAccount(
+                    color = colorResource(colorRes),
+                    containerModifier = bottomModifier,
+                    label = when (settlement.settlementType) {
+                        SettlementType.DEBT_REPAY -> "Was Debt Repaid"
+                        SettlementType.LENT_REPAY -> "Was Lent Repaid"
+                        else -> "Affect Current Account"
+                    },
+                    affectCurrentAccountState = affectCurrentAccount
                 )
 
                 Row(
@@ -744,7 +761,8 @@ fun EditSettlementAmount(
                             oldSettlement = settlement,
                             newAmount = newAmount,
                             newDescription = descriptionDisplay.value,
-                            localDate = localDateState.value.toFirestoreTimestampUtc()
+                            localDate = localDateState.value.toFirestoreTimestampUtc(),
+                            affectCurrentAccount = affectCurrentAccount.value
                         )
                         showDialog.value = false
                         onUpdateSuccess()
@@ -759,7 +777,8 @@ fun EditSettlementAmount(
 fun DeleteSettlementButton(
     settlement: Settlement,
     financeType: String,
-    viewModel: DetailViewModel = hiltViewModel()
+    viewModel: DetailViewModel = hiltViewModel(),
+    onDismiss: () -> Unit
 ) {
     DeleteButton(
         title = "Delete ${settlement.settlementType.text}?",
@@ -768,6 +787,7 @@ fun DeleteSettlementButton(
         detailButtonType = DetailButtonType.ICON_ONLY,
         onConfirm = {
             viewModel.deleteSettlement(financeType, settlement)
+            onDismiss()
         }
     )
 }
@@ -850,7 +870,8 @@ fun SettlementDetailDialog(
                     )
                     DeleteSettlementButton(
                         settlement = settlement,
-                        financeType = financeType
+                        financeType = financeType,
+                        onDismiss = onDismiss
                     )
                 }
 
@@ -879,9 +900,23 @@ fun EditWithdrawalAmount(
     val amountDisplay = remember { mutableStateOf(withdrawal.amount.toString()) }
     val descriptionState = rememberTextFieldState(withdrawal.description)
     val descriptionDisplay = remember { mutableStateOf(withdrawal.description) }
+    val affectCurrentAccount = remember { mutableStateOf(withdrawal.affectCurrentAccount) }
 
     val colorRes = SettlementType.WITHDRAWAL.color
     val getColor = colorResource(colorRes)
+
+    val topModifier = Modifier.clip(
+        RoundedCornerShape(
+            topStart = 10.dp,
+            topEnd = 10.dp
+        )
+    )
+    val bottomModifier = Modifier.clip(
+        RoundedCornerShape(
+            bottomStart = 10.dp,
+            bottomEnd = 10.dp
+        )
+    )
 
     DetailButton(
         label = label,
@@ -906,7 +941,7 @@ fun EditWithdrawalAmount(
                     .imePadding()
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
 
                 Icon(
@@ -933,16 +968,23 @@ fun EditWithdrawalAmount(
                     displayState = amountDisplay,
                     placeholder = "0.0",
                     colorResId = colorRes,
-                    containerModifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                    modifier = topModifier
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerDescriptionTextField(
                     title = "Description",
+                    description = "Take a note",
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Details...",
                     colorResId = colorRes
+                )
+
+                AffectCurrentAccount(
+                    color = getColor,
+                    containerModifier = bottomModifier,
+                    label = "Affect Current Account",
+                    affectCurrentAccountState = affectCurrentAccount
                 )
 
                 Row(
@@ -962,7 +1004,8 @@ fun EditWithdrawalAmount(
                         viewModel.updateWithdrawal(
                             oldWithdrawal = withdrawal,
                             newAmount = newAmount,
-                            newDescription = descriptionDisplay.value
+                            newDescription = descriptionDisplay.value,
+                            affectCurrentAccount = affectCurrentAccount.value
                         )
                         showDialog.value = false
                     }
@@ -1151,7 +1194,7 @@ fun EditAchievementAmount(
                     displayState = amountDisplay,
                     placeholder = "0.0",
                     colorResId = color,
-                    containerModifier = Modifier
+                    modifier = Modifier
                         .clip(RoundedCornerShape(10.dp))
                 )
 
@@ -1218,6 +1261,8 @@ fun EditTransaction(
     val descriptionState = rememberTextFieldState()
     val descriptionDisplay = remember { mutableStateOf("") }
     val tagIcon = remember { mutableStateOf(TagIcon("", R.drawable.initial)) }
+    val affectCurrentAccount =
+        remember { mutableStateOf(transaction?.affectCurrentAccount ?: false) }
     val paymentMethodState = remember {
         mutableStateOf(
             transaction?.paymentMethod ?: PaymentMethod.CASH
@@ -1249,6 +1294,7 @@ fun EditTransaction(
             descriptionDisplay.value = transaction.description
             localDateState.value = transaction.createdAt.toLocalDateTimeUtc()
             tagIcon.value = transaction.tagIcon
+            affectCurrentAccount.value = transaction.affectCurrentAccount
         }
     }
 
@@ -1308,10 +1354,10 @@ fun EditTransaction(
                     displayState = amountDisplay,
                     placeholder = "0.0",
                     colorResId = transaction?.transactionType?.color ?: R.color.Earnings,
-                    containerModifier = topModifier
+                    modifier = topModifier
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerLabelTextField(
                     title = "Label",
                     state = labelState,
                     displayText = labelDisplay,
@@ -1319,8 +1365,9 @@ fun EditTransaction(
                     colorResId = transaction?.transactionType?.color ?: R.color.Earnings
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerDescriptionTextField(
                     title = "Description",
+                    description = "Take a note",
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Notes...",
@@ -1337,8 +1384,14 @@ fun EditTransaction(
                 ModelDrawerTag(
                     colorResId = transaction?.transactionType?.color ?: R.color.Earnings,
                     title = "Icon",
-                    iconState = tagIcon,
-                    containerModifier = bottomModifier
+                    iconState = tagIcon
+                )
+
+                AffectCurrentAccount(
+                    color = color,
+                    containerModifier = bottomModifier,
+                    label = "Affect Current Account",
+                    affectCurrentAccountState = affectCurrentAccount
                 )
 
                 PaymentMethodDropdown(
@@ -1365,7 +1418,8 @@ fun EditTransaction(
                             description = descriptionDisplay.value,
                             tagIcon = tagIcon.value,
                             paymentMethod = paymentMethodState.value,
-                            localDate = localDateState.value
+                            localDate = localDateState.value,
+                            affectCurrentAccount = affectCurrentAccount.value
                         )
                         showDialog.value = false
                     }
@@ -1502,10 +1556,10 @@ fun EditLiability(
                     displayState = amountDisplay,
                     placeholder = liability.amount.toString(),
                     colorResId = liability.liabilityType.color,
-                    containerModifier = topModifier
+                    modifier = topModifier
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerLabelTextField(
                     title = "Label",
                     state = labelState,
                     displayText = labelDisplay,
@@ -1513,8 +1567,9 @@ fun EditLiability(
                     colorResId = liability.liabilityType.color
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerDescriptionTextField(
                     title = "Description",
+                    description = "Take a note",
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Notes...",
@@ -1615,6 +1670,7 @@ fun AddSettlement(
     val descriptionDisplay = remember { mutableStateOf("") }
     val paymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val dateTime = remember { mutableStateOf(LocalDateTime.now()) }
+    val affectCurrentAccount = remember { mutableStateOf(true) }
 
     val showDatePicker = remember { mutableStateOf(false) }
     val showTimePicker = remember { mutableStateOf(false) }
@@ -1689,11 +1745,12 @@ fun AddSettlement(
                     displayState = amountDisplay,
                     placeholder = remainingAmountState.value.formatValueOnly(),
                     colorResId = settlementType.color,
-                    containerModifier = topModifier
+                    modifier = topModifier
                 )
 
-                ModelDrawerTextField(
+                ModelDrawerDescriptionTextField(
                     title = "Description",
+                    description = "Take a note",
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Details (Optional)",
@@ -1704,8 +1761,18 @@ fun AddSettlement(
                     showTime = showTimePicker,
                     showDate = showDatePicker,
                     localDateTimeState = dateTime,
-                    colorResId = settlementType.color,
-                    timeContainerModifier = bottomModifier
+                    colorResId = settlementType.color
+                )
+
+                AffectCurrentAccount(
+                    color = colorResource(settlementType.color),
+                    containerModifier = bottomModifier,
+                    label = when (settlementType) {
+                        SettlementType.DEBT_REPAY -> "Was Debt Repaid"
+                        SettlementType.LENT_REPAY -> "Was Lent Repaid"
+                        else -> "Affect Current Account"
+                    },
+                    affectCurrentAccountState = affectCurrentAccount
                 )
 
                 PaymentMethodDropdown(
@@ -1732,7 +1799,8 @@ fun AddSettlement(
                             paymentMethod = paymentMethod.value,
                             dateTime = dateTime.value.toFirestoreTimestampUtc(),
                             tagIcon = liability.tagIcon,
-                            settlementType = settlementType
+                            settlementType = settlementType,
+                            affectCurrentAccount = affectCurrentAccount.value
                         )
                         showDialog.value = false
                     }
@@ -1757,8 +1825,6 @@ fun AddWithdrawal(
     // Withdrawal form states
     val amountState = rememberTextFieldState()
     val amountDisplay = remember { mutableStateOf("0.0") }
-    val labelState = rememberTextFieldState()
-    val labelDisplay = remember { mutableStateOf("") }
     val descriptionState = rememberTextFieldState()
     val descriptionDisplay = remember { mutableStateOf("") }
     val toPaymentMethod = remember {
@@ -1769,9 +1835,22 @@ fun AddWithdrawal(
     }
     val fromPaymentMethod = remember { mutableStateOf(currentPaymentMethod) }
     val dateTime = remember { mutableStateOf(LocalDateTime.now()) }
+    val affectCurrentAccount = remember { mutableStateOf(true) }
 
     val showDatePicker = remember { mutableStateOf(false) }
     val showTimePicker = remember { mutableStateOf(false) }
+    val topModifier = Modifier.clip(
+        RoundedCornerShape(
+            topStart = 10.dp,
+            topEnd = 10.dp
+        )
+    )
+    val bottomModifier = Modifier.clip(
+        RoundedCornerShape(
+            bottomStart = 10.dp,
+            bottomEnd = 10.dp
+        )
+    )
 
     val withdrawalType = SettlementType.WITHDRAWAL
 
@@ -1825,19 +1904,13 @@ fun AddWithdrawal(
                     state = amountState,
                     displayState = amountDisplay,
                     placeholder = "0.0",
-                    colorResId = withdrawalType.color
+                    colorResId = withdrawalType.color,
+                    modifier = topModifier
                 )
 
-                ModelDrawerTextField(
-                    title = "Label",
-                    state = labelState,
-                    displayText = labelDisplay,
-                    placeholder = withdrawalType.text,
-                    colorResId = withdrawalType.color
-                )
-
-                ModelDrawerTextField(
+                ModelDrawerDescriptionTextField(
                     title = "Description",
+                    description = "Take a note",
                     state = descriptionState,
                     displayText = descriptionDisplay,
                     placeholder = "Details (Optional)",
@@ -1849,6 +1922,13 @@ fun AddWithdrawal(
                     showDate = showDatePicker,
                     localDateTimeState = dateTime,
                     colorResId = withdrawalType.color
+                )
+
+                AffectCurrentAccount(
+                    color = colorResource(withdrawalType.color),
+                    containerModifier = bottomModifier,
+                    label = "Affect Current Account",
+                    affectCurrentAccountState = affectCurrentAccount
                 )
 
                 Text(
@@ -1885,11 +1965,11 @@ fun AddWithdrawal(
                         viewModel.addWithdrawal(
                             datasetId = transactionId,
                             amount = amountDisplay.value.toDoubleOrNull() ?: 0.0,
-                            label = labelDisplay.value.ifEmpty { withdrawalType.text },
                             description = descriptionDisplay.value,
                             toPaymentMethod = toPaymentMethod.value,
                             fromPaymentMethod = fromPaymentMethod.value,
                             dateTime = dateTime.value.toFirestoreTimestampUtc(),
+                            affectCurrentAccount = affectCurrentAccount.value
                         )
                         showDialog.value = false
                     }

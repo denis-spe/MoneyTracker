@@ -27,8 +27,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.ui.UserViewModel
-import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionFloatingButton
-import com.example.moneytracker.ui.homeScreen.dataAddition.DataAdditionModelDrawer
+import com.example.moneytracker.ui.dataAddition.DataAdditionFloatingButton
+import com.example.moneytracker.ui.dataAddition.DataAdditionModelDrawer
 import com.example.moneytracker.ui.homeScreen.topAppAction.TopAppAction
 import com.example.moneytracker.ui.homeScreen.topAppNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topAppNavigation.TopAppNav

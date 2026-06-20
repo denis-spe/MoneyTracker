@@ -49,8 +49,8 @@ import com.example.moneytracker.ui.Receipt
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.components.Swipe
+import com.example.moneytracker.ui.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
-import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.theme.StewardTheme
 
 private val ICON_SIZE = 20.dp

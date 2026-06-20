@@ -181,7 +181,8 @@ class DetailViewModel @Inject constructor(
         tagIcon: TagIcon,
         amount: Double,
         paymentMethod: PaymentMethod,
-        localDate: LocalDateTime
+        localDate: LocalDateTime,
+        affectCurrentAccount: Boolean
     ) {
         viewModelScope.launch {
             val currentState = _detailState.value.financeEntity
@@ -193,7 +194,8 @@ class DetailViewModel @Inject constructor(
                     tagIcon = tagIcon,
                     amount = amount,
                     paymentMethod = paymentMethod,
-                    createdAt = localDate.toFirestoreTimestampUtc()
+                    createdAt = localDate.toFirestoreTimestampUtc(),
+                    affectCurrentAccount = affectCurrentAccount
                 )
 
                 storage.updateDataset(
@@ -312,7 +314,8 @@ class DetailViewModel @Inject constructor(
         paymentMethod: PaymentMethod,
         dateTime: Timestamp,
         tagIcon: TagIcon,
-        settlementType: SettlementType
+        settlementType: SettlementType,
+        affectCurrentAccount: Boolean
     ) {
         viewModelScope.launch {
             val settlement = Settlement(
@@ -325,7 +328,8 @@ class DetailViewModel @Inject constructor(
                 settlementType = settlementType,
                 paymentMethod = paymentMethod,
                 userId = account.currentUserId,
-                datasetId = liabilityId
+                datasetId = liabilityId,
+                affectCurrentAccount = affectCurrentAccount
             )
             storage.addSettlementDataset(
                 userId = account.currentUserId,
@@ -339,11 +343,11 @@ class DetailViewModel @Inject constructor(
     fun addWithdrawal(
         datasetId: String,
         amount: Double,
-        label: String,
         description: String,
         toPaymentMethod: PaymentMethod,
         fromPaymentMethod: PaymentMethod,
-        dateTime: Timestamp
+        dateTime: Timestamp,
+        affectCurrentAccount: Boolean
     ) {
         viewModelScope.launch {
             val withdrawal = Withdrawal(
@@ -351,11 +355,12 @@ class DetailViewModel @Inject constructor(
                 datasetId = datasetId,
                 userId = account.currentUserId,
                 amount = amount,
-                label = label,
+                label = "Withdrawn",
                 description = description,
                 createdAt = dateTime,
                 toPaymentMethod = toPaymentMethod,
-                fromPaymentMethod = fromPaymentMethod
+                fromPaymentMethod = fromPaymentMethod,
+                affectCurrentAccount = affectCurrentAccount
             )
             storage.addWithdrawal(
                 userId = account.currentUserId,
@@ -371,13 +376,15 @@ class DetailViewModel @Inject constructor(
         oldSettlement: Settlement,
         newAmount: Double,
         newDescription: String,
-        localDate: Timestamp
+        localDate: Timestamp,
+        affectCurrentAccount: Boolean
     ) {
         viewModelScope.launch {
             val newSettlement = oldSettlement.copy(
                 amount = newAmount,
                 description = newDescription,
-                dateTime = localDate
+                dateTime = localDate,
+                affectCurrentAccount = affectCurrentAccount
             )
             storage.updateSettlementDataset(
                 userId = account.currentUserId,
@@ -406,12 +413,14 @@ class DetailViewModel @Inject constructor(
     fun updateWithdrawal(
         oldWithdrawal: Withdrawal,
         newAmount: Double,
-        newDescription: String
+        newDescription: String,
+        affectCurrentAccount: Boolean
     ) {
         viewModelScope.launch {
             val newWithdrawal = oldWithdrawal.copy(
                 amount = newAmount,
-                description = newDescription
+                description = newDescription,
+                affectCurrentAccount = affectCurrentAccount
             )
             storage.updateWithdrawalDataset(
                 userId = account.currentUserId,

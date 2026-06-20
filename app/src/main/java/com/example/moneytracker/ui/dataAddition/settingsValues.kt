@@ -1,5 +1,5 @@
 // Great is the LORD of host and his name be gloried
-package com.example.moneytracker.ui.homeScreen.dataAddition
+package com.example.moneytracker.ui.dataAddition
 
 import androidx.compose.ui.unit.dp
 

@@ -72,17 +72,18 @@ import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.DeleteDialog
 import com.example.moneytracker.ui.components.DottedDivider
 import com.example.moneytracker.ui.components.StatusView
+import com.example.moneytracker.ui.dataAddition.AffectCurrentAccount
+import com.example.moneytracker.ui.dataAddition.DateTimeInput
+import com.example.moneytracker.ui.dataAddition.FONT_WEIGHT
+import com.example.moneytracker.ui.dataAddition.MAX_LABEL_LENGTH
+import com.example.moneytracker.ui.dataAddition.MaxWidth
+import com.example.moneytracker.ui.dataAddition.ModelDrawerAmountField
+import com.example.moneytracker.ui.dataAddition.ModelDrawerButton
+import com.example.moneytracker.ui.dataAddition.ModelDrawerDescriptionTextField
+import com.example.moneytracker.ui.dataAddition.ModelDrawerLabelTextField
+import com.example.moneytracker.ui.dataAddition.ModelDrawerTag
+import com.example.moneytracker.ui.dataAddition.PaymentMethodDropdown
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
-import com.example.moneytracker.ui.homeScreen.dataAddition.AffectCurrentAccount
-import com.example.moneytracker.ui.homeScreen.dataAddition.DateTimeInput
-import com.example.moneytracker.ui.homeScreen.dataAddition.FONT_WEIGHT
-import com.example.moneytracker.ui.homeScreen.dataAddition.MAX_LABEL_LENGTH
-import com.example.moneytracker.ui.homeScreen.dataAddition.MaxWidth
-import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerAmountField
-import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerButton
-import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTag
-import com.example.moneytracker.ui.homeScreen.dataAddition.ModelDrawerTextField
-import com.example.moneytracker.ui.homeScreen.dataAddition.PaymentMethodDropdown
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
@@ -1249,7 +1250,7 @@ fun OnUpdate(
                         ) {
                             if (dataSettlement.financeEntityType != "GOAL") {
                                 ModelDrawerAmountField(
-                                    containerModifier = topModifier,
+                                    modifier = topModifier,
                                     state = amountState,
                                     placeholder = "0.0",
                                     colorResId = colorResId,
@@ -1266,7 +1267,7 @@ fun OnUpdate(
                             Row(
                                 modifier = Modifier.animateItem()
                             ) {
-                                ModelDrawerTextField(
+                                ModelDrawerLabelTextField(
                                     state = labelState,
                                     title = "Label",
                                     description = "Add a label for the given amount",
@@ -1275,7 +1276,7 @@ fun OnUpdate(
                                     wasSuccess = wasSuccess,
                                     textLength = MAX_LABEL_LENGTH,
                                     displayText = displayLabel,
-                                    containerModifier = if (dataSettlement.financeEntityType == "GOAL")
+                                    modifier = if (dataSettlement.financeEntityType == "GOAL")
                                         Modifier else topModifier
                                 )
                             }
@@ -1300,7 +1301,7 @@ fun OnUpdate(
                         Row(
                             modifier = Modifier.animateItem()
                         ) {
-                            ModelDrawerTextField(
+                            ModelDrawerDescriptionTextField(
                                 state = descriptionState,
                                 placeholder = "Note (Optional)",
                                 title = "Note",
