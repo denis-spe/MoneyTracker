@@ -127,7 +127,7 @@ sealed class DataSettlement {
             is SettlementAdjust -> {
                 when (settlement.financeEntity) {
                     is FinanceEntity.Transaction -> "TRANSACTION"
-                    is FinanceEntity.Goal -> "GOAL"
+                    is FinanceEntity.Goal -> "ATTAINMENT"
                     is FinanceEntity.Liability -> "LIABILITY"
                     null -> "TRANSACTION"
                 }
@@ -149,7 +149,6 @@ sealed class DataSettlement {
                     is FinanceEntity.Liability -> "LIABILITY"
                 }
             }
-
         }
 
     val paymentMethod: PaymentMethod

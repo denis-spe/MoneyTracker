@@ -69,7 +69,10 @@ import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.GoalWarning
+import com.example.moneytracker.helper.InputState
 import com.example.moneytracker.helper.State
+import com.example.moneytracker.helper.isAmountValid
+import com.example.moneytracker.helper.isLabelValid
 import com.example.moneytracker.helper.isStartDateTimeNotEqualToDeadlineDateTime
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toEpochMilli
@@ -537,6 +540,9 @@ fun FinancialDataInput(
         RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
     )
 
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -574,7 +580,7 @@ fun FinancialDataInput(
             state = amountState,
             placeholder = "0",
             colorResId = type.color,
-            wasSuccess = null,
+            wasSuccess = wasAmountSuccess,
             displayState = rememberSaveable {
                 mutableStateOf("")
             },
@@ -587,7 +593,7 @@ fun FinancialDataInput(
             description = "Add a label",
             placeholder = placeholder,
             colorResId = type.color,
-            wasSuccess = null,
+            wasSuccess = wasLabelSuccess,
             textLength = MAX_LABEL_LENGTH,
             displayText = rememberSaveable {
                 mutableStateOf("")
@@ -633,7 +639,7 @@ fun FinancialDataInput(
 
                     else -> ""
                 },
-                containerModifier = bottomModifier,
+                modifier = bottomModifier,
                 color = colorResource(type.color),
                 affectCurrentAccountState = affectCurrentAccountState
             )
@@ -670,26 +676,13 @@ fun FinancialDataInput(
 
                     val label = labelState.text.toString()
 
+                    wasLabelSuccess.isLabelValid(label = label)
+                    wasAmountSuccess.isAmountValid(amount = amountAsDouble)
+
                     if (
-                        amountAsDouble == null ||
-                        label.isBlank()
+                        wasLabelSuccess.value is InputState.Error ||
+                        wasAmountSuccess.value is InputState.Error
                     ) {
-
-                        uiState = uiState.copy(
-                            isError = true
-                        )
-
-                        userViewModel.showActionNotification(
-                            if (amountAsDouble == null && label.isBlank()) {
-                                "Amount and label cannot be empty"
-                            } else if (amountAsDouble == null) {
-                                "Amount cannot be empty"
-                            } else {
-                                "Label cannot be empty"
-                            },
-                            color = Color.Red.copy(alpha = 0.5f)
-                        )
-
                         return@ModelDrawerButton
                     }
 
@@ -728,17 +721,22 @@ fun FinancialDataInput(
                         else -> return@ModelDrawerButton
                     }
 
-                    viewModel.addData(entity)
+                    if (
+                        wasLabelSuccess.value is InputState.Success
+                        && wasAmountSuccess.value is InputState.Success
+                    ) {
+                        viewModel.addData(entity)
 
-                    amountState.clearText()
-                    labelState.clearText()
-                    descriptionState.clearText()
+                        amountState.clearText()
+                        labelState.clearText()
+                        descriptionState.clearText()
 
-                    onDismiss()
+                        onDismiss()
 
-                    userViewModel.launchSnackBarHostState(
-                        "$label was added successfully"
-                    )
+                        userViewModel.launchSnackBarHostState(
+                            message = "$label was added successfully"
+                        )
+                    }
                 }
 
                 TextButton(
@@ -770,7 +768,9 @@ fun GoalDataInput(
     val labelState = rememberTextFieldState()
     val descriptionState = rememberTextFieldState()
 
-    var wasSuccess by remember { mutableStateOf(State.INITIAL) }
+
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
 
     val amountAsDouble by remember {
         derivedStateOf {
@@ -813,12 +813,6 @@ fun GoalDataInput(
         RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
     )
 
-    LaunchedEffect(amountState.text, labelState.text) {
-        if (wasSuccess == State.ERROR) {
-            wasSuccess = State.INITIAL
-        }
-    }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -852,7 +846,7 @@ fun GoalDataInput(
             state = amountState,
             placeholder = "0.0",
             colorResId = GoalType.color,
-            wasSuccess = remember { mutableStateOf(wasSuccess) },
+            wasSuccess = wasAmountSuccess,
             displayState = rememberSaveable { mutableStateOf("") },
             modifier = topModifier
         )
@@ -863,7 +857,7 @@ fun GoalDataInput(
             description = "Add a label for the given amount",
             placeholder = placeholder,
             colorResId = GoalType.color,
-            wasSuccess = remember { mutableStateOf(wasSuccess) },
+            wasSuccess = wasLabelSuccess,
             textLength = MAX_LABEL_LENGTH,
             displayText = rememberSaveable { mutableStateOf("") }
         )
@@ -897,7 +891,7 @@ fun GoalDataInput(
             startLocalDateTimeState = localDateTimeState,
             endLocalDateTimeState = endLocalDateTimeState,
             goalDateTimeWarningState = goalDateTimeWarningState,
-            containerModifier = bottomModifier
+            modifier = bottomModifier
         )
 
         PaymentMethodDropdown(
@@ -917,39 +911,19 @@ fun GoalDataInput(
             ) {
                 ModelDrawerButton(
                     text = buttonText,
-                    wasSuccess = remember { mutableStateOf(wasSuccess) },
                     colorResId = GoalType.color,
                     filledColor = color,
                     textColor = Color.White
                 ) {
-                    val amount = amountAsDouble
                     val label = labelState.text.toString()
 
-                    if (amount == null || label.isBlank()) {
-                        wasSuccess = State.ERROR
-                        userViewModel.showActionNotification(
-                            if (amount == null && label.isBlank()) {
-                                "Amount and label cannot be empty"
-                            } else if (amount == null) {
-                                "Amount cannot be empty"
-                            } else {
-                                "Label cannot be empty"
-                            },
-                            color = Color.Red.copy(alpha = 0.5f)
-                        )
-                        return@ModelDrawerButton
-                    }
-
-                    if (goalDateTimeWarningState.value == GoalWarning.INITIAL) {
-                        goalDateTimeWarningState.value = GoalWarning.ERROR
-                        return@ModelDrawerButton
-                    }
+                    wasLabelSuccess.isLabelValid(label = label)
+                    wasAmountSuccess.isAmountValid(amount = amountAsDouble)
 
                     if (
-                        endLocalDateTimeState.value <= localDateTimeState.value ||
-                        goalDateTimeWarningState.value == GoalWarning.ERROR
+                        wasLabelSuccess.value is InputState.Error ||
+                        wasAmountSuccess.value is InputState.Error
                     ) {
-                        wasSuccess = State.ERROR
                         return@ModelDrawerButton
                     }
 
@@ -977,7 +951,7 @@ fun GoalDataInput(
 
                     val entity = FinanceEntity.Goal(
                         id = UUID.randomUUID().toString(),
-                        amount = amount,
+                        amount = amountAsDouble ?: 0.0,
                         label = label,
                         description = descriptionState.text.toString(),
                         createdAt = normalizedStart.toFirestoreTimestampUtc(),
@@ -1109,7 +1083,7 @@ fun SettlementDataInputs(
             colorResId = settlementType.color,
             selectedFinanceEntity = selectedFinanceEntity,
             wasSuccess = remember { mutableStateOf(wasSuccess) },
-            containerModifier = topModifier
+            modifier = topModifier
         )
 
         ModelDrawerDescriptionTextField(
@@ -1143,7 +1117,7 @@ fun SettlementDataInputs(
 
                     else -> ""
                 },
-                containerModifier = bottomModifier,
+                modifier = bottomModifier,
                 color = colorResource(settlementType.color),
                 affectCurrentAccountState = affectCurrentAccountState
             )
@@ -1352,7 +1326,7 @@ fun WithdrawalInputs(
             colorResId = settlementType.color,
             selectedFinanceEntity = selectedFinanceEntity,
             wasSuccess = remember { mutableStateOf(wasSuccess) },
-            containerModifier = topModifier
+            modifier = topModifier
         )
 
         ModelDrawerDescriptionTextField(
@@ -1375,7 +1349,7 @@ fun WithdrawalInputs(
 
         AffectCurrentAccount(
             label = "Affect current account",
-            containerModifier = bottomModifier,
+            modifier = bottomModifier,
             color = color,
             affectCurrentAccountState = affectCurrentAccountState
         )

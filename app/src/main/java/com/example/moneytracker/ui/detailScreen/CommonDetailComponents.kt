@@ -1,4 +1,4 @@
-// Bless be the name of name of LORD of hosts and to Lamb of GOD
+// Bless be the name of LORD of hosts and to Lamb of GOD
 package com.example.moneytracker.ui.detailScreen
 
 import androidx.compose.foundation.BorderStroke
@@ -72,9 +72,12 @@ import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.backend.storage.Withdrawal
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
+import com.example.moneytracker.helper.InputState
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.formatValueOnly
+import com.example.moneytracker.helper.isAmountValid
+import com.example.moneytracker.helper.isLabelValid
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toLocalDateTimeUtc
@@ -357,8 +360,10 @@ fun AddGoalAttained(
         )
     )
 
-    val showDatePicker = remember { mutableStateOf(false) }
     val showTimePicker = remember { mutableStateOf(false) }
+
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    val showDatePicker = remember { mutableStateOf(false) }
 
     // Initialize values if goal is ready
     LaunchedEffect(showDialog.value, goal) {
@@ -366,6 +371,7 @@ fun AddGoalAttained(
             labelState.setTextAndPlaceCursorAtEnd(goal.label)
             labelDisplay.value = goal.label
             tagIcon.value = goal.tagIcon
+            wasAmountSuccess.value = InputState.Initial
         }
     }
 
@@ -418,7 +424,8 @@ fun AddGoalAttained(
                     displayState = amountDisplay,
                     placeholder = remainingAmount.formatValueOnly(),
                     colorResId = R.color.Attain,
-                    modifier = topModifier
+                    modifier = topModifier,
+                    wasSuccess = wasAmountSuccess
                 )
 
                 ModelDrawerDescriptionTextField(
@@ -454,6 +461,8 @@ fun AddGoalAttained(
                         colorResId = R.color.Attain,
                         textColor = colorResource(R.color.Attain)
                     ) {
+                        if (!wasAmountSuccess.isAmountValid(amountDisplay.value.toDoubleOrNull())) return@ModelDrawerButton
+
                         viewModel.addGoalAttainment(
                             goalId = goalId,
                             amount = amountDisplay.value.toDoubleOrNull() ?: 0.0,
@@ -505,6 +514,8 @@ fun EditGoal(
         )
     )
 
+    val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+
 
     LaunchedEffect(showDialog.value, goal) {
         if (showDialog.value && goal != null) {
@@ -515,6 +526,7 @@ fun EditGoal(
             localDateState.value = goal.createdAt.toLocalDateTimeUtc()
             paymentMethod.value = goal.paymentMethod
             tagIcon.value = goal.tagIcon
+            wasLabelSuccess.value = InputState.Initial
         }
     }
 
@@ -568,7 +580,8 @@ fun EditGoal(
                     displayText = labelDisplay,
                     placeholder = "Goal Title",
                     colorResId = R.color.Goal,
-                    modifier = topModifier
+                    modifier = topModifier,
+                    wasSuccess = wasLabelSuccess
                 )
 
                 ModelDrawerDescriptionTextField(
@@ -611,6 +624,8 @@ fun EditGoal(
                         filledColor = colorResource(R.color.Goal),
                         textColor = Color.White
                     ) {
+                        if (!wasLabelSuccess.isLabelValid(labelDisplay.value)) return@ModelDrawerButton
+
                         viewModel.updateGoalInfo(
                             goalId = goalId,
                             label = labelDisplay.value,
@@ -638,13 +653,14 @@ fun EditSettlementAmount(
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
-    val amountState = rememberTextFieldState(settlement.amount.toString())
+    val amountState = rememberTextFieldState()
     val amountDisplay = remember { mutableStateOf(settlement.amount.toString()) }
     val descriptionState = rememberTextFieldState(settlement.description)
     val descriptionDisplay = remember { mutableStateOf(settlement.description) }
     val localDateState = remember { mutableStateOf(settlement.dateTime.toLocalDateTimeUtc()) }
     val affectCurrentAccount = remember { mutableStateOf(false) }
 
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
 
     val colorRes = settlement.settlementType.color
     val getColor = colorResource(colorRes)
@@ -710,9 +726,11 @@ fun EditSettlementAmount(
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
-                    placeholder = "0.0",
+                    placeholder = settlement.amount.formatValueOnly(),
                     colorResId = colorRes,
-                    modifier = topModifier
+                    modifier = topModifier,
+                    wasSuccess = wasAmountSuccess,
+                    clearOnCancel = true
                 )
 
                 ModelDrawerDescriptionTextField(
@@ -733,7 +751,7 @@ fun EditSettlementAmount(
 
                 AffectCurrentAccount(
                     color = colorResource(colorRes),
-                    containerModifier = bottomModifier,
+                    modifier = bottomModifier,
                     label = when (settlement.settlementType) {
                         SettlementType.DEBT_REPAY -> "Was Debt Repaid"
                         SettlementType.LENT_REPAY -> "Was Lent Repaid"
@@ -755,6 +773,8 @@ fun EditSettlementAmount(
                         filledColor = getColor.copy(0.2f),
                         textColor = getColor
                     ) {
+                        if (!wasAmountSuccess.isAmountValid(amountDisplay.value.toDoubleOrNull())) return@ModelDrawerButton
+
                         val newAmount = amountDisplay.value.toDoubleOrNull() ?: settlement.amount
                         viewModel.updateSettlement(
                             financeType = financeType,
@@ -902,6 +922,8 @@ fun EditWithdrawalAmount(
     val descriptionDisplay = remember { mutableStateOf(withdrawal.description) }
     val affectCurrentAccount = remember { mutableStateOf(withdrawal.affectCurrentAccount) }
 
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+
     val colorRes = SettlementType.WITHDRAWAL.color
     val getColor = colorResource(colorRes)
 
@@ -966,9 +988,11 @@ fun EditWithdrawalAmount(
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
-                    placeholder = "0.0",
+                    placeholder = withdrawal.amount.formatValueOnly(),
                     colorResId = colorRes,
-                    modifier = topModifier
+                    modifier = topModifier,
+                    wasSuccess = wasAmountSuccess,
+                    clearOnCancel = true
                 )
 
                 ModelDrawerDescriptionTextField(
@@ -982,7 +1006,7 @@ fun EditWithdrawalAmount(
 
                 AffectCurrentAccount(
                     color = getColor,
-                    containerModifier = bottomModifier,
+                    modifier = bottomModifier,
                     label = "Affect Current Account",
                     affectCurrentAccountState = affectCurrentAccount
                 )
@@ -1000,6 +1024,8 @@ fun EditWithdrawalAmount(
                         filledColor = getColor.copy(0.2f),
                         textColor = getColor
                     ) {
+                        if (!wasAmountSuccess.isAmountValid(amountDisplay.value.toDoubleOrNull())) return@ModelDrawerButton
+
                         val newAmount = amountDisplay.value.toDoubleOrNull() ?: withdrawal.amount
                         viewModel.updateWithdrawal(
                             oldWithdrawal = withdrawal,
@@ -1134,8 +1160,10 @@ fun EditAchievementAmount(
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
-    val amountState = rememberTextFieldState(achievement.totalSettlementAmount.toString())
+    val amountState = rememberTextFieldState()
     val amountDisplay = remember { mutableStateOf(achievement.totalSettlementAmount.toString()) }
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+
     val color = remember(
         achievement.status
     ) {
@@ -1192,10 +1220,12 @@ fun EditAchievementAmount(
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
-                    placeholder = "0.0",
+                    placeholder = achievement.totalSettlementAmount.formatValueOnly(),
                     colorResId = color,
                     modifier = Modifier
-                        .clip(RoundedCornerShape(10.dp))
+                        .clip(RoundedCornerShape(10.dp)),
+                    wasSuccess = wasAmountSuccess,
+                    clearOnCancel = true
                 )
 
                 Row(
@@ -1211,6 +1241,8 @@ fun EditAchievementAmount(
                         filledColor = getColor.copy(0.2f),
                         textColor = getColor
                     ) {
+                        if (!wasAmountSuccess.isAmountValid(amountDisplay.value.toDoubleOrNull())) return@ModelDrawerButton
+
                         val newAmount = amountDisplay.value.toDoubleOrNull()
                             ?: achievement.totalSettlementAmount
                         viewModel.updateAchievementAmount(achievement, newAmount)
@@ -1281,6 +1313,9 @@ fun EditTransaction(
         )
     )
 
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+
     val localDateState = remember { mutableStateOf(LocalDateTime.now()) }
 
 
@@ -1288,13 +1323,14 @@ fun EditTransaction(
         if (showDialog.value && transaction != null) {
             labelState.setTextAndPlaceCursorAtEnd(transaction.label)
             labelDisplay.value = transaction.label
-            amountState.setTextAndPlaceCursorAtEnd(transaction.amount.toString())
             amountDisplay.value = transaction.amount.toString()
             descriptionState.setTextAndPlaceCursorAtEnd(transaction.description)
             descriptionDisplay.value = transaction.description
             localDateState.value = transaction.createdAt.toLocalDateTimeUtc()
             tagIcon.value = transaction.tagIcon
             affectCurrentAccount.value = transaction.affectCurrentAccount
+            wasAmountSuccess.value = InputState.Initial
+            wasLabelSuccess.value = InputState.Initial
         }
     }
 
@@ -1352,9 +1388,11 @@ fun EditTransaction(
                 ModelDrawerAmountField(
                     state = amountState,
                     displayState = amountDisplay,
-                    placeholder = "0.0",
+                    placeholder = transaction?.amount?.formatValueOnly() ?: "0.0",
                     colorResId = transaction?.transactionType?.color ?: R.color.Earnings,
-                    modifier = topModifier
+                    modifier = topModifier,
+                    wasSuccess = wasAmountSuccess,
+                    clearOnCancel = true
                 )
 
                 ModelDrawerLabelTextField(
@@ -1362,7 +1400,8 @@ fun EditTransaction(
                     state = labelState,
                     displayText = labelDisplay,
                     placeholder = "Title...",
-                    colorResId = transaction?.transactionType?.color ?: R.color.Earnings
+                    colorResId = transaction?.transactionType?.color ?: R.color.Earnings,
+                    wasSuccess = wasLabelSuccess
                 )
 
                 ModelDrawerDescriptionTextField(
@@ -1389,7 +1428,7 @@ fun EditTransaction(
 
                 AffectCurrentAccount(
                     color = color,
-                    containerModifier = bottomModifier,
+                    modifier = bottomModifier,
                     label = "Affect Current Account",
                     affectCurrentAccountState = affectCurrentAccount
                 )
@@ -1411,6 +1450,12 @@ fun EditTransaction(
                         filledColor = color,
                         textColor = Color.White
                     ) {
+                        val isAmountOk =
+                            wasAmountSuccess.isAmountValid(amountDisplay.value.toDoubleOrNull())
+                        val isLabelOk = wasLabelSuccess.isLabelValid(labelDisplay.value)
+
+                        if (!isAmountOk || !isLabelOk) return@ModelDrawerButton
+
                         viewModel.updateTransactionInfo(
                             transactionId = transactionId,
                             label = labelDisplay.value,
@@ -1487,6 +1532,9 @@ fun EditLiability(
         )
     )
 
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+
 
     LaunchedEffect(showDialog.value, liability) {
         if (showDialog.value) {
@@ -1497,6 +1545,8 @@ fun EditLiability(
             tagIcon.value = liability.tagIcon
             localDateState.value = liability.createdAt.toLocalDateTimeUtc()
             affectCurrentAccountState.value = liability.affectCurrentAccount
+            wasAmountSuccess.value = InputState.Initial
+            wasLabelSuccess.value = InputState.Initial
         }
     }
 
@@ -1556,7 +1606,9 @@ fun EditLiability(
                     displayState = amountDisplay,
                     placeholder = liability.amount.toString(),
                     colorResId = liability.liabilityType.color,
-                    modifier = topModifier
+                    modifier = topModifier,
+                    wasSuccess = wasAmountSuccess,
+                    clearOnCancel = true
                 )
 
                 ModelDrawerLabelTextField(
@@ -1564,7 +1616,8 @@ fun EditLiability(
                     state = labelState,
                     displayText = labelDisplay,
                     placeholder = "Liability Title",
-                    colorResId = liability.liabilityType.color
+                    colorResId = liability.liabilityType.color,
+                    wasSuccess = wasLabelSuccess
                 )
 
                 ModelDrawerDescriptionTextField(
@@ -1594,7 +1647,7 @@ fun EditLiability(
                         LiabilityType.DEBT -> "Was Amount Received"
                         LiabilityType.LOAN -> "Was Amount Paid"
                     },
-                    containerModifier = bottomModifier,
+                    modifier = bottomModifier,
                     affectCurrentAccountState = affectCurrentAccountState,
                     color = colorResource(liability.liabilityType.color)
                 )
@@ -1613,6 +1666,12 @@ fun EditLiability(
                         ),
                         textColor = Color.White
                     ) {
+                        val isAmountOk =
+                            wasAmountSuccess.isAmountValid(amountDisplay.value.toDoubleOrNull())
+                        val isLabelOk = wasLabelSuccess.isLabelValid(labelDisplay.value)
+
+                        if (!isAmountOk || !isLabelOk) return@ModelDrawerButton
+
                         viewModel.updateLiabilityInfo(
                             liabilityId = liabilityId,
                             label = labelDisplay.value,
@@ -1671,6 +1730,8 @@ fun AddSettlement(
     val paymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val dateTime = remember { mutableStateOf(LocalDateTime.now()) }
     val affectCurrentAccount = remember { mutableStateOf(true) }
+
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
 
     val showDatePicker = remember { mutableStateOf(false) }
     val showTimePicker = remember { mutableStateOf(false) }
@@ -1745,7 +1806,8 @@ fun AddSettlement(
                     displayState = amountDisplay,
                     placeholder = remainingAmountState.value.formatValueOnly(),
                     colorResId = settlementType.color,
-                    modifier = topModifier
+                    modifier = topModifier,
+                    wasSuccess = wasAmountSuccess
                 )
 
                 ModelDrawerDescriptionTextField(
@@ -1766,7 +1828,7 @@ fun AddSettlement(
 
                 AffectCurrentAccount(
                     color = colorResource(settlementType.color),
-                    containerModifier = bottomModifier,
+                    modifier = bottomModifier,
                     label = when (settlementType) {
                         SettlementType.DEBT_REPAY -> "Was Debt Repaid"
                         SettlementType.LENT_REPAY -> "Was Lent Repaid"
@@ -1791,6 +1853,8 @@ fun AddSettlement(
                         colorResId = settlementType.color,
                         textColor = colorResource(settlementType.color)
                     ) {
+                        if (!wasAmountSuccess.isAmountValid(amountDisplay.value.toDoubleOrNull())) return@ModelDrawerButton
+
                         viewModel.addLiabilitySettlement(
                             liabilityId = liabilityId,
                             amount = amountDisplay.value.toDoubleOrNull() ?: 0.0,
@@ -1836,6 +1900,8 @@ fun AddWithdrawal(
     val fromPaymentMethod = remember { mutableStateOf(currentPaymentMethod) }
     val dateTime = remember { mutableStateOf(LocalDateTime.now()) }
     val affectCurrentAccount = remember { mutableStateOf(true) }
+
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
 
     val showDatePicker = remember { mutableStateOf(false) }
     val showTimePicker = remember { mutableStateOf(false) }
@@ -1905,7 +1971,8 @@ fun AddWithdrawal(
                     displayState = amountDisplay,
                     placeholder = "0.0",
                     colorResId = withdrawalType.color,
-                    modifier = topModifier
+                    modifier = topModifier,
+                    wasSuccess = wasAmountSuccess
                 )
 
                 ModelDrawerDescriptionTextField(
@@ -1926,7 +1993,7 @@ fun AddWithdrawal(
 
                 AffectCurrentAccount(
                     color = colorResource(withdrawalType.color),
-                    containerModifier = bottomModifier,
+                    modifier = bottomModifier,
                     label = "Affect Current Account",
                     affectCurrentAccountState = affectCurrentAccount
                 )
@@ -1962,6 +2029,11 @@ fun AddWithdrawal(
                         colorResId = withdrawalType.color,
                         textColor = colorResource(withdrawalType.color)
                     ) {
+                        val isAmountOk =
+                            wasAmountSuccess.isAmountValid(amountDisplay.value.toDoubleOrNull())
+
+                        if (!isAmountOk) return@ModelDrawerButton
+
                         viewModel.addWithdrawal(
                             datasetId = transactionId,
                             amount = amountDisplay.value.toDoubleOrNull() ?: 0.0,

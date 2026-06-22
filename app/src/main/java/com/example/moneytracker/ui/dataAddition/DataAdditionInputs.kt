@@ -109,6 +109,7 @@ import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.RoutineData
 import com.example.moneytracker.backend.storage.TagIcon
 import com.example.moneytracker.helper.GoalWarning
+import com.example.moneytracker.helper.InputState
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.eval
@@ -433,10 +434,10 @@ fun ModelDrawerLabelTextField(
     placeholder: String,
     colorResId: Int,
     textLength: Int = 16,
-    wasSuccess: MutableState<State>? = null,
+    wasSuccess: MutableState<InputState>,
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.SingleLine,
 ) {
-    val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
+    val isError = state.text.isEmpty() && wasSuccess.value is InputState.Error
     val color = if (isError)
         colorResource(R.color.error_color) else
         colorResource(id = colorResId)
@@ -449,6 +450,10 @@ fun ModelDrawerLabelTextField(
     val optionsTitle = if (title == "Label") "Required" else
         "Optional"
     val focusRequester = remember { FocusRequester() }
+
+    LaunchedEffect(state) {
+        wasSuccess.value = InputState.Initial
+    }
 
     if (onDialogShow.value) {
         LaunchedEffect(Unit) {
@@ -637,10 +642,11 @@ fun ModelDrawerAmountField(
     placeholder: String,
     colorResId: Int,
     shape: Shape = CircleShape,
-    wasSuccess: MutableState<State>? = null,
+    wasSuccess: MutableState<InputState>,
     displayState: MutableState<String>,
+    clearOnCancel: Boolean = false,
 ) {
-    val isError = wasSuccess != null && state.text.isEmpty() && wasSuccess.value == State.ERROR
+    val isError = wasSuccess.value is InputState.Error
     val color = if (isError)
         colorResource(R.color.error_color) else
         colorResource(id = colorResId)
@@ -655,6 +661,9 @@ fun ModelDrawerAmountField(
     val keyboardController = LocalSoftwareKeyboardController.current
     val focusRequester = remember { FocusRequester() }
 
+    LaunchedEffect(state.text) {
+        wasSuccess.value = InputState.Initial
+    }
 
     if (onDialogShow.value) {
         LaunchedEffect(Unit) {
@@ -776,22 +785,19 @@ fun ModelDrawerAmountField(
                             visible = showCustomKeyboard.value,
                             contentColor = color,
                             onDone = {
-                                showCustomKeyboard.value = false
                                 if (state.text.isNotEmpty()) {
-                                    state.edit {
-                                        delete(selection.start, selection.end)
-                                        val result = originalText.eval.formatResult
-                                        Log.d("CustomAmountKeyBoard", "result: $result")
-                                        replace(0, length, result)
-                                    }
-
-                                    onDialogShow.value = false
+                                    state.setTextAndPlaceCursorAtEnd(state.text.toString())
                                     displayState.value = state.text.toString()
+                                    onDialogShow.value = false
+                                    showCustomKeyboard.value = false
                                 }
                             },
                             onCancel = {
                                 onDialogShow.value = false
-//                                state.setTextAndPlaceCursorAtEnd(displayState.value)
+                                if (clearOnCancel)
+                                    state.setTextAndPlaceCursorAtEnd("")
+                                else
+                                    state.setTextAndPlaceCursorAtEnd(displayState.value)
                             }
                         )
                     }
@@ -840,7 +846,7 @@ fun SettlementField(
     financeEntityList: List<FinanceEntity>,
     colorResId: Int,
     selectedFinanceEntity: MutableState<FinanceEntity?>,
-    containerModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     wasSuccess: MutableState<State>
 ) {
     var expanded by remember { mutableStateOf(false) }
@@ -1138,7 +1144,7 @@ fun SettlementField(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
-            .then(containerModifier)
+            .then(modifier)
             .height(height)
             .clickable {
                 showCustomKeyboard.value = true
@@ -1271,7 +1277,7 @@ fun RepeatableInputComponent(
 
 @Composable
 fun RepeatableTransaction(
-    containerModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     repeatByState: MutableState<RoutineData>,
     dataType: DataType,
     goalDateTimeWarningState: MutableState<GoalWarning>,
@@ -1470,7 +1476,7 @@ fun RepeatableTransaction(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
-            .then(containerModifier)
+            .then(modifier)
             .height(height)
             .clickable {
                 onDialogShow.value = true
@@ -1848,7 +1854,7 @@ fun DoubleTimePickerComponent(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateTimeInput(
-    dateContainerModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     timeContainerModifier: Modifier = Modifier,
     showTime: MutableState<Boolean>,
     showDate: MutableState<Boolean>,
@@ -1875,7 +1881,7 @@ fun DateTimeInput(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 2.dp, horizontal = 13.dp)
-            .then(dateContainerModifier)
+            .then(modifier)
             .height(height)
             .clickable {
                 showDate.value = true
@@ -1987,7 +1993,7 @@ fun DateTimeInput(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateTimeRange(
-    containerModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     startLocalDateTimeState: MutableState<LocalDateTime>,
     endLocalDateTimeState: MutableState<LocalDateTime>,
     colorResId: Int,
@@ -2030,7 +2036,7 @@ fun DateTimeRange(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
-            .then(containerModifier)
+            .then(modifier)
             .height(height)
             .clickable {
                 isTimeDialogOpen.value = true
@@ -2073,7 +2079,7 @@ fun DateTimeRange(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
-            .then(containerModifier)
+            .then(modifier)
             .height(height)
             .clickable {
                 isPresentStartDateDialogOpen.value = true
@@ -2105,7 +2111,7 @@ fun DateTimeRange(
     ListItem(
         modifier = Modifier
             .fillMaxWidth()
-            .then(containerModifier)
+            .then(modifier)
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
             .height(height)
             .clickable {
@@ -2211,7 +2217,7 @@ fun DateTimeRange(
 @Composable
 fun AffectCurrentAccount(
     label: String,
-    containerModifier: Modifier = Modifier,
+    modifier: Modifier = Modifier,
     affectCurrentAccountState: MutableState<Boolean>,
     color: Color,
 ) {
@@ -2222,7 +2228,7 @@ fun AffectCurrentAccount(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = VERTICAL_PADDING, horizontal = HORIZONTAL_PADDING)
-            .then(containerModifier)
+            .then(modifier)
             .clickable {
                 affectCurrentAccountState.value = !affectCurrentAccountState.value
             },

@@ -61,9 +61,13 @@ import com.example.moneytracker.backend.storage.Withdrawal
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.backend.storage.types.TransactionType
+import com.example.moneytracker.helper.InputState
 import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.formatValueOnly
+import com.example.moneytracker.helper.isAmountValid
+import com.example.moneytracker.helper.isLabelValid
 import com.example.moneytracker.helper.remainingAmount
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
@@ -1129,6 +1133,12 @@ fun OnUpdate(
                 dataSettlement.text
     }
 
+    val amount = when (dataSettlement) {
+        is DataSettlement.SettlementData -> dataSettlement.financeEntity.amount
+        is DataSettlement.SettlementAdjust -> dataSettlement.settlement.amount
+        is DataSettlement.SettlementWithdrawal -> dataSettlement.withdrawal.amount
+    }
+
     val color = colorResource(colorResId)
     val topModifier = Modifier.clip(
         RoundedCornerShape(topStart = 10.dp, topEnd = 10.dp)
@@ -1136,6 +1146,9 @@ fun OnUpdate(
     val bottomModifier = Modifier.clip(
         RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
     )
+
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
 
     LaunchedEffect(dataSettlement, isUpdateModelBottonOpen.value) {
         if (isUpdateModelBottonOpen.value) {
@@ -1145,7 +1158,6 @@ fun OnUpdate(
             when (dataSettlement) {
                 is DataSettlement.SettlementData -> {
                     val finance = dataSettlement.financeEntity
-                    amountState.setTextAndPlaceCursorAtEnd(finance.amount.toString())
                     displayAmountState.value = finance.amount.toString()
                     labelState.setTextAndPlaceCursorAtEnd(finance.label)
                     displayLabel.value = finance.label
@@ -1161,7 +1173,6 @@ fun OnUpdate(
 
                 is DataSettlement.SettlementAdjust -> {
                     val settlement = dataSettlement.settlement
-                    amountState.setTextAndPlaceCursorAtEnd(settlement.amount.toString())
                     displayAmountState.value = settlement.amount.toString()
                     labelState.setTextAndPlaceCursorAtEnd(settlement.label)
                     displayLabel.value = settlement.label
@@ -1174,7 +1185,6 @@ fun OnUpdate(
 
                 is DataSettlement.SettlementWithdrawal -> {
                     val withdrawal = dataSettlement.withdrawal
-                    amountState.setTextAndPlaceCursorAtEnd(withdrawal.amount.toString())
                     displayAmountState.value = withdrawal.amount.toString()
                     labelState.setTextAndPlaceCursorAtEnd(withdrawal.label)
                     displayLabel.value = withdrawal.label
@@ -1248,14 +1258,16 @@ fun OnUpdate(
                             modifier = Modifier
                                 .animateItem()
                         ) {
-                            if (dataSettlement.financeEntityType != "GOAL") {
+                            if (dataSettlement.financeEntityType != "GOAL"
+                            ) {
                                 ModelDrawerAmountField(
                                     modifier = topModifier,
                                     state = amountState,
-                                    placeholder = "0.0",
+                                    placeholder = amount.formatValueOnly(),
                                     colorResId = colorResId,
-                                    wasSuccess = wasSuccess,
+                                    wasSuccess = wasAmountSuccess,
                                     displayState = displayAmountState,
+                                    clearOnCancel = true
                                 )
                             }
                         }
@@ -1273,11 +1285,11 @@ fun OnUpdate(
                                     description = "Add a label for the given amount",
                                     placeholder = dataSettlement.financeEntity.label,
                                     colorResId = colorResId,
-                                    wasSuccess = wasSuccess,
+                                    wasSuccess = wasLabelSuccess,
                                     textLength = MAX_LABEL_LENGTH,
                                     displayText = displayLabel,
                                     modifier = if (dataSettlement.financeEntityType == "GOAL")
-                                        Modifier else topModifier
+                                        topModifier else Modifier
                                 )
                             }
                         }
@@ -1324,12 +1336,15 @@ fun OnUpdate(
                                 showDate = showDate,
                                 localDateTimeState = onCreatedDateTimeState,
                                 colorResId = colorResId,
-                                timeContainerModifier = if (dataSettlement.financeEntityType == "GOAL") Modifier else bottomModifier,
+                                timeContainerModifier = if (
+                                    dataSettlement.financeEntityType == "GOAL" ||
+                                    dataSettlement.financeEntityType == "ATTAINMENT"
+                                ) bottomModifier else Modifier,
                             )
                         }
                     }
 
-                    if (showAffectCurrentAccount) {
+                    if (showAffectCurrentAccount && dataSettlement.financeEntityType != "ATTAINMENT") {
                         item(6544) {
                             // Show affectCurrentAccount.
                             Column(
@@ -1339,7 +1354,7 @@ fun OnUpdate(
                                     label = "Affect current account",
                                     color = colorResource(colorResId),
                                     affectCurrentAccountState = affectCurrentAccount,
-                                    containerModifier = bottomModifier
+                                    modifier = bottomModifier
                                 )
                             }
                         }
@@ -1401,15 +1416,24 @@ fun OnUpdate(
                                         filledColor = colorResource(colorResId),
                                         textColor = Color.White
                                     ) {
-                                        if (amountAsDouble != null && labelState.text.toString()
-                                                .isNotEmpty()
+
+                                        if (amountAsDouble == null) {
+                                            amountState.setTextAndPlaceCursorAtEnd(amount.toString())
+                                        }
+
+                                        // Validate input
+                                        wasLabelSuccess.isLabelValid(labelState.text.toString())
+                                        wasAmountSuccess.isAmountValid(amountAsDouble)
+
+                                        if (wasLabelSuccess.value is InputState.Success &&
+                                            wasAmountSuccess.value is InputState.Success
                                         ) {
                                             val finance = dataSettlement.financeEntity
                                             val normalizedStart = onCreatedDateTimeState.value
 
                                             val newFinanceEntity = when (finance) {
                                                 is FinanceEntity.Transaction -> finance.copy(
-                                                    amount = amountAsDouble,
+                                                    amount = amountAsDouble ?: 0.0,
                                                     label = labelState.text.toString(),
                                                     description = descriptionState.text.toString(),
                                                     createdAt = normalizedStart.toFirestoreTimestampUtc(),
@@ -1419,7 +1443,7 @@ fun OnUpdate(
                                                 )
 
                                                 is FinanceEntity.Goal -> finance.copy(
-                                                    amount = amountAsDouble,
+                                                    amount = amountAsDouble ?: 0.0,
                                                     label = labelState.text.toString(),
                                                     description = descriptionState.text.toString(),
                                                     createdAt = normalizedStart.toFirestoreTimestampUtc(),
@@ -1428,7 +1452,7 @@ fun OnUpdate(
                                                 )
 
                                                 is FinanceEntity.Liability -> finance.copy(
-                                                    amount = amountAsDouble,
+                                                    amount = amountAsDouble ?: 0.0,
                                                     label = labelState.text.toString(),
                                                     description = descriptionState.text.toString(),
                                                     createdAt = normalizedStart.toFirestoreTimestampUtc(),
@@ -1489,6 +1513,10 @@ fun OnUpdate(
                                             colorResId = colorResId,
                                             filledColor = Color.Transparent
                                         ) {
+                                            if (amountAsDouble == null) {
+                                                amountState.setTextAndPlaceCursorAtEnd(amount.toString())
+                                            }
+
                                             if (amountAsDouble != null
                                                 && amountAsDouble
                                                 <= (dataSettlement.settlement.financeEntity!!.remainingAmount + dataSettlement.settlement.amount)
@@ -1558,6 +1586,10 @@ fun OnUpdate(
                                             colorResId = colorResId,
                                             filledColor = Color.Transparent
                                         ) {
+                                            if (amountAsDouble == null) {
+                                                amountState.setTextAndPlaceCursorAtEnd(amount.toString())
+                                            }
+
                                             if (amountAsDouble != null
                                                 && amountAsDouble
                                                 <= (dataSettlement.withdrawal.financeEntity!!.remainingAmount
