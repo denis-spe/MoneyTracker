@@ -4,7 +4,7 @@ import androidx.compose.ui.graphics.Color
 
 data class ChartData(
     val x: List<Double> = listOf(),
-    val y: List<Int> = listOf(),
+    val y: List<Double> = listOf(),
     val color: Color = Color.Gray,
     // Optional label shown in legends. Keep default null to avoid breaking existing callers.
     val label: String? = null

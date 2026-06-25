@@ -25,8 +25,8 @@ class GetYesterdayChartDataUseCase @Inject constructor() {
             // 🔥 Precompute X once
             val xAxis = DoubleArray(24) { it * 3600.0 }
 
-            // 🔥 Map<String, IntArray(24)>
-            val resultMap = mutableMapOf<String, IntArray>()
+            // 🔥 Map<String, DoubleArray(24)>
+            val resultMap = mutableMapOf<String, DoubleArray>()
             val colorMap = mutableMapOf<String, Int>()
 
             for (finance in financeEntityList) {
@@ -36,12 +36,12 @@ class GetYesterdayChartDataUseCase @Inject constructor() {
                     colorMap[type] = finance.colorRes
 
                     // 🚀 Get or create bucket
-                    val hoursArray = resultMap.getOrPut(type) { IntArray(24) }
+                    val hoursArray = resultMap.getOrPut(type) { DoubleArray(24) }
 
                     // ⚡ Convert once
                     val hour = finance.createdAt.toLocalDateTimeUtc().hour
                     if (hour in 0..23) {
-                        hoursArray[hour] += finance.amount.toInt()
+                        hoursArray[hour] += finance.amount
                     }
                 }
 
@@ -57,10 +57,10 @@ class GetYesterdayChartDataUseCase @Inject constructor() {
                         val type = settlement.settlementType.text
                         colorMap[type] = settlement.settlementType.color
 
-                        val hoursArray = resultMap.getOrPut(type) { IntArray(24) }
+                        val hoursArray = resultMap.getOrPut(type) { DoubleArray(24) }
                         val hour = settlement.dateTime.toLocalDateTimeUtc().hour
                         if (hour in 0..23) {
-                            hoursArray[hour] += settlement.amount.toInt()
+                            hoursArray[hour] += settlement.amount
                         }
                     }
                 }
