@@ -25,7 +25,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,7 +37,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
-import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
@@ -120,7 +118,7 @@ fun ModelDrawerButton(
     colorResId: Int,
     modifier: Modifier = Modifier,
     icon: Int? = null,
-    wasSuccess: MutableState<State>? = null,
+    isError: Boolean = false,
     shape: Shape = ButtonDefaults.outlinedShape,
     filledColor: Color? = null,
     textColor: Color? = null,
@@ -129,7 +127,7 @@ fun ModelDrawerButton(
 ) {
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
 
-    val color = if (wasSuccess != null && wasSuccess.value == State.ERROR)
+    val color = if (isError)
         colorResource(R.color.error_color) else
         colorResource(id = colorResId)
     OutlinedButton(

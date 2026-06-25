@@ -916,7 +916,7 @@ fun EditWithdrawalAmount(
 ) {
     val showDialog = remember { mutableStateOf(false) }
 
-    val amountState = rememberTextFieldState(withdrawal.amount.toString())
+    val amountState = rememberTextFieldState()
     val amountDisplay = remember { mutableStateOf(withdrawal.amount.toString()) }
     val descriptionState = rememberTextFieldState(withdrawal.description)
     val descriptionDisplay = remember { mutableStateOf(withdrawal.description) }

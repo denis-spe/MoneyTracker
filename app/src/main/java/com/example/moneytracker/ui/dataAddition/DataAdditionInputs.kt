@@ -847,7 +847,7 @@ fun SettlementField(
     colorResId: Int,
     selectedFinanceEntity: MutableState<FinanceEntity?>,
     modifier: Modifier = Modifier,
-    wasSuccess: MutableState<State>
+    wasSuccess: MutableState<InputState>
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -912,7 +912,7 @@ fun SettlementField(
         else -> R.drawable.withdrawal
     }
 
-    val color = if (wasSuccess.value == State.ERROR)
+    val color = if (wasSuccess.value is InputState.Error)
         colorResource(R.color.error_color)
     else colorResource(colorResId)
 
@@ -945,7 +945,8 @@ fun SettlementField(
                         val title = when (datatype) {
                             DataType.GOAL -> "Attain"
                             DataType.LENT -> "Refund"
-                            else -> "Withdraw Amount"
+                            DataType.DEBT -> "Payback"
+                            else -> "Withdraw"
                         }
 
                         Row(
@@ -967,6 +968,7 @@ fun SettlementField(
                         val desc = when (datatype) {
                             DataType.GOAL -> "Attain your goal"
                             DataType.LENT -> "Refund of loan payment"
+                            DataType.DEBT -> "Payback your debt"
                             else -> "Add amount to transfer between accounts"
                         }
                         Text(desc)

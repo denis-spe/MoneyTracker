@@ -502,11 +502,16 @@ fun FinancialDataInput(
         }
     }
 
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+
     LaunchedEffect(amountState.text, labelState.text) {
 
         if (uiState.isError) {
             uiState = uiState.copy(isError = false)
         }
+        wasAmountSuccess.isAmountValid(amount = amountAsDouble)
+        wasLabelSuccess.isLabelValid(label = labelState.text.toString())
     }
 
     val creationDateTime = remember {
@@ -540,9 +545,6 @@ fun FinancialDataInput(
         RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
     )
 
-    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
-    val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -572,9 +574,33 @@ fun FinancialDataInput(
         )
 
         Text(
-            text = type.typeDescription,
-            color = Color.Gray, fontSize = 12.sp
+            text = when {
+                wasLabelSuccess.value is InputState.Error &&
+                        wasAmountSuccess.value is InputState.Error -> {
+                    (wasAmountSuccess.value as InputState.Error).message + "\n" +
+                            (wasLabelSuccess.value as InputState.Error).message
+                }
+
+                wasAmountSuccess.value is InputState.Error -> (wasAmountSuccess.value as InputState.Error)
+                    .message
+
+                wasLabelSuccess.value is InputState.Error -> (wasLabelSuccess.value as InputState.Error)
+                    .message
+
+                else -> type.typeDescription
+            },
+            color = when {
+                wasLabelSuccess.value is InputState.Error &&
+                        wasAmountSuccess.value is InputState.Error -> Color.Red
+
+                wasAmountSuccess.value is InputState.Error -> Color.Red
+                wasLabelSuccess.value is InputState.Error -> Color.Red
+                else -> Color.Gray
+            },
+            textAlign = TextAlign.Center,
+            fontSize = 12.sp
         )
+
 
         ModelDrawerAmountField(
             state = amountState,
@@ -657,7 +683,6 @@ fun FinancialDataInput(
 
             horizontalArrangement = Arrangement.Center
         ) {
-
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center
@@ -665,7 +690,8 @@ fun FinancialDataInput(
                 ModelDrawerButton(
                     text = buttonText,
 
-                    wasSuccess = null,
+                    isError = wasLabelSuccess.value is InputState.Error ||
+                            wasAmountSuccess.value is InputState.Error,
 
                     colorResId = type.color,
 
@@ -838,8 +864,31 @@ fun GoalDataInput(
         )
 
         Text(
-            text = GoalType.typeDescription,
-            color = Color.Gray, fontSize = 12.sp
+            text = when {
+                wasLabelSuccess.value is InputState.Error &&
+                        wasAmountSuccess.value is InputState.Error -> {
+                    (wasAmountSuccess.value as InputState.Error).message + "\n" +
+                            (wasLabelSuccess.value as InputState.Error).message
+                }
+
+                wasAmountSuccess.value is InputState.Error -> (wasAmountSuccess.value as InputState.Error)
+                    .message
+
+                wasLabelSuccess.value is InputState.Error -> (wasLabelSuccess.value as InputState.Error)
+                    .message
+
+                else -> GoalType.typeDescription
+            },
+            color = when {
+                wasLabelSuccess.value is InputState.Error &&
+                        wasAmountSuccess.value is InputState.Error -> Color.Red
+
+                wasAmountSuccess.value is InputState.Error -> Color.Red
+                wasLabelSuccess.value is InputState.Error -> Color.Red
+                else -> Color.Gray
+            },
+            textAlign = TextAlign.Center,
+            fontSize = 12.sp
         )
 
         ModelDrawerAmountField(
@@ -911,6 +960,8 @@ fun GoalDataInput(
             ) {
                 ModelDrawerButton(
                     text = buttonText,
+                    isError = wasLabelSuccess.value is InputState.Error ||
+                            wasAmountSuccess.value is InputState.Error,
                     colorResId = GoalType.color,
                     filledColor = color,
                     textColor = Color.White
@@ -1004,7 +1055,8 @@ fun SettlementDataInputs(
     val adjustAmountState = rememberTextFieldState()
 
     var wasSuccess by remember { mutableStateOf(State.INITIAL) }
-
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    
     val selectedFinanceEntity = remember {
         mutableStateOf<FinanceEntity?>(null)
     }
@@ -1046,6 +1098,11 @@ fun SettlementDataInputs(
         GoalType -> DataType.GOAL
     }
 
+    LaunchedEffect(settleAsDouble) {
+        if (settleAsDouble != null)
+            wasAmountSuccess.isAmountValid(settleAsDouble)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1071,8 +1128,18 @@ fun SettlementDataInputs(
         )
 
         Text(
-            text = settlementType.typeDescription,
-            color = Color.Gray, fontSize = 12.sp
+            text = when {
+                wasAmountSuccess.value is InputState.Error -> (wasAmountSuccess.value as InputState.Error)
+                    .message
+
+                else -> settlementType.typeDescription
+            },
+            color = when {
+                wasAmountSuccess.value is InputState.Error -> Color.Red
+                else -> Color.Gray
+            },
+            textAlign = TextAlign.Center,
+            fontSize = 12.sp
         )
 
         SettlementField(
@@ -1082,7 +1149,7 @@ fun SettlementDataInputs(
             financeEntityList = financeEntityList,
             colorResId = settlementType.color,
             selectedFinanceEntity = selectedFinanceEntity,
-            wasSuccess = remember { mutableStateOf(wasSuccess) },
+            wasSuccess = wasAmountSuccess,
             modifier = topModifier
         )
 
@@ -1140,7 +1207,7 @@ fun SettlementDataInputs(
             ) {
                 ModelDrawerButton(
                     text = "Add",
-                    wasSuccess = remember { mutableStateOf(wasSuccess) },
+                    isError = wasAmountSuccess.value is InputState.Error,
                     colorResId = settlementType.color,
                     filledColor = Color.Transparent,
                     textColor = color
@@ -1149,29 +1216,16 @@ fun SettlementDataInputs(
                     val settleAmount = settleAsDouble
 
                     if (entity == null) {
-                        wasSuccess = State.ERROR
-                        userViewModel.showActionNotification(
-                            when (dataType) {
-                                DataType.LENT -> "Please select a loan to repay"
-                                DataType.DEBT -> "Please select a debt to repay"
-                                else -> "Please select a goal to attain"
-                            },
-                            color = Color.Red.copy(alpha = 0.5f)
+                        wasAmountSuccess.value = InputState.Error(
+                            "Please select a ${settlementType.text.lowercase()}"
                         )
                         return@ModelDrawerButton
                     }
 
-                    if (settleAmount == null) {
-                        wasSuccess = State.ERROR
-                        userViewModel.showActionNotification(
-                            "Amount cannot be empty",
-                            color = Color.Red.copy(alpha = 0.5f)
-                        )
-                        return@ModelDrawerButton
-                    }
+                    if (!wasAmountSuccess.isAmountValid(settleAmount)) return@ModelDrawerButton
 
                     if (
-                        settleAmount > entity.remainingAmount &&
+                        settleAmount!! > entity.remainingAmount &&
                         !entity.isStartDateTimeNotEqualToDeadlineDateTime
                     ) {
                         wasSuccess = State.ERROR
@@ -1243,7 +1297,7 @@ fun WithdrawalInputs(
     val descriptionState = rememberTextFieldState()
     val adjustAmountState = rememberTextFieldState()
 
-    var wasSuccess by remember { mutableStateOf(State.INITIAL) }
+    val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
 
     val selectedFinanceEntity = remember {
         mutableStateOf<FinanceEntity?>(null)
@@ -1290,6 +1344,11 @@ fun WithdrawalInputs(
         RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
     )
 
+    LaunchedEffect(settleAsDouble) {
+        if (settleAsDouble != null)
+            wasAmountSuccess.isAmountValid(settleAsDouble)
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -1314,8 +1373,18 @@ fun WithdrawalInputs(
         )
 
         Text(
-            text = settlementType.typeDescription,
-            color = Color.Gray, fontSize = 12.sp
+            text = when {
+                wasAmountSuccess.value is InputState.Error -> (wasAmountSuccess.value as InputState.Error)
+                    .message
+
+                else -> settlementType.typeDescription
+            },
+            color = when {
+                wasAmountSuccess.value is InputState.Error -> Color.Red
+                else -> Color.Gray
+            },
+            textAlign = TextAlign.Center,
+            fontSize = 12.sp
         )
 
         SettlementField(
@@ -1325,7 +1394,7 @@ fun WithdrawalInputs(
             financeEntityList = financeEntityList,
             colorResId = settlementType.color,
             selectedFinanceEntity = selectedFinanceEntity,
-            wasSuccess = remember { mutableStateOf(wasSuccess) },
+            wasSuccess = wasAmountSuccess,
             modifier = topModifier
         )
 
@@ -1388,7 +1457,7 @@ fun WithdrawalInputs(
             ) {
                 ModelDrawerButton(
                     text = "Add",
-                    wasSuccess = remember { mutableStateOf(wasSuccess) },
+                    isError = wasAmountSuccess.value is InputState.Error,
                     colorResId = settlementType.color,
                     filledColor = Color.Transparent,
                     textColor = color
@@ -1397,26 +1466,18 @@ fun WithdrawalInputs(
                     val settleAmount = settleAsDouble
 
                     if (entity == null) {
-                        wasSuccess = State.ERROR
-                        userViewModel.showActionNotification(
-                            "Please select a transaction",
-                            color = Color.Red.copy(alpha = 0.5f)
+                        wasAmountSuccess.value = InputState.Error(
+                            "Please select a ${settlementType.text.lowercase()}"
                         )
+
                         return@ModelDrawerButton
                     }
 
-                    if (settleAmount == null) {
-                        wasSuccess = State.ERROR
-                        userViewModel.showActionNotification(
-                            "Amount cannot be empty",
-                            color = Color.Red.copy(alpha = 0.5f)
-                        )
-                        return@ModelDrawerButton
-                    }
+                    if (!wasAmountSuccess.isAmountValid(settleAmount)) return@ModelDrawerButton
 
                     val withdrawal = Withdrawal(
                         withdrawalId = UUID.randomUUID().toString(),
-                        amount = settleAmount,
+                        amount = settleAmount!!,
                         createdAt = localDateTimeState.value.toFirestoreTimestampUtc(),
                         label = settlementType.text,
                         description = descriptionState.text.toString(),

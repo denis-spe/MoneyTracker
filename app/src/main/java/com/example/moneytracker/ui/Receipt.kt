@@ -62,7 +62,6 @@ import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.InputState
-import com.example.moneytracker.helper.State
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatValueOnly
@@ -1106,8 +1105,6 @@ fun OnUpdate(
     val labelState = rememberTextFieldState()
     val displayLabel = rememberSaveable { mutableStateOf("") }
     val descriptionState = rememberTextFieldState()
-    val wasSuccess = remember { mutableStateOf(State.INITIAL) }
-    val wasSettlementSuccess = remember { mutableStateOf(State.INITIAL) }
     val tagIconState = remember { mutableStateOf(TagIcon("description", R.drawable.description)) }
     val selectedPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
     val toPaymentMethod = remember { mutableStateOf(PaymentMethod.CASH) }
@@ -1115,7 +1112,6 @@ fun OnUpdate(
     val lazyState = rememberLazyListState()
     val affectCurrentAccount =
         rememberSaveable { mutableStateOf(dataSettlement.affectCurrentAccount) }
-
     val dataTypeText = dataSettlement.text
     val colorResId = dataSettlement.colorRes
     val icon = dataSettlement.icon
@@ -1149,6 +1145,8 @@ fun OnUpdate(
 
     val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
     val wasLabelSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
+    val isError = remember { mutableStateOf(false) }
+
 
     LaunchedEffect(dataSettlement, isUpdateModelBottonOpen.value) {
         if (isUpdateModelBottonOpen.value) {
@@ -1411,7 +1409,7 @@ fun OnUpdate(
                                             vertical = 10.dp
                                         ),
                                         text = "Apply changes",
-                                        wasSuccess = wasSuccess,
+                                        isError = isError.value,
                                         colorResId = colorResId,
                                         filledColor = colorResource(colorResId),
                                         textColor = Color.White
@@ -1422,12 +1420,13 @@ fun OnUpdate(
                                         }
 
                                         // Validate input
-                                        wasLabelSuccess.isLabelValid(labelState.text.toString())
-                                        wasAmountSuccess.isAmountValid(amountAsDouble)
+                                        val isLabelOk =
+                                            wasLabelSuccess.isLabelValid(labelState.text.toString())
+                                        val isAmountOk =
+                                            wasAmountSuccess.isAmountValid(amountAsDouble)
+                                        isError.value = !isLabelOk || !isAmountOk
 
-                                        if (wasLabelSuccess.value is InputState.Success &&
-                                            wasAmountSuccess.value is InputState.Success
-                                        ) {
+                                        if (!isError.value) {
                                             val finance = dataSettlement.financeEntity
                                             val normalizedStart = onCreatedDateTimeState.value
 
@@ -1471,8 +1470,6 @@ fun OnUpdate(
                                                 viewModel.beginTheWork(newFinanceEntity)
                                             }
 
-
-                                            wasSuccess.value = State.SUCCESS
                                             userViewModel.showActionNotification(
                                                 "Data updated successfully",
                                                 color
@@ -1490,8 +1487,6 @@ fun OnUpdate(
                                             isUpdateModelBottonOpen.value = false
                                             onShowDialog.value = false
 
-                                        } else {
-                                            wasSuccess.value = State.ERROR
                                         }
                                     }
                                 }
@@ -1509,17 +1504,29 @@ fun OnUpdate(
                                     ) {
                                         ModelDrawerButton(
                                             text = "Apply changes",
-                                            wasSuccess = wasSettlementSuccess,
+                                            isError = wasLabelSuccess.value is InputState.Error ||
+                                                    wasAmountSuccess.value is InputState.Error,
                                             colorResId = colorResId,
                                             filledColor = Color.Transparent
                                         ) {
+
+                                            // Validate input
+                                            val isLabelOk =
+                                                wasLabelSuccess.isLabelValid(labelState.text.toString())
+                                            val isAmountOk =
+                                                wasAmountSuccess.isAmountValid(amountAsDouble)
+
+                                            if (!isLabelOk || !isAmountOk) return@ModelDrawerButton
+
                                             if (amountAsDouble == null) {
                                                 amountState.setTextAndPlaceCursorAtEnd(amount.toString())
                                             }
 
                                             if (amountAsDouble != null
                                                 && amountAsDouble
-                                                <= (dataSettlement.settlement.financeEntity!!.remainingAmount + dataSettlement.settlement.amount)
+                                                <= (dataSettlement.settlement.financeEntity!!
+                                                    .remainingAmount +
+                                                        dataSettlement.settlement.amount)
                                             ) {
                                                 val settlement = dataSettlement.settlement
                                                 val financeEntityType =
@@ -1544,7 +1551,6 @@ fun OnUpdate(
                                                 )
 
 
-                                                wasSettlementSuccess.value = State.SUCCESS
                                                 userViewModel.showActionNotification(
                                                     "Settlement updated successfully",
                                                     color
@@ -1562,8 +1568,6 @@ fun OnUpdate(
                                                 isUpdateModelBottonOpen.value = false
                                                 onShowDialog.value = false
 
-                                            } else {
-                                                wasSettlementSuccess.value = State.ERROR
                                             }
                                         }
                                     }
@@ -1582,10 +1586,19 @@ fun OnUpdate(
                                     ) {
                                         ModelDrawerButton(
                                             text = "Apply changes",
-                                            wasSuccess = wasSettlementSuccess,
+                                            isError = wasLabelSuccess.value is InputState.Error ||
+                                                    wasAmountSuccess.value is InputState.Error,
                                             colorResId = colorResId,
                                             filledColor = Color.Transparent
                                         ) {
+                                            // Validate input
+                                            val isAmountOk =
+                                                wasAmountSuccess.isAmountValid(amountAsDouble)
+                                            val isLabelOk =
+                                                wasLabelSuccess.isLabelValid(labelState.text.toString())
+
+                                            if (!isAmountOk || !isLabelOk) return@ModelDrawerButton
+
                                             if (amountAsDouble == null) {
                                                 amountState.setTextAndPlaceCursorAtEnd(amount.toString())
                                             }
@@ -1614,8 +1627,6 @@ fun OnUpdate(
                                                     )
                                                 )
 
-
-                                                wasSettlementSuccess.value = State.SUCCESS
                                                 userViewModel.showActionNotification(
                                                     "Withdrawal updated successfully",
                                                     color
@@ -1633,13 +1644,10 @@ fun OnUpdate(
                                                 isUpdateModelBottonOpen.value = false
                                                 onShowDialog.value = false
 
-                                            } else {
-                                                wasSettlementSuccess.value = State.ERROR
                                             }
                                         }
                                     }
                                 }
-
                             }
                         }
                     }
