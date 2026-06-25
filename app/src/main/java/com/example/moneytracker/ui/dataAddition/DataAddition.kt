@@ -507,11 +507,12 @@ fun FinancialDataInput(
 
     LaunchedEffect(amountState.text, labelState.text) {
 
-        if (uiState.isError) {
-            uiState = uiState.copy(isError = false)
+        if (wasAmountSuccess.value is InputState.Error ||
+            wasLabelSuccess.value is InputState.Error
+        ) {
+            wasAmountSuccess.isAmountValid(amount = amountAsDouble)
+            wasLabelSuccess.isLabelValid(label = labelState.text.toString())
         }
-        wasAmountSuccess.isAmountValid(amount = amountAsDouble)
-        wasLabelSuccess.isLabelValid(label = labelState.text.toString())
     }
 
     val creationDateTime = remember {
@@ -577,8 +578,7 @@ fun FinancialDataInput(
             text = when {
                 wasLabelSuccess.value is InputState.Error &&
                         wasAmountSuccess.value is InputState.Error -> {
-                    (wasAmountSuccess.value as InputState.Error).message + "\n" +
-                            (wasLabelSuccess.value as InputState.Error).message
+                    "Amount and label are required"
                 }
 
                 wasAmountSuccess.value is InputState.Error -> (wasAmountSuccess.value as InputState.Error)
@@ -839,6 +839,13 @@ fun GoalDataInput(
         RoundedCornerShape(bottomStart = 10.dp, bottomEnd = 10.dp)
     )
 
+    if (wasAmountSuccess.value is InputState.Error ||
+        wasLabelSuccess.value is InputState.Error
+    ) {
+        wasAmountSuccess.isAmountValid(amount = amountAsDouble)
+        wasLabelSuccess.isLabelValid(label = labelState.text.toString())
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -867,8 +874,7 @@ fun GoalDataInput(
             text = when {
                 wasLabelSuccess.value is InputState.Error &&
                         wasAmountSuccess.value is InputState.Error -> {
-                    (wasAmountSuccess.value as InputState.Error).message + "\n" +
-                            (wasLabelSuccess.value as InputState.Error).message
+                    "Amount and label are required"
                 }
 
                 wasAmountSuccess.value is InputState.Error -> (wasAmountSuccess.value as InputState.Error)
