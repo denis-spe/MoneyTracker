@@ -26,10 +26,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ShowChart
+import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
@@ -44,14 +47,17 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.VerticalDivider
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -79,8 +85,16 @@ import com.example.moneytracker.helper.formatResult
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDateTime
 import com.example.moneytracker.helper.formatValueOnly
+import com.example.moneytracker.helper.iqr
+import com.example.moneytracker.helper.kurtosis
+import com.example.moneytracker.helper.mode
+import com.example.moneytracker.helper.quartiles
 import com.example.moneytracker.helper.safePopBackStack
+import com.example.moneytracker.helper.skewness
+import com.example.moneytracker.helper.std
 import com.example.moneytracker.helper.toLocalDateTimeUtc
+import com.example.moneytracker.helper.variance
+import com.example.moneytracker.helper.zScore
 import com.example.moneytracker.ui.components.charts.VicoLineChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
@@ -352,6 +366,7 @@ fun GoalLineChartSummary(
 fun GoalStatistic(
     currentGoal: FinanceEntity.Goal
 ) {
+    var showInsightDialog by remember { mutableStateOf(false) }
     val achievements = currentGoal.achievement
     if (achievements.isEmpty()) {
         Box(
@@ -367,7 +382,7 @@ fun GoalStatistic(
             )
         }
         return
-    }
+    } 
 
     val totalAchievements = achievements.size
     val completedCount = achievements.count { it.status == "COMPLETED" }
@@ -390,24 +405,23 @@ fun GoalStatistic(
         StatisticRow(label = "Success Rate", value = "${successRate.formatResult}%")
         StatisticRow(label = "Total Cycles", value = totalAchievements.toString())
 
-        HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
-
-        Text(
-            text = "Data Science Insights",
-            style = MaterialTheme.typography.labelMedium,
-            color = MaterialTheme.colorScheme.primary,
-            fontWeight = FontWeight.Bold
-        )
-
-        val variance = if (amounts.isEmpty()) 0.0
-        else {
-            val avg = amounts.average()
-            amounts.sumOf { (it - avg) * (it - avg) } / amounts.size
+        TextButton(
+            onClick = { showInsightDialog = true },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text(
+                "View Advanced Analysis",
+                style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary
+            )
         }
-        val stdDev = kotlin.math.sqrt(variance)
+    }
 
-        StatisticRow(label = "Variance", value = variance.formatResult)
-        StatisticRow(label = "Std Deviation", value = stdDev.formatResult)
+    if (showInsightDialog) {
+        InsightDetailDialog(
+            currentGoal = currentGoal,
+            onDismiss = { showInsightDialog = false }
+        )
     }
 }
 
@@ -848,5 +862,250 @@ fun AchievementDetailDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+fun InsightDetailDialog(
+    currentGoal: FinanceEntity.Goal,
+    onDismiss: () -> Unit
+) {
+    val onShow = remember { mutableStateOf(false) }
+    val achievements = currentGoal.achievement
+    val amounts = achievements.map { it.totalSettlementAmount }
+
+    val median = if (amounts.isEmpty()) 0.0
+    else {
+        val sorted = amounts.sorted()
+        val mid = sorted.size / 2
+        if (sorted.size % 2 == 0) (sorted[mid - 1] + sorted[mid]) / 2.0 else sorted[mid]
+    }
+
+    val range = (amounts.maxOrNull() ?: 0.0) - (amounts.minOrNull() ?: 0.0)
+
+    val mode = amounts.mode()
+    val (q1, _, q3) = amounts.quartiles()
+    val iqr = amounts.iqr()
+    val skewness = amounts.skewness()
+    val kurtosis = amounts.kurtosis()
+    val latestZScore = amounts.lastOrNull()?.zScore(amounts) ?: 0.0
+
+
+    val trend = if (achievements.size >= 4) {
+        val mid = achievements.size / 2
+        val firstHalf = achievements.take(mid).map { it.totalSettlementAmount }.average()
+        val secondHalf = achievements.takeLast(mid).map { it.totalSettlementAmount }.average()
+        when {
+            secondHalf > firstHalf * 1.05 -> "Improving"
+            secondHalf < firstHalf * 0.95 -> "Declining"
+            else -> "Stable"
+        }
+    } else "Insufficient Data"
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier.fillMaxWidth(0.95f),
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        ) {
+            Column(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ShowChart,
+                        contentDescription = "Analysis",
+                        tint = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.size(30.dp)
+                    )
+
+                    Text(
+                        text = "Advanced Analysis",
+                        color = MaterialTheme.colorScheme.primary,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                    )
+
+                    Text(
+                        text = "Deep dive into performance",
+                        color = Color.Gray, fontSize = 12.sp
+                    )
+                }
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    DetailRow(label = "Median", value = median.formatToAmount())
+                    if (mode.size == 1) {
+                        DetailRow(
+                            label = "Mode",
+                            value = mode[0].formatToAmount()
+                        )
+                    } else {
+                        DetailRow(
+                            label = "Mode",
+                            value = "N/A"
+                        )
+                    }
+                    DetailRow(label = "Range", value = range.formatToAmount())
+                    StatisticRow(label = "Variance", value = amounts.variance.formatResult)
+                    StatisticRow(label = "Std Deviation", value = amounts.std.formatResult)
+                    HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.2f))
+
+                    Text(
+                        "Quartiles & IQR",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray
+                    )
+                    DetailRow(label = "Q1 (25%)", value = q1.formatToAmount())
+                    DetailRow(label = "Q3 (75%)", value = q3.formatToAmount())
+                    DetailRow(label = "IQR", value = iqr.formatToAmount())
+
+                    HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.2f))
+                    Text(
+                        "Distribution Shapes",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.Gray
+                    )
+                    DetailRow(label = "Skewness", value = skewness.formatResult)
+                    DetailRow(label = "Kurtosis", value = kurtosis.formatResult)
+
+                    HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.2f))
+                    DetailRow(label = "Latest Z-Score", value = latestZScore.formatResult)
+                    DetailRow(label = "Overall Trend", value = trend)
+                }
+
+                IconButton(
+                    onClick = {
+                        onShow.value = true
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                        contentDescription = "help"
+                    )
+                }
+
+                TextButton(onClick = onDismiss) {
+                    Text(
+                        "Close",
+                        color = StewardTheme.colors.onSurfaceText
+                    )
+                }
+            }
+        }
+    }
+
+    InsightHelpBottomDrawer(onShow = onShow)
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun InsightHelpBottomDrawer(
+    onShow: MutableState<Boolean>
+) {
+    if (onShow.value) {
+        ModalBottomSheet(
+            onDismissRequest = { onShow.value = false },
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true
+            ),
+            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Understanding Your Analysis",
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+
+                Text(
+                    text = "These metrics help you understand your long-term performance patterns and consistency.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+
+                HorizontalDivider(thickness = 0.5.dp)
+
+                HelpItem(
+                    title = "Median",
+                    description = "The true middle value of your achievements. Unlike the average, it isn't skewed by one-off very high or very low results."
+                )
+
+                HelpItem(
+                    title = "Mode",
+                    description = "The specific amount you hit most frequently across all your completed goal cycles."
+                )
+
+                HelpItem(
+                    title = "Range",
+                    description = "The total gap between your all-time best performance and your lowest point. A smaller range means higher stability."
+                )
+
+                HelpItem(
+                    title = "Variance & Standard Deviation",
+                    description = "These measure how much your results jump around cycle-to-cycle. Low values indicate you are very consistent."
+                )
+
+                HelpItem(
+                    title = "Quartiles (Q1 & Q3)",
+                    description = "Q1 (25%) is your 'performance floor'—you hit at least this much 75% of the time. Q3 (75%) is your 'ceiling'—you reach this level in your top 25% of cycles."
+                )
+
+                HelpItem(
+                    title = "Interquartile Range (IQR)",
+                    description = "The spread of your middle 50% of results. It describes your most 'typical' performance range."
+                )
+
+                HelpItem(
+                    title = "Skewness",
+                    description = "Measures if your results lean in a direction. Positive means you often over-perform your average; negative means you often fall short."
+                )
+
+                HelpItem(
+                    title = "Kurtosis",
+                    description = "Measures volatility. High kurtosis means you have occasional extreme jumps (very high or low) rather than steady progress."
+                )
+
+                HelpItem(
+                    title = "Z-Score",
+                    description = "How your most recent result compares to history. 0 is exactly average, +1 is well above average, and -1 is below average."
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+            }
+        }
+    }
+}
+
+@Composable
+fun HelpItem(title: String, description: String) {
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleSmall,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.secondary
+        )
+        Text(
+            text = description,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }

@@ -15,15 +15,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
-import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -63,99 +60,13 @@ import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatValueOnly
 import com.example.moneytracker.helper.getCurrencySymbol
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
-import com.example.moneytracker.helper.mean
-import com.example.moneytracker.helper.median
 import com.example.moneytracker.helper.shimmerEffect
-import com.example.moneytracker.helper.std
 import com.example.moneytracker.ui.components.charts.DonutChart
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.theme.StewardTheme
 import kotlinx.coroutines.launch
-
-@Composable
-fun Stat(
-    financeEntityList: List<FinanceEntity>
-) {
-    if (financeEntityList.isEmpty()) return
-
-    val mean = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
-        entry.key to entry.value.mean { it.amount }
-    }
-
-    val median = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
-        entry.key to entry.value.median
-    }
-
-    val min = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
-        entry.key to entry.value.minOf { it.amount }
-    }
-
-    val max = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
-        entry.key to entry.value.maxOf { it.amount }
-    }
-
-    val std = financeEntityList.groupBy { data -> data.categoryText }.map { entry ->
-        entry.key to entry.value.std
-    }
-
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .fillMaxHeight(0.7f),
-    ) {
-        item {
-            LazyRow(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                item {
-                    Text(text = "Label")
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = "min")
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = "median")
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = "max")
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = "std")
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = "mean")
-
-                }
-            }
-        }
-        items(min.size) {
-            val minItem = min[it]
-            val maxItem = max[it]
-            val stdItem = std[it]
-            val meanItem = mean[it]
-            val medianItem = median[it]
-
-            LazyRow(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceEvenly,
-            ) {
-                item {
-                    Text(text = minItem.first)
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = minItem.second.formatToAmount())
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = medianItem.second.formatToAmount())
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = maxItem.second.formatToAmount())
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = stdItem.second.formatToAmount())
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(text = meanItem.second.formatToAmount())
-
-                }
-            }
-        }
-    }
-
-}
 
 
 @Composable

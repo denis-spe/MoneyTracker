@@ -377,22 +377,102 @@ val List<FinanceEntity>.median: Double
         }
     }
 
-/**
- * Calculates the Variance: The average of the squared differences from the Mean.
- */
-val List<FinanceEntity>.variance: Double
-    get() {
-        if (isEmpty()) return 0.0
-        val avg = mean { it.amount }
-        // sum of (value - mean)^2 / count
-        return sumOf { (it.amount - avg).let { diff -> diff * diff } } / size
-    }
 
 /**
  * Calculates the Standard Deviation: The square root of the Variance.
  */
-val List<FinanceEntity>.std: Double
+val List<Double>.std: Double
     get() = kotlin.math.sqrt(variance)
+
+/**
+ * Calculates the Variance: The average of the squared differences from the Mean.
+ */
+val List<Double>.variance: Double
+    get() {
+        if (isEmpty()) return 0.0
+        val avg = average()
+        return sumOf { (it - avg) * (it - avg) } / size
+    }
+
+
+/**
+ * Calculates the Mode: The most frequent value in a list.
+ */
+fun List<Double>.mode(): List<Double> {
+    if (isEmpty()) return emptyList()
+    val counts = groupBy { it }.mapValues { it.value.size }
+    val maxCount = counts.maxOf { it.value }
+    return counts.filter { it.value == maxCount }.keys.toList()
+}
+
+/**
+ * Calculates Quartiles: Q1, Q2 (Median), Q3.
+ */
+fun List<Double>.quartiles(): Triple<Double, Double, Double> {
+    if (size < 4) return Triple(0.0, 0.0, 0.0)
+    val sorted = sorted()
+
+    fun getMedian(data: List<Double>): Double {
+        if (data.isEmpty()) return 0.0
+        val mid = data.size / 2
+        return if (data.size % 2 == 0) (data[mid - 1] + data[mid]) / 2.0 else data[mid]
+    }
+
+    val q2 = getMedian(sorted)
+    val lowerHalf = sorted.take(size / 2)
+    val upperHalf = if (size % 2 == 0) sorted.takeLast(size / 2) else sorted.takeLast(size / 2)
+
+    val q1 = getMedian(lowerHalf)
+    val q3 = getMedian(upperHalf)
+
+    return Triple(q1, q2, q3)
+}
+
+/**
+ * Calculates the Interquartile Range (IQR).
+ */
+fun List<Double>.iqr(): Double {
+    val (q1, _, q3) = quartiles()
+    return q3 - q1
+}
+
+/**
+ * Calculates the Skewness: Measure of asymmetry.
+ */
+fun List<Double>.skewness(): Double {
+    if (size < 3) return 0.0
+    val avg = average()
+    val stdDev = kotlin.math.sqrt(map { (it - avg) * (it - avg) }.sum() / size)
+    if (stdDev == 0.0) return 0.0
+
+    val m3 = map { (it - avg).pow(3.0) }.sum() / size
+    return m3 / stdDev.pow(3.0)
+}
+
+/**
+ * Calculates the Kurtosis: Measure of "tailedness".
+ */
+fun List<Double>.kurtosis(): Double {
+    if (size < 4) return 0.0
+    val avg = average()
+    val variance = map { (it - avg) * (it - avg) }.sum() / size
+    if (variance == 0.0) return 0.0
+
+    val m4 = map { (it - avg).pow(4.0) }.sum() / size
+    return (m4 / variance.pow(2.0)) - 3.0
+}
+
+/**
+ * Calculates the Z-score for a given value relative to a list of values.
+ */
+fun Double.zScore(values: List<Double>): Double {
+    if (values.isEmpty()) return 0.0
+    val avg = values.average()
+    val variance = values.map { (it - avg) * (it - avg) }.sum() / values.size
+    val stdDev = kotlin.math.sqrt(variance)
+    if (stdDev == 0.0) return 0.0
+    return (this - avg) / stdDev
+}
 
 val FinanceEntity.isStartDateTimeNotEqualToDeadlineDateTime: Boolean
     get() = if (this is FinanceEntity.Goal) routine.startDateTime != routine.deadlineDateTime else false
