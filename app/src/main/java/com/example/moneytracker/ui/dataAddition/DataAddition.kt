@@ -989,7 +989,7 @@ fun GoalDataInput(
                         Routine.Weekly,
                         Routine.Monthly,
                         Routine.Yearly,
-                        Routine.SpecifyDayOfTheWeek
+                        Routine.SpecifyDayOfTheYear
                     )
 
                     val normalizedStart =

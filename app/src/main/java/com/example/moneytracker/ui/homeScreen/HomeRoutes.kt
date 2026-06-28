@@ -18,7 +18,7 @@ import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 fun TodayScreenRoute(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
 ) {
 
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -64,6 +64,7 @@ fun TodayScreenRoute(
 fun FulfillmentScreenRoute(
     paddingValues: PaddingValues,
     onNavigate: NavController?,
+    onTabClick: (Int) -> Unit = {},
     viewModel: HomeViewModel = hiltViewModel()
 ) {
 
@@ -81,6 +82,8 @@ fun FulfillmentScreenRoute(
         allDataset = allDataset,
 
         uiState = uiState,
+
+        onTabClick = onTabClick
     )
 }
 
@@ -88,7 +91,7 @@ fun FulfillmentScreenRoute(
 fun YesterdayScreenRoute(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
 ) {
     val yesterdayChartDataState by viewModel
         .yesterdayChartData
@@ -119,7 +122,7 @@ fun YesterdayScreenRoute(
 fun AllScreenRoute(
     paddingValues: PaddingValues,
     viewModel: HomeViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel()
+    userViewModel: UserViewModel = hiltViewModel(),
 ) {
     val dataState by viewModel
         .weeklyData

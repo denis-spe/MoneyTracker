@@ -272,6 +272,22 @@ fun RoutineData.rescheduleDeadline(
             startBase.plusYears(count).toMidnight()
         }
 
+        Routine.SpecificDayOfTheWeek -> {
+            if (specificDays.isEmpty()) {
+                startBase.plusDays(1).toMidnight()
+            } else {
+                val todayDay = startBase.dayOfWeek.value
+                val sortedDays = specificDays.sorted()
+                val nextDay = sortedDays.firstOrNull { it > todayDay } ?: sortedDays.first()
+                val daysToAdd = if (nextDay > todayDay) {
+                    (nextDay - todayDay).toLong()
+                } else {
+                    (7 - todayDay + nextDay).toLong()
+                }
+                startBase.plusDays(daysToAdd).toMidnight()
+            }
+        }
+
         else -> {
             timeProvider.nowLocalDateTime().plusMinutes(1)
         }
@@ -319,7 +335,29 @@ fun RoutineData.getTriggerMillisFrom(baseMillis: Long): Long {
             .toInstant()
             .toEpochMilli()
 
-        Routine.SpecifyDayOfTheWeek -> {
+        Routine.SpecificDayOfTheWeek -> {
+            if (specificDays.isEmpty()) {
+                base.plusDays(1)
+                    .withHour(0).withMinute(0).withSecond(0).withNano(0)
+                    .toInstant()
+                    .toEpochMilli()
+            } else {
+                val todayDay = base.dayOfWeek.value
+                val sortedDays = specificDays.sorted()
+                val nextDay = sortedDays.firstOrNull { it > todayDay } ?: sortedDays.first()
+                val daysToAdd = if (nextDay > todayDay) {
+                    (nextDay - todayDay).toLong()
+                } else {
+                    (7 - todayDay + nextDay).toLong()
+                }
+                base.plusDays(daysToAdd)
+                    .withHour(0).withMinute(0).withSecond(0).withNano(0)
+                    .toInstant()
+                    .toEpochMilli()
+            }
+        }
+
+        Routine.SpecifyDayOfTheYear -> {
             val safeCount = if (count <= 0) 1L else count
             val targetDay = DayOfWeek.of(((safeCount + 5) % 7 + 1).toInt())
             val next = if (base.dayOfWeek == targetDay) {
@@ -562,7 +600,8 @@ val RoutineData.routineToMap: Map<String, Any>
         "stopRoutine" to stopRoutine,
         "startDateTime" to startDateTime,
         "deadlineDateTime" to deadlineDateTime,
-        "triggerMillis" to triggerMillis
+        "triggerMillis" to triggerMillis,
+        "specificDays" to specificDays
     )
 
 val Achievement.achievementToMap: Map<String, Any>
@@ -708,6 +747,8 @@ fun Map<*, *>.asRoutineData(): RoutineData {
     val startDateTime = parseTimestamp(this["startDateTime"])
     val deadlineDateTime = parseTimestamp(this["deadlineDateTime"])
     val triggerMillis = (this["triggerMillis"] as? Number)?.toLong() ?: 0L
+    val specificDays =
+        (this["specificDays"] as? List<*>)?.mapNotNull { (it as? Number)?.toInt() } ?: emptyList()
 
     return RoutineData(
         routine = routine,
@@ -715,7 +756,8 @@ fun Map<*, *>.asRoutineData(): RoutineData {
         stopRoutine = stopRoutine,
         startDateTime = startDateTime,
         deadlineDateTime = deadlineDateTime,
-        triggerMillis = triggerMillis
+        triggerMillis = triggerMillis,
+        specificDays = specificDays
     )
 }
 

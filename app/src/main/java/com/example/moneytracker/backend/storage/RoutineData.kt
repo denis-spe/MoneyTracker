@@ -12,5 +12,6 @@ data class RoutineData(
     val stopRoutine: Boolean = true,
     val startDateTime: Timestamp = Timestamp.now(),
     val deadlineDateTime: Timestamp = Timestamp.now(),
-    val triggerMillis: Long = 0
+    val triggerMillis: Long = 0,
+    val specificDays: List<Int> = emptyList()
 )

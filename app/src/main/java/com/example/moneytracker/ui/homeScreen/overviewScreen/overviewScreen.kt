@@ -3,9 +3,8 @@ package com.example.moneytracker.ui.homeScreen.overviewScreen
 
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -19,14 +18,15 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,7 +43,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
@@ -51,14 +50,9 @@ import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.Withdrawal
-import com.example.moneytracker.backend.storage.types.FinanceCategory
-import com.example.moneytracker.backend.storage.types.GoalType
-import com.example.moneytracker.backend.storage.types.LiabilityType
-import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToTime
 import com.example.moneytracker.helper.formattedDate
-import com.example.moneytracker.helper.formattedTime
 import com.example.moneytracker.helper.limit
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
@@ -72,14 +66,48 @@ import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.screenManager.FulfillmentDetailScreenRouter
 import com.example.moneytracker.ui.screenManager.LiabilityDetailScreenRouter
 import com.example.moneytracker.ui.screenManager.TransactionDetailScreenRouter
+import com.example.moneytracker.ui.theme.StewardTheme
 import com.example.moneytracker.ui.usecase.coupleDatasetsWithSettlements
 
-private val SPACE = 10.dp
+private val CORNER_RADIUS = 16.dp
+
+@Composable
+fun SectionHeader(
+    modifier: Modifier = Modifier,
+    title: String,
+    onSeeAllClick: (() -> Unit)? = null
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = title,
+            style = typography.titleMedium.copy(fontWeight = FontWeight.Bold)
+        )
+        if (onSeeAllClick != null) {
+            TextButton(
+                onClick = onSeeAllClick,
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 0.dp)
+            ) {
+                Text(
+                    text = "See All",
+                    style = typography.labelLarge,
+                    color = StewardTheme.colors.primaryAccent
+                )
+            }
+        }
+    }
+}
 
 @Composable
 fun TransactionCard(
     modifier: Modifier = Modifier,
-    financeEntity: FinanceEntity.Transaction
+    financeEntity: FinanceEntity.Transaction,
+    onNavigate: NavController?
 ) {
     val amount = financeEntity.amount.formatToAmount()
     val label = financeEntity.label
@@ -90,19 +118,25 @@ fun TransactionCard(
 
     Card(
         modifier = Modifier
-            .clip(RoundedCornerShape(50))
-            .then(modifier)
+            .width(170.dp)
+            .clip(RoundedCornerShape(CORNER_RADIUS))
+            .then(modifier),
+        onClick = {
+            onNavigate?.navigate(
+                TransactionDetailScreenRouter(financeEntity.id)
+            )
+        }
     ) {
         Row(
             modifier = Modifier
-                .width(165.dp)
-                .padding(5.dp),
+                .fillMaxWidth()
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .padding(10.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Image(
                     modifier = Modifier.size(ICON_SIZE),
@@ -116,25 +150,25 @@ fun TransactionCard(
                 )
             }
 
-            Column {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 Text(
                     label,
-                    style = typography.titleSmall
+                    style = typography.titleSmall,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Text(
                     transactionType,
-                    style = typography.titleSmall,
+                    style = typography.labelSmall,
                     color = color
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        amount,
-                        style = typography.titleSmall
-                    )
-                }
+                Text(
+                    amount,
+                    style = typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -146,25 +180,26 @@ fun WithdrawalCard(
     withdrawal: Withdrawal
 ) {
     val amount = "-${withdrawal.amount.formatToAmount()}"
-    val label = withdrawal.financeEntity!!.label
+    val label = withdrawal.financeEntity?.label ?: "Withdrawal"
     val tagIcon = painterResource(withdrawal.financeEntity?.tagIcon?.icon ?: R.drawable.initial)
     val color = colorResource(R.color.Lent)
     val toPaymentMethod = withdrawal.toPaymentMethod
 
     Card(
         modifier = modifier
-            .clip(RoundedCornerShape(50))
+            .width(170.dp)
+            .clip(RoundedCornerShape(CORNER_RADIUS))
     ) {
         Row(
             modifier = Modifier
-                .width(165.dp)
-                .padding(5.dp),
+                .fillMaxWidth()
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .padding(10.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Image(
                     modifier = Modifier.size(ICON_SIZE),
@@ -178,25 +213,25 @@ fun WithdrawalCard(
                 )
             }
 
-            Column {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 Text(
                     label,
-                    style = typography.titleSmall
+                    style = typography.titleSmall,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
                 Text(
                     "Withdrawal",
-                    style = typography.titleSmall,
+                    style = typography.labelSmall,
                     color = color
                 )
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Text(
-                        amount,
-                        style = typography.titleSmall
-                    )
-                }
+                Text(
+                    amount,
+                    style = typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
             }
         }
     }
@@ -205,82 +240,35 @@ fun WithdrawalCard(
 @Composable
 fun GoalCard(
     modifier: Modifier = Modifier,
-    financeEntityGoal: FinanceEntity.Goal
+    financeEntityGoal: FinanceEntity.Goal,
+    onNavigate: NavController?
 ) {
-    financeEntityGoal.routine.startDateTime.toLocalDateTimeUtc()
-    val endDateTime = financeEntityGoal.routine.deadlineDateTime.toLocalDateTimeUtc()
-    val endDate = "${endDateTime.day}/${endDateTime.month.name.title}/${endDateTime.year}"
-    val status = financeEntityGoal.status.name.title
+    val goalStatus = financeEntityGoal.status
+    val statusText = goalStatus.name.title
 
     val progressAmount = financeEntityGoal.settlement.sumOf { it.amount }
     val remainingAmount = (financeEntityGoal.amount - progressAmount).coerceAtLeast(0.0)
+    val goalColor = colorResource(financeEntityGoal.colorRes)
 
-    val donutChartDataCollection = DonutChartDataCollection(
-        listOf(
-            DonutChartData(
-                amount = progressAmount.toFloat(),
-                color = colorResource(financeEntityGoal.colorRes),
-                title = "Progress"
-            ),
-
-            DonutChartData(
-                amount = remainingAmount.toFloat(),
-                color = Color.LightGray.copy(alpha = 0.3f),
-                title = "Remaining"
+    val finalDonutChartDataCollection = remember(progressAmount, remainingAmount, goalColor) {
+        DonutChartDataCollection(
+            listOf(
+                DonutChartData(
+                    amount = progressAmount.toFloat(),
+                    color = goalColor,
+                    title = "Progress"
+                ),
+                DonutChartData(
+                    amount = remainingAmount.toFloat(),
+                    color = Color.LightGray.copy(alpha = 0.3f),
+                    title = "Remaining"
+                )
             )
         )
-    )
-
-    val endState = when (financeEntityGoal.status) {
-        Status.SUCCESS -> {
-            "Completed "
-        }
-
-        Status.OVERDUE -> {
-            "Expired "
-        }
-
-        Status.ACTIVE -> {
-            "Will end "
-        }
-
-        else -> {
-            ""
-        }
     }
 
-    val dateTime = when (financeEntityGoal.routine.routine) {
-        Routine.EveryMinute -> {
-            "${endState}end at ${endDateTime.hour formatToTime endDateTime.minute}"
-        }
-
-        Routine.EveryHour -> {
-            "$endState at ${endDateTime.hour formatToTime endDateTime.minute}"
-        }
-
-        Routine.EveryDay -> {
-            "$endState at $endDate"
-        }
-
-        Routine.Weekly -> {
-            "$endState at $endDate"
-        }
-
-        Routine.Monthly -> {
-            "$endState at ${endDateTime.month}"
-        }
-
-        Routine.Yearly -> {
-            "$endState at ${endDateTime.year}"
-        }
-
-        Routine.SpecifyDayOfTheWeek -> {
-            "$endState at ${endDateTime.dayOfWeek}"
-        }
-
-        else -> {
-            null
-        }
+    val dateTimeText = remember(financeEntityGoal) {
+        getGoalStatusText(financeEntityGoal)
     }
 
     val routineName = if (financeEntityGoal.routine.routine == Routine.Nothing) {
@@ -308,100 +296,114 @@ fun GoalCard(
     val createdAtDateTime = "Created at $day ${createdAt.month.name.title} " +
             "${createdAt.year} ${createdAt.hour formatToTime createdAt.minute}"
 
-    Column(
-        modifier = modifier.fillMaxWidth(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(CORNER_RADIUS)),
+        onClick = {
+            onNavigate?.navigate(
+                FulfillmentDetailScreenRouter(financeEntityGoal.id)
+            )
+        }
     ) {
         ListItem(
             headlineContent = {
-                Column(
-                    horizontalAlignment = Alignment.Start
-                ) {
-                    Text(
-                        text = financeEntityGoal.label,
-                        style = typography.titleMedium
-                    )
-                }
-            },
-            overlineContent = {
-
-            },
-            supportingContent = {
                 Text(
-                    text = financeEntityGoal.amount.formatToAmount(),
-                    style = typography.titleLarge
+                    text = financeEntityGoal.label,
+                    style = typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
             },
-            leadingContent = {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    DonutChart(
-                        data = donutChartDataCollection,
-                        modifier = Modifier.size(40.dp),
-                        chartSize = 40.dp,
-                        strokeWidth = 4.dp,
-                        strokeWidthSelected = 6.dp,
-                        gapPercentage = 0.06f,
-                        strokeCap = StrokeCap.Round,
-                        selectionView = {
-                            Text(
-                                text = "$animatedPercentage%",
-                                style = typography.labelSmall.copy(fontSize = 8.sp)
-                            )
-                        }
+            supportingContent = {
+                Column {
+                    Text(
+                        text = financeEntityGoal.amount.formatToAmount(),
+                        style = typography.titleLarge,
+                        color = goalColor
                     )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = createdAtDateTime,
+                        style = typography.bodySmall,
+                        color = Color.Gray
+                    )
+                    dateTimeText?.let {
+                        Text(
+                            text = it,
+                            style = typography.bodySmall,
+                            color = Color.Gray
+                        )
+                    }
                 }
+            },
+            leadingContent = {
+                DonutChart(
+                    data = finalDonutChartDataCollection,
+                    modifier = Modifier.size(60.dp),
+                    chartSize = 50.dp,
+                    strokeWidth = 6.dp,
+                    strokeWidthSelected = 8.dp,
+                    gapPercentage = 0.06f,
+                    strokeCap = StrokeCap.Round,
+                    selectionView = {
+                        Text(
+                            text = "$animatedPercentage%",
+                            style = typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
+                )
             },
             trailingContent = {
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = status,
-                        style = typography.bodySmall,
+                        text = statusText,
+                        style = typography.labelMedium,
                         fontWeight = FontWeight.Bold,
-                        color = colorResource(financeEntityGoal.status.color)
+                        color = colorResource(goalStatus.color)
                     )
                     Text(
                         text = routineName,
-                        style = typography.bodySmall
+                        style = typography.labelSmall,
+                        color = Color.Gray
                     )
                 }
             },
             modifier = modifier.fillMaxWidth(),
-            colors = ListItemDefaults.colors(),
-            tonalElevation = ListItemDefaults.Elevation,
-            shadowElevation = ListItemDefaults.Elevation
         )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = createdAtDateTime,
-                style = typography.bodySmall
-            )
-            dateTime?.let {
-                Text(
-                    text = it,
-                    style = typography.bodySmall
-                )
-            }
-        }
+    }
+}
+
+private fun getGoalStatusText(goal: FinanceEntity.Goal): String? {
+    val endDateTime = goal.routine.deadlineDateTime.toLocalDateTimeUtc()
+    val endDate = "${endDateTime.day}/${endDateTime.month.name.title}/${endDateTime.year}"
+    val goalStatus = goal.status
+
+    val endState = when (goalStatus) {
+        Status.COMPLETED, Status.SUCCESS -> "Completed "
+        Status.OVERDUE -> "Expired "
+        Status.ACTIVE -> "Will end "
+        else -> ""
+    }
+
+    return when (goal.routine.routine) {
+        Routine.EveryMinute -> "${endState}at ${endDateTime.hour formatToTime endDateTime.minute}"
+        Routine.EveryHour -> "$endState at ${endDateTime.hour formatToTime endDateTime.minute}"
+        Routine.EveryDay, Routine.Weekly -> "$endState at $endDate"
+        Routine.Monthly -> "$endState at ${endDateTime.month.name.title}"
+        Routine.Yearly -> "$endState at ${endDateTime.year}"
+        Routine.SpecifyDayOfTheYear -> "$endState at ${endDateTime.dayOfWeek.name.title}"
+        else -> null
     }
 }
 
 @Composable
-fun SettlementCard(
-    modifier: Modifier,
-    financeEntity: FinanceEntity.Liability
+fun LiabilityCard(
+    modifier: Modifier = Modifier,
+    financeEntity: FinanceEntity.Liability,
+    onNavigate: NavController?
 ) {
     val createdAt = financeEntity.createdAt.toLocalDateTimeUtc()
     val amount = financeEntity.amount.formatToAmount()
@@ -425,67 +427,82 @@ fun SettlementCard(
         animationSpec = tween(1000)
     )
 
-    val donutChartDataCollection = DonutChartDataCollection(
-        listOf(
-            DonutChartData(
-                amount = progressAmount.toFloat(),
-                color = color,
-                title = "Progress"
-            ),
-
-            DonutChartData(
-                amount = remainingAmount.toFloat(),
-                color = Color.LightGray.copy(alpha = 0.3f),
-                title = "Remaining"
+    val donutChartDataCollection = remember(progressAmount, remainingAmount, color) {
+        DonutChartDataCollection(
+            listOf(
+                DonutChartData(
+                    amount = progressAmount.toFloat(),
+                    color = color,
+                    title = "Progress"
+                ),
+                DonutChartData(
+                    amount = remainingAmount.toFloat(),
+                    color = Color.LightGray.copy(alpha = 0.3f),
+                    title = "Remaining"
+                )
             )
         )
-    )
+    }
 
     OutlinedCard(
-        modifier = modifier,
+        modifier = modifier
+            .width(130.dp)
+            .clip(RoundedCornerShape(CORNER_RADIUS)),
         colors = CardDefaults.outlinedCardColors().copy(
             containerColor = color.copy(0.08f)
         ),
+        onClick = {
+            onNavigate?.navigate(
+                LiabilityDetailScreenRouter(financeEntity.id)
+            )
+        },
+        border = BorderStroke(2.dp, color.copy(0.3f))
     ) {
         Column(
             modifier = Modifier
-                .width(130.dp)
-                .padding(5.dp),
-            verticalArrangement = Arrangement.Center,
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             DonutChart(
                 data = donutChartDataCollection,
-                modifier = Modifier.size(50.dp),
-                chartSize = 40.dp,
-                strokeWidth = 4.dp,
-                strokeWidthSelected = 6.dp,
+                modifier = Modifier.size(60.dp),
+                chartSize = 50.dp,
+                strokeWidth = 6.dp,
+                strokeWidthSelected = 8.dp,
                 gapPercentage = 0.06f,
                 strokeCap = StrokeCap.Round,
                 selectionView = {
                     Text(
                         text = "$animatedPercentage%",
-                        style = typography.labelSmall.copy(fontSize = 8.sp)
+                        style = typography.labelMedium.copy(fontWeight = FontWeight.Bold)
                     )
                 }
             )
 
-            Column {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(2.dp)
+            ) {
                 Text(
                     label,
-                    style = typography.titleMedium
+                    style = typography.titleSmall,
+                    maxLines = 1,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                    fontWeight = FontWeight.Bold
                 )
                 Text(
                     createdAt.formattedDate,
-                    style = typography.titleSmall
-                )
-                Text(
-                    createdAt.formattedTime,
-                    style = typography.titleSmall
+                    style = typography.labelSmall,
+                    color = Color.Gray
                 )
                 Text(
                     amount,
-                    style = typography.titleLarge
+                    style = typography.titleMedium,
+                    color = color,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -498,7 +515,17 @@ fun OverviewScreen(
     paddingValues: PaddingValues,
     allDataset: DataState<List<FinanceEntity>>,
     uiState: HomeUiState,
+    onTabClick: (Int) -> Unit = {}
 ) {
+    @Suppress("UNUSED_VARIABLE")
+    val unusedUiState = uiState
+
+    val coupledData = remember(allDataset) {
+        if (allDataset is DataState.Success) {
+            coupleDatasetsWithSettlements(allDataset.data)
+        } else emptyList()
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -506,8 +533,10 @@ fun OverviewScreen(
     ) {
         LazyColumn(
             modifier = Modifier
-                .padding(15.dp)
-                .clip(RoundedCornerShape(6)),
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(vertical = 16.dp)
         ) {
             when (allDataset) {
                 is DataState.Loading -> {
@@ -518,11 +547,12 @@ fun OverviewScreen(
 
                 is DataState.Success -> {
                     val data = allDataset.data
+
                     if (data.isEmpty()) {
                         item {
                             Column(
                                 modifier = Modifier
-                                    .fillParentMaxHeight()
+                                    .fillParentMaxHeight(0.8f)
                                     .fillMaxWidth(),
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 verticalArrangement = Arrangement.Center
@@ -530,223 +560,143 @@ fun OverviewScreen(
                                 Image(
                                     painter = painterResource(R.drawable.empty_list),
                                     contentDescription = "empty list",
-                                    modifier = Modifier.size(60.dp)
+                                    modifier = Modifier.size(120.dp),
+                                    alpha = 0.5f
+                                )
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Text(
+                                    text = "No activity recorded yet",
+                                    style = typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center
                                 )
                                 Text(
-                                    buildString {
-                                        append("No activity recorded\n")
-                                        append("yet")
-                                    },
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.LightGray,
+                                    text = "Start by adding your first transaction!",
+                                    style = typography.bodyMedium,
+                                    color = Color.Gray.copy(alpha = 0.7f),
                                     textAlign = TextAlign.Center
                                 )
                             }
                         }
                     } else {
-                        item { Spacer(modifier = Modifier.height(SPACE)) }
-                        val coupledData = coupleDatasetsWithSettlements(data)
-
-                        coupledData.groupBy {
-                            val type = when (it) {
-                                is DataSettlement.SettlementData -> it.financeEntity.financeType
-                                is DataSettlement.SettlementAdjust -> it.settlement.financeEntity?.financeType
-                                    ?: TransactionType.EARNINGS
-
-                                is DataSettlement.SettlementWithdrawal -> it.withdrawal.financeEntity?.financeType
-                                    ?: TransactionType.EARNINGS
-                            }
-                            if (type is TransactionType || it is DataSettlement.SettlementWithdrawal) "Transactions" else type
-                        }.forEach { (key, list) ->
-                            // Title part
-                            item {
-                                Spacer(modifier = Modifier.height(SPACE))
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth(),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    val headerText = when (val k = key) {
-                                        is String -> k
-                                        is FinanceCategory -> {
-                                            when (k) {
-                                                GoalType -> "${k.text} Fulfillment"
-                                                is LiabilityType -> "${k.text} Settlements"
-                                                else -> k.text
-                                            }
+                        // Recent Activity (Transactions & Withdrawals)
+                        item {
+                            val recentActivity = remember(coupledData) {
+                                coupledData
+                                    .filter {
+                                        it is DataSettlement.SettlementData && it.financeEntity is FinanceEntity.Transaction ||
+                                                it is DataSettlement.SettlementWithdrawal
+                                    }
+                                    .sortedByDescending {
+                                        when (it) {
+                                            is DataSettlement.SettlementData -> it.financeEntity.createdAt
+                                            is DataSettlement.SettlementWithdrawal -> it.withdrawal.createdAt
+                                            else -> com.google.firebase.Timestamp.now()
                                         }
-
-                                        else -> k.toString()
-                                    }
-
-                                    Text(
-                                        text = headerText,
-                                        style = typography.titleMedium,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                }
-                                Spacer(modifier = Modifier.height(SPACE))
-                            }
-
-                            // Goal part
-                            item {
-                                val goals = list
-                                    .filterIsInstance<DataSettlement.SettlementData>()
-                                    .map { it.financeEntity }
-                                    .filterIsInstance<FinanceEntity.Goal>()
-                                    .sortedBy {
-                                        it.routine.deadlineDateTime
-                                    }
-                                    .limit(3)
-                                goals.forEachIndexed { index, goal ->
-                                    GoalCard(
-                                        financeEntityGoal = goal,
-                                        modifier = Modifier
-                                            .background(
-                                                colorResource(id = goal.colorRes)
-                                                    .copy(alpha = 0.1f)
-                                            )
-                                            .clickable {
-                                                onNavigate?.navigate(
-                                                    FulfillmentDetailScreenRouter(goalId = goal.id),
-                                                )
-                                            }
-                                    )
-                                    if (index < goals.size && goals.isNotEmpty()) Spacer(
-                                        modifier = Modifier.height(
-                                            SPACE
-                                        )
-                                    )
-                                }
-                            }
-
-                            // Liabilities part
-                            item {
-                                val liabilities = list
-                                    .filterIsInstance<DataSettlement.SettlementData>()
-                                    .map { it.financeEntity }
-                                    .filterIsInstance<FinanceEntity.Liability>()
-                                    .sortedBy {
-                                        it.createdAt
                                     }
                                     .limit(10)
-
-                                if (liabilities.isNotEmpty()) {
-                                    LazyRow(
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        item {
-                                            liabilities.forEach { liability ->
-                                                SettlementCard(
-                                                    financeEntity = liability,
-                                                    modifier = Modifier
-                                                        .padding(end = SPACE)
-                                                        .clip(RoundedCornerShape(10))
-                                                        .background(
-                                                            colorResource(id = liability.colorRes)
-                                                                .copy(alpha = 0.1f)
-                                                        )
-                                                        .clickable {
-                                                            onNavigate?.navigate(
-                                                                LiabilityDetailScreenRouter(
-                                                                    liabilityId = liability.id
-                                                                ),
-                                                            )
-                                                        }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
                             }
 
-                            // Transactions part (now includes withdrawals and adjustments)
-                            item {
-                                val sortedList = list
-                                    .sortedByDescending { it.createdAt }
-                                    .limit(15)
+                            if (recentActivity.isNotEmpty()) {
+                                SectionHeader(
+                                    title = "Recent Activity",
+                                    onSeeAllClick = { onTabClick(1) } // Go to Today
+                                )
 
-                                if (sortedList.isNotEmpty()) {
-                                    Row(
-                                        Modifier.fillMaxWidth(),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        LazyRow(
-                                            modifier = Modifier
-                                                .clip(
-                                                    RoundedCornerShape(
-                                                        topStart = 50.dp,
-                                                        topEnd = 50.dp,
-                                                        bottomStart = 50.dp,
-                                                        bottomEnd = 50.dp
-                                                    )
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(recentActivity) { activity ->
+                                        when (activity) {
+                                            is DataSettlement.SettlementData -> {
+                                                TransactionCard(
+                                                    financeEntity = activity.financeEntity as FinanceEntity.Transaction,
+                                                    onNavigate = onNavigate
                                                 )
-                                        ) {
-                                            item {
-                                                sortedList.forEachIndexed { index, item ->
-                                                    when (item) {
-                                                        is DataSettlement.SettlementData -> {
-                                                            if (item.financeEntity is FinanceEntity.Transaction) {
-                                                                TransactionCard(
-                                                                    modifier = Modifier
-                                                                        .animateItem()
-                                                                        .clickable {
-                                                                            onNavigate?.navigate(
-                                                                                TransactionDetailScreenRouter(
-                                                                                    transactionId = item.financeEntity.id
-                                                                                )
-                                                                            )
-                                                                        },
-                                                                    financeEntity = item.financeEntity
-                                                                )
-
-                                                                if (index < sortedList.size - 1)
-                                                                    Spacer(
-                                                                        modifier = Modifier.width(
-                                                                            SPACE
-                                                                        )
-                                                                    )
-                                                            }
-                                                        }
-
-                                                        is DataSettlement.SettlementWithdrawal -> {
-//                                                            WithdrawalCard(
-//                                                                modifier = Modifier
-//                                                                    .padding(end = SPACE)
-//                                                                    .animateItem()
-//                                                                    .clickable {
-//                                                                        onNavigate?.navigate(
-//                                                                            TransactionDetailScreenRouter(
-//                                                                                transactionId = item.withdrawal.withdrawalId
-//                                                                            )
-//                                                                        )
-//                                                                    },
-//                                                                withdrawal = item.withdrawal
-//                                                            )
-                                                        }
-
-                                                        is DataSettlement.SettlementAdjust -> {
-                                                            // Optional: show adjustment cards too
-                                                        }
-                                                    }
-                                                }
                                             }
+
+                                            is DataSettlement.SettlementWithdrawal -> {
+                                                WithdrawalCard(
+                                                    withdrawal = activity.withdrawal
+                                                )
+                                            }
+
+                                            else -> {}
                                         }
                                     }
                                 }
                             }
                         }
-                        item { Spacer(modifier = Modifier.height(SPACE)) }
+
+                        // Goals
+                        item {
+                            val goals = remember(data) {
+                                data.filterIsInstance<FinanceEntity.Goal>()
+                                    .sortedBy { it.routine.deadlineDateTime }
+                                    .limit(3)
+                            }
+
+                            if (goals.isNotEmpty()) {
+                                SectionHeader(
+                                    title = "Active Goals",
+                                    onSeeAllClick = { /* Maybe expand list or stay here */ }
+                                )
+
+                                Column(
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                ) {
+                                    goals.forEach { goal ->
+                                        GoalCard(
+                                            financeEntityGoal = goal,
+                                            onNavigate = onNavigate
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        // Liabilities
+                        item {
+                            val liabilities = remember(data) {
+                                data.filterIsInstance<FinanceEntity.Liability>()
+                                    .sortedByDescending { it.createdAt }
+                                    .limit(5)
+                            }
+
+                            if (liabilities.isNotEmpty()) {
+                                SectionHeader(
+                                    title = "Liabilities",
+                                    onSeeAllClick = { onTabClick(3) } // Go to All
+                                )
+
+                                LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    items(liabilities, key = { it.id }) { liability ->
+                                        LiabilityCard(
+                                            financeEntity = liability,
+                                            onNavigate = onNavigate
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
                 is DataState.Error -> {
+                    item {
+                        Text(
+                            text = "Something went wrong. Please try again.",
+                            color = Color.Red,
+                            modifier = Modifier.padding(16.dp)
+                        )
+                    }
                 }
             }
-
-            item { Spacer(modifier = Modifier.height(SPACE)) }
         }
     }
 }
-

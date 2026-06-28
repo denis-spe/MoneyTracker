@@ -3,6 +3,7 @@ package com.example.moneytracker.ui.homeScreen.todayScreen
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -43,8 +44,10 @@ fun TodayScreen(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
-            .padding(horizontal = 10.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+            .padding(horizontal = 16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(vertical = 16.dp),
     ) {
         statArea(
             donutChartDataCollection = donutChartDataCollection,
@@ -56,7 +59,7 @@ fun TodayScreen(
         stickyHeader {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(0.95f)
+                    .fillMaxWidth()
                     .background(MaterialTheme.colorScheme.background)
             ) {
                 ItemListAreaSort(

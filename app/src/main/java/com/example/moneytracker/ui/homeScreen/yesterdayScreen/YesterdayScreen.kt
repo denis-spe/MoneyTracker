@@ -9,12 +9,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
@@ -23,23 +24,24 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.charts.collections.ChartData
-import com.example.moneytracker.ui.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
 import com.example.moneytracker.ui.theme.StewardTheme
+
+private val CORNER_RADIUS = 16.dp
 
 @Composable
 fun YesterdayScreen(
@@ -52,7 +54,7 @@ fun YesterdayScreen(
 ) {
     val userColor = StewardTheme.colors.secondarySurface
     val cardColor = CardDefaults.cardColors().copy(
-        containerColor = userColor.copy(0.4f)
+        containerColor = userColor.copy(0.4f),
     )
 
     val surfaceColor = MaterialTheme.colorScheme.surface
@@ -63,22 +65,24 @@ fun YesterdayScreen(
 
     LazyColumn(
         modifier = Modifier
+            .fillMaxSize()
             .padding(paddingValues)
-            .padding(horizontal = 10.dp)
-            .fillMaxWidth()
-            .fillMaxHeight(),
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(vertical = 16.dp)
     ) {
         item {
             Card(
                 modifier = Modifier
-                    .fillMaxSize(),
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(CORNER_RADIUS)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
                 colors = CardDefaults.cardColors(containerColor = blendedColor)
             ) {
                 YesterdayStatArea(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(10.dp),
+                        .padding(16.dp),
                     chartData = yesterdayChartDataState,
                     stats = yesterdayStatsDataState
                 )
@@ -86,21 +90,15 @@ fun YesterdayScreen(
         }
 
         item {
-            Spacer(modifier = Modifier.size(10.dp))
-        }
-
-        item {
             Row(
                 horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 10.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    "Yesterday's Activity",
-                    fontSize = 18.sp,
-                    fontWeight = FONT_WEIGHT,
+                    text = "Yesterday's Activity",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
                 )
             }
         }
@@ -109,8 +107,9 @@ fun YesterdayScreen(
             when (sortAbleDataSettlementDataState) {
                 is DataState.Error -> {
                     Text(
-                        "Failed to load data",
+                        text = "Failed to load data",
                         color = Color.Red,
+                        modifier = Modifier.padding(16.dp)
                     )
                 }
 
@@ -119,14 +118,14 @@ fun YesterdayScreen(
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(bottom = 10.dp),
+                            .clip(RoundedCornerShape(CORNER_RADIUS)),
                         colors = cardColor
                     ) {
                         Column(
                             modifier = Modifier
-                                .padding(10.dp)
+                                .padding(16.dp)
                                 .fillMaxWidth(),
-                            verticalArrangement = Arrangement.Center,
+                            verticalArrangement = Arrangement.spacedBy(12.dp),
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             repeat(7) {
@@ -144,7 +143,7 @@ fun YesterdayScreen(
                     if (data.isEmpty()) {
                         Column(
                             modifier = Modifier
-                                .fillParentMaxHeight(0.4f)
+                                .fillParentMaxHeight(0.6f)
                                 .fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
@@ -152,15 +151,15 @@ fun YesterdayScreen(
                             Image(
                                 painter = painterResource(R.drawable.empty_list),
                                 contentDescription = "empty list",
-                                modifier = Modifier.size(60.dp)
+                                modifier = Modifier.size(120.dp),
+                                alpha = 0.5f
                             )
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                buildString {
-                                    append("No activity recorded\n")
-                                    append("for yesterday")
-                                },
+                                text = "No activity recorded for yesterday",
+                                style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.LightGray,
+                                color = Color.Gray,
                                 textAlign = TextAlign.Center
                             )
                         }

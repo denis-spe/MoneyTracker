@@ -1,11 +1,9 @@
 package com.example.moneytracker.ui.homeScreen.overviewScreen
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -20,22 +18,36 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.helper.shimmerEffect
 import com.example.moneytracker.ui.dataAddition.ICON_SIZE
 
 
-private val SPACE = 10.dp
+private val SPACE = 12.dp
+private val CORNER_RADIUS = 16.dp
 
 @Composable
 fun HeaderShimmer(modifier: Modifier = Modifier) {
-    Box(
+    Row(
         modifier = modifier
-            .width(150.dp)
-            .height(24.dp)
-            .shimmerEffect(shape = RoundedCornerShape(4.dp))
-    )
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .width(150.dp)
+                .height(24.dp)
+                .shimmerEffect(shape = RoundedCornerShape(4.dp))
+        )
+        Box(
+            modifier = Modifier
+                .width(60.dp)
+                .height(24.dp)
+                .shimmerEffect(shape = RoundedCornerShape(4.dp))
+        )
+    }
 }
 
 @Composable
@@ -44,25 +56,25 @@ fun TransactionCardShimmer(
 ) {
     Card(
         modifier = modifier
-            .clip(RoundedCornerShape(50))
+            .width(170.dp)
+            .clip(RoundedCornerShape(CORNER_RADIUS))
     ) {
         Row(
             modifier = Modifier
-                .width(165.dp)
-                .padding(5.dp),
+                .fillMaxWidth()
+                .padding(12.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Start
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Column(
-                modifier = Modifier
-                    .padding(10.dp)
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Box(
                     modifier = Modifier
                         .size(ICON_SIZE)
                         .shimmerEffect(shape = CircleShape)
                 )
-                Spacer(modifier = Modifier.height(2.dp))
                 Box(
                     modifier = Modifier
                         .size(ICON_SIZE)
@@ -70,25 +82,25 @@ fun TransactionCardShimmer(
                 )
             }
 
-            Column {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Box(
                     modifier = Modifier
                         .width(60.dp)
                         .height(14.dp)
                         .shimmerEffect(shape = RoundedCornerShape(4.dp))
                 )
-                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
                         .width(40.dp)
                         .height(12.dp)
                         .shimmerEffect(shape = RoundedCornerShape(4.dp))
                 )
-                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
                         .width(50.dp)
-                        .height(14.dp)
+                        .height(18.dp)
                         .shimmerEffect(shape = RoundedCornerShape(4.dp))
                 )
             }
@@ -100,12 +112,10 @@ fun TransactionCardShimmer(
 fun GoalCardShimmer(
     modifier: Modifier = Modifier,
 ) {
-    Column(
+    Card(
         modifier = modifier
             .fillMaxWidth()
-            .background(Color.LightGray.copy(alpha = 0.05f)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .clip(RoundedCornerShape(CORNER_RADIUS))
     ) {
         ListItem(
             headlineContent = {
@@ -117,25 +127,39 @@ fun GoalCardShimmer(
                 )
             },
             supportingContent = {
-                Box(
-                    modifier = Modifier
-                        .width(80.dp)
-                        .height(24.dp)
-                        .padding(top = 4.dp)
-                        .shimmerEffect(shape = RoundedCornerShape(4.dp))
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box(
+                        modifier = Modifier
+                            .width(80.dp)
+                            .height(24.dp)
+                            .padding(top = 4.dp)
+                            .shimmerEffect(shape = RoundedCornerShape(4.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(150.dp)
+                            .height(12.dp)
+                            .shimmerEffect(shape = RoundedCornerShape(4.dp))
+                    )
+                    Box(
+                        modifier = Modifier
+                            .width(100.dp)
+                            .height(12.dp)
+                            .shimmerEffect(shape = RoundedCornerShape(4.dp))
+                    )
+                }
             },
             leadingContent = {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(60.dp)
                         .shimmerEffect(shape = CircleShape)
                 )
             },
             trailingContent = {
                 Column(
                     horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.Center
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Box(
                         modifier = Modifier
@@ -143,7 +167,6 @@ fun GoalCardShimmer(
                             .height(14.dp)
                             .shimmerEffect(shape = RoundedCornerShape(4.dp))
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
                     Box(
                         modifier = Modifier
                             .width(70.dp)
@@ -154,75 +177,48 @@ fun GoalCardShimmer(
             },
             modifier = Modifier.fillMaxWidth()
         )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(180.dp)
-                    .height(12.dp)
-                    .shimmerEffect(shape = RoundedCornerShape(4.dp))
-            )
-            Spacer(modifier = Modifier.height(4.dp))
-            Box(
-                modifier = Modifier
-                    .width(140.dp)
-                    .height(12.dp)
-                    .shimmerEffect(shape = RoundedCornerShape(4.dp))
-            )
-        }
     }
 }
 
 @Composable
-fun SettlementCardShimmer(
+fun LiabilityCardShimmer(
     modifier: Modifier = Modifier,
 ) {
     Card(
         modifier = modifier
-            .width(130.dp)
-            .clip(RoundedCornerShape(10)),
+            .width(150.dp)
+            .clip(RoundedCornerShape(CORNER_RADIUS))
     ) {
         Column(
             modifier = Modifier
-                .padding(10.dp),
-            verticalArrangement = Arrangement.Center,
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Box(
                 modifier = Modifier
-                    .size(50.dp)
+                    .size(60.dp)
                     .shimmerEffect(shape = CircleShape)
             )
 
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                horizontalAlignment = Alignment.Start,
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Box(
                     modifier = Modifier
                         .width(80.dp)
                         .height(16.dp)
                         .shimmerEffect(shape = RoundedCornerShape(4.dp))
                 )
-                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
                         .width(60.dp)
                         .height(12.dp)
                         .shimmerEffect(shape = RoundedCornerShape(4.dp))
                 )
-                Spacer(modifier = Modifier.height(4.dp))
-                Box(
-                    modifier = Modifier
-                        .width(60.dp)
-                        .height(12.dp)
-                        .shimmerEffect(shape = RoundedCornerShape(4.dp))
-                )
-                Spacer(modifier = Modifier.height(4.dp))
                 Box(
                     modifier = Modifier
                         .width(70.dp)
@@ -236,44 +232,43 @@ fun SettlementCardShimmer(
 
 @Composable
 fun OverviewShimmer() {
-    Column {
-        repeat(3) {
-            Spacer(modifier = Modifier.height(SPACE))
+    Column(
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        // Recent Activity Shimmer
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             HeaderShimmer()
-            Spacer(modifier = Modifier.height(SPACE))
-
-            when (it) {
-                0 -> { // Transactions
-                    LazyRow(modifier = Modifier.fillMaxWidth()) {
-                        items(3) {
-                            TransactionCardShimmer(
-                                modifier = Modifier.padding(end = SPACE)
-                            )
-                        }
-                    }
-                }
-
-                1 -> { // Goals
-                    repeat(2) {
-                        GoalCardShimmer(
-                            modifier = Modifier
-                                .padding(bottom = SPACE)
-                                .clip(RoundedCornerShape(10))
-                        )
-                    }
-                }
-
-                2 -> { // Settlements
-                    LazyRow(modifier = Modifier.fillMaxWidth()) {
-                        items(3) {
-                            SettlementCardShimmer(
-                                modifier = Modifier.padding(end = SPACE)
-                            )
-                        }
-                    }
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(3) {
+                    TransactionCardShimmer()
                 }
             }
-            Spacer(modifier = Modifier.height(SPACE))
+        }
+
+        // Active Goals Shimmer
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            HeaderShimmer()
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                repeat(2) {
+                    GoalCardShimmer()
+                }
+            }
+        }
+
+        // Liabilities Shimmer
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            HeaderShimmer()
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                items(3) {
+                    LiabilityCardShimmer()
+                }
+            }
         }
     }
 }

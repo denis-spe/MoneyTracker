@@ -37,7 +37,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.rounded.Summarize
+import androidx.compose.material.icons.twotone.Insights
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -660,7 +660,7 @@ fun GoalSummaryCard(
                             imageVector = when (pager.currentPage) {
                                 0 -> Icons.Outlined.Info
                                 1 -> Icons.AutoMirrored.Filled.ShowChart
-                                2 -> Icons.Rounded.Summarize
+                                2 -> Icons.TwoTone.Insights
                                 else -> Icons.Default.Info
                             },
                             contentDescription = "left arrow"

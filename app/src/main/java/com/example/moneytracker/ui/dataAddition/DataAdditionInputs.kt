@@ -1,6 +1,7 @@
 // Praise be the LORD, For the LORD is good and his mercy endures forever
 package com.example.moneytracker.ui.dataAddition
 
+
 import android.util.Log
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -9,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -56,12 +58,13 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerDefaults
@@ -81,6 +84,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
@@ -123,7 +127,6 @@ import com.example.moneytracker.ui.components.CustomAmountKeyBoard
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.launch
-import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.atTime
 import kotlinx.datetime.number
@@ -210,7 +213,7 @@ fun ModelDrawerDescriptionTextField(
     displayText: MutableState<String>,
     placeholder: String,
     colorResId: Int,
-    textLength: Int = 300, 
+    textLength: Int = 300,
     wasSuccess: MutableState<State>? = null,
     lineLimits: TextFieldLineLimits = TextFieldLineLimits.MultiLine(minHeightInLines = 8),
 ) {
@@ -1205,10 +1208,58 @@ fun SettlementField(
 }
 
 @Composable
+fun DaySelectionComponent(
+    selectedDays: List<Int>,
+    onDaysSelected: (List<Int>) -> Unit,
+    color: Color
+) {
+    val days = listOf("M", "T", "W", "T", "F", "S", "S")
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        days.forEachIndexed { index, day ->
+            val dayValue = index + 1
+            val isSelected = selectedDays.contains(dayValue)
+
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(if (isSelected) color else color.copy(alpha = 0.1f))
+                    .clickable {
+                        val newList = if (isSelected) {
+                            selectedDays - dayValue
+                        } else {
+                            selectedDays + dayValue
+                        }
+                        onDaysSelected(newList.sorted())
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = day,
+                    color = if (isSelected) Color.White else {
+                        if (index == 5) Color(0xFF13AEF3) else color
+                    },
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+    }
+}
+
+@Composable
 fun RepeatableInputComponent(
     repeatByState: MutableState<RoutineData>,
     routine: Routine,
-    lastText: String
+    lastText: String,
+    color: Color = Color.Unspecified
 ) {
     val state = rememberTextFieldState(initialText = "1")
 
@@ -1221,57 +1272,144 @@ fun RepeatableInputComponent(
         }
     }
 
-    Row(
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier.fillMaxWidth()
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
-            horizontalArrangement = Arrangement.Start,
+            horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth(0.9f)
+            modifier = Modifier.fillMaxWidth()
         ) {
-            RadioButton(
-                selected = repeatByState.value.routine == routine,
-                onClick = {
-                    repeatByState.value = repeatByState.value.copy(
-                        routine = routine,
-                        routineCount = state.text.toString().toIntOrNull() ?: 0
-                    )
-                }
-            )
-
-
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                if (routine != Routine.Nothing) {
-                    Text("Every")
-                    TextField(
-                        state = state,
+
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.Start,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Row(
                         modifier = Modifier
-                            .width(60.dp)
-                            .onFocusChanged {
-                                if (it.isFocused) {
-                                    repeatByState.value =
-                                        repeatByState.value.copy(
-                                            routine = routine,
-                                            routineCount = state.text.toString().toIntOrNull()
-                                                ?: 0
-                                        )
-                                }
+                            .fillMaxWidth()
+                            .clickable {
+                                repeatByState.value = repeatByState.value.copy(
+                                    routine = routine,
+                                    routineCount = state.text.toString().toIntOrNull() ?: 0
+                                )
                             },
-                        inputTransformation = InputTransformation
-                            .maxLength(3),
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done
-                        ),
-                        lineLimits = TextFieldLineLimits.SingleLine,
-                    )
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        RadioButton(
+                            selected = repeatByState.value.routine == routine,
+                            onClick = {
+                                repeatByState.value = repeatByState.value.copy(
+                                    routine = routine,
+                                    routineCount = state.text.toString().toIntOrNull() ?: 0
+                                )
+                            },
+                            colors = RadioButtonDefaults.colors().copy(
+                                selectedColor = color,
+                                unselectedColor = Color.Gray
+                            )
+                        )
+
+                        Text(
+                            lastText,
+                            color = color,
+                            fontSize = integerResource(R.integer.modelDrawerFontSize).sp
+                        )
+
+                    }
+
+                    Row(
+                        horizontalArrangement = Arrangement.Start,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 50.dp)
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.Start,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            if (
+                                routine != Routine.Nothing && routine != Routine.SpecificDayOfTheWeek
+                                && repeatByState.value.routine == routine
+                            ) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(5.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    OutlinedTextField(
+                                        state = state,
+                                        textStyle = TextStyle(
+                                            color = color,
+                                            textAlign = TextAlign.Center,
+                                            fontWeight = FontWeight.Bold,
+                                            fontSize = integerResource(R.integer.modelDrawerFontSize).sp
+                                        ),
+                                        colors = TextFieldDefaults.colors().copy(
+                                            focusedTextColor = color,
+                                            unfocusedTextColor = Color.Gray,
+                                            cursorColor = color,
+                                            focusedIndicatorColor = color,
+                                            unfocusedIndicatorColor = Color.Gray,
+                                        ),
+                                        modifier = Modifier
+                                            .width(60.dp)
+                                            .onFocusChanged {
+                                                if (it.isFocused) {
+                                                    repeatByState.value =
+                                                        repeatByState.value.copy(
+                                                            routine = routine,
+                                                            routineCount = state.text.toString()
+                                                                .toIntOrNull()
+                                                                ?: 0
+                                                        )
+                                                }
+                                            },
+                                        inputTransformation = InputTransformation
+                                            .maxLength(3),
+                                        keyboardOptions = KeyboardOptions(
+                                            keyboardType = KeyboardType.Number,
+                                            imeAction = ImeAction.Done
+                                        ),
+                                        lineLimits = TextFieldLineLimits.SingleLine,
+                                    )
+                                    Text(routine.text, color = Color.Gray, fontSize = 13.sp)
+                                }
+                            } else {
+                                if (
+                                    routine == Routine.SpecificDayOfTheWeek &&
+                                    repeatByState.value.routine == Routine.SpecificDayOfTheWeek
+                                ) {
+
+                                    DaySelectionComponent(
+                                        selectedDays = repeatByState.value.specificDays,
+                                        onDaysSelected = {
+                                            repeatByState.value =
+                                                repeatByState.value.copy(specificDays = it)
+                                        },
+                                        color = color
+                                    )
+
+                                }
+                            }
+
+                            if (routine != Routine.Nothing) {
+                                HorizontalDivider(
+                                    modifier = Modifier.padding(top = 5.dp)
+                                )
+                            }
+                        }
+                    }
                 }
-                Text(lastText)
             }
         }
     }
@@ -1315,7 +1453,7 @@ fun RepeatableTransaction(
                 Routine.Monthly -> now.with(TemporalAdjusters.lastDayOfMonth())
                     .plusMonths(repeatByState.value.routineCount.toLong() - 1)
 
-                Routine.SpecifyDayOfTheWeek -> {
+                Routine.SpecifyDayOfTheYear -> {
                     val safeCount = if (repeatByState.value.routineCount <= 0) 1L
                     else repeatByState.value.routineCount.toLong()
                     val targetDay = java.time.DayOfWeek.of(((safeCount + 5) % 7 + 1).toInt())
@@ -1327,6 +1465,22 @@ fun RepeatableTransaction(
                     next
                 }
 
+                Routine.SpecificDayOfTheWeek -> {
+                    if (repeatByState.value.specificDays.isEmpty()) {
+                        now.plusDays(1)
+                    } else {
+                        val todayDay = now.dayOfWeek.value
+                        val sortedDays = repeatByState.value.specificDays.sorted()
+                        val nextDay = sortedDays.firstOrNull { it > todayDay } ?: sortedDays.first()
+                        val daysToAdd = if (nextDay > todayDay) {
+                            (nextDay - todayDay).toLong()
+                        } else {
+                            (7 - todayDay + nextDay).toLong()
+                        }
+                        now.plusDays(daysToAdd)
+                    }
+                }
+
                 else -> now
             }.toLocalDateTime().toKotlinLocalDateTime()
 
@@ -1335,7 +1489,8 @@ fun RepeatableTransaction(
                     Routine.Weekly,
                     Routine.Monthly,
                     Routine.Yearly,
-                    Routine.SpecifyDayOfTheWeek
+                    Routine.SpecifyDayOfTheYear,
+                    Routine.SpecificDayOfTheWeek
                 )
             ) {
                 startLocalDateTimeState.value.toMidnight()
@@ -1347,7 +1502,8 @@ fun RepeatableTransaction(
                     Routine.Weekly,
                     Routine.Monthly,
                     Routine.Yearly,
-                    Routine.SpecifyDayOfTheWeek
+                    Routine.SpecifyDayOfTheYear,
+                    Routine.SpecificDayOfTheWeek
                 )
             ) {
                 endLocalDateTimeState.value.toMidnight()
@@ -1360,10 +1516,6 @@ fun RepeatableTransaction(
     if (repeatByState.value.routine != Routine.Nothing) {
         goalDateTimeWarningState.value = GoalWarning.CONSECUTIVE
     }
-
-
-    DayOfWeek.entries
-    LocalDate.now()
 
     val color = colorResource(dataType.color)
     val fontSize = integerResource(R.integer.modelDrawerFontSize).sp
@@ -1383,7 +1535,8 @@ fun RepeatableTransaction(
             },
         ) {
             Card(
-                modifier = DIALOG_CARD_MODIFIER
+                modifier = Modifier
+                    .fillMaxWidth(0.96f)
                     .pointerInput(Unit) {
                         detectTapGestures(
                             onTap = {
@@ -1394,22 +1547,34 @@ fun RepeatableTransaction(
             ) {
                 Column(
                     verticalArrangement = Arrangement.SpaceBetween,
-                    horizontalAlignment = Alignment.CenterHorizontally
-
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.padding(top = 10.dp)
                 ) {
-                    Text(
-                        "Specify when to reset the goal",
-                        textAlign = TextAlign.Center,
-                        fontWeight = FONT_WEIGHT,
-                        modifier = Modifier.padding(vertical = 10.dp, horizontal = 10.dp)
-                    )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 10.dp))
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 10.dp)
+                    ) {
+                        Text(
+                            "Recurrence",
+                            textAlign = TextAlign.Center,
+                            fontWeight = FONT_WEIGHT,
+                        )
 
+                        Text(
+                            "Define the repeating schedule",
+                            textAlign = TextAlign.Center,
+                            fontSize = 13.sp,
+                        )
+                    }
 
                     LazyColumn(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(10.dp)
+                            .clip(RoundedCornerShape(10.dp))
+                            .padding(5.dp)
                             .selectableGroup(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
@@ -1420,52 +1585,58 @@ fun RepeatableTransaction(
                                     repeatByState = repeatBy,
                                     routine = it,
                                     lastText = when (it) {
-                                        Routine.EveryMinute -> "minutes"
-                                        Routine.EveryHour -> "hours"
-                                        Routine.EveryDay -> "days"
-                                        Routine.Weekly -> "weeks"
-                                        Routine.Monthly -> "months"
-                                        Routine.Yearly -> "years"
-                                        Routine.SpecifyDayOfTheWeek -> "days"
+                                        Routine.EveryMinute -> "Every minutes"
+                                        Routine.EveryHour -> "Every hours"
+                                        Routine.EveryDay -> "Every days"
+                                        Routine.Weekly -> "Every weeks"
+                                        Routine.Monthly -> "Every months"
+                                        Routine.Yearly -> "Every years"
+                                        Routine.SpecifyDayOfTheYear -> "Specify day of the year"
+                                        Routine.SpecificDayOfTheWeek -> "Specify days of the week"
                                         else -> "Don't repeat"
-                                    }
+                                    },
+                                    color = color
                                 )
                             }
                         }
-                    }
 
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceEvenly,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        TextButton(
-                            onClick = {},
-                            colors = ButtonDefaults.textButtonColors().copy(
-                                contentColor = color
-                            )
-                        ) {
-                            Text(
-                                "Cancel",
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
+                        item(key = "keys") {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                TextButton(
+                                    onClick = {
+                                        onDialogShow.value = false
+                                    },
+                                    colors = ButtonDefaults.textButtonColors().copy(
+                                        contentColor = color
+                                    )
+                                ) {
+                                    Text(
+                                        "Cancel",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
 
-                        Text("|", color = color)
+                                Text("|", color = color)
 
-                        TextButton(
-                            onClick = {
-                                repeatByState.value = repeatBy.value
-                                onDialogShow.value = false
-                            },
-                            colors = ButtonDefaults.textButtonColors().copy(
-                                contentColor = color
-                            )
-                        ) {
-                            Text(
-                                "Use",
-                                fontWeight = FontWeight.Bold
-                            )
+                                TextButton(
+                                    onClick = {
+                                        repeatByState.value = repeatBy.value
+                                        onDialogShow.value = false
+                                    },
+                                    colors = ButtonDefaults.textButtonColors().copy(
+                                        contentColor = color
+                                    )
+                                ) {
+                                    Text(
+                                        "Use",
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
+                            }
                         }
                     }
                 }

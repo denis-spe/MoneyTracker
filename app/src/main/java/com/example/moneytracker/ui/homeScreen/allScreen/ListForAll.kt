@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -57,8 +58,11 @@ fun ListForAll(
     userViewModel: UserViewModel,
     dataSettlements: DataState<List<DataSettlement>>,
 ) {
-    LazyColumn {
-        item { Spacer(modifier = Modifier.size(10.dp)) }
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        contentPadding = PaddingValues(vertical = 12.dp)
+    ) {
         when (dataSettlements) {
             is DataState.Success -> {
                 val data = dataSettlements.data
@@ -67,7 +71,7 @@ fun ListForAll(
                     item {
                         Column(
                             modifier = Modifier
-                                .fillParentMaxHeight()
+                                .fillParentMaxHeight(0.8f)
                                 .fillMaxWidth(),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
@@ -75,15 +79,21 @@ fun ListForAll(
                             Image(
                                 painter = painterResource(R.drawable.empty_list),
                                 contentDescription = "empty list",
-                                modifier = Modifier.size(60.dp)
+                                modifier = Modifier.size(120.dp),
+                                alpha = 0.5f
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "No activity recorded yet",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center
                             )
                             Text(
-                                buildString {
-                                    append("No activity recorded\n")
-                                    append("for this period")
-                                },
-                                fontWeight = FontWeight.Bold,
-                                color = Color.LightGray,
+                                text = "Start by adding your first transaction!",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray.copy(alpha = 0.7f),
                                 textAlign = TextAlign.Center
                             )
                         }
@@ -119,13 +129,15 @@ fun ListForAll(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
-                        Text("Error: $error")
+                        Text(
+                            text = "Error: $error",
+                            color = Color.Red,
+                            modifier = Modifier.padding(16.dp)
+                        )
                     }
                 }
             }
         }
-
-        item { Spacer(modifier = Modifier.size(10.dp)) }
     }
 }
 

@@ -77,7 +77,7 @@ class RoutineFrequencyTest {
         val baseMillis = now.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
 
         val routineData =
-            RoutineData(routine = Routine.SpecifyDayOfTheWeek, routineCount = 1) // 1 = Sunday
+            RoutineData(routine = Routine.SpecifyDayOfTheYear, routineCount = 1) // 1 = Sunday
         val triggerMillis = routineData.getTriggerMillisFrom(baseMillis)
 
         val triggerDate = LocalDateTime.ofInstant(

@@ -169,9 +169,16 @@ fun HomeScreen(
 
                     0 -> {
 
+                        val scope = rememberCoroutineScope()
+
                         FulfillmentScreenRoute(
                             paddingValues = paddingValues,
-                            onNavigate = onNavigate
+                            onNavigate = onNavigate,
+                            onTabClick = { index ->
+                                scope.launch {
+                                    pagerState.animateScrollToPage(index)
+                                }
+                            }
                         )
                     }
 
