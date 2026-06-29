@@ -1662,12 +1662,12 @@ fun OnUpdate(
 
 @Composable
 fun Receipt(
+    viewModel: HomeViewModel,
     dataSettlement: DataSettlement,
     onShowDialog: MutableState<Boolean>
 ) {
     val onShowDeleteDialog = remember { mutableStateOf(false) }
     val isUpdateModelBottonOpen = remember { mutableStateOf(false) }
-    val viewModel: HomeViewModel = hiltViewModel<HomeViewModel>()
     val userViewModel: UserViewModel = hiltViewModel<UserViewModel>()
 
     Dialog(

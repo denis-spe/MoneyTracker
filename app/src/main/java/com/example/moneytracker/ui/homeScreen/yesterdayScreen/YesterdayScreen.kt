@@ -164,12 +164,17 @@ fun YesterdayScreen(
                             )
                         }
                     } else {
-                        YesterdayItems(
-                            modifier = Modifier.animateItem(),
-                            dataSettlements = data,
-                            viewModel = viewModel,
-                            userViewModel = userViewModel
-                        )
+                        data.forEach { settlement ->
+                            YesterdayItem(
+                                modifier = Modifier
+                                    .animateItem()
+                                    .fillMaxWidth(),
+                                dataSettlement = settlement,
+                                showDivider = data.indexOf(settlement) < data.size - 1,
+                                viewModel = viewModel,
+                                userViewModel = userViewModel,
+                            )
+                        }
                     }
                 }
             }

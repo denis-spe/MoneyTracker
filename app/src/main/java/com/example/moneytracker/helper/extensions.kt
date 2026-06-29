@@ -1235,6 +1235,40 @@ val Timestamp.formatToDateTime: String
         return "$day $month $year, $hour:$minute"
     }
 
+val Timestamp.formatToDate: String
+    get() {
+        val dateTime = toLocalDateTimeUtc()
+        val day = dateTime.day.addZeroIfLessThenTen
+        val month = dateTime.month.name.take(3).title
+        val year = dateTime.year
+        return "$day $month $year"
+    }
+
+val Timestamp.formatToTime: String
+    get() {
+        val dateTime = toLocalDateTimeUtc()
+        val hour = dateTime.hour.addZeroIfLessThenTen
+        val minute = dateTime.minute.addZeroIfLessThenTen
+        return "$hour:$minute"
+    }
+
+val Timestamp.monthName: String
+    get() = this.toLocalDateTimeUtc().month.name.take(3).title
+
+val Timestamp.weekDay: String
+    get() = this.toLocalDateTimeUtc().dayOfWeek.name.take(3).title
+
+val Timestamp.year: String
+    get() = this.toLocalDateTimeUtc().year.toString()
+
+
+fun String.limitLength(maxLength: Int): String {
+    return if (this.length > maxLength) {
+        this.substring(0, maxLength) + "..."
+    } else {
+        this
+    }
+}
 
 fun Long.formatToAmount(): String {
     return this.toDouble().formatToAmount()

@@ -7,8 +7,11 @@ package com.example.moneytracker.ui.dataAddition
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
@@ -22,6 +25,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material3.BottomSheetDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -52,7 +56,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataType
@@ -79,6 +82,7 @@ import com.example.moneytracker.helper.toEpochMilli
 import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toMidnight
 import com.example.moneytracker.ui.UserViewModel
+import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import kotlinx.datetime.LocalDateTime
@@ -132,12 +136,48 @@ fun DataAdditionModelDrawer(
                         listOf(GoalType)
             }
 
-            DataAdditionModelDrawerContent(
-                viewModel = viewModel,
-                userViewModel = userViewModel,
-                entries = entries,
-                adjustFinance = adjustFinance,
-            )
+            when (val adjust = adjustFinance) {
+                is DataState.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .fillMaxHeight(0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+
+                is DataState.Success -> {
+                    DataAdditionModelDrawerContent(
+                        viewModel = viewModel,
+                        userViewModel = userViewModel,
+                        entries = entries,
+                        adjustFinance = adjust.data,
+                    )
+                }
+
+                is DataState.Error -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .fillMaxHeight(0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "Some thing went wrong")
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -165,12 +205,48 @@ fun DataAdditionModelDrawer(
                 }
             }
 
-            DataAdditionModelDrawerContent(
-                viewModel = viewModel,
-                userViewModel = userViewModel,
-                entries = entries,
-                adjustFinance = adjustFinance,
-            )
+            when (val adjust = adjustFinance) {
+                is DataState.Loading -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .fillMaxHeight(0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
+                }
+
+                is DataState.Success -> {
+                    DataAdditionModelDrawerContent(
+                        viewModel = viewModel,
+                        userViewModel = userViewModel,
+                        entries = entries,
+                        adjustFinance = adjust.data,
+                    )
+                }
+
+                is DataState.Error -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .fillMaxHeight(0.5f)
+                    ) {
+                        Column(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            Text(text = "Some thing went wrong")
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -275,7 +351,8 @@ fun <T> DataAdditionModelDrawerContent(
                             TransactionType.EXPENSES -> "Spent"
                         },
 
-                        userViewModel = userViewModel
+                        userViewModel = userViewModel,
+                        viewModel = viewModel
                     ) {
 
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
@@ -299,7 +376,8 @@ fun <T> DataAdditionModelDrawerContent(
                             LiabilityType.LOAN -> "Lent"
                         },
 
-                        userViewModel = userViewModel
+                        userViewModel = userViewModel,
+                        viewModel = viewModel
                     ) {
 
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
@@ -314,8 +392,7 @@ fun <T> DataAdditionModelDrawerContent(
                         placeholder = "Goal for",
 
                         buttonText = "Start Goal",
-
-                        userViewModel = userViewModel
+                        viewModel = viewModel
                     ) {
 
                         viewModel.updateOnDatasetModelBottomSheetShow(false)
@@ -330,9 +407,7 @@ fun <T> DataAdditionModelDrawerContent(
                         type = LiabilityType.LOAN,
 
                         settlementType = SettlementType.LENT_REPAY,
-
-                        userViewModel = userViewModel,
-
+                        viewModel = viewModel,
                         adjustFinance = adjustFinance
                     ) {
 
@@ -350,7 +425,7 @@ fun <T> DataAdditionModelDrawerContent(
                         settlementType = SettlementType.DEBT_REPAY,
 
 
-                        userViewModel = userViewModel,
+                        viewModel = viewModel,
 
                         adjustFinance = adjustFinance
                     ) {
@@ -368,7 +443,7 @@ fun <T> DataAdditionModelDrawerContent(
                         settlementType = SettlementType.GOAL_ATTAIN,
 
 
-                        userViewModel = userViewModel,
+                        viewModel = viewModel,
 
                         adjustFinance = adjustFinance
                     ) {
@@ -385,10 +460,7 @@ fun <T> DataAdditionModelDrawerContent(
                         type = TransactionType.EARNINGS,
 
                         settlementType = SettlementType.WITHDRAWAL,
-
-
-                        userViewModel = userViewModel,
-
+                        viewModel = viewModel,
                         adjustFinance = adjustFinance
                     ) {
 
@@ -479,11 +551,9 @@ fun FinancialDataInput(
     type: FinanceCategory,
     buttonText: String,
     userViewModel: UserViewModel,
+    viewModel: HomeViewModel,
     onDismiss: () -> Unit,
 ) {
-
-    val viewModel: HomeViewModel = hiltViewModel()
-
     val scrollState = rememberScrollState()
 
     val amountState = rememberTextFieldState()
@@ -783,11 +853,9 @@ fun FinancialDataInput(
 fun GoalDataInput(
     placeholder: String,
     buttonText: String,
-    userViewModel: UserViewModel,
+    viewModel: HomeViewModel,
     onDismiss: () -> Unit,
 ) {
-    val viewModel: HomeViewModel = hiltViewModel()
-
     val scrollState = rememberScrollState()
 
     val amountState = rememberTextFieldState()
@@ -1046,11 +1114,10 @@ fun GoalDataInput(
 fun SettlementDataInputs(
     type: FinanceCategory,
     settlementType: SettlementType,
-    userViewModel: UserViewModel,
+    viewModel: HomeViewModel,
     adjustFinance: List<FinanceEntity>,
     onDismiss: () -> Unit
 ) {
-    val viewModel: HomeViewModel = hiltViewModel()
     val financeEntityList = remember(adjustFinance, type) {
         adjustFinance.filter { it.financeType == type }
     }
@@ -1062,7 +1129,7 @@ fun SettlementDataInputs(
 
     var wasSuccess by remember { mutableStateOf(State.INITIAL) }
     val wasAmountSuccess = remember { mutableStateOf<InputState>(InputState.Initial) }
-    
+
     val selectedFinanceEntity = remember {
         mutableStateOf<FinanceEntity?>(null)
     }
@@ -1289,11 +1356,10 @@ fun SettlementDataInputs(
 fun WithdrawalInputs(
     type: FinanceCategory,
     settlementType: SettlementType,
-    userViewModel: UserViewModel,
+    viewModel: HomeViewModel,
     adjustFinance: List<FinanceEntity>,
     onDismiss: () -> Unit
 ) {
-    val viewModel: HomeViewModel = hiltViewModel()
     val financeEntityList = remember(adjustFinance, type) {
         adjustFinance.filter { it.financeType == type }
     }

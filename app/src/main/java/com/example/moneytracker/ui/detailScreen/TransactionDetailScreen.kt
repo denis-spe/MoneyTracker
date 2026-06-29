@@ -233,11 +233,15 @@ fun TransactionContent(
                     fontWeight = FontWeight.Bold
                 )
             }
-            items(transaction.withdrawal.size) { index ->
+            items(
+                count = transaction.withdrawal.size,
+                key = { transaction.withdrawal[it].withdrawalId }
+            ) { index ->
                 val withdrawal = transaction.withdrawal[index]
                 // Ensure financeEntity is set for WithdrawalCard to work
                 withdrawal.financeEntity = transaction
                 WithdrawalItem(
+                    modifier = Modifier.animateItem(),
                     withdrawal = withdrawal,
                     onClick = { selectedWithdrawal = withdrawal }
                 )
@@ -255,11 +259,12 @@ fun TransactionContent(
 
 @Composable
 fun WithdrawalItem(
+    modifier: Modifier = Modifier,
     withdrawal: Withdrawal,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(

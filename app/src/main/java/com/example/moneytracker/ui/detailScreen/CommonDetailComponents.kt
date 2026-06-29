@@ -98,11 +98,12 @@ import network.chaintech.kmp_date_time_picker.utils.now
 
 @Composable
 fun SettlementItem(
+    modifier: Modifier = Modifier,
     settlement: Settlement,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(

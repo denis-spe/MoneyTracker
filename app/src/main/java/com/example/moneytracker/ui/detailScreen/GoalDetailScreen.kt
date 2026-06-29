@@ -80,20 +80,26 @@ import androidx.navigation.NavHostController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.CountAchievement
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.helper.formatResult
 import com.example.moneytracker.helper.formatToAmount
+import com.example.moneytracker.helper.formatToDate
 import com.example.moneytracker.helper.formatToDateTime
+import com.example.moneytracker.helper.formatToTime
 import com.example.moneytracker.helper.formatValueOnly
 import com.example.moneytracker.helper.iqr
 import com.example.moneytracker.helper.kurtosis
 import com.example.moneytracker.helper.mode
+import com.example.moneytracker.helper.monthName
 import com.example.moneytracker.helper.quartiles
 import com.example.moneytracker.helper.safePopBackStack
 import com.example.moneytracker.helper.skewness
 import com.example.moneytracker.helper.std
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.helper.variance
+import com.example.moneytracker.helper.weekDay
+import com.example.moneytracker.helper.year
 import com.example.moneytracker.helper.zScore
 import com.example.moneytracker.ui.components.charts.VicoLineChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
@@ -231,12 +237,11 @@ fun GoalDetailScreen(
                                         items = currentGoal.settlement,
                                         key = { it.settlementId.ifEmpty { it.dateTime.toString() } }
                                     ) { settlement ->
-                                        Box(modifier = Modifier.animateItem()) {
-                                            SettlementItem(
-                                                settlement = settlement,
-                                                onClick = { selectedSettlement = settlement }
-                                            )
-                                        }
+                                        SettlementItem(
+                                            modifier = Modifier.animateItem(),
+                                            settlement = settlement,
+                                            onClick = { selectedSettlement = settlement }
+                                        )
                                     }
                                 }
 
@@ -252,12 +257,11 @@ fun GoalDetailScreen(
                                         items = currentGoal.achievement,
                                         key = { it.achievementId.ifEmpty { it.startDateTime.toString() } }
                                     ) { achievement ->
-                                        Box(modifier = Modifier.animateItem()) {
-                                            AchievementItem(
-                                                achievement = achievement,
-                                                onClick = { selectedAchievement = achievement }
-                                            )
-                                        }
+                                        AchievementItem(
+                                            modifier = Modifier.animateItem(),
+                                            achievement = achievement,
+                                            onClick = { selectedAchievement = achievement }
+                                        )
                                     }
                                 }
                             }
@@ -358,7 +362,52 @@ fun GoalLineChartSummary(
                     .substring(5)
             } else ""
         },
-        yValueFormatter = { value -> value.formatValueOnly() }
+        yValueFormatter = { value -> value.formatValueOnly() },
+        markerFormatter = { x, y ->
+            val index = x.toInt()
+            if (index in sortedAchievements.indices) {
+                val achievement = sortedAchievements[index]
+                when (currentGoal.routine.routine) {
+                    Routine.Weekly -> {
+                        "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
+                    }
+
+                    Routine.Monthly -> {
+                        "${achievement.deadlineDateTime.monthName}, ${y.formatToAmount()}"
+                    }
+
+                    Routine.Yearly -> {
+                        "${achievement.deadlineDateTime.year}, ${y.formatToAmount()}"
+                    }
+
+                    Routine.SpecificDayOfTheWeek -> {
+                        "${achievement.deadlineDateTime.weekDay}, ${y.formatToAmount()}"
+                    }
+
+                    Routine.SpecifyDayOfTheYear -> {
+                        "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
+                    }
+
+                    Routine.EveryDay -> {
+                        "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
+                    }
+
+                    Routine.EveryHour -> {
+                        "${achievement.deadlineDateTime.formatToTime}, ${y.formatToAmount()}"
+                    }
+
+                    Routine.EveryMinute -> {
+                        "${achievement.deadlineDateTime.formatToTime}, ${y.formatToAmount()}"
+                    }
+
+                    else -> {
+                        "${achievement.startDateTime.formatToTime}, ${y.formatToAmount()}"
+                    }
+                }
+            } else {
+                y.formatToAmount()
+            }
+        }
     )
 }
 
@@ -725,11 +774,12 @@ fun GoalSummaryCard(
 
 @Composable
 fun AchievementItem(
+    modifier: Modifier = Modifier,
     achievement: com.example.moneytracker.backend.storage.Achievement,
     onClick: () -> Unit
 ) {
     Card(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxWidth()
             .clickable(onClick = onClick),
         colors = CardDefaults.cardColors(

@@ -139,13 +139,40 @@ class DataStorageImpl(
             }
             Log.d("DataStorageImpl", "parsed total count: ${combined.size}")
             trySend(combined)
-            onSuccess(true)
+            // Only call onSuccess when we actually have some data or all listeners have fired at least once
+            if (combined.isNotEmpty()) {
+                onSuccess(true)
+            }
         }
 
         collections.forEach { collectionName ->
             val ref = db.collection(COLLECTION_NAME)
                 .document(userId)
                 .collection(collectionName)
+
+            // Try to fetch from cache first for immediate emission
+            launch {
+                try {
+                    val cacheSnapshot = ref.get(Source.CACHE).await()
+                    if (!cacheSnapshot.isEmpty) {
+                        Log.d(
+                            "DataStorageImpl",
+                            "Cache hit for $collectionName: ${cacheSnapshot.size()}"
+                        )
+                        val cacheData = cacheSnapshot.documents.mapNotNull { doc ->
+                            try {
+                                doc.data?.toFinance()
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+                        latestData[collectionName] = cacheData
+                        emitCombined()
+                    }
+                } catch (e: Exception) {
+                    Log.d("DataStorageImpl", "No cache for $collectionName")
+                }
+            }
 
             val listener = ref.addSnapshotListener { snapshot, error ->
                 if (error != null) {

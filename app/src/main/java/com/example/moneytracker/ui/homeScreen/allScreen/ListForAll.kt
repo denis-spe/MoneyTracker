@@ -295,6 +295,7 @@ fun CardForAllItem(
         Receipt(
             dataSettlement = dataSettlement,
             onShowDialog = onShowDialog,
+            viewModel = viewModel
         )
     }
 

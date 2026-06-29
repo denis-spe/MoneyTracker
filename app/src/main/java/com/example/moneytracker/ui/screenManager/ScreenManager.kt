@@ -1,3 +1,4 @@
+// Bless be the Name of the Lord
 package com.example.moneytracker.ui.screenManager
 
 import android.os.Build
@@ -5,7 +6,6 @@ import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
@@ -30,17 +30,29 @@ import com.example.moneytracker.ui.homeScreen.HomeScreen
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.settings.SettingsScreen
+import com.example.moneytracker.ui.showAll.ShowAllGoalScreen
+import com.example.moneytracker.ui.showAll.ShowAllLiabilityScreen
+import com.example.moneytracker.ui.showAll.ShowAllTransactionScreen
+import com.example.moneytracker.ui.showAll.ShowAllViewModel
 import com.example.moneytracker.ui.startUpScreen.StartUpScreen
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun ScreenManager(
+    homeViewModel: HomeViewModel,
+    showAllViewModel: ShowAllViewModel,
     navController: NavHostController = rememberNavController(),
-    account: AccountServices = hiltViewModel<ScreenManagerViewModel>().account
+    account: AccountServices = hiltViewModel<ScreenManagerViewModel>().account,
+    onFullyDrawn: () -> Unit
 ) {
-    val registerViewModel: RegisterViewModel = hiltViewModel()
-    val loadingViewModel: LoadingViewModel = hiltViewModel()
     val userViewModel: UserViewModel = hiltViewModel()
+
+    // ─── Single source of truth ───────────────────────────────────────────────
+    // HomeViewModel is created ONCE here, scoped to ScreenManager's back-stack
+    // entry. It is passed down to every composable that needs it — never via
+    // hiltViewModel() again inside child composables.
+    val isDataLoaded by homeViewModel.isDataLoaded.collectAsStateWithLifecycle()
+    // ─────────────────────────────────────────────────────────────────────────
 
     val router = if (account.hasUser) {
         LoadingScreenRouter(userId = account.currentUserId)
@@ -49,27 +61,30 @@ fun ScreenManager(
     }
 
     NavHost(navController = navController, startDestination = router) {
+
+        // ── Startup / Auth ────────────────────────────────────────────────────
+
         composable<StartUpScreenRouter> {
+            val registerViewModel: RegisterViewModel = hiltViewModel()
+            val loadingViewModel: LoadingViewModel = hiltViewModel()
+
             StartUpScreen(
                 navController,
                 loadingViewModel = loadingViewModel
             )
         }
+
+        // ── Loading splash ────────────────────────────────────────────────────
+        // Reads isDataLoaded from the already-created homeViewModel above.
+        // No new HomeViewModel instance is created here.
+
         composable<LoadingScreenRouter> { backStackEntry ->
             val arguments = backStackEntry.toRoute<LoadingScreenRouter>()
-            val currentUserId = arguments.userId
-
-            // Collect the user state
             val user by userViewModel.userState.collectAsStateWithLifecycle()
 
-            // Scoped correctly via Hilt, collecting ONLY the unified state
-            val homeViewModel: HomeViewModel = hiltViewModel()
-            val isDataLoaded by homeViewModel.isDataLoaded.collectAsStateWithLifecycle()
-
-            // Automatically navigate forward once data validation passes
             LaunchedEffect(isDataLoaded) {
                 if (isDataLoaded) {
-                    navController.navigate(HomeScreenRouter(userId = currentUserId)) {
+                    navController.navigate(HomeScreenRouter(userId = arguments.userId)) {
                         popUpTo<LoadingScreenRouter> { inclusive = true }
                     }
                 }
@@ -78,45 +93,31 @@ fun ScreenManager(
             LoadingScreen(
                 user = user != null,
                 navController = navController,
-                currentUserId = currentUserId,
+                currentUserId = arguments.userId,
                 isSplashScreen = true,
                 isDataLoaded = isDataLoaded,
-                content = loadingViewModel.content ?: {}
+                content = null
             )
         }
 
-        composable<MailScreenRouter> { MailScreen(navController) }
-        composable<NamesRegistrationScreenRouter> {
-            NamesRegistrationScreen(
-                viewModel = registerViewModel,
-                onNavigate = navController
-            )
-        }
-        composable<EmailRegistrationScreenRouter> {
-            EmailRegistrationScreen(
-                viewModel = registerViewModel,
-                onNavigate = navController
-            )
-        }
-        composable<PasswordRegistrationScreenRouter> {
-            PasswordRegistrationScreen(
-                viewModel = registerViewModel,
-                onNavigate = navController
-            )
-        }
-        composable<LoginScreenRouter> {
-            LoginScreen(onNavigate = navController)
-        }
+        // ── Home ──────────────────────────────────────────────────────────────
+        // Passes the already-created homeViewModel and userViewModel.
+        // HomeScreen no longer calls hiltViewModel() internally.
+
         composable<HomeScreenRouter> { backStackEntry ->
-            // 1. Extract the type-safe object
             val arguments = backStackEntry.toRoute<HomeScreenRouter>()
 
             HomeScreen(
-                // 2. Access the property directly from the object
+                homeViewModel = homeViewModel,
+                userViewModel = userViewModel,
                 userId = arguments.userId,
-                onNavigate = navController
+                onNavigate = navController,
+                onFullyDrawn = onFullyDrawn
             )
         }
+
+        // ── Settings ──────────────────────────────────────────────────────────
+
         composable<SettingsScreenRouter> {
             SettingsScreen(
                 onBackClick = { navController.safePopBackStack() },
@@ -125,36 +126,87 @@ fun ScreenManager(
                 userId = account.currentUserId
             )
         }
+
+        // ── ShowAll ──────────────────────────────────────────────────────────
+        composable<ShowAllTransactionsScreenRouter> {
+            ShowAllTransactionScreen(
+                viewModel = showAllViewModel,
+                navController = navController
+            )
+        }
+
+        composable<ShowAllLiabilitiesScreenRouter> {
+            ShowAllLiabilityScreen(
+                viewModel = showAllViewModel,
+                navController = navController
+            )
+        }
+
+        composable<ShowAllGoalsScreenRouter> {
+            ShowAllGoalScreen(
+                viewModel = showAllViewModel,
+                navController = navController
+            )
+        }
+
+        // ── Auth screens ──────────────────────────────────────────────────────
+
+        composable<MailScreenRouter> {
+            MailScreen(navController)
+        }
+
+        composable<NamesRegistrationScreenRouter> {
+            val registerViewModel: RegisterViewModel = hiltViewModel()
+            NamesRegistrationScreen(
+                viewModel = registerViewModel,
+                onNavigate = navController
+            )
+        }
+
+        composable<EmailRegistrationScreenRouter> {
+            val registerViewModel: RegisterViewModel = hiltViewModel()
+            EmailRegistrationScreen(
+                viewModel = registerViewModel,
+                onNavigate = navController
+            )
+        }
+
+        composable<PasswordRegistrationScreenRouter> {
+            val registerViewModel: RegisterViewModel = hiltViewModel()
+            PasswordRegistrationScreen(
+                viewModel = registerViewModel,
+                onNavigate = navController
+            )
+        }
+
+        composable<LoginScreenRouter> {
+            LoginScreen(onNavigate = navController)
+        }
+
+        // ── Detail screens ────────────────────────────────────────────────────
+
         composable<FulfillmentDetailScreenRouter> { backStackEntry ->
             val arguments = backStackEntry.toRoute<FulfillmentDetailScreenRouter>()
-            val goalId = arguments.goalId
             GoalDetailScreen(
-                goalId = goalId,
+                goalId = arguments.goalId,
                 navController = navController,
             )
         }
+
         composable<TransactionDetailScreenRouter> { backStackEntry ->
             val arguments = backStackEntry.toRoute<TransactionDetailScreenRouter>()
-            val transactionId = arguments.transactionId
             TransactionDetailScreen(
-                transactionId = transactionId,
+                transactionId = arguments.transactionId,
                 navController = navController,
             )
         }
+
         composable<LiabilityDetailScreenRouter> { backStackEntry ->
             val arguments = backStackEntry.toRoute<LiabilityDetailScreenRouter>()
-            val liabilityId = arguments.liabilityId
             SettlementDetailScreen(
-                liabilityId = liabilityId,
+                liabilityId = arguments.liabilityId,
                 navController = navController,
             )
         }
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-@Preview
-@Composable
-fun ScreenManagerPreview() {
-    ScreenManager()
 }

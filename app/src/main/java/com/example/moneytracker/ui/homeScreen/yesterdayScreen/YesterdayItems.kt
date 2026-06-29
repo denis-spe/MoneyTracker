@@ -246,6 +246,7 @@ fun YesterdayItem(
         Receipt(
             dataSettlement = dataSettlement,
             onShowDialog = onShowDialog,
+            viewModel = viewModel
         )
     }
 

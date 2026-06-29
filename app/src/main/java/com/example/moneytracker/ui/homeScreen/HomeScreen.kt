@@ -22,7 +22,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneytracker.R
@@ -43,28 +42,25 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
+    // ViewModels received from ScreenManager — never created here
+    homeViewModel: HomeViewModel,
+    userViewModel: UserViewModel,
     onNavigate: NavController? = null,
-    userId: String
+    userId: String,
+    onFullyDrawn: () -> Unit
 ) {
-
-    val homeViewModel: HomeViewModel = hiltViewModel()
-    val userViewModel: UserViewModel = hiltViewModel()
-
-    // ONLY collect lightweight global states here
     val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
-
     val userUiState by userViewModel.uiState.collectAsStateWithLifecycle()
     val userState by userViewModel.userState.collectAsStateWithLifecycle()
+    val isLoaded by homeViewModel.isDataLoaded.collectAsStateWithLifecycle()
 
-    val snackBarHostState by userViewModel
-        .snackBarHostState
-        .collectAsStateWithLifecycle()
-
-    val scope = rememberCoroutineScope()
-
-    val topBarEntries = remember {
-        TopBarNav.entries
+    LaunchedEffect(isLoaded) {
+        if (isLoaded) onFullyDrawn()
     }
+
+    val snackBarHostState by userViewModel.snackBarHostState.collectAsStateWithLifecycle()
+    val scope = rememberCoroutineScope()
+    val topBarEntries = remember { TopBarNav.entries }
 
     val pagerState = rememberPagerState(
         initialPage = 1,
@@ -76,16 +72,12 @@ fun HomeScreen(
     LaunchedEffect(Unit) {
         userViewModel.navigationEvents.collect {
             onNavigate?.navigate(StartUpScreenRouter) {
-                popUpTo(0) {
-                    inclusive = true
-                }
+                popUpTo(0) { inclusive = true }
             }
         }
     }
 
-    Box(
-        modifier = Modifier.fillMaxSize()
-    ) {
+    Box(modifier = Modifier.fillMaxSize()) {
 
         Scaffold(
             modifier = Modifier
@@ -93,44 +85,33 @@ fun HomeScreen(
                 .testTag(stringResource(R.string.homeScreenId)),
 
             topBar = {
-
                 CenterAlignedTopAppBar(
                     colors = TopAppBarDefaults.topAppBarColors(
                         titleContentColor = Color.White
                     ),
-
                     title = {
-
                         TopAppTitle(
                             state = pagerState,
                             contentColor = customColors.accentContent,
                             currentPageColor = customColors.primaryAccent,
                             backgroundColor = customColors.secondarySurface,
-
-                            ) { tab ->
-
+                        ) { tab ->
                             scope.launch {
-                                val index = topBarEntries.indexOf(tab)
-                                pagerState.animateScrollToPage(index)
+                                pagerState.animateScrollToPage(topBarEntries.indexOf(tab))
                             }
                         }
-
                     },
-
                     navigationIcon = {
-
                         TopAppNav(
                             userState = userState,
                             contentColor = customColors.accentContent,
                             userColor = uiState.info.color
                         ) {
-
                             userViewModel.updateIsUserDropdownVisible(
                                 !userUiState.isUserDropdownVisible
                             )
                         }
                     },
-
                     actions = {
                         TopAppAction()
                     }
@@ -138,10 +119,10 @@ fun HomeScreen(
             },
 
             floatingActionButton = {
-
                 DataAdditionFloatingButton(
                     uiState = uiState,
-                    isLoading = false
+                    isLoading = false,
+                    viewModel = homeViewModel
                 )
             },
 
@@ -153,53 +134,46 @@ fun HomeScreen(
 
             HorizontalPager(
                 state = pagerState,
-
-                // VERY IMPORTANT FOR PERFORMANCE
                 beyondViewportPageCount = 1,
-
                 pageSpacing = 0.dp,
-
                 snapPosition = SnapPosition.Start,
                 userScrollEnabled = true,
-                // Prevent unnecessary page recreation
                 key = { topBarEntries[it] },
             ) { page ->
 
                 when (page) {
-
                     0 -> {
-
-                        val scope = rememberCoroutineScope()
-
+                        val pageScope = rememberCoroutineScope()
                         FulfillmentScreenRoute(
                             paddingValues = paddingValues,
                             onNavigate = onNavigate,
+                            viewModel = homeViewModel,   // passed in — no new instance
                             onTabClick = { index ->
-                                scope.launch {
+                                pageScope.launch {
                                     pagerState.animateScrollToPage(index)
                                 }
                             }
                         )
                     }
-
                     1 -> {
-
                         TodayScreenRoute(
-                            paddingValues = paddingValues
+                            paddingValues = paddingValues,
+                            viewModel = homeViewModel,      // passed in — no new instance
+                            userViewModel = userViewModel,  // passed in — no new instance
                         )
                     }
-
                     2 -> {
-
                         YesterdayScreenRoute(
-                            paddingValues = paddingValues
+                            paddingValues = paddingValues,
+                            viewModel = homeViewModel,      // passed in — no new instance
+                            userViewModel = userViewModel,  // passed in — no new instance
                         )
                     }
-
                     3 -> {
-
                         AllScreenRoute(
-                            paddingValues = paddingValues
+                            paddingValues = paddingValues,
+                            viewModel = homeViewModel,      // passed in — no new instance
+                            userViewModel = userViewModel,  // passed in — no new instance
                         )
                     }
                 }
@@ -214,32 +188,19 @@ fun HomeScreen(
 
         DropDownUserProfile(
             modifier = Modifier.align(Alignment.TopCenter),
-
             contentColor = customColors.accentContent,
-
-            backgroundColor = customColors.secondarySurface.copy(
-                alpha = 0.9f
-            ),
-
+            backgroundColor = customColors.secondarySurface.copy(alpha = 0.9f),
             visible = userUiState.isUserDropdownVisible,
-
             userState = userState,
-
             isLoading = userUiState.isLoading,
-
             settingsClick = {
-
                 onNavigate?.navigate(SettingsScreenRouter)
-
                 userViewModel.updateIsUserDropdownVisible(false)
             },
-
             onDismiss = {
                 userViewModel.updateIsUserDropdownVisible(false)
             }
-
         ) {
-
             userViewModel.handleLogout()
         }
     }

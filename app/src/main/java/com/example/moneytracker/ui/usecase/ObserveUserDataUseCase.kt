@@ -1,6 +1,7 @@
 package com.example.moneytracker.ui.usecase
 
 import android.util.Log
+import com.example.moneytracker.StartupTimer
 import com.example.moneytracker.backend.storage.DataStorage
 import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.Info
@@ -30,16 +31,19 @@ class ObserveUserDataUseCase @Inject constructor(
             } else {
                 combine(
                     dataStorage.getWholeDatasets(uid, {}, {})
+                        .onStart { StartupTimer.mark("getWholeDatasets started") }
                         .catch { e ->
                             Log.e("ObserveUserDataUseCase", "datasets error", e)
                             emit(emptyList())
                         },
                     dataStorage.getInfo(uid)
+                        .onStart { StartupTimer.mark("getInfo started") }
                         .catch { e ->
                             Log.e("ObserveUserDataUseCase", "info error", e)
                             emit(Info())
                         }
                 ) { datasets, info ->
+                    StartupTimer.mark("combine emitted datasets=${datasets.size}")
                     HomeData(
                         datasets = datasets,
                         info = info,

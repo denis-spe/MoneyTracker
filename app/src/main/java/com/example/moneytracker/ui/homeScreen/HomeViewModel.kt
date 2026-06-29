@@ -1,15 +1,19 @@
+// Glory be the name of LORD our GOD
 package com.example.moneytracker.ui.homeScreen
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.moneytracker.StartupTimer
 import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataSettlement
+import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.backend.storage.Withdrawal
+import com.example.moneytracker.backend.storage.toDataState
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.components.charts.DonutChartData
@@ -28,43 +32,34 @@ import com.example.moneytracker.ui.usecase.GetYesterdayChartDataUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayDataSettlementUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayFinanceUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayStatsUseCase
+import com.example.moneytracker.ui.usecase.HomeData
 import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
 import com.example.moneytracker.ui.usecase.RoutineWorkerUseCase
 import com.example.moneytracker.ui.usecase.SortTodayDataSettlementUseCase
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.Filter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
-import java.time.ZoneId
 import javax.inject.Inject
 
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val accountService: AccountServices,
     private val financeOperationsUseCase: FinanceOperationsUseCase,
-    private val observeUserDataUseCase: ObserveUserDataUseCase,
+    observeUserDataUseCase: ObserveUserDataUseCase,
     private val sortTodayDataSettlementUseCase: SortTodayDataSettlementUseCase,
     private val getYesterdayDataSettlementUseCase: GetYesterdayDataSettlementUseCase,
     private val getWeeklyDataUseCase: GetWeeklyDataUseCase,
@@ -85,17 +80,16 @@ class HomeViewModel @Inject constructor(
         const val STATE_TIMEOUT = 5_000L
     }
 
+    // ---------------------------------------------------------------------------
+    // UI state (sorting, tab, dates — user-driven, NOT data)
+    // ---------------------------------------------------------------------------
+
     private val _uiState = MutableStateFlow(HomeUiState())
-    val uiState = _uiState.asStateFlow()
+    val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-
-    /*******************
-     * BASE FLOWS (Single Source of Truth)
-     *******************/
-    private val datasetsFlow = uiState
-        .map { it.datasets }
-        .distinctUntilChanged()
-        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), replay = 1)
+    // ---------------------------------------------------------------------------
+    // Secondary flows derived from uiState (sorting/dates only — NOT datasets)
+    // ---------------------------------------------------------------------------
 
     private val datesFlow = uiState
         .map { it.dates }
@@ -118,478 +112,244 @@ class HomeViewModel @Inject constructor(
             )
         }
         .distinctUntilChanged()
-        .shareIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), replay = 1)
-
-    /*******************
-     * LIVE UI STATE FLOWS
-     *******************/
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val allDataset: StateFlow<DataState<List<FinanceEntity>>> = datasetsFlow
-        .flatMapLatest { datasets ->
-            flow {
-                emit(DataState.Loading)
-                try {
-                    emit(DataState.Success(datasets))
-                } catch (e: Exception) {
-                    emit(DataState.Error(e))
-                }
-            }
-        }
         .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
+            viewModelScope,
+            SharingStarted.Eagerly,
+            SortingState(
+                time = SortType.Descending,
+                category = "Initial",
+                payment = null,
+                alphabetical = SortType.Initial,
+                amount = SortType.Initial
+            )
         )
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val todayFinance: StateFlow<DataState<List<FinanceEntity>>> = datasetsFlow
-        .flatMapLatest { datasets ->
-            flow {
-                emit(DataState.Loading)
-                try {
-                    // Ensure the UseCase runs on a background thread
-                    val result = withContext(Dispatchers.Default) {
-                        datasets.filter { it.isForToday }
-                    }
-                    emit(DataState.Success(result))
-                } catch (e: Exception) {
-                    emit(DataState.Error(e))
-                }
-            }
-        }
-        .onStart { loadTodayDatasets() }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
+    // ---------------------------------------------------------------------------
+    // Single source of truth — one Firestore subscription for everything.
+    // flowOn(Dispatchers.Default) means ALL downstream .map { } blocks run off
+    // the main thread automatically. No withContext() needed in derived flows.
+    // ---------------------------------------------------------------------------
+
+    private val rawDatasetsFlow: StateFlow<HomeData> =
+        observeUserDataUseCase(
+            accountService.userState.map { it?.uid }   // Flow<String?>
         )
+            .flowOn(Dispatchers.Default)
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STATE_TIMEOUT),
+                HomeData(datasetState = DatasetState.Loading)
+            )
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val yesterdayFinance: StateFlow<DataState<List<FinanceEntity>>> = datasetsFlow
-        .flatMapLatest { datasets ->
-            flow {
-                emit(DataState.Loading)
-                try {
-                    // Ensure the UseCase runs on a background thread
-                    val result = withContext(Dispatchers.Default) {
-                        getYesterdayFinanceUseCase(datasets)
-                    }
-                    emit(DataState.Success(result))
-                } catch (e: Exception) {
-                    emit(DataState.Error(e))
-                }
-            }
-        }
-        .onStart { loadYesterdayDatasets() }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val fulfillmentFinanceEntity: StateFlow<DataState<List<FinanceEntity>>> = datasetsFlow
-        .flatMapLatest { datasets ->
-            flow {
-                emit(DataState.Loading)
-                try {
-                    // Ensure the UseCase runs on a background thread
-                    val result = withContext(Dispatchers.Default) {
-                        datasets.filter { entity ->
-                            entity is FinanceEntity.Goal ||
-                                    entity is FinanceEntity.Liability
-                        }
-                    }
-                    emit(DataState.Success(result))
-                } catch (e: Exception) {
-                    emit(DataState.Error(e))
-                }
-            }
-        }
-        .onStart { loadFulfillmentData() }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-    val adjustFinance = datasetsFlow
-        .map { getAdjustFinanceUseCase(it) }
-        .onStart { loadAdjustData() }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val donutChartData = todayFinance
-        .flatMapLatest { state ->
-            // Explicitly type the flows to match the StateFlow's generic type
-            when (state) {
-                is DataState.Success -> flow<DataState<List<DonutChartData>>> {
-                    emit(DataState.Loading)
-                    try {
-                        val chartData = withContext(Dispatchers.Default) {
-                            getTodayChartDonutDataUseCase(
-                                state.data,
-                                context
-                            )
-                        }
-                        emit(DataState.Success(chartData))
-                    } catch (e: Exception) {
-                        emit(DataState.Error(e))
-                    }
-                }
-                // Use <List<ChartData>> here to satisfy the compiler
-                is DataState.Error -> flowOf<DataState<List<DonutChartData>>>(DataState.Error(state.exception))
-                DataState.Loading -> flowOf<DataState<List<DonutChartData>>>(DataState.Loading)
-            }
-        }
-        .stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val currentAccountBalance: StateFlow<DataState<Map<String, Double>>> = datasetsFlow
-        .flatMapLatest { datasets ->
-            flow {
-                emit(DataState.Loading)
-                try {
-                    val balance = withContext(Dispatchers.Default) {
-                        getCurrentAmountUseCase(datasets)
-                    }
-                    emit(DataState.Success(balance))
-                } catch (e: Exception) {
-                    emit(DataState.Error(e))
-                }
-            }
-        }
-        .stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val liabilityBalance: StateFlow<DataState<Map<String, Double>>> = datasetsFlow
-        .flatMapLatest { datasets ->
-            flow {
-                emit(DataState.Loading)
-                try {
-                    val balance = withContext(Dispatchers.Default) {
-                        getLiabilityBalanceUseCase(datasets)
-                    }
-                    emit(DataState.Success(balance))
-                } catch (e: Exception) {
-                    emit(DataState.Error(e))
-                }
-            }
-        }
-        .stateIn(
-            viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val yesterdayChartData: StateFlow<DataState<List<ChartData>>> = yesterdayFinance
-        .flatMapLatest { state ->
-            // Explicitly type the flows to match the StateFlow's generic type
-            when (state) {
-                is DataState.Success -> flow<DataState<List<ChartData>>> {
-                    emit(DataState.Loading)
-                    try {
-                        val chartData = withContext(Dispatchers.Default) {
-                            getYesterdayChartDataUseCase(state.data, context)
-                        }
-                        emit(DataState.Success(chartData))
-                    } catch (e: Exception) {
-                        emit(DataState.Error(e))
-                    }
-                }
-                // Use <List<ChartData>> here to satisfy the compiler
-                is DataState.Error -> flowOf<DataState<List<ChartData>>>(DataState.Error(state.exception))
-                DataState.Loading -> flowOf<DataState<List<ChartData>>>(DataState.Loading)
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val yesterdayStats: StateFlow<DataState<YesterdayStats>> = yesterdayFinance
-        .flatMapLatest { state ->
-            when (state) {
-                is DataState.Success -> flow {
-                    emit(DataState.Loading)
-                    try {
-                        val stats = withContext(Dispatchers.Default) {
-                            getYesterdayStatsUseCase(state.data)
-                        }
-                        emit(DataState.Success(stats))
-                    } catch (e: Exception) {
-                        emit(DataState.Error(e))
-                    }
-                }
-                // Explicitly type the shared states to avoid the "DataState<Nothing>" mismatch
-                is DataState.Error -> flowOf<DataState<YesterdayStats>>(DataState.Error(state.exception))
-                DataState.Loading -> flowOf<DataState<YesterdayStats>>(DataState.Loading)
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val sortedToday: StateFlow<DataState<List<DataSettlement>>> = combine(
-        datasetsFlow,
-        sortingFlow
-    ) { datasets, sorting ->
-        datasets to sorting
-    }.flatMapLatest { (datasets, sorting) ->
-        flow {
-            emit(DataState.Loading)
-            try {
-                val result = withContext(Dispatchers.Default) {
-                    sortTodayDataSettlementUseCase(
-                        timeSorting = sorting.time,
-                        categorySorting = sorting.category,
-                        paymentSorting = sorting.payment,
-                        alphabeticalOrder = sorting.alphabetical,
-                        amountSorting = sorting.amount,
-                        financeEntityList = datasets
-                    )
-                }
-                emit(DataState.Success(result))
-            } catch (e: Exception) {
-                emit(DataState.Error(e))
-            }
-        }
-    }.stateIn(
-        viewModelScope,
-        SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-        DataState.Loading
-    )
-
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val sortedYesterday: StateFlow<DataState<List<DataSettlement>>> = datasetsFlow
-        .flatMapLatest { datasets ->
-            flow {
-                emit(DataState.Loading)
-                try {
-                    val result = withContext(Dispatchers.Default) {
-                        getYesterdayDataSettlementUseCase(datasets)
-                    }
-                    emit(DataState.Success(result))
-                } catch (e: Exception) {
-                    emit(DataState.Error(e))
-                }
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-
-    // 2. Create the flow that emits the actual data state
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val weeklyData: StateFlow<DataState<List<DataSettlement>>> =
-        combine(datasetsFlow, datesFlow) { datasets, dates ->
-            datasets to dates
-        }.flatMapLatest { (datasets, dates) ->
-            flow {
-                // Emit Loading immediately when inputs change
-                emit(DataState.Loading)
-
-                try {
-                    // Fetch data
-                    val result = withContext(Dispatchers.Default) {
-                        getWeeklyDataUseCase(datasets, dates)
-                    }
-                    // Emit the actual result
-                    emit(DataState.Success(result))
-                } catch (e: Exception) {
-                    emit(DataState.Error(e))
-                }
-            }
-        }.stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(5_000), // 5 seconds timeout
-            initialValue = DataState.Loading
-        )
-
-
-    val currentWeekDerived = currentWeekFlow
-        .map { getCurrentWeekUseCase(it) }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    val activityCounts: StateFlow<DataState<Map<LocalDate, Int>>> = datasetsFlow
-        .flatMapLatest { datasets ->
-            flow {
-                // 1. Emit Loading immediately
-                emit(DataState.Loading)
-
-                try {
-                    // 2. Perform calculation on background thread
-                    val counts = withContext(Dispatchers.Default) {
-                        val map = mutableMapOf<LocalDate, Int>()
-
-                        datasets.forEach { entity ->
-                            val date = entity.createdAt.toLocalDateTimeUtc().date
-                            map[date] = (map[date] ?: 0) + 1
-
-                            val settlements = when (entity) {
-                                is FinanceEntity.Goal -> entity.settlement
-                                is FinanceEntity.Liability -> entity.settlement
-                                else -> emptyList()
-                            }
-
-                            settlements.forEach { s ->
-                                val sDate = s.dateTime.toLocalDateTimeUtc().date
-                                map[sDate] = (map[sDate] ?: 0) + 1
-                            }
-
-                            val withdrawal = if (entity is FinanceEntity.Transaction) {
-                                entity.withdrawal
-                            } else emptyList()
-
-                            withdrawal.forEach { s ->
-                                val sDate = s.createdAt.toLocalDateTimeUtc().date
-                                map[sDate] = (map[sDate] ?: 0) + 1
-                            }
-                        }
-                        map // Return the calculated map
-                    }
-
-                    // 3. Emit Success
-                    emit(DataState.Success(counts))
-
-                } catch (e: Exception) {
-                    // 4. Catch and emit Error
-                    emit(DataState.Error(e))
-                }
-            }
-        }
-        .stateIn(
-            scope = viewModelScope,
-            started = SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-            initialValue = DataState.Loading
-        )
-
-
-    val currentDateDerived = combine(currentWeekFlow, uiState.map { it.date }) { week, date ->
-        getCurrentDateUseCase(week, date)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), LocalDate.now())
+    // ---------------------------------------------------------------------------
+    // init — single place for side effects:
+    //   1. Auth change → reset UI / run migration
+    //   2. Sync rawDatasetsFlow → _uiState so downstream code that still reads
+    //      uiState.info / uiState.error stays consistent.
+    // There is NO second observeUserDataUseCase call here.
+    // ---------------------------------------------------------------------------
 
     init {
-        observe()
-    }
+        StartupTimer.mark("ViewModel.init thread=${Thread.currentThread().name} hash=${this.hashCode()}")
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun observe() {
-        accountService.userState
-            .map { it?.uid }
-            .distinctUntilChanged()
-            .onEach { uid ->
-                if (uid == null) {
-                    _uiState.value = HomeUiState()
-                } else {
-                    viewModelScope.launch(Dispatchers.IO) {
-                        financeOperationsUseCase.triggerMigration(uid)
+        // 1. Auth side-effects (migration, state reset)
+        viewModelScope.launch {
+            accountService.userState
+                .map { it?.uid }
+                .distinctUntilChanged()
+                .collect { uid ->
+                    if (uid == null) {
+                        _uiState.value = HomeUiState()
+                    } else {
+                        launch(Dispatchers.IO) {
+                            financeOperationsUseCase.triggerMigration(uid)
+                        }
                     }
                 }
-            }
-            .flatMapLatest { uid ->
-                observeUserDataUseCase(flowOf(uid))
-            }
-            .onEach { homeData ->
+        }
+
+        // 2. Mirror HomeData into uiState (info, error, datasetState only)
+        viewModelScope.launch {
+            rawDatasetsFlow.collect { homeData ->
                 _uiState.update { current ->
                     current.copy(
-                        datasets = homeData.datasets,
                         info = homeData.info,
                         error = homeData.error,
                         datasetState = homeData.datasetState,
                     )
                 }
             }
-            .launchIn(viewModelScope)
+        }
     }
 
-    private fun getDayRange(date: java.time.LocalDate): Pair<Timestamp, Timestamp> {
-        val zone = ZoneId.systemDefault()
-        val start = date.atStartOfDay(zone).toInstant()
-        val end = date.plusDays(1).atStartOfDay(zone).toInstant()
-        return Timestamp(start.epochSecond, start.nano) to Timestamp(end.epochSecond, end.nano)
-    }
+    // ---------------------------------------------------------------------------
+    // Derived data flows — all use toDataState { } extension + rawDatasetsFlow.
+    // No flatMapLatest, no intermediate Loading emits, no withContext() needed.
+    // ---------------------------------------------------------------------------
 
-    fun loadTodayDatasets() = viewModelScope.launch {
-        val uid = accountService.userState.value?.uid ?: return@launch
-        val (start, end) = getDayRange(java.time.LocalDate.now())
-        financeOperationsUseCase.filterFinances(
-            userId = uid,
-            filter = Filter.and(
-                Filter.greaterThanOrEqualTo("createdAt", start),
-                Filter.lessThan("createdAt", end)
+    val allDataset: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
+        .map { it.toDataState { datasets -> datasets } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val todayFinance: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
+        .map { it.toDataState { datasets -> datasets.filter { it.isForToday } } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val yesterdayFinance: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
+        .map { it.toDataState { datasets -> getYesterdayFinanceUseCase(datasets) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val fulfillmentFinanceEntity: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
+        .map {
+            it.toDataState { datasets ->
+                datasets.filter { entity ->
+                    entity is FinanceEntity.Goal || entity is FinanceEntity.Liability
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val adjustFinance: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
+        .map { it.toDataState { datasets -> getAdjustFinanceUseCase(datasets) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val currentAccountBalance: StateFlow<DataState<Map<String, Double>>> = rawDatasetsFlow
+        .map { it.toDataState { datasets -> getCurrentAmountUseCase(datasets) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val liabilityBalance: StateFlow<DataState<Map<String, Double>>> = rawDatasetsFlow
+        .map { it.toDataState { datasets -> getLiabilityBalanceUseCase(datasets) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    // Chart flows derive directly from rawDatasetsFlow (not chained off todayFinance /
+    // yesterdayFinance) to avoid stacked Loading frames.
+
+    val donutChartData: StateFlow<DataState<List<DonutChartData>>> = rawDatasetsFlow
+        .map { homeData ->
+            homeData.toDataState { datasets ->
+                getTodayChartDonutDataUseCase(
+                    datasets.filter { it.isForToday },
+                    context
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val yesterdayChartData: StateFlow<DataState<List<ChartData>>> = rawDatasetsFlow
+        .map { homeData ->
+            homeData.toDataState { datasets ->
+                getYesterdayChartDataUseCase(
+                    getYesterdayFinanceUseCase(datasets),
+                    context
+                )
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val yesterdayStats: StateFlow<DataState<YesterdayStats>> = rawDatasetsFlow
+        .map { homeData ->
+            homeData.toDataState { datasets ->
+                getYesterdayStatsUseCase(getYesterdayFinanceUseCase(datasets))
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    // Sorted lists — combine rawDatasetsFlow with user-driven sorting/date state.
+    // No Loading flash: combine() only fires when either input actually changes.
+
+    val sortedToday: StateFlow<DataState<List<DataSettlement>>> = combine(
+        rawDatasetsFlow,
+        sortingFlow
+    ) { homeData, sorting ->
+        homeData.toDataState { datasets ->
+            sortTodayDataSettlementUseCase(
+                timeSorting = sorting.time,
+                categorySorting = sorting.category,
+                paymentSorting = sorting.payment,
+                alphabeticalOrder = sorting.alphabetical,
+                amountSorting = sorting.amount,
+                financeEntityList = datasets
             )
-        )
-    }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
-    fun loadYesterdayDatasets() = viewModelScope.launch {
-        val uid = accountService.userState.value?.uid ?: return@launch
-        val (start, end) = getDayRange(java.time.LocalDate.now().minusDays(1))
-        financeOperationsUseCase.filterFinances(
-            userId = uid,
-            filter = Filter.and(
-                Filter.greaterThanOrEqualTo("createdAt", start),
-                Filter.lessThan("createdAt", end)
-            )
-        )
-    }
+    val sortedYesterday: StateFlow<DataState<List<DataSettlement>>> = rawDatasetsFlow
+        .map { it.toDataState { datasets -> getYesterdayDataSettlementUseCase(datasets) } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
-    fun loadFulfillmentData() = viewModelScope.launch {
-        val uid = accountService.userState.value?.uid ?: return@launch
-        financeOperationsUseCase.filterFinances(
-            userId = uid,
-            filter = Filter.or(
-                Filter.equalTo("financeType", "GOAL"),
-                Filter.equalTo("financeType", "LIABILITY")
-            )
-        )
-    }
+    val weeklyData: StateFlow<DataState<List<DataSettlement>>> = combine(
+        rawDatasetsFlow,
+        datesFlow
+    ) { homeData, dates ->
+        homeData.toDataState { datasets -> getWeeklyDataUseCase(datasets, dates) }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
-    fun loadAdjustData() = viewModelScope.launch {
-        val uid = accountService.userState.value?.uid ?: return@launch
-        // Fetch a broad set to ensure settlements are loaded
-        financeOperationsUseCase.filterFinances(
-            userId = uid,
-            filter = Filter.greaterThan("amount", -1)
-        )
-    }
+    val activityCounts: StateFlow<DataState<Map<LocalDate, Int>>> = rawDatasetsFlow
+        .map { homeData ->
+            homeData.toDataState { datasets ->
+                val map = mutableMapOf<LocalDate, Int>()
+                datasets.forEach { entity ->
+                    val date = entity.createdAt.toLocalDateTimeUtc().date
+                    map[date] = (map[date] ?: 0) + 1
 
-    // 2. Combine them into a single reactive StateFlow
+                    val settlements = when (entity) {
+                        is FinanceEntity.Goal -> entity.settlement
+                        is FinanceEntity.Liability -> entity.settlement
+                        else -> emptyList()
+                    }
+                    settlements.forEach { s ->
+                        val sDate = s.dateTime.toLocalDateTimeUtc().date
+                        map[sDate] = (map[sDate] ?: 0) + 1
+                    }
+
+                    if (entity is FinanceEntity.Transaction) {
+                        entity.withdrawal.forEach { w ->
+                            val sDate = w.createdAt.toLocalDateTimeUtc().date
+                            map[sDate] = (map[sDate] ?: 0) + 1
+                        }
+                    }
+                }
+                map
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    // ---------------------------------------------------------------------------
+    // Week / date helpers
+    // ---------------------------------------------------------------------------
+
+    val currentWeekDerived: StateFlow<List<LocalDate>> = currentWeekFlow
+        .map { getCurrentWeekUseCase(it) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
+
+    val currentDateDerived = combine(
+        currentWeekFlow,
+        uiState.map { it.date }
+    ) { week, date ->
+        getCurrentDateUseCase(week, date)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), LocalDate.now())
+
+    // ---------------------------------------------------------------------------
+    // isDataLoaded — true once ALL key flows have settled (Success or Error).
+    // Used by the composable to switch from shimmer → content.
+    // ---------------------------------------------------------------------------
+
     val isDataLoaded: StateFlow<Boolean> = combine(
         todayFinance,
-        donutChartData,
-        currentAccountBalance,
         sortedToday
-    ) { finance, donut, balance, sorted ->
-        // Helper to check if a state has finished loading (either successfully or with an error)
+    ) { finance, sorted ->
         fun DataState<*>.isTerminal() = this is DataState.Success || this is DataState.Error
-
-        // Evaluates to true only when ALL 4 flows have finished their network requests
-        finance.isTerminal() && donut.isTerminal() && balance.isTerminal() && sorted.isTerminal()
+        // More lenient loaded check: Success even if some secondary data (like charts) is still pending
+        finance.isTerminal() || sorted.isTerminal()
     }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5000), // Keeps flow alive for 5s during config changes
-        initialValue = false // Starts as false while data fetches
+        viewModelScope,
+        SharingStarted.WhileSubscribed(STATE_TIMEOUT),
+        initialValue = false
     )
 
+    // ---------------------------------------------------------------------------
+    // CRUD operations — all go through financeOperationsUseCase
+    // ---------------------------------------------------------------------------
 
     fun addData(financeEntity: FinanceEntity) = launchWithUid {
         financeOperationsUseCase.addData(it, financeEntity)
@@ -609,9 +369,7 @@ class HomeViewModel @Inject constructor(
 
     fun addWithdrawal(financeId: String, financeType: String, withdrawal: Withdrawal) =
         launchWithUid {
-            financeOperationsUseCase.addWithdrawal(
-                it, financeId, financeType, withdrawal
-            )
+            financeOperationsUseCase.addWithdrawal(it, financeId, financeType, withdrawal)
         }
 
     fun updateSettlement(
@@ -623,9 +381,10 @@ class HomeViewModel @Inject constructor(
         financeOperationsUseCase.updateSettlement(it, financeId, financeType, old, new)
     }
 
-    fun removeSettlement(financeId: String, financeType: String, adj: Settlement) = launchWithUid {
-        financeOperationsUseCase.removeSettlement(it, financeId, financeType, adj)
-    }
+    fun removeSettlement(financeId: String, financeType: String, adj: Settlement) =
+        launchWithUid {
+            financeOperationsUseCase.removeSettlement(it, financeId, financeType, adj)
+        }
 
     fun updateWithdrawal(
         financeId: String,
@@ -641,40 +400,60 @@ class HomeViewModel @Inject constructor(
             financeOperationsUseCase.removeWithdrawal(it, financeId, financeType, withdrawal)
         }
 
-    private fun launchWithUid(block: suspend (String) -> Unit) {
-        viewModelScope.launch {
-            val uid = accountService.userState.value?.uid ?: return@launch
-            block(uid)
-        }
-    }
+    // Public aliases kept for backward compatibility with existing composables
+
+    fun addSettlementData(financeId: String, financeType: String, adj: Settlement) =
+        addSettlement(financeId, financeType, adj)
+
+    fun addWithdrawalData(financeId: String, financeType: String, withdrawal: Withdrawal) =
+        addWithdrawal(financeId, financeType, withdrawal)
+
+    fun updateWithdrawalData(
+        financeId: String, financeType: String, old: Withdrawal, new: Withdrawal
+    ) = updateWithdrawal(financeId, financeType, old, new)
+
+    fun removeWithdrawalFinance(financeId: String, financeType: String, withdrawal: Withdrawal) =
+        removeWithdrawal(financeId, financeType, withdrawal)
+
+    fun updateSettlementData(
+        financeId: String, financeType: String, old: Settlement, new: Settlement
+    ) = updateSettlement(financeId, financeType, old, new)
+
+    fun removeSettlementFinance(financeId: String, financeType: String, adj: Settlement) =
+        removeSettlement(financeId, financeType, adj)
+
+    // ---------------------------------------------------------------------------
+    // Routine / WorkManager
+    // ---------------------------------------------------------------------------
 
     fun beginWork(financeEntity: FinanceEntity) {
         val uid = accountService.userState.value?.uid ?: return
         if (financeEntity is FinanceEntity.Goal) {
             if (financeEntity.routine.routine == Routine.Nothing) return
-            val financeEntityType = "GOAL"
             routineWorker(
                 uid,
                 financeEntity.id,
-                financeEntityType,
+                "GOAL",
                 financeEntity.routine.triggerMillis,
                 true
             )
         }
     }
 
+    fun beginTheWork(financeEntity: FinanceEntity) = beginWork(financeEntity)
 
-    fun updateSelectedTabIndex(index: Int) {
+    // ---------------------------------------------------------------------------
+    // UI state updaters
+    // ---------------------------------------------------------------------------
+
+    fun updateSelectedTabIndex(index: Int) =
         _uiState.update { it.copy(selectedTabIndex = index) }
-    }
 
-    fun updateCurrentWeek(dates: List<LocalDate>) {
+    fun updateCurrentWeek(dates: List<LocalDate>) =
         _uiState.update { it.copy(currentWeek = dates) }
-    }
 
-    fun updateWeekDays(dates: List<LocalDate>) {
+    fun updateWeekDays(dates: List<LocalDate>) =
         _uiState.update { it.copy(dates = dates) }
-    }
 
     fun updateSorting(
         time: SortType? = null,
@@ -700,55 +479,29 @@ class HomeViewModel @Inject constructor(
     fun updatePaymentSorting(method: PaymentMethod?) = updateSorting(payment = method)
     fun updateAlphabeticalOrder(type: SortType) = updateSorting(alpha = type)
 
-    fun updateOnDatasetModelBottomSheetShow(show: Boolean) {
+    fun updateOnDatasetModelBottomSheetShow(show: Boolean) =
         _uiState.update { it.copy(isDatasetBottomSheetOpen = show) }
-    }
 
-    fun updateOnAdjustModelBottomSheetShow(show: Boolean) {
+    fun updateOnAdjustModelBottomSheetShow(show: Boolean) =
         _uiState.update { it.copy(isSettlementBottomSheetOpen = show) }
-    }
 
-    fun updateIsBottomSheetContentLoading(loading: Boolean) {
+    fun updateIsBottomSheetContentLoading(loading: Boolean) =
         _uiState.update { it.copy(isBottomSheetContentLoading = loading) }
-    }
 
-    fun updateOnFilterClick(show: Boolean) {
+    fun updateOnFilterClick(show: Boolean) =
         _uiState.update { it.copy(onFilterClick = show) }
-    }
 
-    fun updateOnActivateShow(show: Boolean) {
+    fun updateOnActivateShow(show: Boolean) =
         _uiState.update { it.copy(onActivateShow = show) }
+
+    // ---------------------------------------------------------------------------
+    // Private helpers
+    // ---------------------------------------------------------------------------
+
+    private fun launchWithUid(block: suspend (String) -> Unit) {
+        viewModelScope.launch {
+            val uid = accountService.userState.value?.uid ?: return@launch
+            block(uid)
+        }
     }
-
-    fun beginTheWork(financeEntity: FinanceEntity) = beginWork(financeEntity)
-
-    fun addSettlementData(financeId: String, financeType: String, adj: Settlement) =
-        addSettlement(financeId, financeType, adj)
-
-    fun addWithdrawalData(financeId: String, financeType: String, withdrawal: Withdrawal) =
-        addWithdrawal(
-            financeId,
-            financeType,
-            withdrawal = withdrawal
-        )
-
-    fun updateWithdrawalData(
-        financeId: String,
-        financeType: String,
-        old: Withdrawal,
-        new: Withdrawal
-    ) = updateWithdrawal(financeId, financeType, old, new)
-
-    fun removeWithdrawalFinance(financeId: String, financeType: String, withdrawal: Withdrawal) =
-        removeWithdrawal(financeId, financeType, withdrawal)
-
-    fun updateSettlementData(
-        financeId: String,
-        financeType: String,
-        old: Settlement,
-        new: Settlement
-    ) = updateSettlement(financeId, financeType, old, new)
-
-    fun removeSettlementFinance(financeId: String, financeType: String, adj: Settlement) =
-        removeSettlement(financeId, financeType, adj)
 }

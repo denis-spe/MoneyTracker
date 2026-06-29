@@ -14,11 +14,11 @@ plugins {
 //extensions.configure<ApplicationExtension>
 android {
     namespace = "com.example.moneytracker"
-    compileSdk = 36
+    compileSdk = 37
     defaultConfig {
         applicationId = "com.example.moneytracker"
         minSdk = 26
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 1
         versionName = "1.0"
 
@@ -29,11 +29,16 @@ android {
     buildTypes {
 
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+        }
+
+        debug {
+            isMinifyEnabled = false
         }
     }
 
@@ -128,8 +133,8 @@ dependencies {
 
     // Vico chart
     // Core
-    val vicoVersion = "2.3.6" // As of late 2025, please check for the latest version
-    implementation("com.patrykandpatrick.vico:core:$vicoVersion")
+    val vicoVersion = "2.5.2" // As of late 2025, please check for the latest version
+    implementation(libs.core)
     implementation("com.patrykandpatrick.vico:compose-m3:$vicoVersion")
 
     // Compose (new cartesian API)
@@ -149,9 +154,10 @@ dependencies {
     implementation(libs.androidx.hilt.work)
     ksp(libs.androidx.hilt.compiler.v120)
 
-    implementation("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("androidx.datastore:datastore-preferences:1.2.1")
 
     implementation("com.github.skydoves:colorpicker-compose:1.1.4")
+    implementation("io.github.androidpoet:drafter:0.2.0")
 
 
 }

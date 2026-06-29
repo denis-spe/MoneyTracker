@@ -222,8 +222,9 @@ fun LiabilityContent(
                     fontWeight = FontWeight.Bold
                 )
             }
-            items(liability.settlement) { settlement ->
+            items(liability.settlement, key = { it.settlementId }) { settlement ->
                 SettlementItem(
+                    modifier = Modifier.animateItem(),
                     settlement = settlement,
                     onClick = { selectedSettlement = settlement }
                 )

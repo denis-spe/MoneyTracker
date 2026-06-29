@@ -35,10 +35,6 @@ object FirebaseAuthModule {
     fun provideFirebaseFirestore(): FirebaseFirestore {
         val firestore = FirebaseFirestore.getInstance()
 
-        if (BuildConfig.DEBUG) {
-            firestore.useEmulator(EMULATOR_IP, 8080)
-        }
-
         val settings = FirebaseFirestoreSettings.Builder()
             .setLocalCacheSettings(
                 PersistentCacheSettings.newBuilder()
@@ -46,10 +42,16 @@ object FirebaseAuthModule {
                     .build()
             )
             .build()
-        firestore.firestoreSettings = settings
-        
+
         FirebaseFirestore.setLoggingEnabled(true)
-        return firestore
+
+        return FirebaseFirestore.getInstance().apply {
+            firestoreSettings = settings
+
+            if (BuildConfig.DEBUG) {
+                firestore.useEmulator(EMULATOR_IP, 8080)
+            }
+        }
     }
 
     @Singleton

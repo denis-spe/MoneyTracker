@@ -121,7 +121,7 @@ open class AccountServicesImpl(
 
         // Create a Google ID option with filtering by authorized accounts enabled.
         val googleIdOption: GetGoogleIdOption = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
+            .setFilterByAuthorizedAccounts(true)
             .setServerClientId(webClientId)
             .setNonce(generateSecureRandomNonce())
             .build()
@@ -171,7 +171,6 @@ open class AccountServicesImpl(
                     .setDisplayName("$firstName $lastName").build()
             )
         _userState.value = auth.currentUser
-        auth.tenantId
     }
 
     override suspend fun sendRecoveryEmail(email: String) {
@@ -195,18 +194,16 @@ open class AccountServicesImpl(
     }
 
     override suspend fun signOut() {
-        val user = auth.currentUser
-
         try {
-            if (user?.isAnonymous == true) {
-                user.delete().await() // wait for completion
+            if (auth.currentUser?.isAnonymous == true) {
+                auth.currentUser?.delete()?.await()
             }
+            auth.signOut()
         } catch (e: Exception) {
-            Log.w("Auth", "Anonymous delete failed", e)
+            Log.e("Auth", "Sign out error — forcing local sign out anyway", e)
+            auth.signOut()  // still sign out locally
+        } finally {
+            _userState.value = null
         }
-
-        auth.signOut()
-
-        _userState.value = null
     }
 }

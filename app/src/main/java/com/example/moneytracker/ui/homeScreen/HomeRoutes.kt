@@ -5,7 +5,6 @@ package com.example.moneytracker.ui.homeScreen
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneytracker.ui.UserViewModel
@@ -14,46 +13,32 @@ import com.example.moneytracker.ui.homeScreen.overviewScreen.OverviewScreen
 import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 
+// ─────────────────────────────────────────────────────────────────────────────
+// All route composables receive ViewModels as explicit parameters.
+// hiltViewModel() is NEVER called here — that would create new instances
+// scoped to each pager page, causing duplicate Firestore subscriptions.
+// ─────────────────────────────────────────────────────────────────────────────
+
 @Composable
 fun TodayScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel(),
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel,
 ) {
-
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    val donutChartData by viewModel
-        .donutChartData
-        .collectAsStateWithLifecycle()
-
-    val datasetWithAdjust by viewModel
-        .sortedToday
-        .collectAsStateWithLifecycle()
-
-    val fulfillmentFinanceEntity by viewModel
-        .fulfillmentFinanceEntity
-        .collectAsStateWithLifecycle()
-
-    val currentAmountBalance by viewModel
-        .currentAccountBalance
-        .collectAsStateWithLifecycle()
-
-    val liabilityBalance by viewModel
-        .liabilityBalance
-        .collectAsStateWithLifecycle()
+    val donutChartData by viewModel.donutChartData.collectAsStateWithLifecycle()
+    val datasetWithAdjust by viewModel.sortedToday.collectAsStateWithLifecycle()
+    val fulfillmentFinanceEntity by viewModel.fulfillmentFinanceEntity.collectAsStateWithLifecycle()
+    val currentAmountBalance by viewModel.currentAccountBalance.collectAsStateWithLifecycle()
+    val liabilityBalance by viewModel.liabilityBalance.collectAsStateWithLifecycle()
 
     TodayScreen(
         paddingValues = paddingValues,
-
         donutChartDataCollection = donutChartData,
-
         uiState = uiState,
-
         fulfillmentFinanceEntityList = fulfillmentFinanceEntity,
         currentAmountBalance = currentAmountBalance,
         liabilityBalance = liabilityBalance,
-
         homeViewModel = viewModel,
         datasetWithAdjust = datasetWithAdjust,
         userViewModel = userViewModel
@@ -64,54 +49,34 @@ fun TodayScreenRoute(
 fun FulfillmentScreenRoute(
     paddingValues: PaddingValues,
     onNavigate: NavController?,
+    viewModel: HomeViewModel,
     onTabClick: (Int) -> Unit = {},
-    viewModel: HomeViewModel = hiltViewModel()
 ) {
-
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-    val allDataset by viewModel
-        .allDataset
-        .collectAsStateWithLifecycle()
+    val allDataset by viewModel.allDataset.collectAsStateWithLifecycle()
 
     OverviewScreen(
         onNavigate = onNavigate,
-
         paddingValues = paddingValues,
-
         allDataset = allDataset,
-
-        uiState = uiState,
-
-        onTabClick = onTabClick
+        uiState = uiState
     )
 }
 
 @Composable
 fun YesterdayScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel(),
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel,
 ) {
-    val yesterdayChartDataState by viewModel
-        .yesterdayChartData
-        .collectAsStateWithLifecycle()
-
-    val yesterdayStatsDataState by viewModel
-        .yesterdayStats
-        .collectAsStateWithLifecycle()
-
-    val sortedYesterday by viewModel
-        .sortedYesterday
-        .collectAsStateWithLifecycle()
+    val yesterdayChartDataState by viewModel.yesterdayChartData.collectAsStateWithLifecycle()
+    val yesterdayStatsDataState by viewModel.yesterdayStats.collectAsStateWithLifecycle()
+    val sortedYesterday by viewModel.sortedYesterday.collectAsStateWithLifecycle()
 
     YesterdayScreen(
         paddingValues = paddingValues,
-
         sortAbleDataSettlementDataState = sortedYesterday,
-
         yesterdayChartDataState = yesterdayChartDataState,
-
         yesterdayStatsDataState = yesterdayStatsDataState,
         viewModel = viewModel,
         userViewModel = userViewModel
@@ -121,18 +86,14 @@ fun YesterdayScreenRoute(
 @Composable
 fun AllScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel = hiltViewModel(),
-    userViewModel: UserViewModel = hiltViewModel(),
+    viewModel: HomeViewModel,
+    userViewModel: UserViewModel,
 ) {
-    val dataState by viewModel
-        .weeklyData
-        .collectAsStateWithLifecycle()
+    val dataState by viewModel.weeklyData.collectAsStateWithLifecycle()
 
     AllScreen(
         paddingValues = paddingValues,
-
         viewModel = viewModel,
-
         dataState = dataState,
         userViewModel = userViewModel
     )

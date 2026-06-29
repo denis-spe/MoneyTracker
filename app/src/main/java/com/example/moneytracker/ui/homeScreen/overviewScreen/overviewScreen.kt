@@ -65,6 +65,9 @@ import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.screenManager.FulfillmentDetailScreenRouter
 import com.example.moneytracker.ui.screenManager.LiabilityDetailScreenRouter
+import com.example.moneytracker.ui.screenManager.ShowAllGoalsScreenRouter
+import com.example.moneytracker.ui.screenManager.ShowAllLiabilitiesScreenRouter
+import com.example.moneytracker.ui.screenManager.ShowAllTransactionsScreenRouter
 import com.example.moneytracker.ui.screenManager.TransactionDetailScreenRouter
 import com.example.moneytracker.ui.theme.StewardTheme
 import com.example.moneytracker.ui.usecase.coupleDatasetsWithSettlements
@@ -104,7 +107,7 @@ fun SectionHeader(
 }
 
 @Composable
-fun TransactionCard(
+internal fun TransactionCard(
     modifier: Modifier = Modifier,
     financeEntity: FinanceEntity.Transaction,
     onNavigate: NavController?
@@ -238,7 +241,7 @@ fun WithdrawalCard(
 }
 
 @Composable
-fun GoalCard(
+internal fun GoalCard(
     modifier: Modifier = Modifier,
     financeEntityGoal: FinanceEntity.Goal,
     onNavigate: NavController?
@@ -376,7 +379,7 @@ fun GoalCard(
     }
 }
 
-private fun getGoalStatusText(goal: FinanceEntity.Goal): String? {
+fun getGoalStatusText(goal: FinanceEntity.Goal): String? {
     val endDateTime = goal.routine.deadlineDateTime.toLocalDateTimeUtc()
     val endDate = "${endDateTime.day}/${endDateTime.month.name.title}/${endDateTime.year}"
     val goalStatus = goal.status
@@ -400,7 +403,7 @@ private fun getGoalStatusText(goal: FinanceEntity.Goal): String? {
 }
 
 @Composable
-fun LiabilityCard(
+internal fun LiabilityCard(
     modifier: Modifier = Modifier,
     financeEntity: FinanceEntity.Liability,
     onNavigate: NavController?
@@ -514,8 +517,7 @@ fun OverviewScreen(
     onNavigate: NavController?,
     paddingValues: PaddingValues,
     allDataset: DataState<List<FinanceEntity>>,
-    uiState: HomeUiState,
-    onTabClick: (Int) -> Unit = {}
+    uiState: HomeUiState
 ) {
     @Suppress("UNUSED_VARIABLE")
     val unusedUiState = uiState
@@ -600,18 +602,21 @@ fun OverviewScreen(
 
                             if (recentActivity.isNotEmpty()) {
                                 SectionHeader(
-                                    title = "Recent Activity",
-                                    onSeeAllClick = { onTabClick(1) } // Go to Today
+                                    title = "Recent Transactions",
+                                    onSeeAllClick = {
+                                        onNavigate?.navigate(ShowAllTransactionsScreenRouter)
+                                    } // Go to Today
                                 )
 
                                 LazyRow(
                                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
-                                    items(recentActivity) { activity ->
+                                    items(recentActivity, key = { it.id }) { activity ->
                                         when (activity) {
                                             is DataSettlement.SettlementData -> {
                                                 TransactionCard(
+                                                    modifier = Modifier.animateItem(),
                                                     financeEntity = activity.financeEntity as FinanceEntity.Transaction,
                                                     onNavigate = onNavigate
                                                 )
@@ -619,6 +624,7 @@ fun OverviewScreen(
 
                                             is DataSettlement.SettlementWithdrawal -> {
                                                 WithdrawalCard(
+                                                    modifier = Modifier.animateItem(),
                                                     withdrawal = activity.withdrawal
                                                 )
                                             }
@@ -641,7 +647,9 @@ fun OverviewScreen(
                             if (goals.isNotEmpty()) {
                                 SectionHeader(
                                     title = "Active Goals",
-                                    onSeeAllClick = { /* Maybe expand list or stay here */ }
+                                    onSeeAllClick = {
+                                        onNavigate?.navigate(ShowAllGoalsScreenRouter)
+                                    }
                                 )
 
                                 Column(
@@ -649,6 +657,7 @@ fun OverviewScreen(
                                 ) {
                                     goals.forEach { goal ->
                                         GoalCard(
+                                            modifier = Modifier.animateItem(),
                                             financeEntityGoal = goal,
                                             onNavigate = onNavigate
                                         )
@@ -668,7 +677,9 @@ fun OverviewScreen(
                             if (liabilities.isNotEmpty()) {
                                 SectionHeader(
                                     title = "Liabilities",
-                                    onSeeAllClick = { onTabClick(3) } // Go to All
+                                    onSeeAllClick = {
+                                        onNavigate?.navigate(ShowAllLiabilitiesScreenRouter)
+                                    } // Go to All
                                 )
 
                                 LazyRow(
@@ -677,6 +688,7 @@ fun OverviewScreen(
                                 ) {
                                     items(liabilities, key = { it.id }) { liability ->
                                         LiabilityCard(
+                                            modifier = Modifier.animateItem(),
                                             financeEntity = liability,
                                             onNavigate = onNavigate
                                         )

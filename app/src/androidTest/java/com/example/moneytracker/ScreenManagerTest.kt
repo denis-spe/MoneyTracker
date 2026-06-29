@@ -5,7 +5,6 @@ import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
-import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.moneytracker.ui.screenManager.ScreenManager
 import dagger.hilt.android.testing.HiltAndroidTest
@@ -18,7 +17,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ScreenManagerTest : TestBase(
     screenComposable = {
-        ScreenManager(rememberNavController())
+        ScreenManager()
     }) {
 
     @Test

@@ -57,20 +57,22 @@ fun VicoLineChart(
     val modelProducer = remember { CartesianChartModelProducer() }
     val zoomState = rememberVicoZoomState(initialZoom = Zoom.Content)
 
-    val markerFormatter = DefaultCartesianMarker.ValueFormatter { context, targets ->
-        // Get the first highlighted point's data
-        val primaryTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
-        val entry = primaryTarget?.points?.firstOrNull()?.entry
+    val vicoMarkerFormatter = remember(markerFormatter) {
+        DefaultCartesianMarker.ValueFormatter { context, targets ->
+            // Get the first highlighted point's data
+            val primaryTarget = targets.firstOrNull() as? LineCartesianLayerMarkerTarget
+            val entry = primaryTarget?.points?.firstOrNull()?.entry
 
-        if (entry != null) {
-            // Format as "X: Value, Y: Value" or any layout you prefer
-            markerFormatter(entry.x, entry.y)
-        } else {
-            ""
+            if (entry != null) {
+                // Format as "X: Value, Y: Value" or any layout you prefer
+                markerFormatter(entry.x, entry.y)
+            } else {
+                ""
+            }
         }
     }
 
-    val marker = rememberMarker(valueFormatter = markerFormatter)
+    val marker = rememberMarker(valueFormatter = vicoMarkerFormatter)
 
 
     val chartData = chartDataCollection.chartData

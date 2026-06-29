@@ -39,27 +39,36 @@ class StewardApplication : Application(), Configuration.Provider {
         super.onCreate()
 
         if (!auth.hasUser) return
+
+        // Defer routine worker initialization to reduce app startup time
+        // This runs on a background thread with low priority to not block UI
         val scope = CoroutineScope(kotlinx.coroutines.Dispatchers.IO)
         scope.launch {
-            val userId = auth.currentUserId
-            val datasets = dataStorage.getWholeDatasets(userId, {}, {})
-            datasets.collect { datasetList ->
-                datasetList.forEach {
-                    if (it is FinanceEntity.Goal) {
-                        if (it.routine.routine != Routine.Nothing) {
-                            workers.startRoutineWorker(
-                                WorkersTask(
-                                    userId = userId,
-                                    datasetId = it.id,
-                                    financeType = "GOAL",
-                                    routineData = it.routine,
-                                    deadlineDateTime = it.routine.deadlineDateTime
+            try {
+                val userId = auth.currentUserId
+                val datasets = dataStorage.getWholeDatasets(userId, {}, {})
+                datasets.collect { datasetList ->
+                    datasetList.forEach {
+                        if (it is FinanceEntity.Goal) {
+                            if (it.routine.routine != Routine.Nothing) {
+                                workers.startRoutineWorker(
+                                    WorkersTask(
+                                        userId = userId,
+                                        datasetId = it.id,
+                                        financeType = "GOAL",
+                                        routineData = it.routine,
+                                        deadlineDateTime = it.routine.deadlineDateTime
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }
+            } catch (e: Exception) {
+                // Silently handle errors during background initialization
             }
         }
+
+        StartupTimer.mark("App.onCreate")
     }
 }

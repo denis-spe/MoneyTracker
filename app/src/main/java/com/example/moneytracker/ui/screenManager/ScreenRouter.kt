@@ -13,6 +13,16 @@ data class LoadingScreenRouter(val userId: String)
 object MailScreenRouter
 
 @Serializable
+object ShowAllTransactionsScreenRouter
+
+@Serializable
+object ShowAllLiabilitiesScreenRouter
+
+@Serializable
+object ShowAllGoalsScreenRouter
+
+
+@Serializable
 object LoginScreenRouter
 
 @Serializable

@@ -372,7 +372,7 @@ fun ItemListAreaSort(
                     modifier = Modifier.padding(3.dp)
 
                 ) {
-                    items(category.size) {
+                    items(category.size, key = { category[it].first }) {
 
 
                         val selectedCategory = category[it].first
@@ -380,6 +380,7 @@ fun ItemListAreaSort(
 
 
                         TextButton(
+                            modifier = Modifier.animateItem(),
                             onClick = {
                                 if (selectedCategory == "Don't sort") {
                                     categoryState.value = ""
@@ -706,9 +707,11 @@ fun LazyListScope.itemListContent(
         is DataState.Success -> {
             val data = datasetWithAdjust.data
 
-            items(data.size) { index ->
+            items(data.size, key = { data[it].id }) { index ->
                 ItemCard(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .animateItem(),
                     dataSettlement = data[index],
                     viewModel = viewModel,
                     userViewModel = userViewModel
@@ -935,6 +938,7 @@ fun ItemCard(
         Receipt(
             dataSettlement = dataSettlement,
             onShowDialog = onShowDialog,
+            viewModel = viewModel,
         )
     }
 

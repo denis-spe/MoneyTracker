@@ -34,7 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.moneytracker.helper.getWeeks
 import com.example.moneytracker.helper.title
@@ -157,7 +156,9 @@ fun CalendarViewSection(
                     fontWeight = FontWeight.Bold
                 )
             }
-            GroupedWeeks { week ->
+            GroupedWeeks(
+                viewModel = viewModel
+            ) { week ->
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
@@ -260,7 +261,7 @@ fun CalendarViewSection(
 @Composable
 fun GroupedWeeks(
     modifier: Modifier = Modifier,
-    viewModel: HomeViewModel = hiltViewModel(),
+    viewModel: HomeViewModel,
     weeksAfter: Int = 100,
     weeksBefore: Int = 100,
     moveTo: (initialPage: Int, pageState: PagerState) -> Unit = { _, _ -> },

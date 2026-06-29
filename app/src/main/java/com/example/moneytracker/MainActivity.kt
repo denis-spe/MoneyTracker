@@ -16,8 +16,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
+import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.settings.SettingsViewModel
 import com.example.moneytracker.ui.settings.ThemeConfig
+import com.example.moneytracker.ui.showAll.ShowAllViewModel
 import com.example.moneytracker.ui.theme.CustomPalette
 import com.example.moneytracker.ui.theme.StewardTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,22 +29,20 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val settingsViewModel: SettingsViewModel by viewModels()
+    private val homeViewModel: HomeViewModel by viewModels()
+    private val showAllViewModel: ShowAllViewModel by viewModels()
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { isGranted: Boolean ->
-        if (isGranted) {
-            Log.d("MainActivity", "Notification permission granted")
-        } else {
-            Log.w("MainActivity", "Notification permission denied")
-        }
+    ) { isGranted ->
+        if (isGranted) Log.d("MainActivity", "Notification permission granted")
+        else Log.w("MainActivity", "Notification permission denied")
     }
 
     private fun checkNotificationPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             if (ContextCompat.checkSelfPermission(
-                    this,
-                    Manifest.permission.POST_NOTIFICATIONS
+                    this, Manifest.permission.POST_NOTIFICATIONS
                 ) != PackageManager.PERMISSION_GRANTED
             ) {
                 requestPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -51,28 +51,23 @@ class MainActivity : ComponentActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    override fun onCreate(savedInstanceState: Bundle?) {
+    override fun onCreate(savedInstanceState: Bundle?) {  // no @RequiresApi here
         super.onCreate(savedInstanceState)
+        StartupTimer.mark("Activity.onCreate")
+
+        // Eagerly initialize ViewModels to start data fetching ASAP
+        homeViewModel
+        settingsViewModel
+        showAllViewModel
+
         enableEdgeToEdge()
         checkNotificationPermission()
 
         setContent {
-            val themeConfig by settingsViewModel.themeConfig.collectAsState()
-            val dynamicColor by settingsViewModel.dynamicColor.collectAsState()
+            StartupTimer.mark("setContent composed")
+            val themeState by settingsViewModel.themeState.collectAsState()
 
-            // Light palette
-            val lSecondarySurface by settingsViewModel.lightSecondarySurface.collectAsState()
-            val lAccentContent by settingsViewModel.lightAccentContent.collectAsState()
-            val lOnSurfaceText by settingsViewModel.lightOnSurfaceText.collectAsState()
-            val lPrimaryAccent by settingsViewModel.lightPrimaryAccent.collectAsState()
-
-            // Dark palette
-            val dSecondarySurface by settingsViewModel.darkSecondarySurface.collectAsState()
-            val dAccentContent by settingsViewModel.darkAccentContent.collectAsState()
-            val dOnSurfaceText by settingsViewModel.darkOnSurfaceText.collectAsState()
-            val dPrimaryAccent by settingsViewModel.darkPrimaryAccent.collectAsState()
-
-            val darkTheme = when (themeConfig) {
+            val darkTheme = when (themeState.themeConfig) {
                 ThemeConfig.SYSTEM -> isSystemInDarkTheme()
                 ThemeConfig.LIGHT -> false
                 ThemeConfig.DARK -> true
@@ -80,21 +75,27 @@ class MainActivity : ComponentActivity() {
 
             StewardTheme(
                 darkTheme = darkTheme,
-                dynamicColor = dynamicColor,
+                dynamicColor = themeState.dynamicColor,
                 lightCustomColors = CustomPalette(
-                    primaryAccent = lPrimaryAccent?.let { Color(it.toULong()) },
-                    secondarySurface = lSecondarySurface?.let { Color(it.toULong()) },
-                    accentContent = lAccentContent?.let { Color(it.toULong()) },
-                    onSurfaceText = lOnSurfaceText?.let { Color(it.toULong()) }
+                    primaryAccent = themeState.lightPrimaryAccent?.let { Color(it.toULong()) },
+                    secondarySurface = themeState.lightSecondarySurface?.let { Color(it.toULong()) },
+                    accentContent = themeState.lightAccentContent?.let { Color(it.toULong()) },
+                    onSurfaceText = themeState.lightOnSurfaceText?.let { Color(it.toULong()) }
                 ),
                 darkCustomColors = CustomPalette(
-                    primaryAccent = dPrimaryAccent?.let { Color(it.toULong()) },
-                    secondarySurface = dSecondarySurface?.let { Color(it.toULong()) },
-                    accentContent = dAccentContent?.let { Color(it.toULong()) },
-                    onSurfaceText = dOnSurfaceText?.let { Color(it.toULong()) }
+                    primaryAccent = themeState.darkPrimaryAccent?.let { Color(it.toULong()) },
+                    secondarySurface = themeState.darkSecondarySurface?.let { Color(it.toULong()) },
+                    accentContent = themeState.darkAccentContent?.let { Color(it.toULong()) },
+                    onSurfaceText = themeState.darkOnSurfaceText?.let { Color(it.toULong()) }
                 )
             ) {
-                App()
+                // reportFullyDrawn is passed as a callback — HomeScreen calls it
+                // when isDataLoaded turns true using the ViewModel it already has
+                App(
+                    homeViewModel = homeViewModel,
+                    showAllViewModel = showAllViewModel,
+                    onFullyDrawn = { reportFullyDrawn() }
+                )
             }
         }
     }
