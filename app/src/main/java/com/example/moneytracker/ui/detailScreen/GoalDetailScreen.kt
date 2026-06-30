@@ -35,6 +35,7 @@ import androidx.compose.material.icons.automirrored.filled.ShowChart
 import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.twotone.Insights
@@ -49,6 +50,8 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -59,6 +62,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -90,22 +94,31 @@ import com.example.moneytracker.helper.formatToTime
 import com.example.moneytracker.helper.formatValueOnly
 import com.example.moneytracker.helper.iqr
 import com.example.moneytracker.helper.kurtosis
+import com.example.moneytracker.helper.limitLength
 import com.example.moneytracker.helper.mode
 import com.example.moneytracker.helper.monthName
 import com.example.moneytracker.helper.quartiles
 import com.example.moneytracker.helper.safePopBackStack
 import com.example.moneytracker.helper.skewness
+import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.std
+import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.helper.variance
 import com.example.moneytracker.helper.weekDay
 import com.example.moneytracker.helper.year
 import com.example.moneytracker.helper.zScore
+import com.example.moneytracker.ui.components.charts.RotatedBarChart
 import com.example.moneytracker.ui.components.charts.VicoLineChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.components.charts.collections.ChartDataCollection
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.theme.StewardTheme
+import io.androidpoet.drafter.bars.renderer.HistogramRenderer
+import io.androidpoet.drafter.boxplot.BoxPlotChart
+import io.androidpoet.drafter.boxplot.BoxPlotChartRenderer
+import io.androidpoet.drafter.boxplot.model.BoxGroup
+import io.androidpoet.drafter.boxplot.model.BoxPlotData
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -305,14 +318,266 @@ fun GoalDetailScreen(
 }
 
 @Composable
+fun GoalMoreCharts(
+    currentGoal: FinanceEntity.Goal,
+    onDialogShow: MutableState<Boolean>
+) {
+    if (onDialogShow.value && currentGoal.achievement.isNotEmpty()) {
+        val bins = remember { mutableIntStateOf(15) }
+        val goalColor = colorResource(currentGoal.colorRes)
+
+        val achievements = remember(currentGoal.achievement) {
+            currentGoal.achievement.map { it.totalSettlementAmount }
+        }
+
+        val stats = remember(achievements) {
+            val (q1, median, q3) = achievements.quartiles()
+            val min = achievements.minOrNull() ?: 0.0
+            val max = achievements.maxOrNull() ?: 0.0
+            val iqr = achievements.iqr()
+            object {
+                val min = min
+                val q1 = q1
+                val median = median
+                val q3 = q3
+                val max = max
+                val iqr = iqr
+            }
+        }
+
+        val histAchievement = remember(achievements, bins.intValue, goalColor) {
+            HistogramRenderer(
+                dataPoints = achievements.map { it.toFloat() },
+                color = goalColor,
+                binCount = bins.intValue
+            )
+        }
+
+        val boxGroups = remember(stats, currentGoal.label) {
+            listOf(
+                BoxGroup(
+                    label = currentGoal.label,
+                    min = stats.min.toFloat(),
+                    q1 = stats.q1.toFloat(),
+                    median = stats.median.toFloat(),
+                    q3 = stats.q3.toFloat(),
+                    max = stats.max.toFloat(),
+                    color = goalColor
+                )
+            )
+        }
+
+        val boxPlotRenderer = remember(boxGroups) {
+            BoxPlotChartRenderer(
+                BoxPlotData(
+                    groups = boxGroups
+                ),
+            )
+        }
+
+
+        // Show more charts
+        Dialog(
+            onDismissRequest = { onDialogShow.value = false }
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(0.98f),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    IconButton(
+                        onClick = { onDialogShow.value = false },
+                        modifier = Modifier
+                            .size(32.dp)
+                            .align(Alignment.TopEnd)
+                            .padding(8.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
+
+                    LazyColumn(
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        item(key = "MoreChartsHeader") {
+                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                Text(
+                                    text = "Advanced Distribution",
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Analyzing ${currentGoal.label} achievements",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray
+                                )
+                            }
+                        }
+
+                        item(key = "SummaryStats") {
+                            Card(
+                                modifier = Modifier.fillMaxWidth(),
+                                colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                        alpha = 0.3f
+                                    )
+                                ),
+                                shape = RoundedCornerShape(12.dp)
+                            ) {
+                                Column(
+                                    modifier = Modifier.padding(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    Text(
+                                        text = "Summary Statistics",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Row(modifier = Modifier.fillMaxWidth()) {
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            StatisticRow(
+                                                label = "Min",
+                                                value = stats.min.formatToAmount()
+                                            )
+                                            StatisticRow(
+                                                label = "Q1",
+                                                value = stats.q1.formatToAmount()
+                                            )
+                                            StatisticRow(
+                                                label = "Median",
+                                                value = stats.median.formatToAmount()
+                                            )
+                                        }
+                                        Spacer(modifier = Modifier.width(16.dp))
+                                        Column(modifier = Modifier.weight(1f)) {
+                                            StatisticRow(
+                                                label = "Q3",
+                                                value = stats.q3.formatToAmount()
+                                            )
+                                            StatisticRow(
+                                                label = "Max",
+                                                value = stats.max.formatToAmount()
+                                            )
+                                            StatisticRow(
+                                                label = "IQR",
+                                                value = stats.iqr.formatToAmount()
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        item(key = "HistogramChart") {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Frequency Distribution (Histogram)",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Shows how often different achievement amounts occur. Adjust bins to change granularity.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(
+                                        text = "Bins: ${bins.intValue}",
+                                        style = MaterialTheme.typography.labelMedium,
+                                        modifier = Modifier.width(60.dp)
+                                    )
+                                    Slider(
+                                        value = bins.intValue.toFloat(),
+                                        onValueChange = { bins.intValue = it.toInt() },
+                                        valueRange = 5f..50f,
+                                        modifier = Modifier.weight(1f),
+                                        colors = SliderDefaults.colors().copy(
+                                            thumbColor = StewardTheme.colors.primaryAccent,
+                                            activeTrackColor = StewardTheme.colors.primaryAccent
+                                        )
+                                    )
+                                }
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(250.dp)
+                                ) {
+                                    RotatedBarChart(
+                                        modifier = Modifier.fillMaxSize(),
+                                        renderer = histAchievement,
+                                        labelRotation = -45f
+                                    )
+                                }
+                            }
+                        }
+
+                        item(key = "BoxPlotChart") {
+                            Column(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                    text = "Box and Whisker Plot",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Text(
+                                    text = "Visualizes the spread, quartiles, and range of your performance.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray,
+                                    textAlign = TextAlign.Center
+                                )
+
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(200.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    BoxPlotChart(
+                                        renderer = boxPlotRenderer,
+                                        modifier = Modifier.fillMaxSize(),
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+
+@Composable
 fun GoalLineChartSummary(
     currentGoal: FinanceEntity.Goal
 ) {
+    val onMoreChartDialog = remember { mutableStateOf(false) }
+
     if (currentGoal.achievement.isEmpty()) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(200.dp),
+                .height(300.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -348,67 +613,92 @@ fun GoalLineChartSummary(
         )
     }
 
-    VicoLineChart(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .height(200.dp)
-            .padding(top = 16.dp),
-        chartDataCollection = chartDataCollection,
-        fillArea = true,
-        xValueFormatter = { value ->
-            val index = value.toInt()
-            if (index in sortedAchievements.indices) {
-                sortedAchievements[index].deadlineDateTime.toLocalDateTimeUtc().date.toString()
-                    .substring(5)
-            } else ""
-        },
-        yValueFormatter = { value -> value.formatValueOnly() },
-        markerFormatter = { x, y ->
-            val index = x.toInt()
-            if (index in sortedAchievements.indices) {
-                val achievement = sortedAchievements[index]
-                when (currentGoal.routine.routine) {
-                    Routine.Weekly -> {
-                        "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
-                    }
+            .height(300.dp),
+        verticalArrangement = Arrangement.Center,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
 
-                    Routine.Monthly -> {
-                        "${achievement.deadlineDateTime.monthName}, ${y.formatToAmount()}"
-                    }
+        VicoLineChart(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .padding(top = 16.dp),
+            chartDataCollection = chartDataCollection,
+            fillArea = true,
+            xValueFormatter = { value ->
+                val index = value.toInt()
+                if (index in sortedAchievements.indices) {
+                    sortedAchievements[index].deadlineDateTime.toLocalDateTimeUtc().date.toString()
+                        .substring(5)
+                } else ""
+            },
+            yValueFormatter = { value -> value.formatValueOnly() },
+            markerFormatter = { x, y ->
+                val index = x.toInt()
+                if (index in sortedAchievements.indices) {
+                    val achievement = sortedAchievements[index]
+                    when (currentGoal.routine.routine) {
+                        Routine.Weekly -> {
+                            "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
+                        }
 
-                    Routine.Yearly -> {
-                        "${achievement.deadlineDateTime.year}, ${y.formatToAmount()}"
-                    }
+                        Routine.Monthly -> {
+                            "${achievement.deadlineDateTime.monthName}, ${y.formatToAmount()}"
+                        }
 
-                    Routine.SpecificDayOfTheWeek -> {
-                        "${achievement.deadlineDateTime.weekDay}, ${y.formatToAmount()}"
-                    }
+                        Routine.Yearly -> {
+                            "${achievement.deadlineDateTime.year}, ${y.formatToAmount()}"
+                        }
 
-                    Routine.SpecifyDayOfTheYear -> {
-                        "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
-                    }
+                        Routine.SpecificDayOfTheWeek -> {
+                            "${achievement.deadlineDateTime.weekDay}, ${y.formatToAmount()}"
+                        }
 
-                    Routine.EveryDay -> {
-                        "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
-                    }
+                        Routine.SpecifyDayOfTheYear -> {
+                            "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
+                        }
 
-                    Routine.EveryHour -> {
-                        "${achievement.deadlineDateTime.formatToTime}, ${y.formatToAmount()}"
-                    }
+                        Routine.EveryDay -> {
+                            "${achievement.deadlineDateTime.formatToDate}, ${y.formatToAmount()}"
+                        }
 
-                    Routine.EveryMinute -> {
-                        "${achievement.deadlineDateTime.formatToTime}, ${y.formatToAmount()}"
-                    }
+                        Routine.EveryHour -> {
+                            "${achievement.deadlineDateTime.formatToTime}, ${y.formatToAmount()}"
+                        }
 
-                    else -> {
-                        "${achievement.startDateTime.formatToTime}, ${y.formatToAmount()}"
+                        Routine.EveryMinute -> {
+                            "${achievement.deadlineDateTime.formatToTime}, ${y.formatToAmount()}"
+                        }
+
+                        else -> {
+                            "${achievement.startDateTime.formatToTime}, ${y.formatToAmount()}"
+                        }
                     }
+                } else {
+                    y.formatToAmount()
                 }
-            } else {
-                y.formatToAmount()
             }
+        )
+
+        TextButton(
+            onClick = { onMoreChartDialog.value = true },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text(
+                "More Advanced Chart",
+                style = MaterialTheme.typography.labelLarge,
+                color = colorResource(currentGoal.colorRes)
+            )
         }
-    )
+
+        GoalMoreCharts(
+            currentGoal = currentGoal,
+            onDialogShow = onMoreChartDialog
+        )
+    }
 }
 
 @Composable
@@ -421,7 +711,7 @@ fun GoalStatistic(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(100.dp),
+                .height(300.dp),
             contentAlignment = Alignment.Center
         ) {
             Text(
@@ -445,6 +735,7 @@ fun GoalStatistic(
     Column(
         modifier = Modifier
             .fillMaxWidth()
+            .height(300.dp)
             .padding(top = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
@@ -461,7 +752,7 @@ fun GoalStatistic(
             Text(
                 "View Advanced Analysis",
                 style = MaterialTheme.typography.labelLarge,
-                color = MaterialTheme.colorScheme.primary
+                color = colorResource(currentGoal.colorRes)
             )
         }
     }
@@ -494,22 +785,63 @@ fun StatisticRow(label: String, value: String) {
 }
 
 @Composable
+fun GoalFullDescription(
+    currentGoal: FinanceEntity.Goal,
+    onShowDialog: MutableState<Boolean>
+) {
+    if (onShowDialog.value && currentGoal.description.isNotEmpty()) {
+        Dialog(
+            onDismissRequest = { onShowDialog.value = false }
+        ) {
+            Card(
+                modifier = Modifier.fillMaxWidth(0.98f),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    Text(
+                        text = currentGoal.label.title + " Full Description",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        text = currentGoal.description,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
 fun GoalInfo(
     currentGoal: FinanceEntity.Goal,
     countAchievement: CountAchievement?,
     animatedSettled: Animatable<Float, AnimationVector1D>,
     currentAnimatedProgress: Float
 ) {
+    val onDescShow = remember { mutableStateOf(false) }
+
     Column(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(300.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         if (currentGoal.description.isNotEmpty()) {
-            Text(
-                text = currentGoal.description,
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
-            )
+            TextButton(
+                onClick = { onDescShow.value = true },
+            ) {
+                Text(
+                    text = currentGoal.description.limitLength(30),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray
+                )
+            }
         }
 
         countAchievement?.let {
@@ -568,12 +900,18 @@ fun GoalInfo(
             InfoRow(label = "Frequency", value = currentGoal.routine.routine.text)
             InfoRow(
                 label = "Start Date",
-                value = currentGoal.routine.startDateTime.formatToDateTime
+                value = currentGoal.routine.startDateTime.formatToDateTime,
             )
             InfoRow(
                 label = "Deadline",
-                value = currentGoal.routine.deadlineDateTime.formatToDateTime
+                value = currentGoal.routine.deadlineDateTime.formatToDateTime,
             )
+            InfoRow(
+                label = "Status",
+                value = currentGoal.status.text,
+                color = colorResource(currentGoal.status.color)
+            )
+            InfoRow(label = "Created At", value = currentGoal.createdAt.formatToDateTime)
         }
 
         Column(modifier = Modifier.fillMaxWidth()) {
@@ -611,10 +949,12 @@ fun GoalInfo(
             )
         }
     }
+
+    GoalFullDescription(currentGoal = currentGoal, onShowDialog = onDescShow)
 }
 
 @Composable
-fun InfoRow(label: String, value: String) {
+fun InfoRow(label: String, value: String, color: Color? = null) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -627,7 +967,8 @@ fun InfoRow(label: String, value: String) {
         Text(
             text = value,
             style = MaterialTheme.typography.bodySmall,
-            fontWeight = FontWeight.Medium
+            fontWeight = FontWeight.Medium,
+            color = color ?: MaterialTheme.colorScheme.onSurface
         )
     }
 }
@@ -659,7 +1000,10 @@ fun GoalSummaryCard(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(10.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -714,17 +1058,6 @@ fun GoalSummaryCard(
                             },
                             contentDescription = "left arrow"
                         )
-
-                        Text(
-                            text = when (pager.currentPage) {
-                                0 -> "Info"
-                                1 -> "Chart"
-                                2 -> "Summary"
-                                else -> "Info"
-                            },
-                            fontSize = 10.sp
-                        )
-
                     }
 
                     IconButton(
@@ -743,6 +1076,23 @@ fun GoalSummaryCard(
                         )
                     }
                 }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = when (pager.currentPage) {
+                        0 -> "Info"
+                        1 -> "Chart"
+                        2 -> "Summary"
+                        else -> "Info"
+                    },
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold
+                )
             }
 
             HorizontalPager(

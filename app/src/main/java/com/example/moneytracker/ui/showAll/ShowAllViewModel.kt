@@ -9,8 +9,11 @@ import com.example.moneytracker.ui.homeScreen.DataState
 import com.google.firebase.firestore.Filter
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -21,6 +24,34 @@ class ShowAllViewModel @Inject constructor(
 ) : ViewModel() {
     private val _showAllDataset = MutableStateFlow(ShowAllStates())
     val showAllDataset: StateFlow<ShowAllStates> = _showAllDataset.asStateFlow()
+
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    val filteredTransactions = combine(
+        _showAllDataset,
+        _searchQuery
+    ) { state, query ->
+        val transactionState = state.transaction
+        if (transactionState is DataState.Success) {
+            val filtered = if (query.isEmpty()) {
+                transactionState.data
+            } else {
+                transactionState.data.filter {
+                    it.label.contains(query, ignoreCase = true) ||
+                            it.description.contains(query, ignoreCase = true) ||
+                            it.paymentMethod.text.contains(query, ignoreCase = true)
+                }
+            }
+            DataState.Success(filtered)
+        } else {
+            transactionState
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DataState.Loading)
+
+    fun onSearchQueryChange(newQuery: String) {
+        _searchQuery.value = newQuery
+    }
 
 
     fun loadAllTransaction() {

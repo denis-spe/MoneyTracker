@@ -2,6 +2,7 @@ package com.example.moneytracker
 
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dagger.hilt.android.testing.HiltAndroidTest
 import dagger.hilt.android.testing.UninstallModules
@@ -12,7 +13,11 @@ import org.junit.runner.RunWith
 @UninstallModules(FirebaseAuthModule::class)
 @RunWith(AndroidJUnit4::class)
 class AppTest : TestBase(screenComposable = {
-    App()
+    App(
+        homeViewModel = hiltViewModel(),
+        showAllViewModel = hiltViewModel(),
+        onFullyDrawn = {}
+    )
 }) {
 
     @Test
