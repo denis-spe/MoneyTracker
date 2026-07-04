@@ -3,9 +3,11 @@ package com.example.moneytracker.ui.homeScreen.overviewScreen
 
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -20,11 +22,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.typography
-import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -38,6 +44,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -50,6 +58,7 @@ import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Status
 import com.example.moneytracker.backend.storage.Withdrawal
+import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToTime
 import com.example.moneytracker.helper.formattedDate
@@ -119,59 +128,99 @@ internal fun TransactionCard(
     val color = colorResource(financeEntity.colorRes)
     val paymentMethod = financeEntity.paymentMethod
 
-    Card(
+
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
+    val blendedColor = remember(color, surfaceColor) {
+        color.copy(alpha = 0.1f).compositeOver(surfaceColor)
+    }
+
+    Surface(
         modifier = Modifier
             .width(170.dp)
-            .clip(RoundedCornerShape(CORNER_RADIUS))
             .then(modifier),
-        onClick = {
-            onNavigate?.navigate(
-                TransactionDetailScreenRouter(financeEntity.id)
-            )
-        }
+        color = blendedColor,
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp,
+        shape = RoundedCornerShape(CORNER_RADIUS)
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .clickable {
+                    onNavigate?.navigate(
+                        TransactionDetailScreenRouter(financeEntity.id)
+                    )
+                }
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Image(
-                    modifier = Modifier.size(ICON_SIZE),
-                    painter = tagIcon,
-                    contentDescription = label,
-                )
-                Image(
-                    painter = painterResource(paymentMethod.icon),
-                    contentDescription = paymentMethod.text,
-                    modifier = Modifier.size(ICON_SIZE)
-                )
-            }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Image(
+                        modifier = Modifier.size(ICON_SIZE),
+                        painter = tagIcon,
+                        contentDescription = label,
+                    )
+                    Image(
+                        painter = painterResource(paymentMethod.icon),
+                        contentDescription = paymentMethod.text,
+                        modifier = Modifier.size(ICON_SIZE)
+                    )
+                }
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    label,
-                    style = typography.titleSmall,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                Text(
-                    transactionType,
-                    style = typography.labelSmall,
-                    color = color
-                )
-                Text(
-                    amount,
-                    style = typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        label,
+                        style = typography.titleSmall,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val icon = when (financeEntity.transactionType) {
+                            TransactionType.EARNINGS -> Icons.Default.ArrowUpward
+                            TransactionType.EXPENSES -> Icons.Default.ArrowDownward
+                            TransactionType.SAVINGS -> Icons.Default.ArrowUpward
+                        }
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(color.copy(alpha = 0.1f))
+                        ) {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(5.dp)
+                            )
+                        }
+
+                        Text(
+                            transactionType,
+                            style = typography.labelSmall,
+                            color = color
+                        )
+                    }
+                    Text(
+                        amount,
+                        style = typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -180,7 +229,8 @@ internal fun TransactionCard(
 @Composable
 fun WithdrawalCard(
     modifier: Modifier = Modifier,
-    withdrawal: Withdrawal
+    withdrawal: Withdrawal,
+    onNavigate: NavController? = null
 ) {
     val amount = "-${withdrawal.amount.formatToAmount()}"
     val label = withdrawal.financeEntity?.label ?: "Withdrawal"
@@ -188,53 +238,96 @@ fun WithdrawalCard(
     val color = colorResource(R.color.Lent)
     val toPaymentMethod = withdrawal.toPaymentMethod
 
-    Card(
-        modifier = modifier
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
+    val blendedColor = remember(color, surfaceColor) {
+        color.copy(alpha = 0.1f).compositeOver(surfaceColor)
+    }
+
+    Surface(
+        modifier = Modifier
             .width(170.dp)
-            .clip(RoundedCornerShape(CORNER_RADIUS))
+            .then(modifier),
+        color = blendedColor,
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp,
+        shape = RoundedCornerShape(CORNER_RADIUS)
     ) {
-        Row(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+                .clickable {
+                    withdrawal.financeEntity?.let {
+                        onNavigate?.navigate(
+                            TransactionDetailScreenRouter(it.id)
+                        )
+                    }
+                }
         ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Image(
-                    modifier = Modifier.size(ICON_SIZE),
-                    painter = tagIcon,
-                    contentDescription = label,
-                )
-                Image(
-                    painter = painterResource(toPaymentMethod.icon),
-                    contentDescription = toPaymentMethod.text,
-                    modifier = Modifier.size(ICON_SIZE)
-                )
-            }
+                Column(
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Image(
+                        modifier = Modifier.size(ICON_SIZE),
+                        painter = tagIcon,
+                        contentDescription = label,
+                    )
+                    Image(
+                        painter = painterResource(toPaymentMethod.icon),
+                        contentDescription = toPaymentMethod.text,
+                        modifier = Modifier.size(ICON_SIZE)
+                    )
+                }
 
-            Column(
-                verticalArrangement = Arrangement.spacedBy(2.dp)
-            ) {
-                Text(
-                    label,
-                    style = typography.titleSmall,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
-                )
-                Text(
-                    "Withdrawal",
-                    style = typography.labelSmall,
-                    color = color
-                )
-                Text(
-                    amount,
-                    style = typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        label,
+                        style = typography.titleSmall,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+                    )
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val icon = Icons.Default.ArrowDownward
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(50))
+                                .background(color.copy(alpha = 0.1f))
+                        ) {
+                            Icon(
+                                icon,
+                                contentDescription = null,
+                                tint = color,
+                                modifier = Modifier
+                                    .size(20.dp)
+                                    .padding(5.dp)
+                            )
+                        }
+
+                        Text(
+                            "Withdrawal",
+                            style = typography.labelSmall,
+                            color = color
+                        )
+                    }
+                    Text(
+                        amount,
+                        style = typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -295,87 +388,104 @@ internal fun GoalCard(
     )
 
     val createdAt = financeEntityGoal.createdAt.toLocalDateTimeUtc()
-    val day = String.format(java.util.Locale.getDefault(), "%02d", createdAt.day)
+    val day = String.format(LocalLocale.current.platformLocale, "%02d", createdAt.day)
     val createdAtDateTime = "Created at $day ${createdAt.month.name.title} " +
             "${createdAt.year} ${createdAt.hour formatToTime createdAt.minute}"
 
-    Card(
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val statusColor = colorResource(financeEntityGoal.status.color)
+    val blendedColor = remember(statusColor, surfaceColor) {
+        statusColor.copy(alpha = 0.07f).compositeOver(surfaceColor)
+    }
+
+    Surface(
         modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(CORNER_RADIUS)),
-        onClick = {
-            onNavigate?.navigate(
-                FulfillmentDetailScreenRouter(financeEntityGoal.id)
-            )
-        }
+            .then(modifier),
+        color = blendedColor,
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp,
+        shape = RoundedCornerShape(CORNER_RADIUS)
     ) {
-        ListItem(
-            headlineContent = {
-                Text(
-                    text = financeEntityGoal.label,
-                    style = typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-            },
-            supportingContent = {
-                Column {
-                    Text(
-                        text = financeEntityGoal.amount.formatToAmount(),
-                        style = typography.titleLarge,
-                        color = goalColor
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    onNavigate?.navigate(
+                        FulfillmentDetailScreenRouter(financeEntityGoal.id)
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
+                }
+        ) {
+            ListItem(
+                colors = ListItemDefaults.colors().copy(
+                    containerColor = blendedColor
+                ),
+                headlineContent = {
                     Text(
-                        text = createdAtDateTime,
-                        style = typography.bodySmall,
-                        color = Color.Gray
+                        text = financeEntityGoal.label,
+                        style = typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
-                    dateTimeText?.let {
+                },
+                supportingContent = {
+                    Column {
                         Text(
-                            text = it,
+                            text = financeEntityGoal.amount.formatToAmount(),
+                            style = typography.titleLarge,
+                            color = goalColor
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = createdAtDateTime,
                             style = typography.bodySmall,
                             color = Color.Gray
                         )
+                        dateTimeText?.let {
+                            Text(
+                                text = it,
+                                style = typography.bodySmall,
+                                color = Color.Gray
+                            )
+                        }
                     }
-                }
-            },
-            leadingContent = {
-                DonutChart(
-                    data = finalDonutChartDataCollection,
-                    modifier = Modifier.size(60.dp),
-                    chartSize = 50.dp,
-                    strokeWidth = 6.dp,
-                    strokeWidthSelected = 8.dp,
-                    gapPercentage = 0.06f,
-                    strokeCap = StrokeCap.Round,
-                    selectionView = {
+                },
+                leadingContent = {
+                    DonutChart(
+                        data = finalDonutChartDataCollection,
+                        modifier = Modifier.size(60.dp),
+                        chartSize = 50.dp,
+                        strokeWidth = 6.dp,
+                        strokeWidthSelected = 8.dp,
+                        gapPercentage = 0.06f,
+                        strokeCap = StrokeCap.Round,
+                        selectionView = {
+                            Text(
+                                text = "$animatedPercentage%",
+                                style = typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            )
+                        }
+                    )
+                },
+                trailingContent = {
+                    Column(
+                        horizontalAlignment = Alignment.End,
+                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
                         Text(
-                            text = "$animatedPercentage%",
-                            style = typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                            text = statusText,
+                            style = typography.labelMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = colorResource(goalStatus.color)
+                        )
+                        Text(
+                            text = routineName,
+                            style = typography.labelSmall,
+                            color = Color.Gray
                         )
                     }
-                )
-            },
-            trailingContent = {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    Text(
-                        text = statusText,
-                        style = typography.labelMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(goalStatus.color)
-                    )
-                    Text(
-                        text = routineName,
-                        style = typography.labelSmall,
-                        color = Color.Gray
-                    )
-                }
-            },
-            modifier = modifier.fillMaxWidth(),
-        )
+                },
+                modifier = modifier.fillMaxWidth(),
+            )
+        }
     }
 }
 
@@ -446,67 +556,76 @@ internal fun LiabilityCard(
             )
         )
     }
+    val surfaceColor = MaterialTheme.colorScheme.surface
+    val blendedColor = remember(color, surfaceColor) {
+        color.copy(alpha = 0.07f).compositeOver(surfaceColor)
+    }
 
-    OutlinedCard(
-        modifier = modifier
+    Surface(
+        modifier = Modifier
             .width(130.dp)
-            .clip(RoundedCornerShape(CORNER_RADIUS)),
-        colors = CardDefaults.outlinedCardColors().copy(
-            containerColor = color.copy(0.08f)
-        ),
-        onClick = {
-            onNavigate?.navigate(
-                LiabilityDetailScreenRouter(financeEntity.id)
-            )
-        },
-        border = BorderStroke(2.dp, color.copy(0.3f))
+            .then(modifier),
+        color = blendedColor,
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp,
+        shape = RoundedCornerShape(CORNER_RADIUS)
     ) {
-        Column(
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            DonutChart(
-                data = donutChartDataCollection,
-                modifier = Modifier.size(60.dp),
-                chartSize = 50.dp,
-                strokeWidth = 6.dp,
-                strokeWidthSelected = 8.dp,
-                gapPercentage = 0.06f,
-                strokeCap = StrokeCap.Round,
-                selectionView = {
-                    Text(
-                        text = "$animatedPercentage%",
-                        style = typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                .clickable {
+                    onNavigate?.navigate(
+                        LiabilityDetailScreenRouter(financeEntity.id)
                     )
                 }
-            )
-
+        ) {
             Column(
-                horizontalAlignment = Alignment.Start,
-                modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(2.dp)
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    label,
-                    style = typography.titleSmall,
-                    maxLines = 1,
-                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
-                    fontWeight = FontWeight.Bold
+                DonutChart(
+                    data = donutChartDataCollection,
+                    modifier = Modifier.size(60.dp),
+                    chartSize = 50.dp,
+                    strokeWidth = 6.dp,
+                    strokeWidthSelected = 8.dp,
+                    gapPercentage = 0.06f,
+                    strokeCap = StrokeCap.Round,
+                    selectionView = {
+                        Text(
+                            text = "$animatedPercentage%",
+                            style = typography.labelMedium.copy(fontWeight = FontWeight.Bold)
+                        )
+                    }
                 )
-                Text(
-                    createdAt.formattedDate,
-                    style = typography.labelSmall,
-                    color = Color.Gray
-                )
-                Text(
-                    amount,
-                    style = typography.titleMedium,
-                    color = color,
-                    fontWeight = FontWeight.Bold
-                )
+
+                Column(
+                    horizontalAlignment = Alignment.Start,
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        label,
+                        style = typography.titleSmall,
+                        maxLines = 1,
+                        overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        createdAt.formattedDate,
+                        style = typography.labelSmall,
+                        color = Color.Gray
+                    )
+                    Text(
+                        amount,
+                        style = typography.titleMedium,
+                        color = color,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
         }
     }
@@ -625,7 +744,8 @@ fun OverviewScreen(
                                             is DataSettlement.SettlementWithdrawal -> {
                                                 WithdrawalCard(
                                                     modifier = Modifier.animateItem(),
-                                                    withdrawal = activity.withdrawal
+                                                    withdrawal = activity.withdrawal,
+                                                    onNavigate = onNavigate
                                                 )
                                             }
 

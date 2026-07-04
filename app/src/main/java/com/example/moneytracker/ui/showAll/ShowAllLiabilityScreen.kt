@@ -3,7 +3,6 @@ package com.example.moneytracker.ui.showAll
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateBounds
-import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
@@ -249,11 +248,11 @@ fun ShowAllLiabilityHeroHeader(
     Surface(
         modifier = Modifier
             .fillMaxWidth()
-            .animateContentSize(),
+            .padding(1.dp),
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 1.dp,
-        shadowElevation = 2.dp,
-        shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
+        shadowElevation = 5.dp
     ) {
         Column(
             modifier = Modifier

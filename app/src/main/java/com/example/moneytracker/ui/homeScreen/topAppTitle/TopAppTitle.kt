@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.PrimaryScrollableTabRow
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
@@ -40,56 +41,62 @@ fun TopAppTitle(
 
     val selectedTabIndex = state.currentPage
 
-    PrimaryScrollableTabRow(
-        selectedTabIndex = selectedTabIndex,
-
+    Surface(
         modifier = Modifier
             .widthIn(min = 160.dp, max = 300.dp)
-            .clip(RoundedCornerShape(50.dp)),
-
-        containerColor = backgroundColor,
-
-        edgePadding = 0.dp,
-
-        indicator = {
-            TabRowDefaults.PrimaryIndicator(
-                modifier = Modifier
-                    .tabIndicatorOffset(
-                        selectedTabIndex = selectedTabIndex,
-                        matchContentSize = true
-                    )
-                    .clip(RoundedCornerShape(100.dp))
-                    .padding(bottom = 2.dp),
-
-                width = 5.dp,
-                height = 5.dp,
-
-                color = contentColor
-            )
-        },
-
-        divider = {}
-
+            .padding(horizontal = 2.dp, vertical = 2.dp),
+        shape = RoundedCornerShape(50.dp),
+        color = backgroundColor,
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp
     ) {
+        PrimaryScrollableTabRow(
+            selectedTabIndex = selectedTabIndex,
 
-        topBarNav.forEachIndexed { index, nav ->
-            val distance =
-                (state.currentPage + state.currentPageOffsetFraction - index).absoluteValue
-            val activeProgress = (1f - distance).coerceIn(0f, 1f)
+            containerColor = backgroundColor,
 
-            TopBarItem(
-                nav = nav,
+            edgePadding = 0.dp,
 
-                activeProgress = activeProgress,
+            indicator = {
+                TabRowDefaults.PrimaryIndicator(
+                    modifier = Modifier
+                        .tabIndicatorOffset(
+                            selectedTabIndex = selectedTabIndex,
+                            matchContentSize = true
+                        )
+                        .clip(RoundedCornerShape(100.dp))
+                        .padding(bottom = 2.dp),
 
-                currentPageColor = currentPageColor,
+                    width = 5.dp,
+                    height = 5.dp,
 
-                contentColor = contentColor,
+                    color = contentColor
+                )
+            },
 
-                onClick = {
-                    function(nav)
-                }
-            )
+            divider = {}
+
+        ) {
+
+            topBarNav.forEachIndexed { index, nav ->
+                val distance =
+                    (state.currentPage + state.currentPageOffsetFraction - index).absoluteValue
+                val activeProgress = (1f - distance).coerceIn(0f, 1f)
+
+                TopBarItem(
+                    nav = nav,
+
+                    activeProgress = activeProgress,
+
+                    currentPageColor = currentPageColor,
+
+                    contentColor = contentColor,
+
+                    onClick = {
+                        function(nav)
+                    }
+                )
+            }
         }
     }
 }
@@ -109,7 +116,7 @@ private fun TopBarItem(
         onClick = onClick,
 
         modifier = Modifier
-            .clip(RoundedCornerShape(50.dp))
+            .clip(RoundedCornerShape(70.dp))
             .background(
                 currentPageColor.copy(alpha = activeProgress)
             ),

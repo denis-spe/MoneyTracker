@@ -3,7 +3,6 @@
 // and with all your strength and love your neighbor as your self.
 package com.example.moneytracker.ui.homeScreen.yesterdayScreen
 
-import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -53,7 +51,6 @@ import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.components.Swipe
 import com.example.moneytracker.ui.dataAddition.FONT_WEIGHT
 import com.example.moneytracker.ui.homeScreen.HomeViewModel
-import com.example.moneytracker.ui.theme.StewardTheme
 
 private val ICON_SIZE = 20.dp
 private val TIME_FONT_SIZE = 13.sp
@@ -68,7 +65,8 @@ fun YesterdayItem(
     dataSettlement: DataSettlement,
     showDivider: Boolean = true,
     viewModel: HomeViewModel,
-    userViewModel: UserViewModel
+    userViewModel: UserViewModel,
+    backgroundColor: Color
 ) {
     val amount = dataSettlement.addNegativeToAmount
 
@@ -145,7 +143,7 @@ fun YesterdayItem(
                     .fillMaxWidth(),
                 colors = ListItemDefaults.colors()
                     .copy(
-                        containerColor = StewardTheme.colors.secondarySurface.copy(0.4f)
+                        containerColor = backgroundColor
                     ),
                 headlineContent = {
                     settlement?.let {
@@ -431,18 +429,18 @@ fun YesterdayItems(
     modifier: Modifier = Modifier,
     dataSettlements: List<DataSettlement>,
     viewModel: HomeViewModel,
-    userViewModel: UserViewModel
+    userViewModel: UserViewModel,
+    backgroundColor: Color
 ) {
     // A single elevated Surface creates a cohesive card look for the group
     Surface(
-        modifier = modifier
-            .padding(vertical = 10.dp)
+        modifier = Modifier
             .fillMaxWidth()
-            .animateContentSize(),
+            .padding(1.dp),
         shape = RoundedCornerShape(20.dp),
         tonalElevation = 1.dp,
         shadowElevation = 1.dp,
-        color = MaterialTheme.colorScheme.surface
+        color = backgroundColor
     ) {
         Column(
             modifier = Modifier.fillMaxWidth(),
@@ -455,9 +453,10 @@ fun YesterdayItems(
                 YesterdayItem(
                     modifier = Modifier.fillMaxWidth(),
                     dataSettlement = settlement,
-                    showDivider = isItemNotTheLast,
+                    showDivider = true,
                     viewModel = viewModel,
                     userViewModel = userViewModel,
+                    backgroundColor = backgroundColor
                 )
             }
         }

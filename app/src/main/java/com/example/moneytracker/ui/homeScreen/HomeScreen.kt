@@ -8,6 +8,7 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.TopAppBarDefaults
@@ -19,6 +20,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -69,6 +71,14 @@ fun HomeScreen(
 
     val customColors = StewardTheme.colors
 
+    val secondarySurface = customColors.secondarySurface
+
+    val surfaceColor = MaterialTheme.colorScheme.surface
+
+    val blendedColor = remember(secondarySurface, surfaceColor) {
+        secondarySurface.copy(alpha = 0.4f).compositeOver(surfaceColor)
+    }
+
     LaunchedEffect(Unit) {
         userViewModel.navigationEvents.collect {
             onNavigate?.navigate(StartUpScreenRouter) {
@@ -94,7 +104,7 @@ fun HomeScreen(
                             state = pagerState,
                             contentColor = customColors.accentContent,
                             currentPageColor = customColors.primaryAccent,
-                            backgroundColor = customColors.secondarySurface,
+                            backgroundColor = blendedColor,
                         ) { tab ->
                             scope.launch {
                                 pagerState.animateScrollToPage(topBarEntries.indexOf(tab))

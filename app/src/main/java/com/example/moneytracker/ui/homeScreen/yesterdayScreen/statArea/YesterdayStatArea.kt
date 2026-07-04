@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme.typography
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -23,6 +24,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.shimmerEffect
@@ -414,113 +416,125 @@ fun YesterdayChartShimmer() {
 fun YesterdayStatArea(
     modifier: Modifier = Modifier,
     chartData: DataState<List<ChartData>>,
-    stats: DataState<YesterdayStats>
+    stats: DataState<YesterdayStats>,
+    backgroundColor: Color,
+    cornerRadius: Dp = 0.dp
 ) {
     // Page state
     val pageState = rememberPagerState { 2 }
     val scope = rememberCoroutineScope()
 
-    Column(
-        modifier = modifier,
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(1.dp),
+        shape = RoundedCornerShape(20.dp),
+        color = backgroundColor,
+        tonalElevation = 1.dp,
+        shadowElevation = 5.dp
     ) {
-        Row(
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
+        Column(
+            modifier = modifier,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            TextButton(
-                onClick = {
-                    scope.launch {
-                        pageState.animateScrollToPage(0)
-                    }
-                },
-                colors = ButtonDefaults.textButtonColors().copy(
-                    contentColor = if (pageState.currentPage == 0)
-                        StewardTheme.colors.accentContent
-                    else StewardTheme.colors.onSurfaceText,
-                    containerColor = if (pageState.currentPage == 0) {
-                        StewardTheme.colors.primaryAccent
-                    } else {
-                        Color.Transparent
-                    }
-                )
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    "Stat",
-                    fontWeight = FontWeight.Bold,
-                    style = typography.titleMedium
-                )
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            pageState.animateScrollToPage(0)
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors().copy(
+                        contentColor = if (pageState.currentPage == 0)
+                            StewardTheme.colors.accentContent
+                        else StewardTheme.colors.onSurfaceText,
+                        containerColor = if (pageState.currentPage == 0) {
+                            StewardTheme.colors.primaryAccent
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                ) {
+                    Text(
+                        "Stat",
+                        fontWeight = FontWeight.Bold,
+                        style = typography.titleMedium
+                    )
+                }
+                TextButton(
+                    onClick = {
+                        scope.launch {
+                            pageState.animateScrollToPage(1)
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors().copy(
+                        contentColor = if (pageState.currentPage == 1)
+                            StewardTheme.colors.accentContent
+                        else StewardTheme.colors.onSurfaceText,
+                        containerColor = if (pageState.currentPage == 1) {
+                            StewardTheme.colors.primaryAccent
+                        } else {
+                            Color.Transparent
+                        }
+                    )
+                ) {
+                    Text(
+                        "Chart",
+                        fontWeight = FontWeight.Bold,
+                        style = typography.titleMedium
+                    )
+                }
             }
-            TextButton(
-                onClick = {
-                    scope.launch {
-                        pageState.animateScrollToPage(1)
-                    }
-                },
-                colors = ButtonDefaults.textButtonColors().copy(
-                    contentColor = if (pageState.currentPage == 1)
-                        StewardTheme.colors.accentContent
-                    else StewardTheme.colors.onSurfaceText,
-                    containerColor = if (pageState.currentPage == 1) {
-                        StewardTheme.colors.primaryAccent
-                    } else {
-                        Color.Transparent
-                    }
-                )
+
+            HorizontalPager(
+                state = pageState
             ) {
-                Text(
-                    "Chart",
-                    fontWeight = FontWeight.Bold,
-                    style = typography.titleMedium
-                )
-            }
-        }
+                when (it) {
+                    0 -> {
+                        when (stats) {
+                            is DataState.Success -> {
+                                YesterdayStat(stats.data)
+                            }
 
-        HorizontalPager(
-            state = pageState
-        ) {
-            when (it) {
-                0 -> {
-                    when (stats) {
-                        is DataState.Success -> {
-                            YesterdayStat(stats.data)
-                        }
+                            is DataState.Loading -> {
+                                YesterdayStatShimmer()
+                            }
 
-                        is DataState.Loading -> {
-                            YesterdayStatShimmer()
-                        }
-
-                        is DataState.Error -> {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text("Failed to Load the data")
+                            is DataState.Error -> {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text("Failed to Load the data")
+                                }
                             }
                         }
                     }
-                }
 
-                1 -> {
-                    when (chartData) {
-                        is DataState.Success -> {
-                            YesterdayChart(chartData.data)
-                        }
+                    1 -> {
+                        when (chartData) {
+                            is DataState.Success -> {
+                                YesterdayChart(chartData.data)
+                            }
 
-                        is DataState.Loading -> {
-                            YesterdayChartShimmer()
-                        }
+                            is DataState.Loading -> {
+                                YesterdayChartShimmer()
+                            }
 
-                        is DataState.Error -> {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text("Failed to Load the chart data")
+                            is DataState.Error -> {
+                                Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center
+                                ) {
+                                    Text("Failed to Load the chart data")
+                                }
                             }
                         }
                     }

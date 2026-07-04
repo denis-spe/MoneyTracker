@@ -52,15 +52,15 @@ fun YesterdayScreen(
     viewModel: HomeViewModel,
     userViewModel: UserViewModel,
 ) {
-    val userColor = StewardTheme.colors.secondarySurface
+    val secondarySurface = StewardTheme.colors.secondarySurface
     val cardColor = CardDefaults.cardColors().copy(
-        containerColor = userColor.copy(0.4f),
+        containerColor = secondarySurface.copy(0.4f),
     )
 
     val surfaceColor = MaterialTheme.colorScheme.surface
 
-    val blendedColor = remember(userColor, surfaceColor) {
-        userColor.copy(alpha = 0.4f).compositeOver(surfaceColor)
+    val blendedColor = remember(secondarySurface, surfaceColor) {
+        secondarySurface.copy(alpha = 0.4f).compositeOver(surfaceColor)
     }
 
     LazyColumn(
@@ -72,21 +72,16 @@ fun YesterdayScreen(
         contentPadding = PaddingValues(vertical = 16.dp)
     ) {
         item {
-            Card(
+
+            YesterdayStatArea(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(CORNER_RADIUS)),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = blendedColor)
-            ) {
-                YesterdayStatArea(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    chartData = yesterdayChartDataState,
-                    stats = yesterdayStatsDataState
-                )
-            }
+                    .padding(16.dp),
+                chartData = yesterdayChartDataState,
+                stats = yesterdayStatsDataState,
+                backgroundColor = blendedColor,
+                cornerRadius = CORNER_RADIUS
+            )
         }
 
         item {
@@ -170,7 +165,8 @@ fun YesterdayScreen(
                                 .clip(RoundedCornerShape(CORNER_RADIUS)),
                             viewModel = viewModel,
                             dataSettlements = data,
-                            userViewModel = userViewModel
+                            userViewModel = userViewModel,
+                            backgroundColor = blendedColor
                         )
                     }
                 }

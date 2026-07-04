@@ -561,7 +561,7 @@ fun LazyListScope.statArea(
                             },
                             colors = IconButtonDefaults.iconButtonColors().copy(
                                 containerColor = if (pagerState.currentPage == 0)
-                                    StewardTheme.colors.secondarySurface else
+                                    StewardTheme.colors.primaryAccent else
                                     Color.Unspecified
                             ),
                             shape = CircleShape
@@ -582,7 +582,7 @@ fun LazyListScope.statArea(
                             },
                             colors = IconButtonDefaults.iconButtonColors().copy(
                                 containerColor = if (pagerState.currentPage == 1)
-                                    StewardTheme.colors.secondarySurface else
+                                    StewardTheme.colors.primaryAccent else
                                     Color.Unspecified
                             ),
                             shape = CircleShape
@@ -603,7 +603,7 @@ fun LazyListScope.statArea(
                             },
                             colors = IconButtonDefaults.iconButtonColors().copy(
                                 containerColor = if (pagerState.currentPage == 2)
-                                    StewardTheme.colors.secondarySurface else
+                                    StewardTheme.colors.primaryAccent else
                                     Color.Unspecified
                             ),
                             shape = CircleShape
