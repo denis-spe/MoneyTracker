@@ -1001,6 +1001,7 @@ fun GoalSummaryCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
     ) {
         Column(
+            modifier = Modifier.padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -1085,10 +1086,10 @@ fun GoalSummaryCard(
             ) {
                 Text(
                     text = when (pager.currentPage) {
-                        0 -> "Info"
-                        1 -> "Chart"
-                        2 -> "Summary"
-                        else -> "Info"
+                        0 -> "Overview"
+                        1 -> "Performance"
+                        2 -> "Analytics"
+                        else -> "Overview"
                     },
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
@@ -1322,13 +1323,13 @@ fun InsightDetailDialog(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ShowChart,
                         contentDescription = "Analysis",
-                        tint = MaterialTheme.colorScheme.primary,
+                        tint = StewardTheme.colors.primaryAccent,
                         modifier = Modifier.size(30.dp)
                     )
 
                     Text(
                         text = "Advanced Analysis",
-                        color = MaterialTheme.colorScheme.primary,
+                        color = StewardTheme.colors.primaryAccent,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
                     )
@@ -1431,7 +1432,7 @@ fun InsightHelpBottomDrawer(
                     text = "Understanding Your Analysis",
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = StewardTheme.colors.primaryAccent
                 )
 
                 Text(

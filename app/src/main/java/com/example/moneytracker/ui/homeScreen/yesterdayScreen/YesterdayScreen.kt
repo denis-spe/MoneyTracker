@@ -164,17 +164,14 @@ fun YesterdayScreen(
                             )
                         }
                     } else {
-                        data.forEach { settlement ->
-                            YesterdayItem(
-                                modifier = Modifier
-                                    .animateItem()
-                                    .fillMaxWidth(),
-                                dataSettlement = settlement,
-                                showDivider = data.indexOf(settlement) < data.size - 1,
-                                viewModel = viewModel,
-                                userViewModel = userViewModel,
-                            )
-                        }
+                        YesterdayItems(
+                            modifier = Modifier
+                                .animateItem()
+                                .clip(RoundedCornerShape(CORNER_RADIUS)),
+                            viewModel = viewModel,
+                            dataSettlements = data,
+                            userViewModel = userViewModel
+                        )
                     }
                 }
             }

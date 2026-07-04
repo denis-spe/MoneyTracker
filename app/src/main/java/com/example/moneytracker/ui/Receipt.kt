@@ -4,6 +4,7 @@
 // you shall love your neighbor as yourself
 package com.example.moneytracker.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
@@ -1117,7 +1119,6 @@ fun OnUpdate(
     val icon = dataSettlement.icon
 
 
-
     val description = when (dataSettlement) {
         is DataSettlement.SettlementData -> "Update ${dataSettlement.financeEntity.label} " +
                 dataSettlement.text
@@ -1193,6 +1194,8 @@ fun OnUpdate(
                     affectCurrentAccount.value = withdrawal.affectCurrentAccount
                 }
             }
+
+            amountState.setTextAndPlaceCursorAtEnd(displayAmountState.value)
         }
     }
 
@@ -1395,12 +1398,13 @@ fun OnUpdate(
                     item(key = 6) {
                         val amountAsDouble = amountState.text.toString().toDoubleOrNull()
 
-                        Row(
+                        Column(
                             modifier = Modifier
                                 .fillMaxWidth()
+                                .padding(bottom = 2.dp)
                                 .animateItem(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(1.dp)
                         ) {
                             when (dataSettlement) {
                                 is DataSettlement.SettlementData -> {
@@ -1492,162 +1496,154 @@ fun OnUpdate(
                                 }
 
                                 is DataSettlement.SettlementAdjust -> {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(
-                                                vertical = 10.dp
-                                            )
-                                            .animateItem(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    ModelDrawerButton(
+                                        text = "Apply changes",
+                                        isError = wasLabelSuccess.value is InputState.Error ||
+                                                wasAmountSuccess.value is InputState.Error,
+                                        colorResId = colorResId,
+                                        filledColor = Color.Transparent
                                     ) {
-                                        ModelDrawerButton(
-                                            text = "Apply changes",
-                                            isError = wasLabelSuccess.value is InputState.Error ||
-                                                    wasAmountSuccess.value is InputState.Error,
-                                            colorResId = colorResId,
-                                            filledColor = Color.Transparent
+
+                                        // Validate input
+                                        val isLabelOk =
+                                            wasLabelSuccess.isLabelValid(labelState.text.toString())
+                                        val isAmountOk =
+                                            wasAmountSuccess.isAmountValid(amountAsDouble)
+
+                                        if (!isLabelOk || !isAmountOk) return@ModelDrawerButton
+
+                                        if (amountAsDouble == null) {
+                                            amountState.setTextAndPlaceCursorAtEnd(amount.toString())
+                                        }
+
+                                        if (amountAsDouble != null
+                                            && amountAsDouble
+                                            <= (dataSettlement.settlement.financeEntity!!
+                                                .remainingAmount +
+                                                    dataSettlement.settlement.amount)
                                         ) {
-
-                                            // Validate input
-                                            val isLabelOk =
-                                                wasLabelSuccess.isLabelValid(labelState.text.toString())
-                                            val isAmountOk =
-                                                wasAmountSuccess.isAmountValid(amountAsDouble)
-
-                                            if (!isLabelOk || !isAmountOk) return@ModelDrawerButton
-
-                                            if (amountAsDouble == null) {
-                                                amountState.setTextAndPlaceCursorAtEnd(amount.toString())
-                                            }
-
-                                            if (amountAsDouble != null
-                                                && amountAsDouble
-                                                <= (dataSettlement.settlement.financeEntity!!
-                                                    .remainingAmount +
-                                                        dataSettlement.settlement.amount)
-                                            ) {
-                                                val settlement = dataSettlement.settlement
-                                                val financeEntityType =
-                                                    when (settlement.financeEntity!!) {
-                                                        is FinanceEntity.Transaction -> "TRANSACTION"
-                                                        is FinanceEntity.Goal -> "GOAL"
-                                                        is FinanceEntity.Liability -> "LIABILITY"
-                                                    }
-                                                viewModel.updateSettlementData(
-                                                    settlement.financeEntity!!.id,
-                                                    financeEntityType,
-                                                    settlement,
-                                                    settlement.copy(
-                                                        amount = amountAsDouble,
-                                                        description = descriptionState.text.toString(),
-                                                        dateTime = onCreatedDateTimeState
-                                                            .value.toFirestoreTimestampUtc(),
-                                                        tagIcon = tagIconState.value,
-                                                        paymentMethod = selectedPaymentMethod.value,
-                                                        affectCurrentAccount = affectCurrentAccount.value
-                                                    )
+                                            val settlement = dataSettlement.settlement
+                                            val financeEntityType =
+                                                when (settlement.financeEntity!!) {
+                                                    is FinanceEntity.Transaction -> "TRANSACTION"
+                                                    is FinanceEntity.Goal -> "GOAL"
+                                                    is FinanceEntity.Liability -> "LIABILITY"
+                                                }
+                                            viewModel.updateSettlementData(
+                                                settlement.financeEntity!!.id,
+                                                financeEntityType,
+                                                settlement,
+                                                settlement.copy(
+                                                    amount = amountAsDouble,
+                                                    description = descriptionState.text.toString(),
+                                                    dateTime = onCreatedDateTimeState
+                                                        .value.toFirestoreTimestampUtc(),
+                                                    tagIcon = tagIconState.value,
+                                                    paymentMethod = selectedPaymentMethod.value,
+                                                    affectCurrentAccount = affectCurrentAccount.value
                                                 )
+                                            )
 
 
-                                                userViewModel.showActionNotification(
-                                                    "Settlement updated successfully",
-                                                    color
-                                                )
+                                            userViewModel.showActionNotification(
+                                                "Settlement updated successfully",
+                                                color
+                                            )
 
-                                                // Reset all state
-                                                amountState.clearText()
-                                                labelState.clearText()
-                                                descriptionState.clearText()
-                                                tagIconState.value = TagIcon(
-                                                    "description",
-                                                    R.drawable.description
-                                                )
+                                            // Reset all state
+                                            amountState.clearText()
+                                            labelState.clearText()
+                                            descriptionState.clearText()
+                                            tagIconState.value = TagIcon(
+                                                "description",
+                                                R.drawable.description
+                                            )
 
-                                                isUpdateModelBottonOpen.value = false
-                                                onShowDialog.value = false
+                                            isUpdateModelBottonOpen.value = false
+                                            onShowDialog.value = false
 
-                                            }
                                         }
                                     }
                                 }
 
                                 is DataSettlement.SettlementWithdrawal -> {
-                                    Row(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(
-                                                vertical = 10.dp
-                                            )
-                                            .animateItem(),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
+                                    ModelDrawerButton(
+                                        text = "Apply changes",
+                                        isError = wasLabelSuccess.value is InputState.Error ||
+                                                wasAmountSuccess.value is InputState.Error,
+                                        colorResId = colorResId,
+                                        filledColor = Color.Transparent
                                     ) {
-                                        ModelDrawerButton(
-                                            text = "Apply changes",
-                                            isError = wasLabelSuccess.value is InputState.Error ||
-                                                    wasAmountSuccess.value is InputState.Error,
-                                            colorResId = colorResId,
-                                            filledColor = Color.Transparent
+                                        // Validate input
+                                        val isAmountOk =
+                                            wasAmountSuccess.isAmountValid(amountAsDouble)
+                                        val isLabelOk =
+                                            wasLabelSuccess.isLabelValid(labelState.text.toString())
+
+                                        if (!isAmountOk || !isLabelOk) return@ModelDrawerButton
+
+                                        if (amountAsDouble == null) {
+                                            amountState.setTextAndPlaceCursorAtEnd(amount.toString())
+                                        }
+
+                                        if (amountAsDouble != null
+                                            && amountAsDouble
+                                            <= (dataSettlement.withdrawal.financeEntity!!.remainingAmount
+                                                    + dataSettlement.withdrawal.amount)
                                         ) {
-                                            // Validate input
-                                            val isAmountOk =
-                                                wasAmountSuccess.isAmountValid(amountAsDouble)
-                                            val isLabelOk =
-                                                wasLabelSuccess.isLabelValid(labelState.text.toString())
+                                            val withdrawal = dataSettlement.withdrawal
+                                            val financeEntityType =
+                                                dataSettlement.financeEntityType
 
-                                            if (!isAmountOk || !isLabelOk) return@ModelDrawerButton
-
-                                            if (amountAsDouble == null) {
-                                                amountState.setTextAndPlaceCursorAtEnd(amount.toString())
-                                            }
-
-                                            if (amountAsDouble != null
-                                                && amountAsDouble
-                                                <= (dataSettlement.withdrawal.financeEntity!!.remainingAmount
-                                                        + dataSettlement.withdrawal.amount)
-                                            ) {
-                                                val withdrawal = dataSettlement.withdrawal
-                                                val financeEntityType =
-                                                    dataSettlement.financeEntityType
-
-                                                viewModel.updateWithdrawal(
-                                                    withdrawal.financeEntity!!.id,
-                                                    financeEntityType,
-                                                    withdrawal,
-                                                    withdrawal.copy(
-                                                        amount = amountAsDouble,
-                                                        description = descriptionState.text.toString(),
-                                                        createdAt = onCreatedDateTimeState
-                                                            .value.toFirestoreTimestampUtc(),
-                                                        fromPaymentMethod = fromPaymentMethod.value,
-                                                        toPaymentMethod = toPaymentMethod.value,
-                                                        affectCurrentAccount = affectCurrentAccount.value
-                                                    )
+                                            viewModel.updateWithdrawal(
+                                                withdrawal.financeEntity!!.id,
+                                                financeEntityType,
+                                                withdrawal,
+                                                withdrawal.copy(
+                                                    amount = amountAsDouble,
+                                                    description = descriptionState.text.toString(),
+                                                    createdAt = onCreatedDateTimeState
+                                                        .value.toFirestoreTimestampUtc(),
+                                                    fromPaymentMethod = fromPaymentMethod.value,
+                                                    toPaymentMethod = toPaymentMethod.value,
+                                                    affectCurrentAccount = affectCurrentAccount.value
                                                 )
+                                            )
 
-                                                userViewModel.showActionNotification(
-                                                    "Withdrawal updated successfully",
-                                                    color
-                                                )
+                                            userViewModel.showActionNotification(
+                                                "Withdrawal updated successfully",
+                                                color
+                                            )
 
-                                                // Reset all state
-                                                amountState.clearText()
-                                                labelState.clearText()
-                                                descriptionState.clearText()
-                                                tagIconState.value = TagIcon(
-                                                    "description",
-                                                    R.drawable.description
-                                                )
+                                            // Reset all state
+                                            amountState.clearText()
+                                            labelState.clearText()
+                                            descriptionState.clearText()
+                                            tagIconState.value = TagIcon(
+                                                "description",
+                                                R.drawable.description
+                                            )
 
-                                                isUpdateModelBottonOpen.value = false
-                                                onShowDialog.value = false
+                                            isUpdateModelBottonOpen.value = false
+                                            onShowDialog.value = false
 
-                                            }
                                         }
                                     }
                                 }
+                            }
+
+                            OutlinedButton(
+                                onClick = {
+                                    isUpdateModelBottonOpen.value = false
+                                    onShowDialog.value = false
+                                },
+                                border = BorderStroke(2.dp, color)
+                            ) {
+                                Text(
+                                    text = "Cancel",
+                                    color = color,
+                                    fontWeight = FontWeight.Bold
+                                )
                             }
                         }
                     }
@@ -1655,7 +1651,6 @@ fun OnUpdate(
             }
         }
     }
-
 
 
 }

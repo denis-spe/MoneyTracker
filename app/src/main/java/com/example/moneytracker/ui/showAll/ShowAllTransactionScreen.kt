@@ -95,6 +95,7 @@ import com.example.moneytracker.helper.std
 import com.example.moneytracker.helper.variance
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.screenManager.TransactionDetailScreenRouter
+import com.example.moneytracker.ui.theme.StewardTheme
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -161,7 +162,7 @@ fun ShowAllTransactionScreen(
                                         Icon(
                                             imageVector = Icons.Default.History,
                                             contentDescription = null,
-                                            tint = MaterialTheme.colorScheme.primary,
+                                            tint = StewardTheme.colors.primaryAccent,
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -177,7 +178,7 @@ fun ShowAllTransactionScreen(
                                         Text(
                                             text = "${data.size} found",
                                             style = typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.primary
+                                            color = StewardTheme.colors.primaryAccent
                                         )
                                     }
                                 }
@@ -252,8 +253,8 @@ fun ShowAllHeroHeader(
             .fillMaxWidth()
             .animateContentSize(),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 3.dp,
-        shadowElevation = 8.dp,
+        tonalElevation = 1.dp,
+        shadowElevation = 2.dp,
         shape = RoundedCornerShape(bottomStart = 32.dp, bottomEnd = 32.dp)
     ) {
         Column(
@@ -303,7 +304,7 @@ fun ShowAllHeroHeader(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = if (isSearchActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                            tint = if (isSearchActive) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = { showStats = true }) {
@@ -333,7 +334,7 @@ fun ShowAllHeroHeader(
                         value = searchQuery,
                         onValueChange = onSearchQueryChange,
                         modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Search by label or description...") },
+                        placeholder = { Text("Search...") },
                         leadingIcon = { Icon(Icons.Default.Search, null) },
                         trailingIcon = {
                             if (searchQuery.isNotEmpty()) {
@@ -345,7 +346,7 @@ fun ShowAllHeroHeader(
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
-                            focusedBorderColor = MaterialTheme.colorScheme.primary
+                            focusedBorderColor = StewardTheme.colors.primaryAccent,
                         ),
                         singleLine = true
                     )
@@ -363,14 +364,14 @@ fun ShowAllHeroHeader(
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.05f),
+                    color = StewardTheme.colors.primaryAccent.copy(alpha = 0.05f),
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     Text(
                         text = "TOTAL NET BALANCE",
                         style = typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary,
+                        color = StewardTheme.colors.primaryAccent,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         letterSpacing = 1.sp
                     )
@@ -476,7 +477,7 @@ fun TransactionHelpSheet(onDismiss: () -> Unit) {
                 text = "Financial Definitions",
                 style = typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary
+                color = StewardTheme.colors.primaryAccent
             )
 
             HelpContentItem(
@@ -555,7 +556,7 @@ fun TransactionStatisticsDialog(
                 Icon(
                     imageVector = Icons.TwoTone.Insights,
                     contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
+                    tint = StewardTheme.colors.primaryAccent,
                     modifier = Modifier.size(40.dp)
                 )
 
@@ -563,7 +564,7 @@ fun TransactionStatisticsDialog(
                     text = "Data Science Statistics",
                     style = typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = StewardTheme.colors.primaryAccent
                 )
 
                 HorizontalDivider(
@@ -695,7 +696,8 @@ internal fun ShowAllTransactionCard(
             .padding(horizontal = 16.dp, vertical = 4.dp),
         shape = RoundedCornerShape(16.dp),
         color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 1.dp
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp
     ) {
         ListItem(
             modifier = Modifier

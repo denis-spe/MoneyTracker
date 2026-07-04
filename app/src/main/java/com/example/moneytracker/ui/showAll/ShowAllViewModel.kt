@@ -28,6 +28,12 @@ class ShowAllViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
 
+    private val _searchQueryLiability = MutableStateFlow("")
+    val searchQueryLiability: StateFlow<String> = _searchQueryLiability.asStateFlow()
+
+    private val _searchQueryGoal = MutableStateFlow("")
+    val searchQueryGoal: StateFlow<String> = _searchQueryGoal.asStateFlow()
+
     val filteredTransactions = combine(
         _showAllDataset,
         _searchQuery
@@ -40,7 +46,8 @@ class ShowAllViewModel @Inject constructor(
                 transactionState.data.filter {
                     it.label.contains(query, ignoreCase = true) ||
                             it.description.contains(query, ignoreCase = true) ||
-                            it.paymentMethod.text.contains(query, ignoreCase = true)
+                            it.paymentMethod.text.contains(query, ignoreCase = true) ||
+                            it.transactionType.text.contains(query, ignoreCase = true)
                 }
             }
             DataState.Success(filtered)
@@ -49,8 +56,58 @@ class ShowAllViewModel @Inject constructor(
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DataState.Loading)
 
+    val filteredLiabilities = combine(
+        _showAllDataset,
+        _searchQueryLiability
+    ) { state, query ->
+        val liabilityState = state.liability
+        if (liabilityState is DataState.Success) {
+            val filtered = if (query.isEmpty()) {
+                liabilityState.data
+            } else {
+                liabilityState.data.filter {
+                    it.label.contains(query, ignoreCase = true) ||
+                            it.description.contains(query, ignoreCase = true) ||
+                            it.liabilityType.name.contains(query, ignoreCase = true)
+                }
+            }
+            DataState.Success(filtered)
+        } else {
+            liabilityState
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DataState.Loading)
+
+    val filteredGoals = combine(
+        _showAllDataset,
+        _searchQueryGoal
+    ) { state, query ->
+        val goalState = state.goal
+        if (goalState is DataState.Success) {
+            val filtered = if (query.isEmpty()) {
+                goalState.data
+            } else {
+                goalState.data.filter {
+                    it.label.contains(query, ignoreCase = true) ||
+                            it.description.contains(query, ignoreCase = true) ||
+                            it.routine.routine.text.contains(query, ignoreCase = true)
+                }
+            }
+            DataState.Success(filtered)
+        } else {
+            goalState
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), DataState.Loading)
+
     fun onSearchQueryChange(newQuery: String) {
         _searchQuery.value = newQuery
+    }
+
+    fun onSearchQueryLiabilityChange(newQuery: String) {
+        _searchQueryLiability.value = newQuery
+    }
+
+    fun onSearchQueryGoalChange(newQuery: String) {
+        _searchQueryGoal.value = newQuery
     }
 
 

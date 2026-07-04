@@ -92,6 +92,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.InterceptPlatformTextInput
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.integerResource
@@ -140,7 +141,6 @@ import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.time.temporal.TemporalAdjusters
 import java.util.Calendar
-import java.util.Locale
 
 
 const val MaxWidth = 0.7f
@@ -372,10 +372,8 @@ fun ModelDrawerDescriptionTextField(
 
                         TextButton(
                             onClick = {
-                                if (state.text.isNotEmpty()) {
-                                    onDialogShow.value = false
-                                    displayText.value = state.text.toString()
-                                }
+                                onDialogShow.value = false
+                                displayText.value = state.text.toString()
                             }
                         ) {
                             Text(
@@ -654,7 +652,7 @@ fun ModelDrawerAmountField(
         colorResource(R.color.error_color) else
         colorResource(id = colorResId)
 
-    val locale = Locale.getDefault()
+    val locale = LocalLocale.current.platformLocale
     val numberFormat = remember(locale) { NumberFormat.getCurrencyInstance(locale) }
     val symbol = numberFormat.currency?.symbol ?: "$"
     val height = integerResource(R.integer.textFieldAndButtonHeight).dp
@@ -897,7 +895,7 @@ fun SettlementField(
     /* ----------------------------------------------------------
      * 2) UI
      * ---------------------------------------------------------- */
-    val locale = Locale.getDefault()
+    val locale = LocalLocale.current.platformLocale
     val numberFormat = remember(locale) { NumberFormat.getCurrencyInstance(locale) }
     val symbol = numberFormat.currency?.symbol ?: "$"
     val onDialogShow = remember { mutableStateOf(false) }

@@ -3,6 +3,7 @@
 // and with all your strength and love your neighbor as your self.
 package com.example.moneytracker.ui.homeScreen.yesterdayScreen
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +12,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -82,7 +84,7 @@ fun YesterdayItem(
 
     val dataTypeIcon = painterResource(id = dataSettlement.icon)
 
-    val tagIcon = dataSettlement.tagIcon.let { painterResource(id = it.icon) }
+    val tagIcon = painterResource(id = dataSettlement.tagIcon.icon)
 
     val paymentMethod = painterResource(id = dataSettlement.paymentMethod.icon)
 
@@ -425,45 +427,43 @@ fun YesterdayItemShimmer(modifier: Modifier = Modifier) {
 
 
 @Composable
-
 fun YesterdayItems(
     modifier: Modifier = Modifier,
     dataSettlements: List<DataSettlement>,
     viewModel: HomeViewModel,
     userViewModel: UserViewModel
 ) {
-    Column(
-        modifier = Modifier
+    // A single elevated Surface creates a cohesive card look for the group
+    Surface(
+        modifier = modifier
             .padding(vertical = 10.dp)
-            .fillMaxWidth(),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
+            .fillMaxWidth()
+            .animateContentSize(),
+        shape = RoundedCornerShape(20.dp),
+        tonalElevation = 1.dp,
+        shadowElevation = 1.dp,
+        color = MaterialTheme.colorScheme.surface
     ) {
-        dataSettlements.forEachIndexed { index, settlement ->
-            val isItemNotTheLast = index < dataSettlements.size - 1
-            val isItemTheLast = index == dataSettlements.size - 1
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            dataSettlements.forEachIndexed { index, settlement ->
+                val isItemNotTheLast = index < dataSettlements.size - 1
 
-            YesterdayItem(
-                modifier = modifier
-                    .clip(
-                        RoundedCornerShape(
-                            topStart = if (index == 0) 10.dp else 0.dp,
-                            topEnd = if (index == 0) 10.dp else 0.dp,
-                            bottomStart = if (isItemTheLast) 10.dp else 0.dp,
-                            bottomEnd = if (isItemTheLast) 10.dp else 0.dp
-                        )
-                    )
-                    .fillMaxWidth(),
-                dataSettlement = settlement,
-                showDivider = isItemNotTheLast,
-                viewModel = viewModel,
-                userViewModel = userViewModel,
-            )
-
-            if (isItemNotTheLast) Spacer(modifier = Modifier.height(2.dp))
+                YesterdayItem(
+                    modifier = Modifier.fillMaxWidth(),
+                    dataSettlement = settlement,
+                    showDivider = isItemNotTheLast,
+                    viewModel = viewModel,
+                    userViewModel = userViewModel,
+                )
+            }
         }
     }
 }
+
 
 
 /**
