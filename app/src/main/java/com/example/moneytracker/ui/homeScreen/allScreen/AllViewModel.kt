@@ -2,10 +2,9 @@ package com.example.moneytracker.ui.homeScreen.allScreen
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataSettlement
-import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.FinanceRepository
 import com.example.moneytracker.backend.storage.toDataState
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.homeScreen.DataState
@@ -14,17 +13,14 @@ import com.example.moneytracker.ui.usecase.GetCurrentWeekUseCase
 import com.example.moneytracker.ui.usecase.GetProfessionalSummaryUseCase
 import com.example.moneytracker.ui.usecase.GetWeeklyDataUseCase
 import com.example.moneytracker.ui.usecase.HomeData
-import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
 import com.example.moneytracker.ui.usecase.ProfessionalSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -35,8 +31,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AllViewModel @Inject constructor(
-    private val accountService: AccountServices,
-    observeUserDataUseCase: ObserveUserDataUseCase,
+    financeRepository: FinanceRepository,
     private val getWeeklyDataUseCase: GetWeeklyDataUseCase,
     private val getCurrentWeekUseCase: GetCurrentWeekUseCase,
     private val getCurrentDateUseCase: GetCurrentDateUseCase,
@@ -60,16 +55,7 @@ class AllViewModel @Inject constructor(
         .distinctUntilChanged()
         .shareIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), replay = 1)
 
-    private val rawDatasetsFlow: StateFlow<HomeData> =
-        observeUserDataUseCase(
-            accountService.userState.map { it?.uid }
-        )
-            .flowOn(Dispatchers.Default)
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-                HomeData(datasetState = DatasetState.Loading)
-            )
+    private val rawDatasetsFlow: StateFlow<HomeData> = financeRepository.rawDatasetsFlow
 
     val groupedWeeklyData: StateFlow<DataState<List<Pair<LocalDate, List<DataSettlement>>>>> =
         combine(
@@ -82,7 +68,13 @@ class AllViewModel @Inject constructor(
                     .toList()
                     .sortedByDescending { it.first }
             }
-        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+        }
+            .distinctUntilChanged()
+            .stateIn(
+                viewModelScope,
+                SharingStarted.WhileSubscribed(STATE_TIMEOUT),
+                DataState.Loading
+            )
 
     val professionalSummary: StateFlow<DataState<ProfessionalSummary>> = combine(
         rawDatasetsFlow,
@@ -91,7 +83,9 @@ class AllViewModel @Inject constructor(
         homeData.toDataState { datasets ->
             getProfessionalSummaryUseCase(getWeeklyDataUseCase(datasets, dates))
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+    }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val activityCounts: StateFlow<DataState<Map<LocalDate, Int>>> = rawDatasetsFlow
         .map { homeData ->
@@ -121,10 +115,12 @@ class AllViewModel @Inject constructor(
                 map
             }
         }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val currentWeekDerived: StateFlow<List<LocalDate>> = currentWeekFlow
         .map { getCurrentWeekUseCase(it) }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), emptyList())
 
     val currentDateDerived = combine(
@@ -132,7 +128,9 @@ class AllViewModel @Inject constructor(
         uiState.map { it.date }
     ) { week, date ->
         getCurrentDateUseCase(week, date)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), LocalDate.now())
+    }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), LocalDate.now())
 
     fun updateSelectedTabIndex(index: Int) =
         _uiState.update { it.copy(selectedTabIndex = index) }

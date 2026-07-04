@@ -11,6 +11,7 @@ import com.example.moneytracker.backend.workers.Workers
 import com.example.moneytracker.backend.workers.WorkersTask
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -47,7 +48,7 @@ class StewardApplication : Application(), Configuration.Provider {
             try {
                 val userId = auth.currentUserId
                 val datasets = dataStorage.getWholeDatasets(userId, {}, {})
-                datasets.collect { datasetList ->
+                datasets.distinctUntilChanged().collect { datasetList ->
                     datasetList.forEach {
                         if (it is FinanceEntity.Goal) {
                             if (it.routine.routine != Routine.Nothing) {

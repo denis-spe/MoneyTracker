@@ -1,8 +1,10 @@
 package com.example.moneytracker.ui.homeScreen.allScreen
 
+import androidx.compose.runtime.Stable
 import kotlinx.datetime.LocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
 
+@Stable
 data class AllUiState(
     val dates: List<LocalDate> = emptyList(),
     val currentWeek: List<LocalDate> = emptyList(),

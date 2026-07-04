@@ -3,10 +3,9 @@ package com.example.moneytracker.ui.homeScreen.todayScreen
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.moneytracker.backend.auth.AccountServices
 import com.example.moneytracker.backend.storage.DataSettlement
-import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.FinanceRepository
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.toDataState
 import com.example.moneytracker.helper.isForToday
@@ -18,18 +17,15 @@ import com.example.moneytracker.ui.usecase.GetCurrentAmountUseCase
 import com.example.moneytracker.ui.usecase.GetLiabilityBalanceUseCase
 import com.example.moneytracker.ui.usecase.GetTodayChartDonutDataUseCase
 import com.example.moneytracker.ui.usecase.HomeData
-import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
 import com.example.moneytracker.ui.usecase.SortTodayDataSettlementUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -37,13 +33,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TodayViewModel @Inject constructor(
-    private val accountService: AccountServices,
-    observeUserDataUseCase: ObserveUserDataUseCase,
+    financeRepository: FinanceRepository,
     private val sortTodayDataSettlementUseCase: SortTodayDataSettlementUseCase,
     private val getCurrentAmountUseCase: GetCurrentAmountUseCase,
     private val getLiabilityBalanceUseCase: GetLiabilityBalanceUseCase,
     private val getTodayChartDonutDataUseCase: GetTodayChartDonutDataUseCase,
-    @ApplicationContext private val context: Context
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     companion object {
@@ -53,16 +48,7 @@ class TodayViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(TodayUiState())
     val uiState: StateFlow<TodayUiState> = _uiState.asStateFlow()
 
-    private val rawDatasetsFlow: StateFlow<HomeData> =
-        observeUserDataUseCase(
-            accountService.userState.map { it?.uid }
-        )
-            .flowOn(Dispatchers.Default)
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-                HomeData(datasetState = DatasetState.Loading)
-            )
+    private val rawDatasetsFlow: StateFlow<HomeData> = financeRepository.rawDatasetsFlow
 
     private val sortingFlow = uiState
         .map {
@@ -87,10 +73,6 @@ class TodayViewModel @Inject constructor(
             )
         )
 
-    val todayFinance: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
-        .map { it.toDataState { datasets -> datasets.filter { it.isForToday } } }
-        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
-
     val donutChartData: StateFlow<DataState<List<DonutChartData>>> = rawDatasetsFlow
         .map { homeData ->
             homeData.toDataState { datasets ->
@@ -100,6 +82,7 @@ class TodayViewModel @Inject constructor(
                 )
             }
         }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val fulfillmentFinanceEntity: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
@@ -110,14 +93,17 @@ class TodayViewModel @Inject constructor(
                 }
             }
         }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val currentAccountBalance: StateFlow<DataState<Map<String, Double>>> = rawDatasetsFlow
         .map { it.toDataState { datasets -> getCurrentAmountUseCase(datasets) } }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val liabilityBalance: StateFlow<DataState<Map<String, Double>>> = rawDatasetsFlow
         .map { it.toDataState { datasets -> getLiabilityBalanceUseCase(datasets) } }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val sortedToday: StateFlow<DataState<List<DataSettlement>>> = combine(
@@ -134,7 +120,9 @@ class TodayViewModel @Inject constructor(
                 financeEntityList = datasets
             )
         }
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+    }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     fun updateSorting(
         time: SortType? = null,

@@ -43,22 +43,16 @@ import com.example.moneytracker.ui.startUpScreen.StartUpScreen
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun ScreenManager(
-    homeMainViewModel: HomeMainViewModel,
-    overviewViewModel: OverviewViewModel,
-    todayViewModel: TodayViewModel,
-    yesterdayViewModel: YesterdayViewModel,
-    allViewModel: AllViewModel,
-    showAllViewModel: ShowAllViewModel,
     navController: NavHostController = rememberNavController(),
     account: AccountServices = hiltViewModel<ScreenManagerViewModel>().account,
     onFullyDrawn: () -> Unit
 ) {
     val userViewModel: UserViewModel = hiltViewModel()
+    val homeMainViewModel: HomeMainViewModel = hiltViewModel()
 
     // ─── Single source of truth ───────────────────────────────────────────────
     // HomeViewModel is created ONCE here, scoped to ScreenManager's back-stack
-    // entry. It is passed down to every composable that needs it — never via
-    // hiltViewModel() again inside child composables.
+    // entry. It is passed down to every composable that needs it.
     val isDataLoaded by homeMainViewModel.isDataLoaded.collectAsStateWithLifecycle()
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -73,7 +67,6 @@ fun ScreenManager(
         // ── Startup / Auth ────────────────────────────────────────────────────
 
         composable<StartUpScreenRouter> {
-            val registerViewModel: RegisterViewModel = hiltViewModel()
             val loadingViewModel: LoadingViewModel = hiltViewModel()
 
             StartUpScreen(
@@ -83,8 +76,6 @@ fun ScreenManager(
         }
 
         // ── Loading splash ────────────────────────────────────────────────────
-        // Reads isDataLoaded from the already-created homeViewModel above.
-        // No new HomeViewModel instance is created here.
 
         composable<LoadingScreenRouter> { backStackEntry ->
             val arguments = backStackEntry.toRoute<LoadingScreenRouter>()
@@ -109,11 +100,14 @@ fun ScreenManager(
         }
 
         // ── Home ──────────────────────────────────────────────────────────────
-        // Passes the already-created homeViewModel and userViewModel.
-        // HomeScreen no longer calls hiltViewModel() internally.
 
         composable<HomeScreenRouter> { backStackEntry ->
             val arguments = backStackEntry.toRoute<HomeScreenRouter>()
+
+            val overviewViewModel: OverviewViewModel = hiltViewModel()
+            val todayViewModel: TodayViewModel = hiltViewModel()
+            val yesterdayViewModel: YesterdayViewModel = hiltViewModel()
+            val allViewModel: AllViewModel = hiltViewModel()
 
             HomeScreen(
                 homeMainViewModel = homeMainViewModel,
@@ -141,6 +135,7 @@ fun ScreenManager(
 
         // ── ShowAll ──────────────────────────────────────────────────────────
         composable<ShowAllTransactionsScreenRouter> {
+            val showAllViewModel: ShowAllViewModel = hiltViewModel()
             ShowAllTransactionScreen(
                 viewModel = showAllViewModel,
                 navController = navController
@@ -148,6 +143,7 @@ fun ScreenManager(
         }
 
         composable<ShowAllLiabilitiesScreenRouter> {
+            val showAllViewModel: ShowAllViewModel = hiltViewModel()
             ShowAllLiabilityScreen(
                 viewModel = showAllViewModel,
                 navController = navController
@@ -155,6 +151,7 @@ fun ScreenManager(
         }
 
         composable<ShowAllGoalsScreenRouter> {
+            val showAllViewModel: ShowAllViewModel = hiltViewModel()
             ShowAllGoalScreen(
                 viewModel = showAllViewModel,
                 navController = navController

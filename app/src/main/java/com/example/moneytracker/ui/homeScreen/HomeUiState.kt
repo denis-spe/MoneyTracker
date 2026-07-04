@@ -1,5 +1,6 @@
 package com.example.moneytracker.ui.homeScreen
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.DatasetState
@@ -13,6 +14,7 @@ import kotlinx.datetime.LocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
 
 
+@Stable
 data class HomeUiState(
     val datasets: List<FinanceEntity> = emptyList(),
     val settlement: List<Settlement> = emptyList(),

@@ -152,7 +152,7 @@ fun HomeScreen(
 
             HorizontalPager(
                 state = pagerState,
-                beyondViewportPageCount = 1,
+                beyondViewportPageCount = 0,
                 pageSpacing = 0.dp,
                 snapPosition = SnapPosition.Start,
                 userScrollEnabled = true,

@@ -4,8 +4,8 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.moneytracker.backend.auth.AccountServices
-import com.example.moneytracker.backend.storage.DatasetState
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.FinanceRepository
 import com.example.moneytracker.backend.storage.Routine
 import com.example.moneytracker.backend.storage.Settlement
 import com.example.moneytracker.backend.storage.Withdrawal
@@ -14,7 +14,6 @@ import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.usecase.FinanceOperationsUseCase
 import com.example.moneytracker.ui.usecase.GetAdjustFinanceUseCase
 import com.example.moneytracker.ui.usecase.HomeData
-import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
 import com.example.moneytracker.ui.usecase.RoutineWorkerUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -24,7 +23,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -35,7 +33,7 @@ import javax.inject.Inject
 class HomeMainViewModel @Inject constructor(
     private val accountService: AccountServices,
     private val financeOperationsUseCase: FinanceOperationsUseCase,
-    observeUserDataUseCase: ObserveUserDataUseCase,
+    private val financeRepository: FinanceRepository,
     private val getAdjustFinanceUseCase: GetAdjustFinanceUseCase,
     private val routineWorker: RoutineWorkerUseCase,
     @param:ApplicationContext private val context: Context
@@ -48,16 +46,7 @@ class HomeMainViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(HomeUiState())
     val uiState: StateFlow<HomeUiState> = _uiState.asStateFlow()
 
-    private val rawDatasetsFlow: StateFlow<HomeData> =
-        observeUserDataUseCase(
-            accountService.userState.map { it?.uid }
-        )
-            .flowOn(Dispatchers.Default)
-            .stateIn(
-                viewModelScope,
-                SharingStarted.WhileSubscribed(STATE_TIMEOUT),
-                HomeData(datasetState = DatasetState.Loading)
-            )
+    private val rawDatasetsFlow: StateFlow<HomeData> = financeRepository.rawDatasetsFlow
 
     init {
         viewModelScope.launch {
@@ -90,15 +79,18 @@ class HomeMainViewModel @Inject constructor(
 
     val todayFinance: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
         .map { it.toDataState { datasets -> datasets.filter { it.isForToday } } }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val adjustFinance: StateFlow<DataState<List<FinanceEntity>>> = rawDatasetsFlow
         .map { it.toDataState { datasets -> getAdjustFinanceUseCase(datasets) } }
+        .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val isDataLoaded: StateFlow<Boolean> = todayFinance.map {
         it is DataState.Success || it is DataState.Error
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), false)
+    }.distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), false)
 
     // CRUD operations
     fun addData(financeEntity: FinanceEntity) = launchWithUid {
