@@ -83,8 +83,8 @@ import com.example.moneytracker.helper.toFirestoreTimestampUtc
 import com.example.moneytracker.helper.toMidnight
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.homeScreen.DataState
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
 import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import kotlinx.datetime.LocalDateTime
 import network.chaintech.kmp_date_time_picker.utils.now
 import java.util.UUID
@@ -101,7 +101,7 @@ private val drawerShape = RoundedCornerShape(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionModelDrawer(
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
     uiState: HomeUiState,
 ) {
@@ -262,7 +262,7 @@ private class DrawerSelection<T>(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun <T> DataAdditionModelDrawerContent(
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
     entries: List<T>,
     adjustFinance: List<FinanceEntity>,
@@ -551,7 +551,7 @@ fun FinancialDataInput(
     type: FinanceCategory,
     buttonText: String,
     userViewModel: UserViewModel,
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     onDismiss: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -853,7 +853,7 @@ fun FinancialDataInput(
 fun GoalDataInput(
     placeholder: String,
     buttonText: String,
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     onDismiss: () -> Unit,
 ) {
     val scrollState = rememberScrollState()
@@ -1086,7 +1086,7 @@ fun GoalDataInput(
                     )
 
                     viewModel.addData(entity)
-                    viewModel.beginTheWork(entity)
+                    viewModel.beginWork(entity)
 
                     amountState.clearText()
                     labelState.clearText()
@@ -1114,7 +1114,7 @@ fun GoalDataInput(
 fun SettlementDataInputs(
     type: FinanceCategory,
     settlementType: SettlementType,
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     adjustFinance: List<FinanceEntity>,
     onDismiss: () -> Unit
 ) {
@@ -1325,7 +1325,7 @@ fun SettlementDataInputs(
                         is FinanceEntity.Liability -> "LIABILITY"
                     }
 
-                    viewModel.addSettlementData(
+                    viewModel.addSettlement(
                         entity.id,
                         financeEntityType,
                         settlement
@@ -1356,7 +1356,7 @@ fun SettlementDataInputs(
 fun WithdrawalInputs(
     type: FinanceCategory,
     settlementType: SettlementType,
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     adjustFinance: List<FinanceEntity>,
     onDismiss: () -> Unit
 ) {
@@ -1564,7 +1564,7 @@ fun WithdrawalInputs(
                         is FinanceEntity.Liability -> "LIABILITY"
                     }
 
-                    viewModel.addWithdrawalData(
+                    viewModel.addWithdrawal(
                         entity.id,
                         financeEntityType,
                         withdrawal = withdrawal

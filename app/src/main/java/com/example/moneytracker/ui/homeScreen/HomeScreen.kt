@@ -30,11 +30,15 @@ import com.example.moneytracker.R
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.dataAddition.DataAdditionFloatingButton
 import com.example.moneytracker.ui.dataAddition.DataAdditionModelDrawer
+import com.example.moneytracker.ui.homeScreen.allScreen.AllViewModel
+import com.example.moneytracker.ui.homeScreen.overviewScreen.OverviewViewModel
+import com.example.moneytracker.ui.homeScreen.todayScreen.TodayViewModel
 import com.example.moneytracker.ui.homeScreen.topAppAction.TopAppAction
 import com.example.moneytracker.ui.homeScreen.topAppNavigation.DropDownUserProfile
 import com.example.moneytracker.ui.homeScreen.topAppNavigation.TopAppNav
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopAppTitle
 import com.example.moneytracker.ui.homeScreen.topAppTitle.TopBarNav
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayViewModel
 import com.example.moneytracker.ui.screenManager.SettingsScreenRouter
 import com.example.moneytracker.ui.screenManager.StartUpScreenRouter
 import com.example.moneytracker.ui.theme.StewardTheme
@@ -45,16 +49,20 @@ import kotlinx.coroutines.launch
 @Composable
 fun HomeScreen(
     // ViewModels received from ScreenManager — never created here
-    homeViewModel: HomeViewModel,
+    homeMainViewModel: HomeMainViewModel,
+    overviewViewModel: OverviewViewModel,
+    todayViewModel: TodayViewModel,
+    yesterdayViewModel: YesterdayViewModel,
+    allViewModel: AllViewModel,
     userViewModel: UserViewModel,
     onNavigate: NavController? = null,
     userId: String,
     onFullyDrawn: () -> Unit
 ) {
-    val uiState by homeViewModel.uiState.collectAsStateWithLifecycle()
+    val uiState by homeMainViewModel.uiState.collectAsStateWithLifecycle()
     val userUiState by userViewModel.uiState.collectAsStateWithLifecycle()
     val userState by userViewModel.userState.collectAsStateWithLifecycle()
-    val isLoaded by homeViewModel.isDataLoaded.collectAsStateWithLifecycle()
+    val isLoaded by homeMainViewModel.isDataLoaded.collectAsStateWithLifecycle()
 
     LaunchedEffect(isLoaded) {
         if (isLoaded) onFullyDrawn()
@@ -132,7 +140,7 @@ fun HomeScreen(
                 DataAdditionFloatingButton(
                     uiState = uiState,
                     isLoading = false,
-                    viewModel = homeViewModel
+                    viewModel = homeMainViewModel
                 )
             },
 
@@ -157,7 +165,7 @@ fun HomeScreen(
                         FulfillmentScreenRoute(
                             paddingValues = paddingValues,
                             onNavigate = onNavigate,
-                            viewModel = homeViewModel,   // passed in — no new instance
+                            viewModel = overviewViewModel,   // passed in — no new instance
                             onTabClick = { index ->
                                 pageScope.launch {
                                     pagerState.animateScrollToPage(index)
@@ -168,29 +176,32 @@ fun HomeScreen(
                     1 -> {
                         TodayScreenRoute(
                             paddingValues = paddingValues,
-                            viewModel = homeViewModel,      // passed in — no new instance
+                            viewModel = todayViewModel,      // passed in — no new instance
+                            homeMainViewModel = homeMainViewModel,
                             userViewModel = userViewModel,  // passed in — no new instance
                         )
                     }
                     2 -> {
                         YesterdayScreenRoute(
                             paddingValues = paddingValues,
-                            viewModel = homeViewModel,      // passed in — no new instance
+                            viewModel = yesterdayViewModel,      // passed in — no new instance
+                            homeMainViewModel = homeMainViewModel,
                             userViewModel = userViewModel,  // passed in — no new instance
                         )
                     }
                     3 -> {
                         AllScreenRoute(
                             paddingValues = paddingValues,
-                            viewModel = homeViewModel,      // passed in — no new instance
+                            viewModel = allViewModel,      // passed in — no new instance
                             userViewModel = userViewModel,  // passed in — no new instance
+                            homeMainViewModel = homeMainViewModel,
                         )
                     }
                 }
             }
 
             DataAdditionModelDrawer(
-                viewModel = homeViewModel,
+                viewModel = homeMainViewModel,
                 userViewModel = userViewModel,
                 uiState = uiState
             )

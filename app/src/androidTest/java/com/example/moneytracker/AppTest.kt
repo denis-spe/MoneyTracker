@@ -16,7 +16,7 @@ class AppTest : TestBase(screenComposable = {
     App(
         homeViewModel = hiltViewModel(),
         showAllViewModel = hiltViewModel(),
-        onFullyDrawn = {}
+        onFullyDrawn = {},
     )
 }) {
 

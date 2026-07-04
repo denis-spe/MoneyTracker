@@ -20,8 +20,7 @@ import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.ItemListAreaSort
 import com.example.moneytracker.ui.homeScreen.todayScreen.itemListArea.itemListContent
 import com.example.moneytracker.ui.homeScreen.todayScreen.statArea.statArea
@@ -31,9 +30,10 @@ import com.example.moneytracker.ui.homeScreen.todayScreen.statArea.statArea
 fun TodayScreen(
     paddingValues: PaddingValues,
     donutChartDataCollection: DataState<List<DonutChartData>>,
-    uiState: HomeUiState,
+    uiState: TodayUiState,
     fulfillmentFinanceEntityList: DataState<List<FinanceEntity>>,
-    homeViewModel: HomeViewModel,
+    todayViewModel: TodayViewModel,
+    homeMainViewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
     datasetWithAdjust: DataState<List<DataSettlement>>,
     currentAmountBalance: DataState<Map<String, Double>>,
@@ -64,19 +64,19 @@ fun TodayScreen(
             ) {
                 ItemListAreaSort(
                     uiState = uiState,
-                    onFilterClick = homeViewModel::updateOnFilterClick,
-                    categorySorting = homeViewModel::updateCategorySorting,
-                    timeSorting = homeViewModel::updateTimeSorting,
-                    amountSorting = homeViewModel::updateAmountSorting,
-                    paymentSorting = homeViewModel::updatePaymentSorting,
-                    alphabeticalOrder = homeViewModel::updateAlphabeticalOrder
+                    onFilterClick = todayViewModel::updateOnFilterClick,
+                    categorySorting = todayViewModel::updateCategorySorting,
+                    timeSorting = todayViewModel::updateTimeSorting,
+                    amountSorting = todayViewModel::updateAmountSorting,
+                    paymentSorting = todayViewModel::updatePaymentSorting,
+                    alphabeticalOrder = todayViewModel::updateAlphabeticalOrder
                 )
             }
         }
 
         itemListContent(
             datasetWithAdjust = datasetWithAdjust,
-            viewModel = homeViewModel,
+            viewModel = homeMainViewModel,
             userViewModel = userViewModel
         )
     }

@@ -9,9 +9,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.homeScreen.allScreen.AllScreen
+import com.example.moneytracker.ui.homeScreen.allScreen.AllViewModel
 import com.example.moneytracker.ui.homeScreen.overviewScreen.OverviewScreen
+import com.example.moneytracker.ui.homeScreen.overviewScreen.OverviewViewModel
 import com.example.moneytracker.ui.homeScreen.todayScreen.TodayScreen
+import com.example.moneytracker.ui.homeScreen.todayScreen.TodayViewModel
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayViewModel
 
 // ─────────────────────────────────────────────────────────────────────────────
 // All route composables receive ViewModels as explicit parameters.
@@ -22,7 +26,8 @@ import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayScreen
 @Composable
 fun TodayScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel,
+    viewModel: TodayViewModel,
+    homeMainViewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -39,7 +44,8 @@ fun TodayScreenRoute(
         fulfillmentFinanceEntityList = fulfillmentFinanceEntity,
         currentAmountBalance = currentAmountBalance,
         liabilityBalance = liabilityBalance,
-        homeViewModel = viewModel,
+        todayViewModel = viewModel,
+        homeMainViewModel = homeMainViewModel,
         datasetWithAdjust = datasetWithAdjust,
         userViewModel = userViewModel
     )
@@ -49,24 +55,23 @@ fun TodayScreenRoute(
 fun FulfillmentScreenRoute(
     paddingValues: PaddingValues,
     onNavigate: NavController?,
-    viewModel: HomeViewModel,
+    viewModel: OverviewViewModel,
     onTabClick: (Int) -> Unit = {},
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val allDataset by viewModel.allDataset.collectAsStateWithLifecycle()
 
     OverviewScreen(
         onNavigate = onNavigate,
         paddingValues = paddingValues,
         allDataset = allDataset,
-        uiState = uiState
     )
 }
 
 @Composable
 fun YesterdayScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel,
+    viewModel: YesterdayViewModel,
+    homeMainViewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
 ) {
     val yesterdayChartDataState by viewModel.yesterdayChartData.collectAsStateWithLifecycle()
@@ -79,6 +84,7 @@ fun YesterdayScreenRoute(
         yesterdayChartDataState = yesterdayChartDataState,
         yesterdayStatsDataState = yesterdayStatsDataState,
         viewModel = viewModel,
+        homeMainViewModel = homeMainViewModel,
         userViewModel = userViewModel
     )
 }
@@ -86,15 +92,19 @@ fun YesterdayScreenRoute(
 @Composable
 fun AllScreenRoute(
     paddingValues: PaddingValues,
-    viewModel: HomeViewModel,
+    viewModel: AllViewModel,
+    homeMainViewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
 ) {
-    val dataState by viewModel.weeklyData.collectAsStateWithLifecycle()
+    val dataState by viewModel.groupedWeeklyData.collectAsStateWithLifecycle()
+    val summaryState by viewModel.professionalSummary.collectAsStateWithLifecycle()
 
     AllScreen(
         paddingValues = paddingValues,
         viewModel = viewModel,
         dataState = dataState,
-        userViewModel = userViewModel
+        summaryState = summaryState,
+        userViewModel = userViewModel,
+        homeMainViewModel = homeMainViewModel
     )
 }

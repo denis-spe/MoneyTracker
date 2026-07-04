@@ -88,7 +88,7 @@ import com.example.moneytracker.ui.dataAddition.ModelDrawerDescriptionTextField
 import com.example.moneytracker.ui.dataAddition.ModelDrawerLabelTextField
 import com.example.moneytracker.ui.dataAddition.ModelDrawerTag
 import com.example.moneytracker.ui.dataAddition.PaymentMethodDropdown
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
 import kotlinx.coroutines.android.awaitFrame
 import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDateTime
@@ -1094,7 +1094,7 @@ fun OnDeleteReceipt(
 @Composable
 fun OnUpdate(
     dataSettlement: DataSettlement,
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
     isUpdateModelBottonOpen: MutableState<Boolean>,
     onShowDialog: MutableState<Boolean>
@@ -1338,14 +1338,13 @@ fun OnUpdate(
                                 localDateTimeState = onCreatedDateTimeState,
                                 colorResId = colorResId,
                                 timeContainerModifier = if (
-                                    dataSettlement.financeEntityType == "GOAL" ||
-                                    dataSettlement.financeEntityType == "ATTAINMENT"
+                                    dataSettlement.financeEntityType == "GOAL"
                                 ) bottomModifier else Modifier,
                             )
                         }
                     }
 
-                    if (showAffectCurrentAccount && dataSettlement.financeEntityType != "ATTAINMENT") {
+                    if (showAffectCurrentAccount && dataSettlement.financeEntityType != "GOAL") {
                         item(6544) {
                             // Show affectCurrentAccount.
                             Column(
@@ -1471,7 +1470,7 @@ fun OnUpdate(
                                             )
 
                                             if (newFinanceEntity is FinanceEntity.Goal) {
-                                                viewModel.beginTheWork(newFinanceEntity)
+                                                viewModel.beginWork(newFinanceEntity)
                                             }
 
                                             userViewModel.showActionNotification(
@@ -1529,7 +1528,7 @@ fun OnUpdate(
                                                     is FinanceEntity.Goal -> "GOAL"
                                                     is FinanceEntity.Liability -> "LIABILITY"
                                                 }
-                                            viewModel.updateSettlementData(
+                                            viewModel.updateSettlement(
                                                 settlement.financeEntity!!.id,
                                                 financeEntityType,
                                                 settlement,
@@ -1657,7 +1656,7 @@ fun OnUpdate(
 
 @Composable
 fun Receipt(
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     dataSettlement: DataSettlement,
     onShowDialog: MutableState<Boolean>
 ) {
@@ -1738,7 +1737,7 @@ fun Receipt(
             is DataSettlement.SettlementAdjust -> {
                 val financeEntityType = dataSettlement.financeEntityType
 
-                viewModel.removeSettlementFinance(
+                viewModel.removeSettlement(
                     dataSettlement.settlement.financeEntity!!.id,
                     financeEntityType,
                     dataSettlement.settlement
@@ -1749,7 +1748,7 @@ fun Receipt(
             is DataSettlement.SettlementWithdrawal -> {
                 val financeEntityType = dataSettlement.financeEntityType
 
-                viewModel.removeWithdrawalFinance(
+                viewModel.removeWithdrawal(
                     dataSettlement.withdrawal.financeEntity!!.id,
                     financeEntityType,
                     dataSettlement.withdrawal

@@ -1,6 +1,7 @@
 // Bless be the name of the LORD of hosts
 package com.example.moneytracker.ui.homeScreen.allScreen
 
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,11 +16,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -37,11 +40,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
-import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.helper.addNegativeToAmount
 import com.example.moneytracker.helper.addZeroIfLessThenTen
 import com.example.moneytracker.helper.shimmerEffect
-import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
 import com.example.moneytracker.ui.OnDeleteReceipt
 import com.example.moneytracker.ui.OnUpdate
@@ -50,91 +51,114 @@ import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.components.Swipe
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
+import network.chaintech.kmp_date_time_picker.utils.now
 
-@Composable
-fun ListForAll(
-    viewModel: HomeViewModel,
+fun LazyListScope.listForAllContent(
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
-    dataSettlements: DataState<List<DataSettlement>>,
+    dataSettlements: DataState<List<Pair<LocalDate, List<DataSettlement>>>>,
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        contentPadding = PaddingValues(vertical = 12.dp)
-    ) {
-        when (dataSettlements) {
-            is DataState.Success -> {
-                val data = dataSettlements.data
+    val groupedData = (dataSettlements as? DataState.Success)?.data ?: emptyList()
 
-                if (data.isEmpty()) {
-                    item {
-                        Column(
-                            modifier = Modifier
-                                .fillParentMaxHeight(0.8f)
-                                .fillMaxWidth(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.empty_list),
-                                contentDescription = "empty list",
-                                modifier = Modifier.size(120.dp),
-                                alpha = 0.5f
-                            )
-                            Spacer(modifier = Modifier.height(16.dp))
-                            Text(
-                                text = "No activity recorded yet",
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.Gray,
-                                textAlign = TextAlign.Center
-                            )
-                            Text(
-                                text = "Start by adding your first transaction!",
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = Color.Gray.copy(alpha = 0.7f),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                } else {
-                    items(
-                        count = data.size,
-                        key = { index -> data[index].id }
-                    ) { index ->
-                        val dataItem = data[index]
-
-                        CardForAllItem(
-                            modifier = Modifier.animateItem(),
-                            dataSettlement = dataItem,
-                            viewModel = viewModel,
-                            userViewModel = userViewModel,
-                        )
-                    }
-                }
-            }
-
-            is DataState.Loading -> {
-                items(7) {
-                    CardForAllItemShimmer()
-                }
-            }
-
-            is DataState.Error -> {
-                val error = dataSettlements.exception.message ?: "Failed to Load"
+    when (dataSettlements) {
+        is DataState.Success -> {
+            if (groupedData.isEmpty()) {
                 item {
                     Column(
-                        modifier = Modifier.fillMaxSize(),
+                        modifier = Modifier
+                            .fillParentMaxHeight(0.6f)
+                            .fillMaxWidth(),
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
+                        Image(
+                            painter = painterResource(R.drawable.empty_list),
+                            contentDescription = "empty list",
+                            modifier = Modifier.size(120.dp),
+                            alpha = 0.5f
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Error: $error",
-                            color = Color.Red,
-                            modifier = Modifier.padding(16.dp)
+                            text = "No activity recorded yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+                        Text(
+                            text = "Start by adding your first transaction!",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray.copy(alpha = 0.7f),
+                            textAlign = TextAlign.Center
                         )
                     }
+                }
+            } else {
+                groupedData.forEach { (date, settlements) ->
+                    stickyHeader(key = "header_$date") {
+                        StickyHeader(date = date)
+                    }
+
+                    item(key = "item_$date") {
+                        Surface(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .animateContentSize()
+                                .padding(horizontal = 4.dp, vertical = 4.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface,
+                            tonalElevation = 1.dp,
+                            shadowElevation = 2.dp
+                        ) {
+                            Column {
+                                settlements.forEachIndexed { index, settlement ->
+                                    CardForAllItem(
+                                        modifier = Modifier.animateItem(),
+                                        dataSettlement = settlement,
+                                        viewModel = viewModel,
+                                        userViewModel = userViewModel,
+                                        showDivider = index < settlements.size - 1
+                                    )
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        is DataState.Loading -> {
+            items(7) {
+                Surface(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 4.dp, vertical = 4.dp),
+                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 1.dp
+                ) {
+                    CardForAllItemShimmer()
+                }
+            }
+        }
+
+        is DataState.Error -> {
+            val error = dataSettlements.exception.message ?: "Failed to Load"
+            item {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Error: $error",
+                        color = Color.Red,
+                        modifier = Modifier.padding(16.dp)
+                    )
                 }
             }
         }
@@ -142,11 +166,54 @@ fun ListForAll(
 }
 
 @Composable
+fun ListForAll(
+    viewModel: HomeMainViewModel,
+    userViewModel: UserViewModel,
+    dataSettlements: DataState<List<Pair<LocalDate, List<DataSettlement>>>>,
+) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(vertical = 12.dp)
+    ) {
+        listForAllContent(viewModel, userViewModel, dataSettlements)
+    }
+}
+
+@Composable
+fun StickyHeader(date: LocalDate) {
+    val now = LocalDate.now()
+    val yesterday = now.minus(1, DateTimeUnit.DAY)
+    val displayText = when (date) {
+        now -> "Today"
+        yesterday -> "Yesterday"
+        else -> "${
+            date.dayOfWeek.name.lowercase().replaceFirstChar { it.uppercase() }
+        }, ${date.dayOfMonth} ${date.month.name.lowercase().replaceFirstChar { it.uppercase() }}"
+    }
+
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.background.copy(alpha = 0.95f)
+    ) {
+        Text(
+            text = displayText,
+            modifier = Modifier
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.primary
+        )
+    }
+}
+
+@Composable
 fun CardForAllItem(
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
     modifier: Modifier = Modifier,
-    dataSettlement: DataSettlement
+    dataSettlement: DataSettlement,
+    showDivider: Boolean = true
 ) {
     val label = dataSettlement.label
     val amount = dataSettlement.addNegativeToAmount
@@ -156,18 +223,16 @@ fun CardForAllItem(
 
     val dateTime = run {
         val dt = dataSettlement.createdAt
-        val date = dt.toLocalDateTimeUtc()
         val time = dt.toLocalDateTimeUtc()
         val hour = time.hour.addZeroIfLessThenTen
         val minute = time.minute.addZeroIfLessThenTen
-        val weekDay = date.dayOfWeek.name.title
 
-        "On $weekDay at $hour:$minute"
+        "at $hour:$minute"
     }
 
     val tagIcon = painterResource(id = dataSettlement.tagIcon.icon)
     val color = colorResource(id = dataSettlement.colorRes)
-    painterResource(id = dataSettlement.icon)
+    val categoryIcon = painterResource(id = dataSettlement.outlineIcon)
     val paymentMethodIcon = painterResource(id = dataSettlement.paymentMethod.icon)
 
     val settlementLabel = when (dataSettlement) {
@@ -220,12 +285,22 @@ fun CardForAllItem(
                             fontWeight = FontWeight.Bold,
                             textDecoration = labelTextDecoration
                         )
-                        StatusView(dataSettlement, fontSize = 12.sp)
+                        settlementLabel?.let {
+                            Text(
+                                it,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                textDecoration = adjustTextDecoration
+                            )
+                        }
                     }
                 },
                 supportingContent = {
-                    if (description.isNotEmpty()) {
-                        Text(description, fontSize = 12.sp)
+                    Column {
+                        if (description.isNotEmpty()) {
+                            Text(description, fontSize = 12.sp)
+                        }
+                        Text(dateTime, fontSize = 12.sp)
                     }
                 },
                 trailingContent = {
@@ -239,7 +314,14 @@ fun CardForAllItem(
                             color = color,
                             fontWeight = FontWeight.Bold
                         )
-                        Text(dateTime)
+
+                        Image(
+                            paymentMethodIcon,
+                            contentDescription = "Payment method Icon",
+                            modifier = Modifier.size(16.dp),
+                        )
+
+                        StatusView(dataSettlement, fontSize = 12.sp)
                     }
                 },
                 leadingContent = {
@@ -261,33 +343,26 @@ fun CardForAllItem(
                                     .padding(4.dp)
                             )
                         }
-                        
+
                         Image(
-                            paymentMethodIcon,
-                            contentDescription = "Payment method Icon",
+                            categoryIcon,
+                            contentDescription = "Category Icon",
                             modifier = Modifier
                                 .size(12.dp)
                                 .clip(CircleShape)
                                 .background(MaterialTheme.colorScheme.background),
+                            colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(color)
                         )
                     }
                 },
-                shadowElevation = 0.dp,
-                overlineContent = {
-                    settlementLabel?.let {
-                        Text(
-                            it,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            textDecoration = adjustTextDecoration
-                        )
-                    }
-                }
+                shadowElevation = 0.dp
             )
-            HorizontalDivider(
-                thickness = 1.dp,
-                color = Color.LightGray.copy(0.3f)
-            )
+            if (showDivider) {
+                HorizontalDivider(
+                    thickness = 1.dp,
+                    color = Color.LightGray.copy(0.3f)
+                )
+            }
         }
     }
 
@@ -308,22 +383,18 @@ fun CardForAllItem(
                 viewModel.removeData(dataSettlement.financeEntity)
                 userViewModel.showActionNotification("Data deleted successfully", Color.Red)
             }
+
             is DataSettlement.SettlementAdjust -> {
-                val financeEntityType = when (dataSettlement.settlement.financeEntity!!) {
-                    is FinanceEntity.Transaction -> "TRANSACTION"
-                    is FinanceEntity.Goal -> "GOAL"
-                    is FinanceEntity.Liability -> "LIABILITY"
-                }
-                viewModel.removeSettlementFinance(
-                    dataSettlement.settlement.financeEntity!!.id,
-                    financeEntityType,
+                viewModel.removeSettlement(
+                    dataSettlement.settlement.datasetId,
+                    dataSettlement.financeEntityType,
                     dataSettlement.settlement
                 )
                 userViewModel.showActionNotification("Settlement deleted successfully", Color.Red)
             }
 
             is DataSettlement.SettlementWithdrawal -> {
-                viewModel.removeWithdrawalFinance(
+                viewModel.removeWithdrawal(
                     dataSettlement.withdrawal.datasetId,
                     dataSettlement.financeEntityType,
                     dataSettlement.withdrawal

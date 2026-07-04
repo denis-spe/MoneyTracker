@@ -36,7 +36,7 @@ import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.charts.collections.ChartData
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStatArea
 import com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea.YesterdayStats
 import com.example.moneytracker.ui.theme.StewardTheme
@@ -49,7 +49,8 @@ fun YesterdayScreen(
     sortAbleDataSettlementDataState: DataState<List<DataSettlement>>,
     yesterdayChartDataState: DataState<List<ChartData>>,
     yesterdayStatsDataState: DataState<YesterdayStats>,
-    viewModel: HomeViewModel,
+    viewModel: YesterdayViewModel,
+    homeMainViewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
 ) {
     val secondarySurface = StewardTheme.colors.secondarySurface
@@ -163,7 +164,7 @@ fun YesterdayScreen(
                             modifier = Modifier
                                 .animateItem()
                                 .clip(RoundedCornerShape(CORNER_RADIUS)),
-                            viewModel = viewModel,
+                            viewModel = homeMainViewModel,
                             dataSettlements = data,
                             userViewModel = userViewModel,
                             backgroundColor = blendedColor

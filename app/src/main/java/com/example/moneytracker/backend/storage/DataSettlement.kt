@@ -127,7 +127,7 @@ sealed class DataSettlement {
             is SettlementAdjust -> {
                 when (settlement.financeEntity) {
                     is FinanceEntity.Transaction -> "TRANSACTION"
-                    is FinanceEntity.Goal -> "ATTAINMENT"
+                    is FinanceEntity.Goal -> "GOAL"
                     is FinanceEntity.Liability -> "LIABILITY"
                     null -> "TRANSACTION"
                 }

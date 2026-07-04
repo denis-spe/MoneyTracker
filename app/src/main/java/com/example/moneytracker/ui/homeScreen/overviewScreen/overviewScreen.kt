@@ -71,7 +71,6 @@ import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.components.charts.collections.DonutChartDataCollection
 import com.example.moneytracker.ui.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.homeScreen.HomeUiState
 import com.example.moneytracker.ui.screenManager.FulfillmentDetailScreenRouter
 import com.example.moneytracker.ui.screenManager.LiabilityDetailScreenRouter
 import com.example.moneytracker.ui.screenManager.ShowAllGoalsScreenRouter
@@ -636,11 +635,8 @@ fun OverviewScreen(
     onNavigate: NavController?,
     paddingValues: PaddingValues,
     allDataset: DataState<List<FinanceEntity>>,
-    uiState: HomeUiState
 ) {
     @Suppress("UNUSED_VARIABLE")
-    val unusedUiState = uiState
-
     val coupledData = remember(allDataset) {
         if (allDataset is DataState.Success) {
             coupleDatasetsWithSettlements(allDataset.data)

@@ -16,7 +16,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
+import com.example.moneytracker.ui.homeScreen.allScreen.AllViewModel
+import com.example.moneytracker.ui.homeScreen.overviewScreen.OverviewViewModel
+import com.example.moneytracker.ui.homeScreen.todayScreen.TodayViewModel
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayViewModel
 import com.example.moneytracker.ui.settings.SettingsViewModel
 import com.example.moneytracker.ui.settings.ThemeConfig
 import com.example.moneytracker.ui.showAll.ShowAllViewModel
@@ -29,8 +33,12 @@ import dagger.hilt.android.AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
     private val settingsViewModel: SettingsViewModel by viewModels()
-    private val homeViewModel: HomeViewModel by viewModels()
+    private val homeMainViewModel: HomeMainViewModel by viewModels()
     private val showAllViewModel: ShowAllViewModel by viewModels()
+    private val overviewViewModel: OverviewViewModel by viewModels()
+    private val todayViewModel: TodayViewModel by viewModels()
+    private val yesterdayViewModel: YesterdayViewModel by viewModels()
+    private val allViewModel: AllViewModel by viewModels()
 
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -56,9 +64,13 @@ class MainActivity : ComponentActivity() {
         StartupTimer.mark("Activity.onCreate")
 
         // Eagerly initialize ViewModels to start data fetching ASAP
-        homeViewModel
+        homeMainViewModel
         settingsViewModel
         showAllViewModel
+        overviewViewModel
+        todayViewModel
+        yesterdayViewModel
+        allViewModel
 
         enableEdgeToEdge()
         checkNotificationPermission()
@@ -92,9 +104,13 @@ class MainActivity : ComponentActivity() {
                 // reportFullyDrawn is passed as a callback — HomeScreen calls it
                 // when isDataLoaded turns true using the ViewModel it already has
                 App(
-                    homeViewModel = homeViewModel,
                     showAllViewModel = showAllViewModel,
-                    onFullyDrawn = { reportFullyDrawn() }
+                    overviewViewModel = overviewViewModel,
+                    todayViewModel = todayViewModel,
+                    yesterdayViewModel = yesterdayViewModel,
+                    allViewModel = allViewModel,
+                    onFullyDrawn = { reportFullyDrawn() },
+                    homeMainViewModel = homeMainViewModel
                 )
             }
         }

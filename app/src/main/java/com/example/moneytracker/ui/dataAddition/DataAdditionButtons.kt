@@ -37,8 +37,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.moneytracker.R
 import com.example.moneytracker.helper.shimmerEffect
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
 import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
 import com.example.moneytracker.ui.theme.StewardTheme
 
 private val FLOAT_BUTTON_SIZE = 45.dp
@@ -46,7 +46,7 @@ private val FLOAT_BUTTON_SIZE = 45.dp
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DataAdditionFloatingButton(
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     uiState: HomeUiState,
     isLoading: Boolean = false
 ) {

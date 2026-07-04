@@ -26,6 +26,7 @@ import com.example.moneytracker.ui.usecase.GetCurrentAmountUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentDateUseCase
 import com.example.moneytracker.ui.usecase.GetCurrentWeekUseCase
 import com.example.moneytracker.ui.usecase.GetLiabilityBalanceUseCase
+import com.example.moneytracker.ui.usecase.GetProfessionalSummaryUseCase
 import com.example.moneytracker.ui.usecase.GetTodayChartDonutDataUseCase
 import com.example.moneytracker.ui.usecase.GetWeeklyDataUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayChartDataUseCase
@@ -34,6 +35,7 @@ import com.example.moneytracker.ui.usecase.GetYesterdayFinanceUseCase
 import com.example.moneytracker.ui.usecase.GetYesterdayStatsUseCase
 import com.example.moneytracker.ui.usecase.HomeData
 import com.example.moneytracker.ui.usecase.ObserveUserDataUseCase
+import com.example.moneytracker.ui.usecase.ProfessionalSummary
 import com.example.moneytracker.ui.usecase.RoutineWorkerUseCase
 import com.example.moneytracker.ui.usecase.SortTodayDataSettlementUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -72,6 +74,7 @@ class HomeViewModel @Inject constructor(
     private val getTodayChartDonutDataUseCase: GetTodayChartDonutDataUseCase,
     private val getYesterdayChartDataUseCase: GetYesterdayChartDataUseCase,
     private val getYesterdayStatsUseCase: GetYesterdayStatsUseCase,
+    private val getProfessionalSummaryUseCase: GetProfessionalSummaryUseCase,
     private val routineWorker: RoutineWorkerUseCase,
     @param:ApplicationContext private val context: Context
 ) : ViewModel() {
@@ -277,11 +280,26 @@ class HomeViewModel @Inject constructor(
         .map { it.toDataState { datasets -> getYesterdayDataSettlementUseCase(datasets) } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
-    val weeklyData: StateFlow<DataState<List<DataSettlement>>> = combine(
+    val groupedWeeklyData: StateFlow<DataState<List<Pair<LocalDate, List<DataSettlement>>>>> =
+        combine(
+            rawDatasetsFlow,
+            datesFlow
+        ) { homeData, dates ->
+            homeData.toDataState { datasets ->
+                getWeeklyDataUseCase(datasets, dates)
+                    .groupBy { it.createdAt.toLocalDateTimeUtc().date }
+                    .toList()
+                    .sortedByDescending { it.first }
+            }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val professionalSummary: StateFlow<DataState<ProfessionalSummary>> = combine(
         rawDatasetsFlow,
         datesFlow
     ) { homeData, dates ->
-        homeData.toDataState { datasets -> getWeeklyDataUseCase(datasets, dates) }
+        homeData.toDataState { datasets ->
+            getProfessionalSummaryUseCase(getWeeklyDataUseCase(datasets, dates))
+        }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val activityCounts: StateFlow<DataState<Map<LocalDate, Int>>> = rawDatasetsFlow

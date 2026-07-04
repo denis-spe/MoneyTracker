@@ -80,8 +80,8 @@ import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.components.Swipe
 import com.example.moneytracker.ui.dataAddition.ICON_SIZE
 import com.example.moneytracker.ui.homeScreen.DataState
-import com.example.moneytracker.ui.homeScreen.HomeUiState
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
+import com.example.moneytracker.ui.homeScreen.todayScreen.TodayUiState
 import com.example.moneytracker.ui.theme.StewardTheme
 
 private val spacerWith = 14.dp
@@ -132,7 +132,7 @@ fun ItemFilter(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ItemListAreaSort(
-    uiState: HomeUiState,
+    uiState: TodayUiState,
     onFilterClick: (Boolean) -> Unit,
     categorySorting: (String) -> Unit,
     timeSorting: (SortType) -> Unit,
@@ -691,7 +691,7 @@ fun ItemListAreaSort(
 
 fun LazyListScope.itemListContent(
     datasetWithAdjust: DataState<List<DataSettlement>>,
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel
 ) {
     when (datasetWithAdjust) {
@@ -761,7 +761,7 @@ fun LazyListScope.itemListContent(
 
 @Composable
 fun ItemCard(
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
     modifier: Modifier = Modifier,
     dataSettlement: DataSettlement,
@@ -953,7 +953,7 @@ fun ItemCard(
             }
 
             is DataSettlement.SettlementAdjust -> {
-                viewModel.removeSettlementFinance(
+                viewModel.removeSettlement(
                     dataSettlement.settlement.datasetId,
                     dataSettlement.financeEntityType,
                     dataSettlement.settlement
@@ -962,7 +962,7 @@ fun ItemCard(
             }
 
             is DataSettlement.SettlementWithdrawal -> {
-                viewModel.removeWithdrawalFinance(
+                viewModel.removeWithdrawal(
                     dataSettlement.withdrawal.datasetId,
                     dataSettlement.financeEntityType,
                     dataSettlement.withdrawal

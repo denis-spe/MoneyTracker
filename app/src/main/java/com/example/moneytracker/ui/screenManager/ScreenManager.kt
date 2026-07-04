@@ -26,8 +26,12 @@ import com.example.moneytracker.ui.authScreens.registerScreen.RegisterViewModel
 import com.example.moneytracker.ui.detailScreen.GoalDetailScreen
 import com.example.moneytracker.ui.detailScreen.SettlementDetailScreen
 import com.example.moneytracker.ui.detailScreen.TransactionDetailScreen
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
 import com.example.moneytracker.ui.homeScreen.HomeScreen
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.allScreen.AllViewModel
+import com.example.moneytracker.ui.homeScreen.overviewScreen.OverviewViewModel
+import com.example.moneytracker.ui.homeScreen.todayScreen.TodayViewModel
+import com.example.moneytracker.ui.homeScreen.yesterdayScreen.YesterdayViewModel
 import com.example.moneytracker.ui.loading.LoadingViewModel
 import com.example.moneytracker.ui.settings.SettingsScreen
 import com.example.moneytracker.ui.showAll.ShowAllGoalScreen
@@ -39,7 +43,11 @@ import com.example.moneytracker.ui.startUpScreen.StartUpScreen
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
 @Composable
 fun ScreenManager(
-    homeViewModel: HomeViewModel,
+    homeMainViewModel: HomeMainViewModel,
+    overviewViewModel: OverviewViewModel,
+    todayViewModel: TodayViewModel,
+    yesterdayViewModel: YesterdayViewModel,
+    allViewModel: AllViewModel,
     showAllViewModel: ShowAllViewModel,
     navController: NavHostController = rememberNavController(),
     account: AccountServices = hiltViewModel<ScreenManagerViewModel>().account,
@@ -51,7 +59,7 @@ fun ScreenManager(
     // HomeViewModel is created ONCE here, scoped to ScreenManager's back-stack
     // entry. It is passed down to every composable that needs it — never via
     // hiltViewModel() again inside child composables.
-    val isDataLoaded by homeViewModel.isDataLoaded.collectAsStateWithLifecycle()
+    val isDataLoaded by homeMainViewModel.isDataLoaded.collectAsStateWithLifecycle()
     // ─────────────────────────────────────────────────────────────────────────
 
     val router = if (account.hasUser) {
@@ -108,11 +116,15 @@ fun ScreenManager(
             val arguments = backStackEntry.toRoute<HomeScreenRouter>()
 
             HomeScreen(
-                homeViewModel = homeViewModel,
+                homeMainViewModel = homeMainViewModel,
                 userViewModel = userViewModel,
                 userId = arguments.userId,
                 onNavigate = navController,
-                onFullyDrawn = onFullyDrawn
+                onFullyDrawn = onFullyDrawn,
+                overviewViewModel = overviewViewModel,
+                todayViewModel = todayViewModel,
+                yesterdayViewModel = yesterdayViewModel,
+                allViewModel = allViewModel
             )
         }
 

@@ -50,7 +50,7 @@ import com.example.moneytracker.ui.UserViewModel
 import com.example.moneytracker.ui.components.StatusView
 import com.example.moneytracker.ui.components.Swipe
 import com.example.moneytracker.ui.dataAddition.FONT_WEIGHT
-import com.example.moneytracker.ui.homeScreen.HomeViewModel
+import com.example.moneytracker.ui.homeScreen.HomeMainViewModel
 
 private val ICON_SIZE = 20.dp
 private val TIME_FONT_SIZE = 13.sp
@@ -64,7 +64,7 @@ fun YesterdayItem(
     modifier: Modifier = Modifier,
     dataSettlement: DataSettlement,
     showDivider: Boolean = true,
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
     backgroundColor: Color
 ) {
@@ -261,7 +261,7 @@ fun YesterdayItem(
             }
 
             is DataSettlement.SettlementAdjust -> {
-                viewModel.removeSettlementFinance(
+                viewModel.removeSettlement(
                     dataSettlement.settlement.datasetId,
                     dataSettlement.financeEntityType,
                     dataSettlement.settlement
@@ -270,7 +270,7 @@ fun YesterdayItem(
             }
 
             is DataSettlement.SettlementWithdrawal -> {
-                viewModel.removeWithdrawalFinance(
+                viewModel.removeWithdrawal(
                     dataSettlement.withdrawal.datasetId,
                     dataSettlement.financeEntityType,
                     dataSettlement.withdrawal
@@ -428,7 +428,7 @@ fun YesterdayItemShimmer(modifier: Modifier = Modifier) {
 fun YesterdayItems(
     modifier: Modifier = Modifier,
     dataSettlements: List<DataSettlement>,
-    viewModel: HomeViewModel,
+    viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
     backgroundColor: Color
 ) {
