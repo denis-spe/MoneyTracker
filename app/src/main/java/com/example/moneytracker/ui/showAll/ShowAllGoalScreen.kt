@@ -239,6 +239,7 @@ fun ShowAllGoalHeroHeader(
 
     var showHelp by remember { mutableStateOf(false) }
     var showStats by remember { mutableStateOf(false) }
+    var showVisualAnalysis by remember { mutableStateOf(false) }
     var isSearchActive by remember { mutableStateOf(false) }
 
     Surface(
@@ -298,6 +299,13 @@ fun ShowAllGoalHeroHeader(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
                             tint = if (isSearchActive) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
+                        )
+                    }
+                    IconButton(onClick = { showVisualAnalysis = true }) {
+                        Icon(
+                            imageVector = Icons.TwoTone.Insights,
+                            contentDescription = "visualization",
+                            tint = if (showVisualAnalysis) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = { showStats = true }) {
@@ -427,6 +435,13 @@ fun ShowAllGoalHeroHeader(
         GoalStatisticsDialog(
             goals = DataState.Success(goals),
             onDismiss = { showStats = false }
+        )
+    }
+
+    if (showVisualAnalysis) {
+        VisualAnalysisBottomSheet(
+            entities = goals,
+            onDismiss = { showVisualAnalysis = false }
         )
     }
 }

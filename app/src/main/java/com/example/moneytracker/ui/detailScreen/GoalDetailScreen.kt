@@ -48,6 +48,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
@@ -242,7 +243,7 @@ fun GoalDetailScreen(
                                     item {
                                         Text(
                                             text = "Attainment History",
-                                            style = MaterialTheme.typography.titleMedium,
+                                            style = typography.titleMedium,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
@@ -262,7 +263,7 @@ fun GoalDetailScreen(
                                     item {
                                         Text(
                                             text = "Achievement History",
-                                            style = MaterialTheme.typography.titleMedium,
+                                            style = typography.titleMedium,
                                             fontWeight = FontWeight.Bold
                                         )
                                     }
@@ -317,6 +318,7 @@ fun GoalDetailScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun GoalMoreCharts(
     currentGoal: FinanceEntity.Goal,
@@ -375,15 +377,23 @@ fun GoalMoreCharts(
             )
         }
 
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
 
         // Show more charts
-        Dialog(
+        ModalBottomSheet(
+            sheetState = sheetState,
+            shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
             onDismissRequest = { onDialogShow.value = false }
         ) {
-            Card(
-                modifier = Modifier.fillMaxWidth(0.98f),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Box(modifier = Modifier.fillMaxWidth()) {
                     IconButton(
@@ -391,7 +401,6 @@ fun GoalMoreCharts(
                         modifier = Modifier
                             .size(32.dp)
                             .align(Alignment.TopEnd)
-                            .padding(8.dp)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Close,
@@ -400,167 +409,166 @@ fun GoalMoreCharts(
                         )
                     }
 
-                    LazyColumn(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        item(key = "MoreChartsHeader") {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "Advanced Distribution",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Analyzing ${currentGoal.label} achievements",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray
-                                )
-                            }
+                        // Header
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                text = "Advanced Distribution",
+                                style = typography.titleLarge,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Analyzing ${currentGoal.label} achievements",
+                                style = typography.bodySmall,
+                                color = Color.Gray
+                            )
                         }
 
-                        item(key = "SummaryStats") {
-                            Card(
-                                modifier = Modifier.fillMaxWidth(),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
-                                        alpha = 0.3f
-                                    )
-                                ),
-                                shape = RoundedCornerShape(12.dp)
+                        // Summary Statistics Card
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = CardDefaults.cardColors(
+                                containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                                    alpha = 0.3f
+                                )
+                            ),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(12.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                                ) {
-                                    Text(
-                                        text = "Summary Statistics",
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    Row(modifier = Modifier.fillMaxWidth()) {
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            StatisticRow(
-                                                label = "Min",
-                                                value = stats.min.formatToAmount()
-                                            )
-                                            StatisticRow(
-                                                label = "Q1",
-                                                value = stats.q1.formatToAmount()
-                                            )
-                                            StatisticRow(
-                                                label = "Median",
-                                                value = stats.median.formatToAmount()
-                                            )
-                                        }
-                                        Spacer(modifier = Modifier.width(16.dp))
-                                        Column(modifier = Modifier.weight(1f)) {
-                                            StatisticRow(
-                                                label = "Q3",
-                                                value = stats.q3.formatToAmount()
-                                            )
-                                            StatisticRow(
-                                                label = "Max",
-                                                value = stats.max.formatToAmount()
-                                            )
-                                            StatisticRow(
-                                                label = "IQR",
-                                                value = stats.iqr.formatToAmount()
-                                            )
-                                        }
+                                Text(
+                                    text = "Summary Statistics",
+                                    style = typography.labelLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Row(modifier = Modifier.fillMaxWidth()) {
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        StatisticRow(
+                                            label = "Min",
+                                            value = stats.min.formatToAmount()
+                                        )
+                                        StatisticRow(
+                                            label = "Q1",
+                                            value = stats.q1.formatToAmount()
+                                        )
+                                        StatisticRow(
+                                            label = "Median",
+                                            value = stats.median.formatToAmount()
+                                        )
+                                    }
+                                    Spacer(modifier = Modifier.width(16.dp))
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        StatisticRow(
+                                            label = "Q3",
+                                            value = stats.q3.formatToAmount()
+                                        )
+                                        StatisticRow(
+                                            label = "Max",
+                                            value = stats.max.formatToAmount()
+                                        )
+                                        StatisticRow(
+                                            label = "IQR",
+                                            value = stats.iqr.formatToAmount()
+                                        )
                                     }
                                 }
                             }
                         }
 
-                        item(key = "HistogramChart") {
-                            Column(
+                        // Histogram Chart
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Frequency Distribution (Histogram)",
+                                style = typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Shows how often different achievement amounts occur. Adjust bins to change granularity.",
+                                style = typography.bodySmall,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Frequency Distribution (Histogram)",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
+                                    text = "Bins: ${bins.intValue}",
+                                    style = typography.labelMedium,
+                                    modifier = Modifier.width(60.dp)
                                 )
-                                Text(
-                                    text = "Shows how often different achievement amounts occur. Adjust bins to change granularity.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray,
-                                    textAlign = TextAlign.Center
+                                Slider(
+                                    value = bins.intValue.toFloat(),
+                                    onValueChange = { bins.intValue = it.toInt() },
+                                    valueRange = 5f..50f,
+                                    modifier = Modifier.weight(1f),
+                                    colors = SliderDefaults.colors().copy(
+                                        thumbColor = StewardTheme.colors.primaryAccent,
+                                        activeTrackColor = StewardTheme.colors.primaryAccent
+                                    )
                                 )
+                            }
 
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Text(
-                                        text = "Bins: ${bins.intValue}",
-                                        style = MaterialTheme.typography.labelMedium,
-                                        modifier = Modifier.width(60.dp)
-                                    )
-                                    Slider(
-                                        value = bins.intValue.toFloat(),
-                                        onValueChange = { bins.intValue = it.toInt() },
-                                        valueRange = 5f..50f,
-                                        modifier = Modifier.weight(1f),
-                                        colors = SliderDefaults.colors().copy(
-                                            thumbColor = StewardTheme.colors.primaryAccent,
-                                            activeTrackColor = StewardTheme.colors.primaryAccent
-                                        )
-                                    )
-                                }
-
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(250.dp)
-                                ) {
-                                    RotatedBarChart(
-                                        modifier = Modifier.fillMaxSize(),
-                                        renderer = histAchievement,
-                                        labelRotation = -45f
-                                    )
-                                }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(250.dp)
+                            ) {
+                                RotatedBarChart(
+                                    modifier = Modifier.fillMaxSize(),
+                                    renderer = histAchievement,
+                                    labelRotation = -45f
+                                )
                             }
                         }
 
-                        item(key = "BoxPlotChart") {
-                            Column(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                Text(
-                                    text = "Box and Whisker Plot",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Text(
-                                    text = "Visualizes the spread, quartiles, and range of your performance.",
-                                    style = MaterialTheme.typography.bodySmall,
-                                    color = Color.Gray,
-                                    textAlign = TextAlign.Center
-                                )
+                        // Box Plot Chart
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Text(
+                                text = "Box and Whisker Plot",
+                                style = typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Text(
+                                text = "Visualizes the spread, quartiles, and range of your performance.",
+                                style = typography.bodySmall,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center
+                            )
 
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(200.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    BoxPlotChart(
-                                        renderer = boxPlotRenderer,
-                                        modifier = Modifier.fillMaxSize(),
-                                    )
-                                }
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(200.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                BoxPlotChart(
+                                    renderer = boxPlotRenderer,
+                                    modifier = Modifier.fillMaxSize(),
+                                )
                             }
                         }
                     }
                 }
+                Spacer(modifier = Modifier.height(24.dp))
             }
         }
     }
@@ -582,7 +590,7 @@ fun GoalLineChartSummary(
         ) {
             Text(
                 text = "No achievement history yet",
-                style = MaterialTheme.typography.bodyMedium,
+                style = typography.bodyMedium,
                 color = Color.Gray
             )
         }
@@ -689,7 +697,7 @@ fun GoalLineChartSummary(
         ) {
             Text(
                 "More Advanced Chart",
-                style = MaterialTheme.typography.labelLarge,
+                style = typography.labelLarge,
                 color = colorResource(currentGoal.colorRes)
             )
         }
@@ -716,7 +724,7 @@ fun GoalStatistic(
         ) {
             Text(
                 text = "No achievement history yet",
-                style = MaterialTheme.typography.bodyMedium,
+                style = typography.bodyMedium,
                 color = Color.Gray
             )
         }
@@ -751,7 +759,7 @@ fun GoalStatistic(
         ) {
             Text(
                 "View Advanced Analysis",
-                style = MaterialTheme.typography.labelLarge,
+                style = typography.labelLarge,
                 color = colorResource(currentGoal.colorRes)
             )
         }
@@ -773,12 +781,12 @@ fun StatisticRow(label: String, value: String) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodyMedium,
+            style = typography.bodyMedium,
             color = Color.Gray
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodyMedium,
+            style = typography.bodyMedium,
             fontWeight = FontWeight.Bold
         )
     }
@@ -804,12 +812,12 @@ fun GoalFullDescription(
                 ) {
                     Text(
                         text = currentGoal.label.title + " Full Description",
-                        style = MaterialTheme.typography.titleLarge,
+                        style = typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = currentGoal.description,
-                        style = MaterialTheme.typography.bodyMedium
+                        style = typography.bodyMedium
                     )
                 }
             }
@@ -838,7 +846,7 @@ fun GoalInfo(
             ) {
                 Text(
                     text = currentGoal.description.limitLength(30),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = typography.bodyMedium,
                     color = Color.Gray
                 )
             }
@@ -921,11 +929,11 @@ fun GoalInfo(
             ) {
                 Text(
                     text = "Target: ${currentGoal.amount.formatToAmount()}",
-                    style = MaterialTheme.typography.labelLarge
+                    style = typography.labelLarge
                 )
                 Text(
                     text = "Settled: ${animatedSettled.value.toDouble().formatToAmount()}",
-                    style = MaterialTheme.typography.labelLarge,
+                    style = typography.labelLarge,
                     color = colorResource(id = R.color.success_complete)
                 )
             }
@@ -943,7 +951,7 @@ fun GoalInfo(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "${(currentAnimatedProgress * 100).toInt()}% of target reached",
-                style = MaterialTheme.typography.bodySmall,
+                style = typography.bodySmall,
                 modifier = Modifier.align(Alignment.End),
                 fontWeight = FontWeight.Medium
             )
@@ -961,12 +969,12 @@ fun InfoRow(label: String, value: String, color: Color? = null) {
     ) {
         Text(
             text = label,
-            style = MaterialTheme.typography.bodySmall,
+            style = typography.bodySmall,
             color = Color.Gray
         )
         Text(
             text = value,
-            style = MaterialTheme.typography.bodySmall,
+            style = typography.bodySmall,
             fontWeight = FontWeight.Medium,
             color = color ?: MaterialTheme.colorScheme.onSurface
         )
@@ -1021,7 +1029,7 @@ fun GoalSummaryCard(
                     )
                     Text(
                         text = currentGoal.label,
-                        style = MaterialTheme.typography.headlineSmall,
+                        style = typography.headlineSmall,
                         fontWeight = FontWeight.Bold
                     )
                 }
@@ -1091,7 +1099,7 @@ fun GoalSummaryCard(
                         2 -> "Analytics"
                         else -> "Overview"
                     },
-                    style = MaterialTheme.typography.headlineSmall,
+                    style = typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -1147,7 +1155,7 @@ fun AchievementItem(
             ) {
                 Text(
                     text = achievement.status,
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = typography.bodyLarge,
                     fontWeight = FontWeight.Bold,
                     color = if (achievement.status == "COMPLETED") colorResource(id = R.color.success_complete) else colorResource(
                         id = R.color.error_color
@@ -1155,7 +1163,7 @@ fun AchievementItem(
                 )
                 Text(
                     text = achievement.totalSettlementAmount.formatToAmount(),
-                    style = MaterialTheme.typography.bodyLarge,
+                    style = typography.bodyLarge,
                     fontWeight = FontWeight.Medium
                 )
             }
@@ -1164,7 +1172,7 @@ fun AchievementItem(
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Period: ${achievement.startDateTime.formatToDateTime} - ${achievement.deadlineDateTime.formatToDateTime}",
-                style = MaterialTheme.typography.bodySmall,
+                style = typography.bodySmall,
                 color = Color.Gray
             )
         }
@@ -1363,7 +1371,7 @@ fun InsightDetailDialog(
 
                     Text(
                         "Quartiles & IQR",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = typography.labelSmall,
                         color = Color.Gray
                     )
                     DetailRow(label = "Q1 (25%)", value = q1.formatToAmount())
@@ -1373,7 +1381,7 @@ fun InsightDetailDialog(
                     HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.2f))
                     Text(
                         "Distribution Shapes",
-                        style = MaterialTheme.typography.labelSmall,
+                        style = typography.labelSmall,
                         color = Color.Gray
                     )
                     DetailRow(label = "Skewness", value = skewness.formatResult)
@@ -1430,14 +1438,14 @@ fun InsightHelpBottomDrawer(
             ) {
                 Text(
                     text = "Understanding Your Analysis",
-                    style = MaterialTheme.typography.titleLarge,
+                    style = typography.titleLarge,
                     fontWeight = FontWeight.Bold,
                     color = StewardTheme.colors.primaryAccent
                 )
 
                 Text(
                     text = "These metrics help you understand your long-term performance patterns and consistency.",
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = typography.bodyMedium,
                     color = Color.Gray
                 )
 
@@ -1499,13 +1507,13 @@ fun HelpItem(title: String, description: String) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
         Text(
             text = title,
-            style = MaterialTheme.typography.titleSmall,
+            style = typography.titleSmall,
             fontWeight = FontWeight.Bold,
             color = MaterialTheme.colorScheme.secondary
         )
         Text(
             text = description,
-            style = MaterialTheme.typography.bodyMedium,
+            style = typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface
         )
     }

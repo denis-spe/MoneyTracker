@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -245,6 +246,7 @@ fun ShowAllHeroHeader(
 
     var showHelp by remember { mutableStateOf(false) }
     var showStats by remember { mutableStateOf(false) }
+    var showVisualAnalysis by remember { mutableStateOf(false) }
     var isSearchActive by remember { mutableStateOf(false) }
 
     Surface(
@@ -298,27 +300,49 @@ fun ShowAllHeroHeader(
                     )
                 }
 
-                Row {
-                    IconButton(onClick = { isSearchActive = !isSearchActive }) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Search",
-                            tint = if (isSearchActive) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
-                        )
+                LazyRow(modifier = Modifier.padding(horizontal = 8.dp)) {
+
+                    // Search button
+                    item {
+                        IconButton(onClick = { isSearchActive = !isSearchActive }) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = if (isSearchActive) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                    IconButton(onClick = { showStats = true }) {
-                        Icon(
-                            imageVector = Icons.TwoTone.Insights,
-                            contentDescription = "Statistics",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+
+                    // Statistics button
+                    item {
+                        IconButton(onClick = { showStats = true }) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Insights,
+                                contentDescription = "Statistics",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
-                    IconButton(onClick = { showHelp = true }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
-                            contentDescription = "Help",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
+
+                    // Visualizations button
+                    item {
+                        IconButton(onClick = { showVisualAnalysis = true }) {
+                            Icon(
+                                imageVector = Icons.TwoTone.Insights,
+                                contentDescription = "visualization",
+                                tint = if (showVisualAnalysis) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    item {
+                        IconButton(onClick = { showHelp = true }) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
+                                contentDescription = "Help",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
                     }
                 }
             }
@@ -452,6 +476,13 @@ fun ShowAllHeroHeader(
         TransactionStatisticsDialog(
             transactions = transactions,
             onDismiss = { showStats = false }
+        )
+    }
+
+    if (showVisualAnalysis) {
+        VisualAnalysisBottomSheet(
+            entities = transactions,
+            onDismiss = { showVisualAnalysis = false }
         )
     }
 }
