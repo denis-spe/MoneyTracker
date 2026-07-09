@@ -71,7 +71,7 @@ fun VisualAnalysisBottomSheet(
                 text = "Visual Analysis",
                 style = typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = StewardTheme.colors.primaryAccent
+                color = StewardTheme.colors.primary
             )
 
             if (entities.isEmpty()) {

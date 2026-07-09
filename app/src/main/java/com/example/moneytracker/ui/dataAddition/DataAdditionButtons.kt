@@ -78,7 +78,7 @@ fun DataAdditionFloatingButton(
                 shape = CircleShape,
                 modifier = Modifier.size(FLOAT_BUTTON_SIZE),
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
-                containerColor = StewardTheme.colors.primaryAccent,
+                containerColor = StewardTheme.colors.primary,
             ) {
                 Icon(
                     imageVector = if (isDatasetBottomSheetOpen) Icons.Default.Clear else Icons.Default.Add,
@@ -97,7 +97,7 @@ fun DataAdditionFloatingButton(
                 shape = CircleShape,
                 modifier = Modifier.size(43.dp),
                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 5.dp),
-                containerColor = StewardTheme.colors.primaryAccent
+                containerColor = StewardTheme.colors.primary
             ) {
                 Icon(
                     imageVector = if (isSettlementBottomSheetOpen) Icons.Outlined.DoDisturbOn

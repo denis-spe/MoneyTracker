@@ -1,12 +1,14 @@
 // Glory to the LORD our GOD
 package com.example.moneytracker.backend.storage
 
+import androidx.compose.runtime.Stable
 import com.example.moneytracker.backend.storage.types.FinanceCategory
 import com.example.moneytracker.backend.storage.types.GoalType
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.TransactionType
 import com.google.firebase.Timestamp
 
+@Stable
 sealed class FinanceEntity {
     abstract val id: String
     abstract val amount: Double

@@ -111,7 +111,7 @@ fun HomeScreen(
                         TopAppTitle(
                             state = pagerState,
                             contentColor = customColors.accentContent,
-                            currentPageColor = customColors.primaryAccent,
+                            currentPageColor = customColors.primary,
                             backgroundColor = blendedColor,
                         ) { tab ->
                             scope.launch {
@@ -158,57 +158,43 @@ fun HomeScreen(
                 userScrollEnabled = true,
                 key = { topBarEntries[it] },
             ) { page ->
-                // Only collect flows for VISIBLE pages to save memory
-                // beyondViewportPageCount = 1 allows smooth animations
                 when (page) {
                     0 -> {
                         val pageScope = rememberCoroutineScope()
-                        // Skip collecting flows if page is not visible or adjacent
-                        if ((pagerState.currentPage - 0).let { it >= -1 && it <= 1 }) {
-                            FulfillmentScreenRoute(
-                                paddingValues = paddingValues,
-                                onNavigate = onNavigate,
-                                viewModel = overviewViewModel,   // passed in — no new instance
-                                onTabClick = { index ->
-                                    pageScope.launch {
-                                        pagerState.animateScrollToPage(index)
-                                    }
+                        FulfillmentScreenRoute(
+                            paddingValues = paddingValues,
+                            onNavigate = onNavigate,
+                            viewModel = overviewViewModel,
+                            onTabClick = { index ->
+                                pageScope.launch {
+                                    pagerState.animateScrollToPage(index)
                                 }
-                            )
-                        }
+                            }
+                        )
                     }
                     1 -> {
-                        // Only render if visible or adjacent to visible page
-                        if ((pagerState.currentPage - 1).let { it >= -1 && it <= 1 }) {
-                            TodayScreenRoute(
-                                paddingValues = paddingValues,
-                                viewModel = todayViewModel,      // passed in — no new instance
-                                homeMainViewModel = homeMainViewModel,
-                                userViewModel = userViewModel,  // passed in — no new instance
-                            )
-                        }
+                        TodayScreenRoute(
+                            paddingValues = paddingValues,
+                            viewModel = todayViewModel,
+                            homeMainViewModel = homeMainViewModel,
+                            userViewModel = userViewModel,
+                        )
                     }
                     2 -> {
-                        // Only render if visible or adjacent to visible page
-                        if ((pagerState.currentPage - page).let { it >= -1 && it <= 1 }) {
-                            YesterdayScreenRoute(
-                                paddingValues = paddingValues,
-                                viewModel = yesterdayViewModel,      // passed in — no new instance
-                                homeMainViewModel = homeMainViewModel,
-                                userViewModel = userViewModel,  // passed in — no new instance
-                            )
-                        }
+                        YesterdayScreenRoute(
+                            paddingValues = paddingValues,
+                            viewModel = yesterdayViewModel,
+                            homeMainViewModel = homeMainViewModel,
+                            userViewModel = userViewModel,
+                        )
                     }
                     3 -> {
-                        // Only render if visible or adjacent to visible page
-                        if ((pagerState.currentPage - page).let { it >= -1 && it <= 1 }) {
-                            AllScreenRoute(
-                                paddingValues = paddingValues,
-                                viewModel = allViewModel,      // passed in — no new instance
-                                userViewModel = userViewModel,  // passed in — no new instance
-                                homeMainViewModel = homeMainViewModel,
-                            )
-                        }
+                        AllScreenRoute(
+                            paddingValues = paddingValues,
+                            viewModel = allViewModel,
+                            userViewModel = userViewModel,
+                            homeMainViewModel = homeMainViewModel,
+                        )
                     }
                 }
             }

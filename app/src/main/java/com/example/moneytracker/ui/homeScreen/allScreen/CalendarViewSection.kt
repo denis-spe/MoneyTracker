@@ -80,7 +80,7 @@ fun CalendarViewSection(
         viewModel.uiState.map { it.selectedTabIndex }
     }.collectAsStateWithLifecycle(1)
     var selectedDate by remember { mutableStateOf(date) }
-    val selectedColor = StewardTheme.colors.primaryAccent
+    val selectedColor = StewardTheme.colors.primary
     val contentColor = StewardTheme.colors.accentContent
 
     val showDatePicker = remember { mutableStateOf(false) }
@@ -112,7 +112,7 @@ fun CalendarViewSection(
             },
             divider = {
                 HorizontalDivider(
-                    color = StewardTheme.colors.primaryAccent
+                    color = StewardTheme.colors.primary
                 )
             },
         ) {

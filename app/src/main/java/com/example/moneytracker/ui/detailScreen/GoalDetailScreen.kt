@@ -517,8 +517,8 @@ fun GoalMoreCharts(
                                     valueRange = 5f..50f,
                                     modifier = Modifier.weight(1f),
                                     colors = SliderDefaults.colors().copy(
-                                        thumbColor = StewardTheme.colors.primaryAccent,
-                                        activeTrackColor = StewardTheme.colors.primaryAccent
+                                        thumbColor = StewardTheme.colors.primary,
+                                        activeTrackColor = StewardTheme.colors.primary
                                     )
                                 )
                             }
@@ -1331,13 +1331,13 @@ fun InsightDetailDialog(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ShowChart,
                         contentDescription = "Analysis",
-                        tint = StewardTheme.colors.primaryAccent,
+                        tint = StewardTheme.colors.primary,
                         modifier = Modifier.size(30.dp)
                     )
 
                     Text(
                         text = "Advanced Analysis",
-                        color = StewardTheme.colors.primaryAccent,
+                        color = StewardTheme.colors.primary,
                         fontWeight = FontWeight.Medium,
                         textAlign = TextAlign.Center,
                     )
@@ -1440,7 +1440,7 @@ fun InsightHelpBottomDrawer(
                     text = "Understanding Your Analysis",
                     style = typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = StewardTheme.colors.primaryAccent
+                    color = StewardTheme.colors.primary
                 )
 
                 Text(

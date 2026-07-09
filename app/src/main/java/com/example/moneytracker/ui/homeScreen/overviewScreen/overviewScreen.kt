@@ -107,7 +107,7 @@ fun SectionHeader(
                 Text(
                     text = "See All",
                     style = typography.labelLarge,
-                    color = StewardTheme.colors.primaryAccent
+                    color = StewardTheme.colors.primary
                 )
             }
         }

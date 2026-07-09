@@ -68,13 +68,13 @@ class MainActivity : ComponentActivity() {
                 darkTheme = darkTheme,
                 dynamicColor = themeState.dynamicColor,
                 lightCustomColors = CustomPalette(
-                    primaryAccent = themeState.lightPrimaryAccent?.let { Color(it.toULong()) },
+                    primary = themeState.lightPrimaryAccent?.let { Color(it.toULong()) },
                     secondarySurface = themeState.lightSecondarySurface?.let { Color(it.toULong()) },
                     accentContent = themeState.lightAccentContent?.let { Color(it.toULong()) },
                     onSurfaceText = themeState.lightOnSurfaceText?.let { Color(it.toULong()) }
                 ),
                 darkCustomColors = CustomPalette(
-                    primaryAccent = themeState.darkPrimaryAccent?.let { Color(it.toULong()) },
+                    primary = themeState.darkPrimaryAccent?.let { Color(it.toULong()) },
                     secondarySurface = themeState.darkSecondarySurface?.let { Color(it.toULong()) },
                     accentContent = themeState.darkAccentContent?.let { Color(it.toULong()) },
                     onSurfaceText = themeState.darkOnSurfaceText?.let { Color(it.toULong()) }

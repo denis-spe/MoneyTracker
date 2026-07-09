@@ -9,7 +9,7 @@ data class ExtendedColors(
     val secondarySurface: Color = Color.Unspecified,
     val accentContent: Color = Color.Unspecified,
     val onSurfaceText: Color = Color.Unspecified,
-    val primaryAccent: Color = Color.Unspecified
+    val primary: Color = Color.Unspecified
 )
 
 val LocalExtendedColors = staticCompositionLocalOf {
@@ -17,6 +17,6 @@ val LocalExtendedColors = staticCompositionLocalOf {
         secondarySurface = Color.Unspecified,
         accentContent = Color.Unspecified,
         onSurfaceText = Color.Unspecified,
-        primaryAccent = Color.Unspecified
+        primary = Color.Unspecified
     )
 }

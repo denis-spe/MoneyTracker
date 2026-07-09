@@ -59,18 +59,11 @@ class GetProfessionalSummaryUseCase @Inject constructor() {
                     when (settlement.settlementType) {
                         SettlementType.LENT_REPAY -> income += amount
                         SettlementType.DEBT_REPAY -> outcome += amount
-                        SettlementType.GOAL_ATTAIN -> {
-                            outcome += amount
-                            savings += amount
-                        }
-
                         else -> {}
                     }
                 }
 
                 is DataSettlement.SettlementWithdrawal -> {
-                    // Withdrawals from transactions are usually expenses/outcome
-                    outcome += amount
                 }
             }
         }

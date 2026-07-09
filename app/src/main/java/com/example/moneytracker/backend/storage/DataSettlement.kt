@@ -3,6 +3,7 @@
 // and love your neighbor as your self.
 package com.example.moneytracker.backend.storage
 
+import androidx.compose.runtime.Stable
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
@@ -10,7 +11,7 @@ import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.isAmountEqualToSettleAmount
 import com.google.firebase.Timestamp
 
-
+@Stable
 sealed class DataSettlement {
     val id: String
         get() = when (this) {

@@ -454,7 +454,7 @@ fun YesterdayStatArea(
                             StewardTheme.colors.accentContent
                         else StewardTheme.colors.onSurfaceText,
                         containerColor = if (pageState.currentPage == 0) {
-                            StewardTheme.colors.primaryAccent
+                            StewardTheme.colors.primary
                         } else {
                             Color.Transparent
                         }
@@ -477,7 +477,7 @@ fun YesterdayStatArea(
                             StewardTheme.colors.accentContent
                         else StewardTheme.colors.onSurfaceText,
                         containerColor = if (pageState.currentPage == 1) {
-                            StewardTheme.colors.primaryAccent
+                            StewardTheme.colors.primary
                         } else {
                             Color.Transparent
                         }

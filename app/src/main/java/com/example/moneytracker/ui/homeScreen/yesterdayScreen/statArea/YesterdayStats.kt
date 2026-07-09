@@ -1,5 +1,8 @@
 package com.example.moneytracker.ui.homeScreen.yesterdayScreen.statArea
 
+import androidx.compose.runtime.Stable
+
+@Stable
 data class YesterdayStats(
     val earnings: Double = 0.0,
     val expenses: Double = 0.0,

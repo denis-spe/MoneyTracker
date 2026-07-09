@@ -167,7 +167,7 @@ fun ShowAllLiabilityScreen(
                                         Icon(
                                             imageVector = Icons.Default.History,
                                             contentDescription = null,
-                                            tint = StewardTheme.colors.primaryAccent,
+                                            tint = StewardTheme.colors.primary,
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -183,7 +183,7 @@ fun ShowAllLiabilityScreen(
                                         Text(
                                             text = "${data.size} items",
                                             style = typography.labelSmall,
-                                            color = StewardTheme.colors.primaryAccent
+                                            color = StewardTheme.colors.primary
                                         )
                                     }
                                 }
@@ -302,14 +302,14 @@ fun ShowAllLiabilityHeroHeader(
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = if (isSearchActive) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
+                            tint = if (isSearchActive) StewardTheme.colors.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = { showVisualAnalysis = true }) {
                         Icon(
                             imageVector = Icons.TwoTone.Insights,
                             contentDescription = "visualization",
-                            tint = if (showVisualAnalysis) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
+                            tint = if (showVisualAnalysis) StewardTheme.colors.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
                     IconButton(onClick = { showStats = true }) {
@@ -351,7 +351,7 @@ fun ShowAllLiabilityHeroHeader(
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
-                            focusedBorderColor = StewardTheme.colors.primaryAccent
+                            focusedBorderColor = StewardTheme.colors.primary
                         ),
                         singleLine = true
                     )

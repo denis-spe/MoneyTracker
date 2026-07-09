@@ -39,7 +39,7 @@ fun TopAppNav(
             .padding(5.dp)
             .border(4.dp, contentColor.copy(0.5f), RoundedCornerShape(100))
             .clip(RoundedCornerShape(100))
-            .background(StewardTheme.colors.primaryAccent)
+            .background(StewardTheme.colors.primary)
             .clickable(onClick = onClick),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center

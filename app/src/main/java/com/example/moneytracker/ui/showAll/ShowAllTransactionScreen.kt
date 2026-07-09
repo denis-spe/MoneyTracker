@@ -162,7 +162,7 @@ fun ShowAllTransactionScreen(
                                         Icon(
                                             imageVector = Icons.Default.History,
                                             contentDescription = null,
-                                            tint = StewardTheme.colors.primaryAccent,
+                                            tint = StewardTheme.colors.primary,
                                             modifier = Modifier.size(18.dp)
                                         )
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -178,7 +178,7 @@ fun ShowAllTransactionScreen(
                                         Text(
                                             text = "${data.size} found",
                                             style = typography.labelSmall,
-                                            color = StewardTheme.colors.primaryAccent
+                                            color = StewardTheme.colors.primary
                                         )
                                     }
                                 }
@@ -308,7 +308,7 @@ fun ShowAllHeroHeader(
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Search",
-                                tint = if (isSearchActive) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
+                                tint = if (isSearchActive) StewardTheme.colors.primary else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -330,7 +330,7 @@ fun ShowAllHeroHeader(
                             Icon(
                                 imageVector = Icons.TwoTone.Insights,
                                 contentDescription = "visualization",
-                                tint = if (showVisualAnalysis) StewardTheme.colors.primaryAccent else MaterialTheme.colorScheme.onSurface
+                                tint = if (showVisualAnalysis) StewardTheme.colors.primary else MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
@@ -369,7 +369,7 @@ fun ShowAllHeroHeader(
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             unfocusedBorderColor = MaterialTheme.colorScheme.surfaceVariant,
-                            focusedBorderColor = StewardTheme.colors.primaryAccent,
+                            focusedBorderColor = StewardTheme.colors.primary,
                         ),
                         singleLine = true
                     )
@@ -387,14 +387,14 @@ fun ShowAllHeroHeader(
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = StewardTheme.colors.primaryAccent.copy(alpha = 0.05f),
+                    color = StewardTheme.colors.primary.copy(alpha = 0.05f),
                     modifier = Modifier.padding(bottom = 8.dp)
                 ) {
                     Text(
                         text = "TOTAL NET BALANCE",
                         style = typography.labelSmall,
                         fontWeight = FontWeight.Bold,
-                        color = StewardTheme.colors.primaryAccent,
+                        color = StewardTheme.colors.primary,
                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
                         letterSpacing = 1.sp
                     )
@@ -507,7 +507,7 @@ fun TransactionHelpSheet(onDismiss: () -> Unit) {
                 text = "Financial Definitions",
                 style = typography.headlineSmall,
                 fontWeight = FontWeight.Bold,
-                color = StewardTheme.colors.primaryAccent
+                color = StewardTheme.colors.primary
             )
 
             HelpContentItem(
@@ -586,7 +586,7 @@ fun TransactionStatisticsDialog(
                 Icon(
                     imageVector = Icons.TwoTone.Insights,
                     contentDescription = null,
-                    tint = StewardTheme.colors.primaryAccent,
+                    tint = StewardTheme.colors.primary,
                     modifier = Modifier.size(40.dp)
                 )
 
@@ -594,7 +594,7 @@ fun TransactionStatisticsDialog(
                     text = "Data Science Statistics",
                     style = typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = StewardTheme.colors.primaryAccent
+                    color = StewardTheme.colors.primary
                 )
 
                 HorizontalDivider(

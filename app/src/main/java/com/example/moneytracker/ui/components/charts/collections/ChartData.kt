@@ -1,7 +1,9 @@
 package com.example.moneytracker.ui.components.charts.collections
 
+import androidx.compose.runtime.Stable
 import androidx.compose.ui.graphics.Color
 
+@Stable
 data class ChartData(
     val x: List<Double> = listOf(),
     val y: List<Double> = listOf(),
