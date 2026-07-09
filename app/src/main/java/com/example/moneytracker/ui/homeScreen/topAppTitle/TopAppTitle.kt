@@ -4,26 +4,25 @@
 
 package com.example.moneytracker.ui.homeScreen.topAppTitle
 
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.pager.PagerState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.PrimaryScrollableTabRow
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.moneytracker.ui.theme.StewardTheme
 import kotlin.math.absoluteValue
 
 @Composable
@@ -34,110 +33,49 @@ fun TopAppTitle(
     backgroundColor: Color,
     function: (TopBarNav) -> Unit
 ) {
+    val topBarNav = remember { TopBarNav.entries }
 
-    val topBarNav = remember {
-        TopBarNav.entries
-    }
+    // Use rememberUpdatedState to avoid reading frequently-changing values directly
+    val pagerState by rememberUpdatedState(state)
+    val selectedTabIndex = pagerState.currentPage
 
-    val selectedTabIndex = state.currentPage
-
-    Surface(
-        modifier = Modifier
-            .widthIn(min = 160.dp, max = 300.dp)
-            .padding(horizontal = 2.dp, vertical = 2.dp),
-        shape = RoundedCornerShape(50.dp),
-        color = backgroundColor,
-        tonalElevation = 1.dp,
-        shadowElevation = 1.dp
+    Box(
+        modifier = Modifier.background(backgroundColor),
+        contentAlignment = Alignment.Center
     ) {
         PrimaryScrollableTabRow(
             selectedTabIndex = selectedTabIndex,
-
-            containerColor = backgroundColor,
-
-            edgePadding = 0.dp,
-
-            indicator = {
-                TabRowDefaults.PrimaryIndicator(
-                    modifier = Modifier
-                        .tabIndicatorOffset(
-                            selectedTabIndex = selectedTabIndex,
-                            matchContentSize = true
-                        )
-                        .clip(RoundedCornerShape(100.dp))
-                        .padding(bottom = 2.dp),
-
-                    width = 5.dp,
-                    height = 5.dp,
-
-                    color = contentColor
-                )
-            },
-
-            divider = {}
-
+            modifier = Modifier,
+            containerColor = Color.Transparent,
+            contentColor = contentColor,
+            edgePadding = 16.dp
         ) {
-
             topBarNav.forEachIndexed { index, nav ->
+                // Calculate distance using the pager state
                 val distance =
-                    (state.currentPage + state.currentPageOffsetFraction - index).absoluteValue
+                    (pagerState.currentPage + pagerState.currentPageOffsetFraction - index).absoluteValue
                 val activeProgress = (1f - distance).coerceIn(0f, 1f)
+                val isSelected = activeProgress > 0.5f
 
-                TopBarItem(
-                    nav = nav,
+                val textColor by animateColorAsState(
+                    targetValue = if (isSelected) contentColor else MaterialTheme.colorScheme.onSurfaceVariant,
+                    animationSpec = tween(300),
+                    label = "TextColorAnimation"
+                )
 
-                    activeProgress = activeProgress,
-
-                    currentPageColor = currentPageColor,
-
-                    contentColor = contentColor,
-
-                    onClick = {
-                        function(nav)
+                Tab(
+                    selected = isSelected,
+                    onClick = { function(nav) },
+                    text = {
+                        Text(
+                            text = nav.text,
+                            fontWeight = if (isSelected) FontWeight.ExtraBold else FontWeight.Bold,
+                            fontSize = 12.sp,
+                            color = textColor
+                        )
                     }
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun TopBarItem(
-    nav: TopBarNav,
-    activeProgress: Float,
-    currentPageColor: Color,
-    contentColor: Color,
-    onClick: () -> Unit
-) {
-
-    Tab(
-        selected = activeProgress > 0.5f,
-
-        onClick = onClick,
-
-        modifier = Modifier
-            .clip(RoundedCornerShape(70.dp))
-            .background(
-                currentPageColor.copy(alpha = activeProgress)
-            ),
-
-        unselectedContentColor = StewardTheme.colors.onSurfaceText,
-
-        selectedContentColor = lerp(
-            StewardTheme.colors.onSurfaceText,
-            contentColor,
-            activeProgress
-        )
-    ) {
-
-        Text(
-            text = nav.text,
-
-            fontWeight = FontWeight.Bold,
-
-            fontSize = 13.sp,
-
-            modifier = Modifier.padding(vertical = 2.dp)
-        )
     }
 }

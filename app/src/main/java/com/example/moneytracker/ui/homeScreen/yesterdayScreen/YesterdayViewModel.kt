@@ -18,10 +18,17 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import javax.inject.Inject
+
+data class YesterdayScreenData(
+    val yesterdayChartData: DataState<List<ChartData>> = DataState.Loading,
+    val yesterdayStats: DataState<YesterdayStats> = DataState.Loading,
+    val sortedYesterday: DataState<List<DataSettlement>> = DataState.Loading
+)
 
 @HiltViewModel
 class YesterdayViewModel @Inject constructor(
@@ -64,4 +71,22 @@ class YesterdayViewModel @Inject constructor(
         .map { it.toDataState { datasets -> getYesterdayDataSettlementUseCase(datasets) } }
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val screenData: StateFlow<YesterdayScreenData> = combine(
+        yesterdayChartData,
+        yesterdayStats,
+        sortedYesterday
+    ) { chart, stats, sorted ->
+        YesterdayScreenData(
+            yesterdayChartData = chart as DataState<List<ChartData>>,
+            yesterdayStats = stats as DataState<YesterdayStats>,
+            sortedYesterday = sorted as DataState<List<DataSettlement>>
+        )
+    }
+        .distinctUntilChanged()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(STATE_TIMEOUT),
+            YesterdayScreenData()
+        )
 }

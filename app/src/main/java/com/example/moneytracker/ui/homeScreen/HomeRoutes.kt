@@ -30,23 +30,18 @@ fun TodayScreenRoute(
     homeMainViewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val donutChartData by viewModel.donutChartData.collectAsStateWithLifecycle()
-    val datasetWithAdjust by viewModel.sortedToday.collectAsStateWithLifecycle()
-    val fulfillmentFinanceEntity by viewModel.fulfillmentFinanceEntity.collectAsStateWithLifecycle()
-    val currentAmountBalance by viewModel.currentAccountBalance.collectAsStateWithLifecycle()
-    val liabilityBalance by viewModel.liabilityBalance.collectAsStateWithLifecycle()
+    val screenData by viewModel.screenData.collectAsStateWithLifecycle()
 
     TodayScreen(
         paddingValues = paddingValues,
-        donutChartDataCollection = donutChartData,
-        uiState = uiState,
-        fulfillmentFinanceEntityList = fulfillmentFinanceEntity,
-        currentAmountBalance = currentAmountBalance,
-        liabilityBalance = liabilityBalance,
+        donutChartDataCollection = screenData.donutChartData,
+        uiState = screenData.uiState,
+        fulfillmentFinanceEntityList = screenData.fulfillmentFinanceEntity,
+        currentAmountBalance = screenData.currentAccountBalance,
+        liabilityBalance = screenData.liabilityBalance,
         todayViewModel = viewModel,
         homeMainViewModel = homeMainViewModel,
-        datasetWithAdjust = datasetWithAdjust,
+        datasetWithAdjust = screenData.sortedToday,
         userViewModel = userViewModel
     )
 }
@@ -74,15 +69,13 @@ fun YesterdayScreenRoute(
     homeMainViewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
 ) {
-    val yesterdayChartDataState by viewModel.yesterdayChartData.collectAsStateWithLifecycle()
-    val yesterdayStatsDataState by viewModel.yesterdayStats.collectAsStateWithLifecycle()
-    val sortedYesterday by viewModel.sortedYesterday.collectAsStateWithLifecycle()
+    val screenData by viewModel.screenData.collectAsStateWithLifecycle()
 
     YesterdayScreen(
         paddingValues = paddingValues,
-        sortAbleDataSettlementDataState = sortedYesterday,
-        yesterdayChartDataState = yesterdayChartDataState,
-        yesterdayStatsDataState = yesterdayStatsDataState,
+        sortAbleDataSettlementDataState = screenData.sortedYesterday,
+        yesterdayChartDataState = screenData.yesterdayChartData,
+        yesterdayStatsDataState = screenData.yesterdayStats,
         viewModel = viewModel,
         homeMainViewModel = homeMainViewModel,
         userViewModel = userViewModel
@@ -96,14 +89,13 @@ fun AllScreenRoute(
     homeMainViewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
 ) {
-    val dataState by viewModel.groupedWeeklyData.collectAsStateWithLifecycle()
-    val summaryState by viewModel.professionalSummary.collectAsStateWithLifecycle()
+    val screenData by viewModel.screenData.collectAsStateWithLifecycle()
 
     AllScreen(
         paddingValues = paddingValues,
         viewModel = viewModel,
-        dataState = dataState,
-        summaryState = summaryState,
+        dataState = screenData.groupedWeeklyData,
+        summaryState = screenData.professionalSummary,
         userViewModel = userViewModel,
         homeMainViewModel = homeMainViewModel
     )

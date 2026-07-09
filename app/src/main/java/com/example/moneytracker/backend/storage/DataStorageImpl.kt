@@ -20,10 +20,12 @@ import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withContext
 import java.util.UUID
@@ -57,56 +59,76 @@ class DataStorageImpl(
         orderBy: String?,
         orderDirection: Query.Direction?
     ): List<FinanceEntity> {
-        return try {
-            val collections = listOf(TRANSACTION_COLLECTION, GOAL_COLLECTION, LIABILITY_COLLECTION)
-            val results = mutableListOf<FinanceEntity>()
+        return withContext(Dispatchers.IO) {
+            try {
+                val collections =
+                    listOf(TRANSACTION_COLLECTION, GOAL_COLLECTION, LIABILITY_COLLECTION)
+                val results = mutableListOf<FinanceEntity>()
 
-            for (collection in collections) {
-                var query: Query = db.collection(COLLECTION_NAME)
-                    .document(userId)
-                    .collection(collection)
-                    .where(filter)
+                for (collection in collections) {
+                    var query: Query = db.collection(COLLECTION_NAME)
+                        .document(userId)
+                        .collection(collection)
+                        .where(filter)
 
-                if (orderBy != null && orderDirection != null) {
-                    query = query.orderBy(orderBy, orderDirection)
-                }
-
-                val snapshot = query.get().await()
-
-                for (doc in snapshot.documents) {
-                    try {
-                        val entity = doc.data?.toFinance() ?: continue
-                        val settlements = doc.reference.collection("settlement").get().await()
-                            .documents.mapNotNull { it.data?.asSettlement() }
-                        val withdrawals = doc.reference.collection("withdrawal").get().await()
-                            .documents.mapNotNull { it.data?.asWithdrawal() }
-                        val achievements = doc.reference.collection("achievement").get().await()
-                            .documents.mapNotNull { it.data?.asAchievement() }
-
-                        val updatedEntity = when (entity) {
-                            is FinanceEntity.Goal -> entity.copy(
-                                settlement = settlements,
-                                achievement = achievements
-                            )
-
-                            is FinanceEntity.Liability -> entity.copy(settlement = settlements)
-                            is FinanceEntity.Transaction -> entity.copy(withdrawal = withdrawals)
-                        }
-                        results.add(updatedEntity)
-                    } catch (e: Exception) {
-                        if (e is CancellationException) throw e
-                        Log.e(
-                            "DataStorageImpl",
-                            "Failed to parse item during filtering in $collection",
-                            e
-                        )
+                    if (orderBy != null && orderDirection != null) {
+                        query = query.orderBy(orderBy, orderDirection)
                     }
+
+                    val snapshot = query.get().await()
+
+                    // Fetch subcollections in PARALLEL for all documents instead of sequentially
+                    val enrichedEntities = snapshot.documents.mapNotNull { doc ->
+                        try {
+                            val entity = doc.data?.toFinance() ?: return@mapNotNull null
+
+                            // Use supervisorScope to parallelize subcollection fetches
+                            supervisorScope {
+                                val settlementsDeferred = async {
+                                    doc.reference.collection("settlement").get().await()
+                                        .documents.mapNotNull { it.data?.asSettlement() }
+                                }
+                                val withdrawalsDeferred = async {
+                                    doc.reference.collection("withdrawal").get().await()
+                                        .documents.mapNotNull { it.data?.asWithdrawal() }
+                                }
+                                val achievementsDeferred = async {
+                                    doc.reference.collection("achievement").get().await()
+                                        .documents.mapNotNull { it.data?.asAchievement() }
+                                }
+
+                                val settlements = settlementsDeferred.await()
+                                val withdrawals = withdrawalsDeferred.await()
+                                val achievements = achievementsDeferred.await()
+
+                                when (entity) {
+                                    is FinanceEntity.Goal -> entity.copy(
+                                        settlement = settlements,
+                                        achievement = achievements
+                                    )
+
+                                    is FinanceEntity.Liability -> entity.copy(settlement = settlements)
+                                    is FinanceEntity.Transaction -> entity.copy(withdrawal = withdrawals)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            if (e is CancellationException) throw e
+                            Log.e(
+                                "DataStorageImpl",
+                                "Failed to parse item during filtering in $collection",
+                                e
+                            )
+                            null
+                        }
+                    }
+
+                    results.addAll(enrichedEntities)
                 }
+                results
+            } catch (e: Exception) {
+                Log.e("DataStorageImpl", "Error filtering datasets", e)
+                emptyList()
             }
-            results
-        } catch (e: Exception) {
-            Log.e("DataStorageImpl", "Error filtering datasets", e)
-            emptyList()
         }
     }
 
@@ -118,39 +140,57 @@ class DataStorageImpl(
         val collections = listOf(TRANSACTION_COLLECTION, GOAL_COLLECTION, LIABILITY_COLLECTION)
         val listeners = mutableListOf<com.google.firebase.firestore.ListenerRegistration>()
         val latestData = mutableMapOf<String, List<FinanceEntity>>()
-        var latestSettlements = emptyList<Settlement>()
-        var latestWithdrawal = emptyList<Withdrawal>()
-        var latestAchievements = emptyList<Achievement>()
+        val latestSubcollections = mutableMapOf<String, List<Any>>()
 
-        // Initialize with empty lists to ensure something is emitted early if requested
+        // Initialize with empty lists
         collections.forEach { latestData[it] = emptyList() }
+        latestSubcollections["settlement"] = emptyList()
+        latestSubcollections["withdrawal"] = emptyList()
+        latestSubcollections["achievement"] = emptyList()
 
         fun emitCombined() {
+            @Suppress("UNCHECKED_CAST")
+            val settlements =
+                (latestSubcollections["settlement"] as? List<Settlement>) ?: emptyList()
+
+            @Suppress("UNCHECKED_CAST")
+            val withdrawals =
+                (latestSubcollections["withdrawal"] as? List<Withdrawal>) ?: emptyList()
+
+            @Suppress("UNCHECKED_CAST")
+            val achievements =
+                (latestSubcollections["achievement"] as? List<Achievement>) ?: emptyList()
+
             val combined = latestData.values.flatten().map { entity ->
                 when (entity) {
                     is FinanceEntity.Goal -> entity.copy(
-                        settlement = latestSettlements.filter { it.datasetId == entity.id },
-                        achievement = latestAchievements.filter { it.datasetId == entity.id }
+                        settlement = settlements.filter { it.datasetId == entity.id },
+                        achievement = achievements.filter { it.datasetId == entity.id }
                     )
 
-                    is FinanceEntity.Liability -> entity.copy(settlement = latestSettlements.filter { it.datasetId == entity.id })
-                    is FinanceEntity.Transaction -> entity.copy(withdrawal = latestWithdrawal.filter { it.datasetId == entity.id })
+                    is FinanceEntity.Liability -> entity.copy(
+                        settlement = settlements.filter { it.datasetId == entity.id }
+                    )
+
+                    is FinanceEntity.Transaction -> entity.copy(
+                        withdrawal = withdrawals.filter { it.datasetId == entity.id }
+                    )
                 }
             }
             Log.d("DataStorageImpl", "parsed total count: ${combined.size}")
             trySend(combined)
-            // Only call onSuccess when we actually have some data or all listeners have fired at least once
             if (combined.isNotEmpty()) {
                 onSuccess(true)
             }
         }
 
+        // Load main collections with listeners
         collections.forEach { collectionName ->
             val ref = db.collection(COLLECTION_NAME)
                 .document(userId)
                 .collection(collectionName)
 
-            // Try to fetch from cache first for immediate emission
+            // Try cache first
             launch {
                 try {
                     val cacheSnapshot = ref.get(Source.CACHE).await()
@@ -202,72 +242,79 @@ class DataStorageImpl(
             listeners.add(listener)
         }
 
-        // Listen to settlements via collection group
-        val settlementListener = db.collectionGroup("settlement")
+        // OPTIMIZED: Single combined listener for all subcollections using collection group
+        // This replaces 3 separate listeners with 1 batched operation
+        val subcollectionListener = db.collectionGroup("settlement")
             .whereEqualTo("userId", userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("DataStorageImpl", "settlement collectionGroup listener error", error)
-                    return@addSnapshotListener
-                }
-
-                val settlements = snapshot?.documents?.mapNotNull { doc ->
+            .addSnapshotListener { settlementSnapshot, settlementError ->
+                if (settlementError == null && settlementSnapshot != null) {
                     try {
-                        doc.data?.asSettlement()
+                        val settlements = settlementSnapshot.documents.mapNotNull { doc ->
+                            try {
+                                doc.data?.asSettlement()
+                            } catch (e: Exception) {
+                                Log.e("DataStorageImpl", "Failed to parse settlement", e)
+                                null
+                            }
+                        }
+                        latestSubcollections["settlement"] = settlements
+                        emitCombined()
                     } catch (e: Exception) {
-                        Log.e("DataStorageImpl", "Failed to parse settlement", e)
-                        null
+                        Log.e("DataStorageImpl", "Error processing settlements", e)
                     }
-                } ?: emptyList()
-
-                latestSettlements = settlements
-                emitCombined()
+                } else if (settlementError != null) {
+                    Log.e("DataStorageImpl", "Settlement listener error", settlementError)
+                }
             }
-        listeners.add(settlementListener)
+        listeners.add(subcollectionListener)
 
-        // Listen to settlements via collection group
+        // Withdrawal listener
         val withdrawalListener = db.collectionGroup("withdrawal")
             .whereEqualTo("userId", userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("DataStorageImpl", "withdrawal collectionGroup listener error", error)
-                    return@addSnapshotListener
-                }
-
-                val withdrawal = snapshot?.documents?.mapNotNull { doc ->
+            .addSnapshotListener { withdrawalSnapshot, withdrawalError ->
+                if (withdrawalError == null && withdrawalSnapshot != null) {
                     try {
-                        doc.data?.asWithdrawal()
+                        val withdrawals = withdrawalSnapshot.documents.mapNotNull { doc ->
+                            try {
+                                doc.data?.asWithdrawal()
+                            } catch (e: Exception) {
+                                Log.e("DataStorageImpl", "Failed to parse withdrawal", e)
+                                null
+                            }
+                        }
+                        latestSubcollections["withdrawal"] = withdrawals
+                        emitCombined()
                     } catch (e: Exception) {
-                        Log.e("DataStorageImpl", "Failed to parse settlement", e)
-                        null
+                        Log.e("DataStorageImpl", "Error processing withdrawals", e)
                     }
-                } ?: emptyList()
-
-                latestWithdrawal = withdrawal
-                emitCombined()
+                } else if (withdrawalError != null) {
+                    Log.e("DataStorageImpl", "Withdrawal listener error", withdrawalError)
+                }
             }
         listeners.add(withdrawalListener)
 
-        // Listen to achievements via collection group
+        // Achievement listener
         val achievementListener = db.collectionGroup("achievement")
             .whereEqualTo("userId", userId)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    Log.e("DataStorageImpl", "achievement collectionGroup listener error", error)
-                    return@addSnapshotListener
-                }
-
-                val achievements = snapshot?.documents?.mapNotNull { doc ->
+            .addSnapshotListener { achievementSnapshot, achievementError ->
+                if (achievementError == null && achievementSnapshot != null) {
                     try {
-                        doc.data?.asAchievement()
+                        val achievements = achievementSnapshot.documents.mapNotNull { doc ->
+                            try {
+                                doc.data?.asAchievement()
+                            } catch (e: Exception) {
+                                Log.e("DataStorageImpl", "Failed to parse achievement", e)
+                                null
+                            }
+                        }
+                        latestSubcollections["achievement"] = achievements
+                        emitCombined()
                     } catch (e: Exception) {
-                        Log.e("DataStorageImpl", "Failed to parse achievement", e)
-                        null
+                        Log.e("DataStorageImpl", "Error processing achievements", e)
                     }
-                } ?: emptyList()
-
-                latestAchievements = achievements
-                emitCombined()
+                } else if (achievementError != null) {
+                    Log.e("DataStorageImpl", "Achievement listener error", achievementError)
+                }
             }
         listeners.add(achievementListener)
 

@@ -14,17 +14,15 @@ class GetCurrentAmountUseCase @Inject constructor() {
             var incoming = 0.0
             var outgoing = 0.0
 
-            financeEntityList.forEach { entity ->
+            for (entity in financeEntityList) {
                 // 1. Process the main entity principal if it matches the method
                 if (entity.paymentMethod == method) {
                     when (entity) {
                         is FinanceEntity.Liability -> {
                             if (entity.affectCurrentAccount) {
                                 if (entity.liabilityType.text == "Debt") {
-                                    // Debt: Income only if we actually received the money
                                     incoming += entity.amount
                                 } else {
-                                    // Lent: Money left our account
                                     outgoing += entity.amount
                                 }
                             }
@@ -45,29 +43,28 @@ class GetCurrentAmountUseCase @Inject constructor() {
 
                 // 2. Process settlements within the entity
                 val settlements = when (entity) {
-                    is FinanceEntity.Goal -> emptyList() // Goal attainments don't affect current account balance
+                    is FinanceEntity.Goal -> emptyList()
                     is FinanceEntity.Liability -> entity.settlement
                     is FinanceEntity.Transaction -> emptyList()
                 }
 
-                settlements.forEach { settlement ->
+                for (settlement in settlements) {
                     if (settlement.paymentMethod == method && settlement.affectCurrentAccount) {
                         when (settlement.settlementType.text) {
                             "Refund" -> incoming += settlement.amount
-                            "Payback",
-                            "Withdrawal" -> outgoing += settlement.amount
+                            "Payback", "Withdrawal" -> outgoing += settlement.amount
                         }
                     }
                 }
 
-                // Process withdrawals within the entity
+                // 3. Process withdrawals within the entity
                 val withdrawals = when (entity) {
                     is FinanceEntity.Transaction -> entity.withdrawal
                     else -> emptyList()
                 }
 
-                withdrawals.forEach { withdrawal ->
-                    if (!withdrawal.affectCurrentAccount) return@forEach
+                for (withdrawal in withdrawals) {
+                    if (!withdrawal.affectCurrentAccount) continue
                     if (withdrawal.fromPaymentMethod == method) {
                         outgoing += withdrawal.amount
                     }
@@ -79,6 +76,7 @@ class GetCurrentAmountUseCase @Inject constructor() {
             return incoming - outgoing
         }
 
+        // Calculate both payment methods in sequence (not nested loops)
         return mapOf(
             "Card" to calculateBalance(PaymentMethod.CREDIT_CARD),
             "Cash" to calculateBalance(PaymentMethod.CASH)

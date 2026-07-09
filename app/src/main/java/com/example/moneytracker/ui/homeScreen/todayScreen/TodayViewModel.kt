@@ -20,16 +20,27 @@ import com.example.moneytracker.ui.usecase.HomeData
 import com.example.moneytracker.ui.usecase.SortTodayDataSettlementUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import javax.inject.Inject
+
+data class TodayScreenData(
+    val uiState: TodayUiState = TodayUiState(),
+    val donutChartData: DataState<List<DonutChartData>> = DataState.Loading,
+    val sortedToday: DataState<List<DataSettlement>> = DataState.Loading,
+    val fulfillmentFinanceEntity: DataState<List<FinanceEntity>> = DataState.Loading,
+    val currentAccountBalance: DataState<Map<String, Double>> = DataState.Loading,
+    val liabilityBalance: DataState<Map<String, Double>> = DataState.Loading
+)
 
 @HiltViewModel
 class TodayViewModel @Inject constructor(
@@ -82,6 +93,7 @@ class TodayViewModel @Inject constructor(
                 )
             }
         }
+        .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
@@ -93,16 +105,19 @@ class TodayViewModel @Inject constructor(
                 }
             }
         }
+        .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val currentAccountBalance: StateFlow<DataState<Map<String, Double>>> = rawDatasetsFlow
         .map { it.toDataState { datasets -> getCurrentAmountUseCase(datasets) } }
+        .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
     val liabilityBalance: StateFlow<DataState<Map<String, Double>>> = rawDatasetsFlow
         .map { it.toDataState { datasets -> getLiabilityBalanceUseCase(datasets) } }
+        .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
@@ -121,8 +136,29 @@ class TodayViewModel @Inject constructor(
             )
         }
     }
+        .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
+
+    val screenData: StateFlow<TodayScreenData> = combine(
+        uiState,
+        donutChartData,
+        sortedToday,
+        fulfillmentFinanceEntity,
+        currentAccountBalance,
+        liabilityBalance
+    ) { flows ->
+        TodayScreenData(
+            uiState = flows[0] as TodayUiState,
+            donutChartData = flows[1] as DataState<List<DonutChartData>>,
+            sortedToday = flows[2] as DataState<List<DataSettlement>>,
+            fulfillmentFinanceEntity = flows[3] as DataState<List<FinanceEntity>>,
+            currentAccountBalance = flows[4] as DataState<Map<String, Double>>,
+            liabilityBalance = flows[5] as DataState<Map<String, Double>>
+        )
+    }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), TodayScreenData())
 
     fun updateSorting(
         time: SortType? = null,

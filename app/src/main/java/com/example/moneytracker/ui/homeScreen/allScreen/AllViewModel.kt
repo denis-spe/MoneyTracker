@@ -15,12 +15,14 @@ import com.example.moneytracker.ui.usecase.GetWeeklyDataUseCase
 import com.example.moneytracker.ui.usecase.HomeData
 import com.example.moneytracker.ui.usecase.ProfessionalSummary
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.flow.stateIn
@@ -28,6 +30,15 @@ import kotlinx.coroutines.flow.update
 import kotlinx.datetime.LocalDate
 import network.chaintech.kmp_date_time_picker.utils.now
 import javax.inject.Inject
+
+data class AllScreenData(
+    val uiState: AllUiState = AllUiState(),
+    val groupedWeeklyData: DataState<List<Pair<LocalDate, List<DataSettlement>>>> = DataState.Loading,
+    val professionalSummary: DataState<ProfessionalSummary> = DataState.Loading,
+    val activityCounts: DataState<Map<LocalDate, Int>> = DataState.Loading,
+    val currentWeekDerived: List<LocalDate> = emptyList(),
+    val currentDateDerived: LocalDate = LocalDate.now()
+)
 
 @HiltViewModel
 class AllViewModel @Inject constructor(
@@ -69,6 +80,7 @@ class AllViewModel @Inject constructor(
                     .sortedByDescending { it.first }
             }
         }
+            .flowOn(Dispatchers.Default)
             .distinctUntilChanged()
             .stateIn(
                 viewModelScope,
@@ -84,6 +96,7 @@ class AllViewModel @Inject constructor(
             getProfessionalSummaryUseCase(getWeeklyDataUseCase(datasets, dates))
         }
     }
+        .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
@@ -91,7 +104,7 @@ class AllViewModel @Inject constructor(
         .map { homeData ->
             homeData.toDataState { datasets ->
                 val map = mutableMapOf<LocalDate, Int>()
-                datasets.forEach { entity ->
+                for (entity in datasets) {
                     val date = entity.createdAt.toLocalDateTimeUtc().date
                     map[date] = (map[date] ?: 0) + 1
 
@@ -100,13 +113,13 @@ class AllViewModel @Inject constructor(
                         is FinanceEntity.Liability -> entity.settlement
                         else -> emptyList()
                     }
-                    settlements.forEach { s ->
+                    for (s in settlements) {
                         val sDate = s.dateTime.toLocalDateTimeUtc().date
                         map[sDate] = (map[sDate] ?: 0) + 1
                     }
 
                     if (entity is FinanceEntity.Transaction) {
-                        entity.withdrawal.forEach { w ->
+                        for (w in entity.withdrawal) {
                             val sDate = w.createdAt.toLocalDateTimeUtc().date
                             map[sDate] = (map[sDate] ?: 0) + 1
                         }
@@ -115,6 +128,7 @@ class AllViewModel @Inject constructor(
                 map
             }
         }
+        .flowOn(Dispatchers.Default)
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), DataState.Loading)
 
@@ -131,6 +145,26 @@ class AllViewModel @Inject constructor(
     }
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), LocalDate.now())
+
+    val screenData: StateFlow<AllScreenData> = combine(
+        uiState,
+        groupedWeeklyData,
+        professionalSummary,
+        activityCounts,
+        currentWeekDerived,
+        currentDateDerived
+    ) { flows ->
+        AllScreenData(
+            uiState = flows[0] as AllUiState,
+            groupedWeeklyData = flows[1] as DataState<List<Pair<LocalDate, List<DataSettlement>>>>,
+            professionalSummary = flows[2] as DataState<ProfessionalSummary>,
+            activityCounts = flows[3] as DataState<Map<LocalDate, Int>>,
+            currentWeekDerived = flows[4] as List<LocalDate>,
+            currentDateDerived = flows[5] as LocalDate
+        )
+    }
+        .distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STATE_TIMEOUT), AllScreenData())
 
     fun updateSelectedTabIndex(index: Int) =
         _uiState.update { it.copy(selectedTabIndex = index) }
