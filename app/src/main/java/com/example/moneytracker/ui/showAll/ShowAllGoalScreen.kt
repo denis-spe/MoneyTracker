@@ -31,11 +31,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.outlined.HelpOutline
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.twotone.Insights
 import androidx.compose.material3.Card
@@ -237,10 +237,12 @@ fun ShowAllGoalHeroHeader(
     val totalAchieved = remember(goals) { goals.sumOf { it.settlement.sumOf { s -> s.amount } } }
     val successRate = if (totalTarget > 0) (totalAchieved / totalTarget) * 100 else 0.0
 
-    var showHelp by remember { mutableStateOf(false) }
-    var showStats by remember { mutableStateOf(false) }
-    var showVisualAnalysis by remember { mutableStateOf(false) }
-    var isSearchActive by remember { mutableStateOf(false) }
+    val showHelp = remember { mutableStateOf(false) }
+    val showStats = remember { mutableStateOf(false) }
+    val showVisualAnalysis = remember { mutableStateOf(false) }
+    val isSearchActive = remember { mutableStateOf(false) }
+    val showMoreOptionState = remember { mutableStateOf(false) }
+
 
     Surface(
         modifier = Modifier
@@ -294,39 +296,39 @@ fun ShowAllGoalHeroHeader(
                 }
 
                 Row {
-                    IconButton(onClick = { isSearchActive = !isSearchActive }) {
+                    IconButton(onClick = { isSearchActive.value = !isSearchActive.value }) {
                         Icon(
                             imageVector = Icons.Default.Search,
                             contentDescription = "Search",
-                            tint = if (isSearchActive) StewardTheme.colors.primary else MaterialTheme.colorScheme.onSurface
+                            tint = if (isSearchActive.value) StewardTheme.colors.primary else MaterialTheme.colorScheme.onSurface
                         )
                     }
-                    IconButton(onClick = { showVisualAnalysis = true }) {
-                        Icon(
-                            imageVector = Icons.TwoTone.Insights,
-                            contentDescription = "visualization",
-                            tint = if (showVisualAnalysis) StewardTheme.colors.primary else MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { showStats = true }) {
-                        Icon(
-                            imageVector = Icons.TwoTone.Insights,
-                            contentDescription = "Statistics",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                    IconButton(onClick = { showHelp = true }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Outlined.HelpOutline,
-                            contentDescription = "Help",
-                            tint = MaterialTheme.colorScheme.onSurface
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
+                    ) {
+                        IconButton(onClick = { showMoreOptionState.value = true }) {
+                            Icon(
+                                imageVector = Icons.Default.MoreHoriz,
+                                contentDescription = "show more",
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+
+                        ShowAllMoreOption(
+                            showHelp = showHelp,
+                            showStats = showStats,
+                            showVisualAnalysis = showVisualAnalysis,
+                            isExpanded = showMoreOptionState,
+                            onDismiss = { showMoreOptionState.value = false }
                         )
                     }
                 }
             }
 
             AnimatedVisibility(
-                visible = isSearchActive,
+                visible = isSearchActive.value,
                 enter = expandVertically() + fadeIn(),
                 exit = shrinkVertically() + fadeOut()
             ) {
@@ -427,21 +429,21 @@ fun ShowAllGoalHeroHeader(
         }
     }
 
-    if (showHelp) {
-        GoalHelpSheet(onDismiss = { showHelp = false })
+    if (showHelp.value) {
+        GoalHelpSheet(onDismiss = { showHelp.value = false })
     }
 
-    if (showStats) {
+    if (showStats.value) {
         GoalStatisticsDialog(
             goals = DataState.Success(goals),
-            onDismiss = { showStats = false }
+            onDismiss = { showStats.value = false }
         )
     }
 
-    if (showVisualAnalysis) {
+    if (showVisualAnalysis.value) {
         VisualAnalysisBottomSheet(
             entities = goals,
-            onDismiss = { showVisualAnalysis = false }
+            onDismiss = { showVisualAnalysis.value = false }
         )
     }
 }

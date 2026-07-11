@@ -188,7 +188,7 @@ fun DonutChart(
         }
     }
 
-    val animationTargetState = (0 until data.items.size).map {
+    val animationTargetState = data.items.indices.map {
         remember {
             mutableStateOf(
                 DonutChartState(
@@ -197,7 +197,7 @@ fun DonutChart(
             )
         }
     }
-    val animValues = (0 until data.items.size).map {
+    val animValues = data.items.indices.map {
         animateDpAsState(
             targetValue = animationTargetState[it].value.stroke,
             animationSpec = TweenSpec(700)

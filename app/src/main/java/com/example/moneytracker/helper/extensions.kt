@@ -1271,12 +1271,16 @@ fun String.limitLength(maxLength: Int): String {
 }
 
 fun Long.formatToAmount(): String {
-    return this.toDouble().formatToAmount()
+    return this.toDouble().formatToAmount().split(".")[0]
 }
 
 
 fun Float.formatToAmount(): String {
     return this.toDouble().formatToAmount()
+}
+
+fun Int.formatToAmount(): String {
+    return this.toDouble().formatToAmount().split(".")[0]
 }
 
 fun Double.formatToAmount(): String {

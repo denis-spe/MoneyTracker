@@ -1,6 +1,12 @@
 // Glory be the name of LORD our GOD
 package com.example.moneytracker.ui.showAll
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -30,7 +36,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.types.TransactionType
@@ -132,7 +140,47 @@ private fun TransactionVisuals(transactions: List<FinanceEntity.Transaction>) {
             DonutChart(
                 data = typeBreakdown,
                 modifier = Modifier.size(200.dp),
-                chartSize = 160.dp
+                chartSize = 160.dp,
+                selectionView = { selectedItem ->
+                    AnimatedContent(
+                        targetState = selectedItem,
+                        transitionSpec = {
+                            (fadeIn() + scaleIn(initialScale = 0.8f))
+                                .togetherWith(fadeOut() + scaleOut(targetScale = 0.8f))
+                        },
+                        label = "DonutCenterAnimation"
+                    ) { item ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (item != null) {
+                                val percentage = (item.amount / typeBreakdown.totalAmount) * 100
+                                Text(
+                                    text = "${percentage.toInt()}%",
+                                    style = typography.titleLarge,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = item.title,
+                                    style = typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                Text(
+                                    text = typeBreakdown.totalAmount.toLong().formatToAmount(),
+                                    style = typography.titleLarge.copy(fontSize = 18.sp),
+                                    fontWeight = FontWeight.Black,
+                                    color = StewardTheme.colors.primary,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Total Volume",
+                                    style = typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(16.dp))
             SimpleLegend(typeBreakdown.items)
@@ -219,12 +267,52 @@ private fun LiabilityVisuals(liabilities: List<FinanceEntity.Liability>) {
         )
     }
 
-    AnalysisSection(title = "Overall Debt Progress") {
+    AnalysisSection(title = "Overall Obligations Progress") {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             DonutChart(
                 data = progressData,
                 modifier = Modifier.size(200.dp),
-                chartSize = 160.dp
+                chartSize = 160.dp,
+                selectionView = { selectedItem ->
+                    AnimatedContent(
+                        targetState = selectedItem,
+                        transitionSpec = {
+                            (fadeIn() + scaleIn(initialScale = 0.8f))
+                                .togetherWith(fadeOut() + scaleOut(targetScale = 0.8f))
+                        },
+                        label = "LiabilityCenterAnimation"
+                    ) { item ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (item != null) {
+                                val percentage = (item.amount / progressData.totalAmount) * 100
+                                Text(
+                                    text = "${percentage.toInt()}%",
+                                    style = typography.titleLarge,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = item.title,
+                                    style = typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                Text(
+                                    text = totalAmount.formatToAmount(),
+                                    style = typography.titleLarge.copy(fontSize = 18.sp),
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.error,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Total Liabilities",
+                                    style = typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(16.dp))
             SimpleLegend(progressData.items)
@@ -298,7 +386,47 @@ private fun GoalVisuals(goals: List<FinanceEntity.Goal>) {
             DonutChart(
                 data = progressData,
                 modifier = Modifier.size(200.dp),
-                chartSize = 160.dp
+                chartSize = 160.dp,
+                selectionView = { selectedItem ->
+                    AnimatedContent(
+                        targetState = selectedItem,
+                        transitionSpec = {
+                            (fadeIn() + scaleIn(initialScale = 0.8f))
+                                .togetherWith(fadeOut() + scaleOut(targetScale = 0.8f))
+                        },
+                        label = "GoalCenterAnimation"
+                    ) { item ->
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            if (item != null) {
+                                val percentage = (item.amount / progressData.totalAmount) * 100
+                                Text(
+                                    text = "${percentage.toInt()}%",
+                                    style = typography.titleLarge,
+                                    fontWeight = FontWeight.Black,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                                Text(
+                                    text = item.title,
+                                    style = typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            } else {
+                                Text(
+                                    text = totalTarget.formatToAmount(),
+                                    style = typography.titleLarge.copy(fontSize = 18.sp),
+                                    fontWeight = FontWeight.Black,
+                                    color = attainColor,
+                                    textAlign = TextAlign.Center
+                                )
+                                Text(
+                                    text = "Total Target",
+                                    style = typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                                )
+                            }
+                        }
+                    }
+                }
             )
             Spacer(modifier = Modifier.height(16.dp))
             SimpleLegend(progressData.items)
