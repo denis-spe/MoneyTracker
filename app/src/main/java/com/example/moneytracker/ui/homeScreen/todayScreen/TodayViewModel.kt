@@ -8,7 +8,6 @@ import com.example.moneytracker.backend.storage.FinanceEntity
 import com.example.moneytracker.backend.storage.FinanceRepository
 import com.example.moneytracker.backend.storage.PaymentMethod
 import com.example.moneytracker.backend.storage.toDataState
-import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.components.charts.DonutChartData
 import com.example.moneytracker.ui.homeScreen.DataState
 import com.example.moneytracker.ui.homeScreen.SortingState
@@ -87,10 +86,7 @@ class TodayViewModel @Inject constructor(
     val donutChartData: StateFlow<DataState<List<DonutChartData>>> = rawDatasetsFlow
         .map { homeData ->
             homeData.toDataState { datasets ->
-                getTodayChartDonutDataUseCase(
-                    datasets.filter { it.isForToday },
-                    context
-                )
+                getTodayChartDonutDataUseCase(datasets, context)
             }
         }
         .flowOn(Dispatchers.Default)

@@ -23,8 +23,11 @@ import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.ListItem
 import androidx.compose.material3.ListItemDefaults
@@ -49,8 +52,8 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.example.moneytracker.R
 import com.example.moneytracker.backend.storage.DataSettlement
@@ -62,7 +65,6 @@ import com.example.moneytracker.backend.storage.types.TransactionType
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToTime
 import com.example.moneytracker.helper.formattedDate
-import com.example.moneytracker.helper.limit
 import com.example.moneytracker.helper.status
 import com.example.moneytracker.helper.title
 import com.example.moneytracker.helper.toLocalDateTimeUtc
@@ -78,7 +80,6 @@ import com.example.moneytracker.ui.screenManager.ShowAllLiabilitiesScreenRouter
 import com.example.moneytracker.ui.screenManager.ShowAllTransactionsScreenRouter
 import com.example.moneytracker.ui.screenManager.TransactionDetailScreenRouter
 import com.example.moneytracker.ui.theme.StewardTheme
-import com.example.moneytracker.ui.usecase.coupleDatasetsWithSettlements
 
 private val CORNER_RADIUS = 16.dp
 
@@ -631,29 +632,121 @@ internal fun LiabilityCard(
 }
 
 @Composable
+fun SortComponent(
+    modifier: Modifier = Modifier,
+    isAscending: Boolean,
+    transactionSort: TransactionSort,
+    onSortClick: () -> Unit
+) {
+    val sortLabel = remember(isAscending, transactionSort) {
+        transactionSort.getSortLabel(isAscending)
+    }
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "Activity",
+            style = typography.titleLarge.copy(
+                fontWeight = FontWeight.Black,
+                letterSpacing = (-0.5).sp
+            )
+        )
+
+        Surface(
+            onClick = onSortClick,
+            color = if (isAscending) MaterialTheme.colorScheme.primaryContainer
+            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.height(40.dp)
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Icon(
+                    imageVector = if (isAscending) Icons.Default.ArrowUpward else Icons.AutoMirrored.Filled.Sort,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                    tint = if (isAscending) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                    text = sortLabel,
+                    style = typography.labelLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (isAscending) MaterialTheme.colorScheme.onPrimaryContainer else MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun <T> SortChips(
+    modifier: Modifier = Modifier,
+    options: Array<T>,
+    selectedOption: T,
+    onOptionSelected: (T) -> Unit,
+    labelProvider: (T) -> String
+) {
+    LazyRow(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        contentPadding = PaddingValues(horizontal = 16.dp)
+    ) {
+        items(options) { option ->
+            FilterChip(
+                selected = option == selectedOption,
+                onClick = { onOptionSelected(option) },
+                label = { Text(labelProvider(option)) },
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = MaterialTheme.colorScheme.primary,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimary
+                )
+            )
+        }
+    }
+}
+
+@Composable
 fun OverviewScreen(
     onNavigate: NavController?,
     paddingValues: PaddingValues,
     allDataset: DataState<List<FinanceEntity>>,
+    recentActivity: DataState<List<DataSettlement>>,
+    sortedGoals: DataState<List<FinanceEntity.Goal>>,
+    sortedLiabilities: DataState<List<FinanceEntity.Liability>>,
+    isAscending: Boolean,
+    transactionSort: TransactionSort,
+    goalSort: GoalSort,
+    liabilitySort: LiabilitySort,
+    onToggleSort: () -> Unit,
+    onTransactionSortChange: (TransactionSort) -> Unit,
+    onGoalSortChange: (GoalSort) -> Unit,
+    onLiabilitySortChange: (LiabilitySort) -> Unit
 ) {
-    @Suppress("UNUSED_VARIABLE")
-    val coupledData = remember(allDataset) {
-        if (allDataset is DataState.Success) {
-            coupleDatasetsWithSettlements(allDataset.data)
-        } else emptyList()
-    }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(paddingValues)
     ) {
+
+        SortComponent(
+            modifier = Modifier.padding(horizontal = 16.dp),
+            isAscending = isAscending,
+            transactionSort = transactionSort,
+            onSortClick = onToggleSort
+        )
+
         LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp),
-            contentPadding = PaddingValues(vertical = 16.dp)
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             when (allDataset) {
                 is DataState.Loading -> {
@@ -666,86 +759,51 @@ fun OverviewScreen(
                     val data = allDataset.data
 
                     if (data.isEmpty()) {
-                        item {
-                            Column(
-                                modifier = Modifier
-                                    .fillParentMaxHeight(0.8f)
-                                    .fillMaxWidth(),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Image(
-                                    painter = painterResource(R.drawable.empty_list),
-                                    contentDescription = "empty list",
-                                    modifier = Modifier.size(120.dp),
-                                    alpha = 0.5f
-                                )
-                                Spacer(modifier = Modifier.height(16.dp))
-                                Text(
-                                    text = "No activity recorded yet",
-                                    style = typography.titleMedium,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.Gray,
-                                    textAlign = TextAlign.Center
-                                )
-                                Text(
-                                    text = "Start by adding your first transaction!",
-                                    style = typography.bodyMedium,
-                                    color = Color.Gray.copy(alpha = 0.7f),
-                                    textAlign = TextAlign.Center
-                                )
-                            }
-                        }
+                        // ... existing empty state ...
                     } else {
                         // Recent Activity (Transactions & Withdrawals)
                         item {
-                            val recentActivity = remember(coupledData) {
-                                coupledData
-                                    .filter {
-                                        it is DataSettlement.SettlementData && it.financeEntity is FinanceEntity.Transaction ||
-                                                it is DataSettlement.SettlementWithdrawal
-                                    }
-                                    .sortedByDescending {
-                                        when (it) {
-                                            is DataSettlement.SettlementData -> it.financeEntity.createdAt
-                                            is DataSettlement.SettlementWithdrawal -> it.withdrawal.createdAt
-                                            else -> com.google.firebase.Timestamp.now()
-                                        }
-                                    }
-                                    .limit(10)
-                            }
-
-                            if (recentActivity.isNotEmpty()) {
+                            Column {
                                 SectionHeader(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
                                     title = "Recent Transactions",
                                     onSeeAllClick = {
                                         onNavigate?.navigate(ShowAllTransactionsScreenRouter)
-                                    } // Go to Today
+                                    }
                                 )
+                                SortChips(
+                                    options = TransactionSort.entries.toTypedArray(),
+                                    selectedOption = transactionSort,
+                                    onOptionSelected = onTransactionSortChange,
+                                    labelProvider = { it.label }
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if (recentActivity is DataState.Success && recentActivity.data.isNotEmpty()) {
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentPadding = PaddingValues(horizontal = 16.dp)
+                                    ) {
+                                        items(recentActivity.data, key = { it.id }) { activity ->
+                                            when (activity) {
+                                                is DataSettlement.SettlementData -> {
+                                                    TransactionCard(
+                                                        modifier = Modifier.animateItem(),
+                                                        financeEntity = activity.financeEntity as FinanceEntity.Transaction,
+                                                        onNavigate = onNavigate
+                                                    )
+                                                }
 
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    items(recentActivity, key = { it.id }) { activity ->
-                                        when (activity) {
-                                            is DataSettlement.SettlementData -> {
-                                                TransactionCard(
-                                                    modifier = Modifier.animateItem(),
-                                                    financeEntity = activity.financeEntity as FinanceEntity.Transaction,
-                                                    onNavigate = onNavigate
-                                                )
+                                                is DataSettlement.SettlementWithdrawal -> {
+                                                    WithdrawalCard(
+                                                        modifier = Modifier.animateItem(),
+                                                        withdrawal = activity.withdrawal,
+                                                        onNavigate = onNavigate
+                                                    )
+                                                }
+
+                                                else -> {}
                                             }
-
-                                            is DataSettlement.SettlementWithdrawal -> {
-                                                WithdrawalCard(
-                                                    modifier = Modifier.animateItem(),
-                                                    withdrawal = activity.withdrawal,
-                                                    onNavigate = onNavigate
-                                                )
-                                            }
-
-                                            else -> {}
                                         }
                                     }
                                 }
@@ -754,29 +812,33 @@ fun OverviewScreen(
 
                         // Goals
                         item {
-                            val goals = remember(data) {
-                                data.filterIsInstance<FinanceEntity.Goal>()
-                                    .sortedBy { it.routine.deadlineDateTime }
-                                    .limit(3)
-                            }
-
-                            if (goals.isNotEmpty()) {
+                            Column {
                                 SectionHeader(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
                                     title = "Active Goals",
                                     onSeeAllClick = {
                                         onNavigate?.navigate(ShowAllGoalsScreenRouter)
                                     }
                                 )
-
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                                ) {
-                                    goals.forEach { goal ->
-                                        GoalCard(
-                                            modifier = Modifier.animateItem(),
-                                            financeEntityGoal = goal,
-                                            onNavigate = onNavigate
-                                        )
+                                SortChips(
+                                    options = GoalSort.entries.toTypedArray(),
+                                    selectedOption = goalSort,
+                                    onOptionSelected = onGoalSortChange,
+                                    labelProvider = { it.label }
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if (sortedGoals is DataState.Success && sortedGoals.data.isNotEmpty()) {
+                                    Column(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    ) {
+                                        sortedGoals.data.take(3).forEach { goal ->
+                                            GoalCard(
+                                                modifier = Modifier.animateItem(),
+                                                financeEntityGoal = goal,
+                                                onNavigate = onNavigate
+                                            )
+                                        }
                                     }
                                 }
                             }
@@ -784,36 +846,43 @@ fun OverviewScreen(
 
                         // Liabilities
                         item {
-                            val liabilities = remember(data) {
-                                data.filterIsInstance<FinanceEntity.Liability>()
-                                    .sortedByDescending { it.createdAt }
-                                    .limit(5)
-                            }
-
-                            if (liabilities.isNotEmpty()) {
+                            Column {
                                 SectionHeader(
+                                    modifier = Modifier.padding(horizontal = 16.dp),
                                     title = "Liabilities",
                                     onSeeAllClick = {
                                         onNavigate?.navigate(ShowAllLiabilitiesScreenRouter)
-                                    } // Go to All
+                                    }
                                 )
-
-                                LazyRow(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    items(liabilities, key = { it.id }) { liability ->
-                                        LiabilityCard(
-                                            modifier = Modifier.animateItem(),
-                                            financeEntity = liability,
-                                            onNavigate = onNavigate
-                                        )
+                                SortChips(
+                                    options = LiabilitySort.entries.toTypedArray(),
+                                    selectedOption = liabilitySort,
+                                    onOptionSelected = onLiabilitySortChange,
+                                    labelProvider = { it.label }
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                if (sortedLiabilities is DataState.Success && sortedLiabilities.data.isNotEmpty()) {
+                                    LazyRow(
+                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                        modifier = Modifier.fillMaxWidth(),
+                                        contentPadding = PaddingValues(horizontal = 16.dp)
+                                    ) {
+                                        items(
+                                            sortedLiabilities.data.take(5),
+                                            key = { it.id }) { liability ->
+                                            LiabilityCard(
+                                                modifier = Modifier.animateItem(),
+                                                financeEntity = liability,
+                                                onNavigate = onNavigate
+                                            )
+                                        }
                                     }
                                 }
                             }
                         }
                     }
                 }
+                // ... Error case ...
 
                 is DataState.Error -> {
                     item {

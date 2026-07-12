@@ -241,9 +241,9 @@ fun ShowAllLiabilityHeroHeader(
         remember(liabilities) { liabilities.sumOf { it.settlement.sumOf { s -> s.amount } } }
     val totalRemaining = (totalAmount - totalSettled).coerceAtLeast(0.0)
 
-    var showHelp = remember { mutableStateOf(false) }
-    var showStats = remember { mutableStateOf(false) }
-    var showVisualAnalysis = remember { mutableStateOf(false) }
+    val showHelp = remember { mutableStateOf(false) }
+    val showStats = remember { mutableStateOf(false) }
+    val showVisualAnalysis = remember { mutableStateOf(false) }
     val showMoreOptionState = remember { mutableStateOf(false) }
     val isSearchActive = remember { mutableStateOf(false) }
 
@@ -291,7 +291,7 @@ fun ShowAllLiabilityHeroHeader(
                         letterSpacing = (-0.5).sp
                     )
                     Text(
-                        text = "Manage your debt",
+                        text = "Manage your obligations",
                         style = typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontWeight = FontWeight.Medium

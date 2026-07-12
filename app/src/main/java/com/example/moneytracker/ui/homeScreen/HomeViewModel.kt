@@ -231,7 +231,7 @@ class HomeViewModel @Inject constructor(
         .map { homeData ->
             homeData.toDataState { datasets ->
                 getTodayChartDonutDataUseCase(
-                    datasets.filter { it.isForToday },
+                    datasets,
                     context
                 )
             }

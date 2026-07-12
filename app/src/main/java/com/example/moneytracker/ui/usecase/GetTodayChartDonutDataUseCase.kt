@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.core.content.ContextCompat
 import com.example.moneytracker.backend.storage.DataSettlement
 import com.example.moneytracker.backend.storage.FinanceEntity
+import com.example.moneytracker.backend.storage.types.LiabilityType
 import com.example.moneytracker.backend.storage.types.SettlementType
 import com.example.moneytracker.helper.isForToday
 import com.example.moneytracker.ui.components.charts.DonutChartData
@@ -23,12 +24,19 @@ class GetTodayChartDonutDataUseCase @Inject constructor() {
                     val entity = it.financeEntity
                     (entity is FinanceEntity.Goal) ||
                             (entity is FinanceEntity.Liability &&
-                                    entity.liabilityType == com.example.moneytracker.backend.storage.types.LiabilityType.DEBT &&
+                                    entity.liabilityType == LiabilityType.DEBT &&
                                     !entity.affectCurrentAccount)
                 }
-                is DataSettlement.SettlementAdjust -> it.settlement.settlementType == SettlementType.GOAL_ATTAIN
+
+                is DataSettlement.SettlementAdjust -> {
+                    (it.settlement.settlementType == SettlementType.DEBT_REPAY ||
+                            it.settlement.settlementType == SettlementType.LENT_REPAY) &&
+                            !it.affectCurrentAccount
+                }
                 is DataSettlement.SettlementWithdrawal -> true
             }
+        }.filter {
+            it.isForToday
         }
 
         val grouped = coupledData.groupBy { it.text }

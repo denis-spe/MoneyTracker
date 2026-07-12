@@ -54,11 +54,30 @@ fun FulfillmentScreenRoute(
     onTabClick: (Int) -> Unit = {},
 ) {
     val allDataset by viewModel.allDataset.collectAsStateWithLifecycle()
+    val recentActivity by viewModel.recentActivity.collectAsStateWithLifecycle()
+    val sortedGoals by viewModel.sortedGoals.collectAsStateWithLifecycle()
+    val sortedLiabilities by viewModel.sortedLiabilities.collectAsStateWithLifecycle()
+    val isAscending by viewModel.isAscending.collectAsStateWithLifecycle()
+
+    val transactionSort by viewModel.transactionSort.collectAsStateWithLifecycle()
+    val goalSort by viewModel.goalSort.collectAsStateWithLifecycle()
+    val liabilitySort by viewModel.liabilitySort.collectAsStateWithLifecycle()
 
     OverviewScreen(
         onNavigate = onNavigate,
         paddingValues = paddingValues,
         allDataset = allDataset,
+        recentActivity = recentActivity,
+        sortedGoals = sortedGoals,
+        sortedLiabilities = sortedLiabilities,
+        isAscending = isAscending,
+        transactionSort = transactionSort,
+        goalSort = goalSort,
+        liabilitySort = liabilitySort,
+        onToggleSort = { viewModel.toggleSortOrder() },
+        onTransactionSortChange = { viewModel.updateTransactionSort(it) },
+        onGoalSortChange = { viewModel.updateGoalSort(it) },
+        onLiabilitySortChange = { viewModel.updateLiabilitySort(it) }
     )
 }
 
