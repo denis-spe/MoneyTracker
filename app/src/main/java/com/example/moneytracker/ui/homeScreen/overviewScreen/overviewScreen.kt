@@ -762,23 +762,24 @@ fun OverviewScreen(
                         // ... existing empty state ...
                     } else {
                         // Recent Activity (Transactions & Withdrawals)
-                        item {
-                            Column {
-                                SectionHeader(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    title = "Recent Transactions",
-                                    onSeeAllClick = {
-                                        onNavigate?.navigate(ShowAllTransactionsScreenRouter)
-                                    }
-                                )
-                                SortChips(
-                                    options = TransactionSort.entries.toTypedArray(),
-                                    selectedOption = transactionSort,
-                                    onOptionSelected = onTransactionSortChange,
-                                    labelProvider = { it.label }
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                if (recentActivity is DataState.Success && recentActivity.data.isNotEmpty()) {
+                        if (recentActivity is DataState.Success && recentActivity.data.isNotEmpty()) {
+                            item {
+                                Column {
+                                    SectionHeader(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        title = "Recent Transactions",
+                                        onSeeAllClick = {
+                                            onNavigate?.navigate(ShowAllTransactionsScreenRouter)
+                                        }
+                                    )
+                                    SortChips(
+                                        options = TransactionSort.entries.toTypedArray(),
+                                        selectedOption = transactionSort,
+                                        onOptionSelected = onTransactionSortChange,
+                                        labelProvider = { it.label }
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+
                                     LazyRow(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                         modifier = Modifier.fillMaxWidth(),
@@ -811,23 +812,25 @@ fun OverviewScreen(
                         }
 
                         // Goals
-                        item {
-                            Column {
-                                SectionHeader(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    title = "Active Goals",
-                                    onSeeAllClick = {
-                                        onNavigate?.navigate(ShowAllGoalsScreenRouter)
-                                    }
-                                )
-                                SortChips(
-                                    options = GoalSort.entries.toTypedArray(),
-                                    selectedOption = goalSort,
-                                    onOptionSelected = onGoalSortChange,
-                                    labelProvider = { it.label }
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                if (sortedGoals is DataState.Success && sortedGoals.data.isNotEmpty()) {
+                        if (sortedGoals is DataState.Success && sortedGoals.data.isNotEmpty()) {
+                            item {
+
+                                Column {
+                                    SectionHeader(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        title = "Active Goals",
+                                        onSeeAllClick = {
+                                            onNavigate?.navigate(ShowAllGoalsScreenRouter)
+                                        }
+                                    )
+                                    SortChips(
+                                        options = GoalSort.entries.toTypedArray(),
+                                        selectedOption = goalSort,
+                                        onOptionSelected = onGoalSortChange,
+                                        labelProvider = { it.label }
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+
                                     Column(
                                         modifier = Modifier.padding(horizontal = 16.dp),
                                         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -845,23 +848,24 @@ fun OverviewScreen(
                         }
 
                         // Liabilities
-                        item {
-                            Column {
-                                SectionHeader(
-                                    modifier = Modifier.padding(horizontal = 16.dp),
-                                    title = "Liabilities",
-                                    onSeeAllClick = {
-                                        onNavigate?.navigate(ShowAllLiabilitiesScreenRouter)
-                                    }
-                                )
-                                SortChips(
-                                    options = LiabilitySort.entries.toTypedArray(),
-                                    selectedOption = liabilitySort,
-                                    onOptionSelected = onLiabilitySortChange,
-                                    labelProvider = { it.label }
-                                )
-                                Spacer(modifier = Modifier.height(8.dp))
-                                if (sortedLiabilities is DataState.Success && sortedLiabilities.data.isNotEmpty()) {
+                        if (sortedLiabilities is DataState.Success && sortedLiabilities.data.isNotEmpty()) {
+                            item {
+                                Column {
+                                    SectionHeader(
+                                        modifier = Modifier.padding(horizontal = 16.dp),
+                                        title = "Liabilities",
+                                        onSeeAllClick = {
+                                            onNavigate?.navigate(ShowAllLiabilitiesScreenRouter)
+                                        }
+                                    )
+                                    SortChips(
+                                        options = LiabilitySort.entries.toTypedArray(),
+                                        selectedOption = liabilitySort,
+                                        onOptionSelected = onLiabilitySortChange,
+                                        labelProvider = { it.label }
+                                    )
+                                    Spacer(modifier = Modifier.height(8.dp))
+
                                     LazyRow(
                                         horizontalArrangement = Arrangement.spacedBy(12.dp),
                                         modifier = Modifier.fillMaxWidth(),
