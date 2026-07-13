@@ -161,9 +161,6 @@ fun YesterdayScreen(
                         }
                     } else {
                         YesterdayItems(
-                            modifier = Modifier
-                                .animateItem()
-                                .clip(RoundedCornerShape(CORNER_RADIUS)),
                             viewModel = homeMainViewModel,
                             dataSettlements = data,
                             userViewModel = userViewModel,

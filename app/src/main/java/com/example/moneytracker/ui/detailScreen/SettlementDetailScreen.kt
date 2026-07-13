@@ -196,21 +196,23 @@ fun LiabilityContent(
                     detailButtonType = DetailButtonType.ICON_TEXT
                 )
 
-                Spacer(modifier = Modifier.width(8.dp))
+                if (liability.remainingAmount > 0) {
+                    Spacer(modifier = Modifier.width(8.dp))
 
-                AddSettlement(
-                    color = when (liability.liabilityType) {
-                        LiabilityType.DEBT -> colorResource(id = R.color.RepayDebt)
-                        LiabilityType.LOAN -> colorResource(id = R.color.RepayLoan)
-                    },
-                    liabilityId = liabilityId,
-                    liability = liability,
-                    label = when (liability.liabilityType) {
-                        LiabilityType.DEBT -> "Payback"
-                        LiabilityType.LOAN -> "Refund"
-                    },
-                    detailButtonType = DetailButtonType.ICON_TEXT
-                )
+                    AddSettlement(
+                        color = when (liability.liabilityType) {
+                            LiabilityType.DEBT -> colorResource(id = R.color.RepayDebt)
+                            LiabilityType.LOAN -> colorResource(id = R.color.RepayLoan)
+                        },
+                        liabilityId = liabilityId,
+                        liability = liability,
+                        label = when (liability.liabilityType) {
+                            LiabilityType.DEBT -> "Payback"
+                            LiabilityType.LOAN -> "Refund"
+                        },
+                        detailButtonType = DetailButtonType.ICON_TEXT
+                    )
+                }
             }
         }
 

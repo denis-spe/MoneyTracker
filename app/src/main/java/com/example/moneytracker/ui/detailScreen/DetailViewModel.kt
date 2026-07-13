@@ -117,6 +117,15 @@ class DetailViewModel @Inject constructor(
         }
     }
 
+    fun deleteGoal(
+        financeEntity: FinanceEntity
+    ) = viewModelScope.launch {
+        storage.removeDataset(
+            userId = account.currentUserId,
+            financeEntity = financeEntity
+        )
+    }
+
     fun addGoalAttainment(
         goalId: String,
         amount: Double,
@@ -156,9 +165,9 @@ class DetailViewModel @Inject constructor(
         localDate: LocalDateTime
     ) {
         viewModelScope.launch {
-            val currentState = _detailState.value.financeEntity
-            if (currentState is DataState.Success && currentState.data is FinanceEntity.Goal) {
-                val oldGoal = currentState.data
+            val oldGoal =
+                (_detailState.value.financeEntity as? DataState.Success)?.data as? FinanceEntity.Goal
+            if (oldGoal != null) {
                 val newGoal = oldGoal.copy(
                     label = label,
                     description = description,
@@ -185,9 +194,9 @@ class DetailViewModel @Inject constructor(
         affectCurrentAccount: Boolean
     ) {
         viewModelScope.launch {
-            val currentState = _detailState.value.financeEntity
-            if (currentState is DataState.Success && currentState.data is FinanceEntity.Transaction) {
-                val oldTransaction = currentState.data
+            val oldTransaction =
+                (_detailState.value.financeEntity as? DataState.Success)?.data as? FinanceEntity.Transaction
+            if (oldTransaction != null) {
                 val newTransaction = oldTransaction.copy(
                     label = label,
                     description = description,
@@ -209,11 +218,12 @@ class DetailViewModel @Inject constructor(
 
     fun deleteTransaction(transactionId: String) {
         viewModelScope.launch {
-            val currentState = _detailState.value.financeEntity
-            if (currentState is DataState.Success && currentState.data is FinanceEntity.Transaction) {
+            val transaction =
+                (_detailState.value.financeEntity as? DataState.Success)?.data as? FinanceEntity.Transaction
+            if (transaction != null) {
                 storage.removeDataset(
                     userId = account.currentUserId,
-                    financeEntity = currentState.data
+                    financeEntity = transaction
                 )
             }
         }
@@ -229,9 +239,9 @@ class DetailViewModel @Inject constructor(
         amount: Double
     ) {
         viewModelScope.launch {
-            val currentState = _detailState.value.financeEntity
-            if (currentState is DataState.Success && currentState.data is FinanceEntity.Liability) {
-                val oldLiability = currentState.data
+            val oldLiability =
+                (_detailState.value.financeEntity as? DataState.Success)?.data as? FinanceEntity.Liability
+            if (oldLiability != null) {
                 val newLiability = oldLiability.copy(
                     label = label,
                     description = description,
@@ -251,11 +261,12 @@ class DetailViewModel @Inject constructor(
 
     fun deleteLiability(liabilityId: String) {
         viewModelScope.launch {
-            val currentState = _detailState.value.financeEntity
-            if (currentState is DataState.Success && currentState.data is FinanceEntity.Liability) {
+            val liability =
+                (_detailState.value.financeEntity as? DataState.Success)?.data as? FinanceEntity.Liability
+            if (liability != null) {
                 storage.removeDataset(
                     userId = account.currentUserId,
-                    financeEntity = currentState.data
+                    financeEntity = liability
                 )
             }
         }

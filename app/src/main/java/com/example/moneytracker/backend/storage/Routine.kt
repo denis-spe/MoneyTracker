@@ -10,12 +10,12 @@ enum class Routine(
     val text: String,
 ) {
 
-    EveryMinute("minutes"),
-    EveryHour("hours"),
-    EveryDay("days"),
-    Weekly("weeks"),
-    Monthly("months"),
-    Yearly("years"),
+    EveryMinute("every minutes"),
+    EveryHour("every hours"),
+    EveryDay("daily"),
+    Weekly("every weeks"),
+    Monthly("every months"),
+    Yearly("every years"),
     SpecifyDayOfTheYear("day of the year"),
     SpecificDayOfTheWeek("Specific days"),
     Nothing("Nothing");

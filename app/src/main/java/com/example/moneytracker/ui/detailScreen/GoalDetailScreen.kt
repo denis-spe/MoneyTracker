@@ -37,6 +37,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.twotone.Insights
 import androidx.compose.material3.Card
@@ -91,6 +92,7 @@ import com.example.moneytracker.helper.formatResult
 import com.example.moneytracker.helper.formatToAmount
 import com.example.moneytracker.helper.formatToDate
 import com.example.moneytracker.helper.formatToDateTime
+import com.example.moneytracker.helper.formatToDayOfWeekDayMonthYear
 import com.example.moneytracker.helper.formatToTime
 import com.example.moneytracker.helper.formatValueOnly
 import com.example.moneytracker.helper.iqr
@@ -109,6 +111,7 @@ import com.example.moneytracker.helper.variance
 import com.example.moneytracker.helper.weekDay
 import com.example.moneytracker.helper.year
 import com.example.moneytracker.helper.zScore
+import com.example.moneytracker.ui.components.DeleteDialog
 import com.example.moneytracker.ui.components.charts.RotatedBarChart
 import com.example.moneytracker.ui.components.charts.VicoLineChart
 import com.example.moneytracker.ui.components.charts.collections.ChartData
@@ -145,6 +148,10 @@ fun GoalDetailScreen(
         mutableStateOf<Settlement?>(null)
     }
 
+    val currentGoal = (financeEntity as? DataState.Success)?.data as? FinanceEntity.Goal
+    val deleteParagraph = "Are you sure you want to delete this goal?"
+    val showDeleteDialog = remember { mutableStateOf(false) }
+
     LaunchedEffect(goalId) {
         viewModel.loadGoal(goalId)
         viewModel.loadAchievementCounts(goalId)
@@ -161,6 +168,20 @@ fun GoalDetailScreen(
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back"
+                        )
+                    }
+                },
+
+                actions = {
+                    IconButton(
+                        onClick = {
+                            showDeleteDialog.value = true
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Outlined.Delete,
+                            contentDescription = "Delete",
+                            tint = Color.Red
                         )
                     }
                 }
@@ -274,7 +295,8 @@ fun GoalDetailScreen(
                                         AchievementItem(
                                             modifier = Modifier.animateItem(),
                                             achievement = achievement,
-                                            onClick = { selectedAchievement = achievement }
+                                            onClick = { selectedAchievement = achievement },
+                                            goal = currentGoal
                                         )
                                     }
                                 }
@@ -316,7 +338,21 @@ fun GoalDetailScreen(
             onDismiss = { selectedSettlement = null }
         )
     }
+
+    DeleteDialog(
+        showDialog = showDeleteDialog,
+        title = "Delete ${currentGoal?.label ?: "Goal"}",
+        paragraph = deleteParagraph,
+        onConfirm = {
+            showDeleteDialog.value = false
+            if (currentGoal != null) {
+                viewModel.deleteGoal(currentGoal)
+                navController.safePopBackStack()
+            }
+        }
+    )
 }
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -905,7 +941,7 @@ fun GoalInfo(
             modifier = Modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            InfoRow(label = "Frequency", value = currentGoal.routine.routine.text)
+            InfoRow(label = "Frequency", value = currentGoal.routine.routine.text.title)
             InfoRow(
                 label = "Start Date",
                 value = currentGoal.routine.startDateTime.formatToDateTime,
@@ -1099,7 +1135,7 @@ fun GoalSummaryCard(
                         2 -> "Analytics"
                         else -> "Overview"
                     },
-                    style = typography.headlineSmall,
+                    style = typography.titleSmall,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -1134,9 +1170,36 @@ fun GoalSummaryCard(
 @Composable
 fun AchievementItem(
     modifier: Modifier = Modifier,
+    goal: FinanceEntity.Goal,
     achievement: com.example.moneytracker.backend.storage.Achievement,
     onClick: () -> Unit
 ) {
+
+    val periodText = when (goal.routine.routine) {
+        Routine.Weekly -> "${achievement.startDateTime.formatToDate} -" +
+                " ${achievement.deadlineDateTime.formatToDate}"
+
+        Routine.Monthly -> "${achievement.startDateTime.monthName} - " +
+                achievement.deadlineDateTime.monthName
+
+        Routine.Yearly -> "${achievement.startDateTime.year} - ${achievement.deadlineDateTime.year}"
+        Routine.SpecificDayOfTheWeek -> "${achievement.startDateTime.formatToDayOfWeekDayMonthYear} " +
+                "- ${achievement.deadlineDateTime.formatToDayOfWeekDayMonthYear}"
+
+        Routine.SpecifyDayOfTheYear -> "${achievement.startDateTime.formatToDate} - " +
+                achievement.deadlineDateTime.formatToDate
+
+        Routine.EveryDay -> "${achievement.startDateTime.formatToDate} - " +
+                achievement.deadlineDateTime.formatToDate
+
+        Routine.EveryHour -> "${achievement.startDateTime.formatToTime} - " +
+                achievement.deadlineDateTime.formatToTime
+
+        Routine.EveryMinute -> "${achievement.startDateTime.formatToTime} - " +
+                achievement.deadlineDateTime.formatToTime
+
+        else -> ""
+    }
     Card(
         modifier = modifier
             .fillMaxWidth()
@@ -1171,7 +1234,7 @@ fun AchievementItem(
             HorizontalDivider(thickness = 0.5.dp, color = Color.Gray.copy(alpha = 0.3f))
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Period: ${achievement.startDateTime.formatToDateTime} - ${achievement.deadlineDateTime.formatToDateTime}",
+                text = "Period: $periodText",
                 style = typography.bodySmall,
                 color = Color.Gray
             )

@@ -426,7 +426,6 @@ fun YesterdayItemShimmer(modifier: Modifier = Modifier) {
 
 @Composable
 fun YesterdayItems(
-    modifier: Modifier = Modifier,
     dataSettlements: List<DataSettlement>,
     viewModel: HomeMainViewModel,
     userViewModel: UserViewModel,
@@ -448,7 +447,6 @@ fun YesterdayItems(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             dataSettlements.forEachIndexed { index, settlement ->
-                val isItemNotTheLast = index < dataSettlements.size - 1
 
                 YesterdayItem(
                     modifier = Modifier.fillMaxWidth(),

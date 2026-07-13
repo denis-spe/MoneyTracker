@@ -1380,7 +1380,11 @@ fun RepeatableInputComponent(
                                         ),
                                         lineLimits = TextFieldLineLimits.SingleLine,
                                     )
-                                    Text(routine.text, color = Color.Gray, fontSize = 13.sp)
+                                    Text(
+                                        routine.text.replace("every", ""),
+                                        color = Color.Gray,
+                                        fontSize = 13.sp
+                                    )
                                 }
                             } else {
                                 if (

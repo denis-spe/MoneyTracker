@@ -1244,6 +1244,16 @@ val Timestamp.formatToDate: String
         return "$day $month $year"
     }
 
+val Timestamp.formatToDayOfWeekDayMonthYear: String
+    get() {
+        val dateTime = toLocalDateTimeUtc()
+        val day = dateTime.day.addZeroIfLessThenTen
+        val dayOfWeek = dateTime.dayOfWeek.name.take(3).title
+        val month = dateTime.month.name.take(3).title
+        val year = dateTime.year
+        return "$dayOfWeek, $day $month $year"
+    }
+
 val Timestamp.formatToTime: String
     get() {
         val dateTime = toLocalDateTimeUtc()
